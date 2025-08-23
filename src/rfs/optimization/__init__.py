@@ -11,6 +11,13 @@ RFS 성능 최적화 및 튜닝 프레임워크
 
 from .optimizer import PerformanceOptimizer, OptimizationSuite, OptimizationResult, OptimizationType, OptimizationCategory
 
+# Cold Start Optimizer (NEW - 구현됨)
+from .cold_start_optimizer import (
+    ColdStartOptimizer, ColdStartConfig, OptimizationPhase,
+    PreloadingStrategy, CacheWarmupStrategy, MemoryOptimizationStrategy,
+    get_default_cold_start_optimizer, optimize_cold_start, measure_cold_start_time
+)
+
 # 임시로 기본값 설정 (구현 중)
 SystemProfiler = None
 MemoryProfiler = None
@@ -30,12 +37,16 @@ DatabaseOptimizer = None
 NetworkOptimizer = None
 
 CloudRunOptimizer = None
-ColdStartOptimizer = None
 ScalingOptimizer = None
 
 __all__ = [
     # 핵심 최적화 시스템
-    "PerformanceOptimizer", "OptimizationSuite", "OptimizationResult",
+    "PerformanceOptimizer", "OptimizationSuite", "OptimizationResult", "OptimizationType", "OptimizationCategory",
+    
+    # Cold Start Optimizer (NEW - 구현됨)
+    "ColdStartOptimizer", "ColdStartConfig", "OptimizationPhase",
+    "PreloadingStrategy", "CacheWarmupStrategy", "MemoryOptimizationStrategy",
+    "get_default_cold_start_optimizer", "optimize_cold_start", "measure_cold_start_time",
     
     # 프로파일러
     "SystemProfiler", "MemoryProfiler", "CPUProfiler", "IOProfiler",
@@ -50,5 +61,5 @@ __all__ = [
     "IOOptimizer", "DatabaseOptimizer", "NetworkOptimizer",
     
     # Cloud Run 최적화
-    "CloudRunOptimizer", "ColdStartOptimizer", "ScalingOptimizer"
+    "CloudRunOptimizer", "ScalingOptimizer"
 ]

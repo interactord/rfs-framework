@@ -10,11 +10,12 @@ RFS 프로덕션 준비성 검증 및 배포 시스템
 """
 
 from .readiness import ProductionReadinessChecker, ReadinessReport, ReadinessLevel
-
-# 임시로 기본값 설정 (구현 중)
-ProductionDeployer = None
-DeploymentStrategy = None
-RollbackManager = None
+from .deployment import (
+    ProductionDeployer, DeploymentStrategy, DeploymentStatus,
+    DeploymentConfig, DeploymentResult, RollbackManager,
+    get_production_deployer, get_rollback_manager,
+    deploy_to_production, rollback_deployment
+)
 ProductionMonitor = None
 AlertManager = None
 HealthChecker = None
@@ -30,7 +31,10 @@ __all__ = [
     "ProductionReadinessChecker", "ReadinessReport", "ReadinessLevel",
     
     # 배포 관리
-    "ProductionDeployer", "DeploymentStrategy", "RollbackManager",
+    "ProductionDeployer", "DeploymentStrategy", "DeploymentStatus",
+    "DeploymentConfig", "DeploymentResult", "RollbackManager",
+    "get_production_deployer", "get_rollback_manager",
+    "deploy_to_production", "rollback_deployment",
     
     # 모니터링
     "ProductionMonitor", "AlertManager", "HealthChecker",

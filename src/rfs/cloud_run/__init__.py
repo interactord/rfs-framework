@@ -10,6 +10,44 @@ Google Cloud Run 전문화 모듈
 Phase 2: Cloud Run 전문화 완료
 """
 
+# Helper functions from helpers.py
+from .helpers import (
+    # Environment
+    is_cloud_run_environment as _is_cloud_run_env,
+    get_cloud_run_service_name,
+    get_cloud_run_revision,
+    get_cloud_run_region,
+    # Service Discovery helpers
+    CloudRunServiceDiscovery as _CloudRunServiceDiscovery,
+    ServiceEndpoint as _ServiceEndpoint,
+    get_service_discovery as _get_service_discovery,
+    discover_services as _discover_services,
+    call_service as _call_service,
+    # Task Queue helpers
+    CloudTaskQueue as _CloudTaskQueue,
+    get_task_queue as _get_task_queue,
+    submit_task as _submit_task,
+    schedule_task as _schedule_task,
+    task_handler as _task_handler,
+    # Monitoring helpers
+    CloudMonitoringClient as _CloudMonitoringClient,
+    get_monitoring_client as _get_monitoring_client,
+    record_metric as _record_metric,
+    log_info as _log_info,
+    log_warning as _log_warning,
+    log_error as _log_error,
+    monitor_performance as _monitor_performance,
+    # Auto Scaling helpers
+    AutoScalingOptimizer as _AutoScalingOptimizer,
+    get_autoscaling_optimizer as _get_autoscaling_optimizer,
+    optimize_scaling as _optimize_scaling,
+    get_scaling_stats as _get_scaling_stats,
+    # Lifecycle
+    initialize_cloud_run_services as _initialize_cloud_run_services,
+    shutdown_cloud_run_services as _shutdown_cloud_run_services,
+    get_cloud_run_status as _get_cloud_run_status,
+)
+
 # Service Discovery & Communication
 from .service_discovery import (
     CloudRunServiceDiscovery, ServiceEndpoint, CircuitBreaker,

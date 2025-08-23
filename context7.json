@@ -85,7 +85,7 @@
   "cliUsage": {
     "installation": "# PyPI 설치\npip install rfs-framework\n\n# 모든 기능 포함 설치\npip install rfs-framework[all]\n\n# 소스에서 직접 실행\ngit clone https://github.com/interactord/rfs-framework\ncd rfs-framework\npython3 rfs_cli.py version",
     "basicCommands": "# 버전 정보 (11가지 상세 정보)\nrfs version\n\n# 시스템 상태 (16개 기능 모니터링)\nrfs status\n\n# 도움말 및 사용법\nrfs help\n\n# 설정 정보\nrfs config",
-    "systemMonitoring": "# CLI로 모니터링되는 16개 핵심 기능:\n# Core: Result Pattern, Reactive Streams\n# Architecture: Hexagonal, Dependency Injection\n# Security: RBAC/ABAC, JWT Authentication\n# Resilience: Circuit Breaker, Load Balancing\n# Monitoring: Performance, Security Event Logging\n# Deployment: Blue-Green, Canary, Rolling, Rollback\n# Cloud: Google Cloud Run Optimization\n# Docs: Korean Documentation (13 modules)\nrfs status  # 모든 기능 상태 확인",
+    "systemMonitoring": "# CLI로 모니터링되는 16개 핵심 기능:\n# Core: Result Pattern, Reactive Streams\n# Architecture: Hexagonal, Dependency Injection\n# Security: RBAC/ABAC, JWT Authentication\n# Resilience: Circuit Breaker, Load Balancing\n# Monitoring: Performance, Security Event Logging\n# Deployment: Blue-Green, Canary, Rolling, Rollback\n# Cloud: Google Cloud Run Optimization\n# Docs: Korean Documentation (14 modules complete)\nrfs status  # 모든 기능 상태 확인",
     "richOutput": "# Rich UI 출력 예시:\n╭─────── RFS Framework 버전 정보 ──────╮\n│ 🏷️  버전: 4.3.0                      │\n│ 📅 릴리스: 2024년 8월               │\n│ 🎯 단계: Production Ready          │\n│ 🏗️  아키텍처: Hexagonal            │\n│ 🔒 보안: RBAC/ABAC with JWT        │\n│ 📊 모니터링: Performance & Security │\n│ 🚀 배포: Blue-Green, Canary, Rolling│\n╰────────────────────────────────────╯",
     "requirements": "# 시스템 요구사항\nPython: 3.10 이상\n운영체제: Linux, macOS, Windows\n메모리: 최소 512MB RAM\n\n# 필수 의존성\npydantic>=2.5.0\ntyping-extensions>=4.8.0\n\n# 권장 의존성 (Rich UI용)\nrich>=13.7.0"
   },
@@ -229,6 +229,22 @@
     }
   ],
   "lastUpdated": "2024-08-23",
+  "releaseNotes": {
+    "v4.3.0": {
+      "releaseDate": "2024-08-23",
+      "status": "Production Ready",
+      "highlights": [
+        "Enterprise CLI with Rich UI and 16-feature monitoring",
+        "Complete hexagonal architecture with annotation-based DI",
+        "Advanced security: RBAC/ABAC + JWT authentication",
+        "Resilience patterns: Circuit Breaker + Load Balancing",
+        "Full deployment strategies: Blue-Green, Canary, Rolling",
+        "14-module Korean documentation complete (8,000+ words)"
+      ],
+      "breaking": false,
+      "migrations": []
+    }
+  },
   "context7": {
     "priority": "high",
     "updateFrequency": "weekly",

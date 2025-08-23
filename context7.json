@@ -1,8 +1,8 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "RFS Framework (Reactive Functional Serverless)",
-  "description": "Enterprise-Grade Python Framework combining Spring Reactor patterns, functional programming with Result/Either/Maybe monads, and serverless optimization for Google Cloud Platform",
-  "version": "4.0.1",
+  "description": "Enterprise-Grade Python Framework with functional programming patterns, hexagonal architecture, reactive streams, production deployment strategies, comprehensive security features, and complete Korean documentation",
+  "version": "4.3.0",
   "language": "python",
   "packageName": "rfs-framework",
   "repository": "https://github.com/interactord/rfs-framework",
@@ -11,6 +11,7 @@
     "src/rfs/",
     "examples/",
     "docs/",
+    "wiki/",
     "README.md",
     "API_REFERENCE.md"
   ],
@@ -40,12 +41,25 @@
     "maybe",
     "spring reactor",
     "railway oriented programming",
+    "hexagonal architecture",
+    "dependency injection",
     "cloud run",
     "google cloud",
     "state machine",
     "event sourcing",
     "cqrs",
-    "saga pattern"
+    "saga pattern",
+    "blue-green deployment",
+    "canary deployment",
+    "circuit breaker",
+    "load balancing",
+    "rbac",
+    "abac",
+    "security",
+    "monitoring",
+    "performance",
+    "rollback",
+    "korean documentation"
   ],
   "rules": [
     "Install using: pip install rfs-framework",
@@ -53,21 +67,39 @@
     "Use Result pattern for safe error handling instead of exceptions",
     "Use Flux for 0-N async stream processing, Mono for 0-1 async values",
     "Follow Railway Oriented Programming principles with bind() and map()",
-    "Use StatelessRegistry for dependency injection (Spring Bean style)",
+    "Use hexagonal architecture: Port (interface) → Adapter (implementation) → UseCase (business logic) → Controller (presentation)",
+    "Apply @inject decorator for dependency injection and register services with appropriate scopes",
+    "Use @Port, @Adapter, @UseCase, @Controller annotations for clean architecture",
+    "Implement security with @RequiresRole, @RequiresPermission, @RequiresAuthentication decorators",
+    "Apply performance monitoring with @PerformanceMonitored and @Cached decorators",
+    "Use deployment strategies: DeploymentType.BLUE_GREEN, CANARY, ROLLING for production",
+    "Create checkpoints before deployments with RollbackManager for safe rollback",
+    "Implement circuit breaker pattern for external service calls",
+    "Use LoadBalancer with algorithms like ROUND_ROBIN, CONSISTENT_HASH",
+    "Apply comprehensive logging with @AuditLogged, @LoggedOperation for security events",
+    "Follow Korean documentation standards in wiki/ directory",
     "Leverage CloudRunOptimizer for serverless optimizations",
-    "Apply @stateless decorator for singleton services",
     "Use EventBus for event-driven architecture patterns",
     "Implement Saga pattern for distributed transactions"
   ],
   "codeExamples": {
     "basicUsage": "from rfs import Result, Success, Failure\n\ndef divide(a: int, b: int) -> Result[float, str]:\n    if b == 0:\n        return Failure('Division by zero')\n    return Success(a / b)\n\nresult = divide(10, 2)\nif result.is_success:\n    print(f'Result: {result.unwrap()}')",
-    "reactiveStreams": "from rfs import Flux, Mono\nimport asyncio\n\nasync def process_stream():\n    result = await (\n        Flux.from_iterable([1, 2, 3, 4, 5])\n        .map(lambda x: x * 2)\n        .filter(lambda x: x > 5)\n        .collect_list()\n    )\n    return result\n\nasyncio.run(process_stream())",
-    "stateManagement": "from rfs import StateMachine, State, Transition\n\nmachine = StateMachine(\n    initial_state='pending',\n    states=['pending', 'processing', 'completed']\n)\n\nmachine.transition_to('processing')\nprint(f'Current state: {machine.current_state}')"
+    "hexagonalArchitecture": "from rfs.core.annotations import Port, Adapter, UseCase, Controller\n\n@Port(name='user_repository')\nclass UserRepository(ABC):\n    @abstractmethod\n    async def find_by_id(self, user_id: str) -> Result[User, str]:\n        pass\n\n@Adapter(port='user_repository')\nclass PostgresUserRepository(UserRepository):\n    async def find_by_id(self, user_id: str) -> Result[User, str]:\n        # Implementation\n        pass\n\n@UseCase(dependencies=['user_repository'])\nclass GetUserUseCase:\n    def __init__(self, user_repository: UserRepository):\n        self.repo = user_repository",
+    "reactiveStreams": "from rfs.reactive import Flux, Mono\nimport asyncio\n\nasync def process_stream():\n    result = await (\n        Flux.from_iterable([1, 2, 3, 4, 5])\n        .parallel(parallelism=4)\n        .map(lambda x: x * 2)\n        .filter(lambda x: x > 5)\n        .collect_list()\n    )\n    return result\n\nasyncio.run(process_stream())",
+    "securityAndAccessControl": "from rfs.security.access_control import RequiresRole, RequiresPermission, RequiresAuthentication\nfrom rfs.security.validation_decorators import ValidateInput, RateLimited\n\n@Controller(route='/api/admin')\nclass AdminController:\n    @RequiresAuthentication()\n    @RequiresRole(UserRole.ADMIN)\n    @RateLimited(max_calls=10, period=timedelta(minutes=1))\n    @ValidateInput({'action': {'type': 'string', 'required': True}})\n    async def admin_action(self, request_data: dict) -> dict:\n        return await self.admin_service.execute_action(request_data)",
+    "deploymentStrategies": "from rfs.production.strategies import DeploymentStrategyFactory, DeploymentType, DeploymentConfig\nfrom rfs.production.rollback import RollbackManager\n\n# Blue-Green deployment\nconfig = DeploymentConfig(\n    deployment_type=DeploymentType.BLUE_GREEN,\n    auto_rollback=True,\n    rollback_on_error_rate=0.05\n)\n\nstrategy = DeploymentStrategyFactory.create(DeploymentType.BLUE_GREEN, config)\nresult = await strategy.deploy('api-service', 'v2.0.0')",
+    "circuitBreakerAndLoadBalancing": "from rfs.service_discovery.circuit_breaker import CircuitBreaker, CircuitBreakerConfig\nfrom rfs.service_discovery.load_balancer import LoadBalancer, LoadBalancingAlgorithm\n\n# Circuit breaker for external services\ncircuit_breaker = CircuitBreaker(\n    CircuitBreakerConfig(\n        failure_threshold=5,\n        recovery_timeout=30,\n        expected_exception=Exception\n    )\n)\n\n# Load balancer with consistent hashing\nload_balancer = LoadBalancer(\n    algorithm=LoadBalancingAlgorithm.CONSISTENT_HASH,\n    health_check_enabled=True\n)\nload_balancer.add_service('payment-service', 'http://payment-1:8080')",
+    "monitoringAndPerformance": "from rfs.monitoring.performance_decorators import PerformanceMonitored, Cached\nfrom rfs.core.logging_decorators import AuditLogged, LoggedOperation\n\nclass PaymentService:\n    @PerformanceMonitored('payment_processing')\n    @Cached(ttl=300)\n    @AuditLogged('payment_processed')\n    async def process_payment(self, amount: float) -> Result[dict, str]:\n        # Payment processing logic\n        pass"
   },
   "documentation": {
     "gettingStarted": "https://github.com/interactord/rfs-framework#quick-start",
     "apiReference": "https://github.com/interactord/rfs-framework/blob/main/API_REFERENCE.md",
     "examples": "https://github.com/interactord/rfs-framework/tree/main/examples",
+    "wiki": "https://github.com/interactord/rfs-framework/tree/main/wiki",
+    "corePatterns": "https://github.com/interactord/rfs-framework/blob/main/wiki/01-core-patterns.md",
+    "dependencyInjection": "https://github.com/interactord/rfs-framework/blob/main/wiki/02-dependency-injection.md",
+    "deploymentStrategies": "https://github.com/interactord/rfs-framework/blob/main/wiki/05-deployment.md",
+    "security": "https://github.com/interactord/rfs-framework/blob/main/wiki/11-security.md",
     "changelog": "https://github.com/interactord/rfs-framework/blob/main/CHANGELOG.md"
   },
   "features": [
@@ -76,8 +108,32 @@
       "description": "Railway Oriented Programming for safe error handling without exceptions"
     },
     {
+      "name": "Hexagonal Architecture",
+      "description": "Clean architecture with Port-Adapter pattern, dependency injection, and annotation-based configuration"
+    },
+    {
       "name": "Reactive Streams",
-      "description": "Spring Reactor-inspired Flux/Mono for async stream processing"
+      "description": "Spring Reactor-inspired Flux/Mono for async stream processing with parallel operations"
+    },
+    {
+      "name": "Production Deployment",
+      "description": "Blue-Green, Canary, and Rolling deployment strategies with automatic rollback"
+    },
+    {
+      "name": "Security & Access Control",
+      "description": "RBAC/ABAC with JWT authentication, input validation, and comprehensive security scanning"
+    },
+    {
+      "name": "Circuit Breaker & Load Balancing",
+      "description": "Fault tolerance with circuit breaker pattern and multiple load balancing algorithms"
+    },
+    {
+      "name": "Performance Monitoring",
+      "description": "Comprehensive metrics collection, caching, and performance optimization"
+    },
+    {
+      "name": "Audit Logging",
+      "description": "Security event logging, transaction management, and compliance tracking"
     },
     {
       "name": "State Machine",
@@ -92,8 +148,8 @@
       "description": "Google Cloud Run and Cloud Tasks optimization with cold start detection"
     },
     {
-      "name": "Dependency Injection",
-      "description": "Spring Bean-style singleton registry for stateless services"
+      "name": "Korean Documentation",
+      "description": "Complete Korean technical documentation with examples and best practices"
     }
   ],
   "dependencies": {
@@ -129,6 +185,8 @@
     "framework",
     "reactive-programming",
     "functional-programming",
+    "hexagonal-architecture",
+    "dependency-injection",
     "serverless",
     "cloud-native",
     "async",
@@ -137,7 +195,19 @@
     "result-pattern",
     "monad",
     "spring-reactor",
-    "railway-oriented-programming"
+    "railway-oriented-programming",
+    "blue-green-deployment",
+    "canary-deployment",
+    "circuit-breaker",
+    "load-balancing",
+    "security",
+    "rbac",
+    "abac",
+    "monitoring",
+    "performance",
+    "logging",
+    "rollback",
+    "korean-documentation"
   ],
   "maintainers": [
     {
@@ -145,7 +215,7 @@
       "email": "team@rfs-framework.dev"
     }
   ],
-  "lastUpdated": "2024-01-23",
+  "lastUpdated": "2024-08-23",
   "context7": {
     "priority": "high",
     "updateFrequency": "weekly",

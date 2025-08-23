@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "rfs-framework": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "env": {},
+      "cwd": "/Users/sangbongmoon/Workspace/cosmos/rfs-framework"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+recursive-include src/rfs *.py
+include src/rfs/py.typed
+exclude tests/
+exclude examples/
+exclude docs/
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.pyo
+global-exclude .DS_Store

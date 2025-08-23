@@ -1,0 +1,348 @@
+"""
+State Machine implementation
+
+Spring StateMachine 스타일의 상태 머신 구현
+"""
+
+from typing import Dict, Any, List, Optional, Set
+from enum import Enum
+from dataclasses import dataclass, field
+from datetime import datetime
+import asyncio
+from .states import State, StateType
+from .transitions import Transition, TransitionResult
+
+class MachineState(Enum):
+    """머신 상태"""
+    IDLE = "idle"
+    RUNNING = "running"
+    STOPPED = "stopped"
+    ERROR = "error"
+
+@dataclass
+class MachineEvent:
+    """머신 이벤트"""
+    name: str
+    data: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+
+class StateMachine:
+    """
+    상태 머신
+    
+    Spring StateMachine의 핵심 기능을 구현:
+    - 상태 관리
+    - 이벤트 기반 전이
+    - Guard 조건
+    - 액션 실행
+    - 계층적 상태 (복합 상태)
+    """
+    
+    def __init__(self, name: str = "StateMachine"):
+        self.name = name
+        self.states: Dict[str, State] = {}
+        self.transitions: Dict[str, List[Transition]] = {}
+        self.current_state: Optional[State] = None
+        self.initial_state: Optional[State] = None
+        self.machine_state = MachineState.IDLE
+        self.context: Dict[str, Any] = {}
+        
+        # 이벤트 큐
+        self.event_queue: List[MachineEvent] = []
+        self.processing_events = False
+        
+        # 통계
+        self.total_transitions = 0
+        self.failed_transitions = 0
+        self.start_time: Optional[datetime] = None
+        self.event_history: List[MachineEvent] = []
+        
+        # 리스너
+        self.state_listeners: List[callable] = []
+        self.transition_listeners: List[callable] = []
+    
+    def add_state(self, state: State) -> 'StateMachine':
+        """상태 추가"""
+        self.states[state.name] = state
+        
+        # 초기 상태 자동 설정
+        if state.is_initial() and not self.initial_state:
+            self.initial_state = state
+        
+        return self
+    
+    def add_transition(self, transition: Transition) -> 'StateMachine':
+        """전이 추가"""
+        key = f"{transition.from_state.name}:{transition.event}"
+        
+        if key not in self.transitions:
+            self.transitions[key] = []
+        
+        self.transitions[key].append(transition)
+        return self
+    
+    def add_state_listener(self, listener: callable) -> 'StateMachine':
+        """상태 변경 리스너 추가"""
+        self.state_listeners.append(listener)
+        return self
+    
+    def add_transition_listener(self, listener: callable) -> 'StateMachine':
+        """전이 리스너 추가"""
+        self.transition_listeners.append(listener)
+        return self
+    
+    async def start(self) -> bool:
+        """상태 머신 시작"""
+        if self.machine_state != MachineState.IDLE:
+            return False
+        
+        if not self.initial_state:
+            raise ValueError("No initial state defined")
+        
+        self.machine_state = MachineState.RUNNING
+        self.start_time = datetime.now()
+        
+        # 초기 상태로 이동
+        await self._change_state(self.initial_state)
+        
+        # 이벤트 처리 시작
+        asyncio.create_task(self._process_events())
+        
+        return True
+    
+    async def stop(self) -> bool:
+        """상태 머신 정지"""
+        if self.machine_state != MachineState.RUNNING:
+            return False
+        
+        self.machine_state = MachineState.STOPPED
+        
+        # 현재 상태에서 탈출
+        if self.current_state:
+            await self.current_state.exit(self.context)
+        
+        return True
+    
+    async def send_event(self, event_name: str, data: Dict[str, Any] = None) -> bool:
+        """이벤트 전송"""
+        if self.machine_state != MachineState.RUNNING:
+            return False
+        
+        event = MachineEvent(
+            name=event_name,
+            data=data or {}
+        )
+        
+        self.event_queue.append(event)
+        self.event_history.append(event)
+        
+        # 이벤트 히스토리 크기 제한
+        if len(self.event_history) > 1000:
+            self.event_history = self.event_history[-500:]
+        
+        return True
+    
+    async def _process_events(self):
+        """이벤트 큐 처리"""
+        self.processing_events = True
+        
+        while self.machine_state == MachineState.RUNNING:
+            if not self.event_queue:
+                await asyncio.sleep(0.01)  # 짧은 대기
+                continue
+            
+            event = self.event_queue.pop(0)
+            
+            try:
+                await self._handle_event(event)
+            except Exception as e:
+                print(f"Event handling failed: {e}")
+                self.machine_state = MachineState.ERROR
+        
+        self.processing_events = False
+    
+    async def _handle_event(self, event: MachineEvent):
+        """단일 이벤트 처리"""
+        if not self.current_state:
+            return
+        
+        # 컨텍스트에 이벤트 데이터 추가
+        event_context = {**self.context, **event.data}
+        
+        # 가능한 전이 찾기
+        key = f"{self.current_state.name}:{event.name}"
+        transitions = self.transitions.get(key, [])
+        
+        for transition in transitions:
+            # 전이 실행 시도
+            result = await transition.execute(event_context)
+            
+            # 전이 리스너 호출
+            for listener in self.transition_listeners:
+                try:
+                    if asyncio.iscoroutinefunction(listener):
+                        await listener(result)
+                    else:
+                        listener(result)
+                except Exception as e:
+                    print(f"Transition listener failed: {e}")
+            
+            if result.success:
+                self.total_transitions += 1
+                
+                # 상태 변경 (외부 전이인 경우)
+                if transition.transition_type.value == "external":
+                    await self._change_state(transition.to_state)
+                
+                # 컨텍스트 업데이트
+                self.context.update(result.context)
+                
+                return  # 첫 번째 성공한 전이만 실행
+            else:
+                self.failed_transitions += 1
+    
+    async def _change_state(self, new_state: State):
+        """상태 변경"""
+        old_state = self.current_state
+        
+        # 상태 변경
+        self.current_state = new_state
+        
+        # 상태 리스너 호출
+        for listener in self.state_listeners:
+            try:
+                if asyncio.iscoroutinefunction(listener):
+                    await listener(old_state, new_state)
+                else:
+                    listener(old_state, new_state)
+            except Exception as e:
+                print(f"State listener failed: {e}")
+    
+    def get_current_state(self) -> Optional[State]:
+        """현재 상태 조회"""
+        return self.current_state
+    
+    def get_state(self, name: str) -> Optional[State]:
+        """이름으로 상태 조회"""
+        return self.states.get(name)
+    
+    def is_in_state(self, state_name: str) -> bool:
+        """특정 상태에 있는지 확인"""
+        return self.current_state and self.current_state.name == state_name
+    
+    def can_fire(self, event_name: str) -> bool:
+        """이벤트 발생 가능 여부 확인"""
+        if not self.current_state:
+            return False
+        
+        key = f"{self.current_state.name}:{event_name}"
+        return key in self.transitions
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """상태 머신 통계"""
+        uptime = 0.0
+        if self.start_time:
+            uptime = (datetime.now() - self.start_time).total_seconds()
+        
+        return {
+            "name": self.name,
+            "machine_state": self.machine_state.value,
+            "current_state": self.current_state.name if self.current_state else None,
+            "total_states": len(self.states),
+            "total_transitions_defined": sum(len(trans) for trans in self.transitions.values()),
+            "total_transitions_executed": self.total_transitions,
+            "failed_transitions": self.failed_transitions,
+            "success_rate": (self.total_transitions - self.failed_transitions) / max(self.total_transitions, 1),
+            "uptime_seconds": uptime,
+            "events_in_queue": len(self.event_queue),
+            "events_in_history": len(self.event_history),
+            "processing_events": self.processing_events
+        }
+    
+    def get_state_stats(self) -> Dict[str, Any]:
+        """모든 상태의 통계"""
+        return {
+            state_name: state.get_stats()
+            for state_name, state in self.states.items()
+        }
+    
+    def get_transition_stats(self) -> List[Dict[str, Any]]:
+        """모든 전이의 통계"""
+        stats = []
+        for transitions in self.transitions.values():
+            for transition in transitions:
+                stats.append(transition.get_stats())
+        return stats
+    
+    def __str__(self) -> str:
+        current = self.current_state.name if self.current_state else "None"
+        return f"StateMachine({self.name}, current={current}, state={self.machine_state.value})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+class StateMachineBuilder:
+    """상태 머신 빌더 (플루언트 인터페이스)"""
+    
+    def __init__(self, name: str):
+        self.name = name
+        self.states: List[State] = []
+        self.transitions: List[Transition] = []
+        self.state_listeners: List[callable] = []
+        self.transition_listeners: List[callable] = []
+    
+    def state(self, state: State) -> 'StateMachineBuilder':
+        """상태 추가"""
+        self.states.append(state)
+        return self
+    
+    def states(self, *states: State) -> 'StateMachineBuilder':
+        """여러 상태 추가"""
+        self.states.extend(states)
+        return self
+    
+    def transition(self, transition: Transition) -> 'StateMachineBuilder':
+        """전이 추가"""
+        self.transitions.append(transition)
+        return self
+    
+    def transitions(self, *transitions: Transition) -> 'StateMachineBuilder':
+        """여러 전이 추가"""
+        self.transitions.extend(transitions)
+        return self
+    
+    def on_state_change(self, listener: callable) -> 'StateMachineBuilder':
+        """상태 변경 리스너 추가"""
+        self.state_listeners.append(listener)
+        return self
+    
+    def on_transition(self, listener: callable) -> 'StateMachineBuilder':
+        """전이 리스너 추가"""
+        self.transition_listeners.append(listener)
+        return self
+    
+    def build(self) -> StateMachine:
+        """상태 머신 생성"""
+        machine = StateMachine(self.name)
+        
+        # 상태 추가
+        for state in self.states:
+            machine.add_state(state)
+        
+        # 전이 추가
+        for transition in self.transitions:
+            machine.add_transition(transition)
+        
+        # 리스너 추가
+        for listener in self.state_listeners:
+            machine.add_state_listener(listener)
+        
+        for listener in self.transition_listeners:
+            machine.add_transition_listener(listener)
+        
+        return machine
+
+# 편의 함수
+def state_machine(name: str) -> StateMachineBuilder:
+    """상태 머신 빌더 생성"""
+    return StateMachineBuilder(name)

@@ -1,0 +1,461 @@
+"""
+Task Decorators for Async Task Management
+
+작업 데코레이터 - 비동기 작업 선언적 관리
+"""
+
+import asyncio
+from typing import Callable, Optional, List, Any, Union
+from functools import wraps
+from datetime import datetime, timedelta
+import logging
+
+from .base import TaskPriority, RetryPolicy, BackoffStrategy, TaskChain, TaskGroup
+from .manager import get_task_manager
+from .scheduler import get_scheduler, CronSchedule, IntervalSchedule
+
+logger = logging.getLogger(__name__)
+
+
+def async_task(
+    name: Optional[str] = None,
+    priority: TaskPriority = TaskPriority.NORMAL,
+    retry_policy: Optional[RetryPolicy] = None,
+    timeout: Optional[timedelta] = None,
+    tags: Optional[List[str]] = None
+):
+    """
+    비동기 작업 데코레이터
+    
+    Usage:
+        @async_task(name="process_data", priority=TaskPriority.HIGH)
+        async def process_data(data: dict):
+            # 작업 처리
+            return result
+    
+    Args:
+        name: 작업 이름
+        priority: 우선순위
+        retry_policy: 재시도 정책
+        timeout: 타임아웃
+        tags: 태그
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            manager = await get_task_manager()
+            
+            task_id = await manager.submit(
+                func,
+                *args,
+                name=name or func.__name__,
+                priority=priority,
+                retry_policy=retry_policy,
+                timeout=timeout,
+                tags=tags,
+                **kwargs
+            )
+            
+            # 작업 ID 반환 (결과 대기하지 않음)
+            return task_id
+        
+        # 원본 함수도 보관
+        wrapper.original = func
+        wrapper.is_async_task = True
+        
+        return wrapper
+    
+    return decorator
+
+
+def background_task(func: Callable) -> Callable:
+    """
+    백그라운드 작업 데코레이터
+    
+    Usage:
+        @background_task
+        def cleanup_old_files():
+            # 정리 작업
+            pass
+    """
+    return async_task(
+        name=f"background_{func.__name__}",
+        priority=TaskPriority.BACKGROUND
+    )(func)
+
+
+def scheduled_task(
+    cron: Optional[str] = None,
+    interval: Optional[timedelta] = None,
+    start_time: Optional[datetime] = None,
+    **kwargs
+):
+    """
+    스케줄된 작업 데코레이터
+    
+    Usage:
+        @scheduled_task(cron="0 * * * *")  # 매시간
+        async def hourly_report():
+            pass
+        
+        @scheduled_task(interval=timedelta(minutes=30))
+        async def periodic_sync():
+            pass
+    
+    Args:
+        cron: Cron 표현식
+        interval: 반복 간격
+        start_time: 시작 시간
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            scheduler = await get_scheduler()
+            
+            if cron:
+                schedule = CronSchedule(cron)
+            elif interval:
+                schedule = IntervalSchedule(interval)
+            else:
+                raise ValueError("Either cron or interval must be specified")
+            
+            task_id = await scheduler.schedule(
+                func,
+                schedule,
+                name=kwargs.get('name', func.__name__),
+                **kwargs
+            )
+            
+            return task_id
+        
+        # 자동으로 스케줄 등록
+        asyncio.create_task(wrapper())
+        
+        return func
+    
+    return decorator
+
+
+def retry_task(
+    max_attempts: int = 3,
+    delay: timedelta = timedelta(seconds=1),
+    backoff: BackoffStrategy = BackoffStrategy.EXPONENTIAL,
+    retry_on: Optional[List[type[Exception]]] = None
+):
+    """
+    재시도 작업 데코레이터
+    
+    Usage:
+        @retry_task(max_attempts=5, delay=timedelta(seconds=2))
+        async def unreliable_api_call():
+            # API 호출
+            pass
+    
+    Args:
+        max_attempts: 최대 재시도 횟수
+        delay: 재시도 지연
+        backoff: 백오프 전략
+        retry_on: 재시도할 예외 타입
+    """
+    retry_policy = RetryPolicy(
+        max_attempts=max_attempts,
+        delay=delay,
+        backoff_strategy=backoff,
+        retry_on=retry_on or []
+    )
+    
+    def decorator(func: Callable) -> Callable:
+        return async_task(
+            retry_policy=retry_policy
+        )(func)
+    
+    return decorator
+
+
+def timeout_task(seconds: int):
+    """
+    타임아웃 작업 데코레이터
+    
+    Usage:
+        @timeout_task(30)  # 30초 타임아웃
+        async def long_running_task():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        return async_task(
+            timeout=timedelta(seconds=seconds)
+        )(func)
+    
+    return decorator
+
+
+def priority_task(priority: TaskPriority):
+    """
+    우선순위 작업 데코레이터
+    
+    Usage:
+        @priority_task(TaskPriority.CRITICAL)
+        async def critical_operation():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        return async_task(priority=priority)(func)
+    
+    return decorator
+
+
+def chain_tasks(*funcs: Callable):
+    """
+    작업 체인 생성
+    
+    Usage:
+        @chain_tasks(fetch_data, process_data, save_result)
+        async def data_pipeline():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            from .base import CallableTask
+            
+            # 체인 생성
+            tasks = [CallableTask(f) for f in funcs]
+            chain = TaskChain(tasks, name=func.__name__)
+            
+            # 실행
+            context = kwargs.get('context', {})
+            results = await chain.execute(context)
+            
+            return results
+        
+        wrapper.is_chain = True
+        wrapper.chain_tasks = funcs
+        
+        return wrapper
+    
+    # 데코레이터 없이 직접 호출도 가능
+    if len(funcs) == 1 and callable(funcs[0]):
+        return decorator(funcs[0])
+    
+    return decorator
+
+
+def parallel_tasks(*funcs: Callable, fail_fast: bool = False):
+    """
+    병렬 작업 그룹 생성
+    
+    Usage:
+        @parallel_tasks(task1, task2, task3, fail_fast=True)
+        async def parallel_execution():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            from .base import CallableTask
+            
+            # 그룹 생성
+            tasks = [CallableTask(f) for f in funcs]
+            group = TaskGroup(tasks, name=func.__name__, fail_fast=fail_fast)
+            
+            # 실행
+            context = kwargs.get('context', {})
+            results = await group.execute(context)
+            
+            return results
+        
+        wrapper.is_group = True
+        wrapper.group_tasks = funcs
+        
+        return wrapper
+    
+    return decorator
+
+
+def depends_on(*task_ids: str):
+    """
+    의존성 작업 데코레이터
+    
+    Usage:
+        @depends_on("task_123", "task_456")
+        async def dependent_task():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            manager = await get_task_manager()
+            
+            # 의존성 설정과 함께 제출
+            task_id = await manager.submit(
+                func,
+                *args,
+                depends_on=list(task_ids),
+                **kwargs
+            )
+            
+            return task_id
+        
+        wrapper.dependencies = task_ids
+        
+        return wrapper
+    
+    return decorator
+
+
+def task_callback(
+    on_complete: Optional[Callable] = None,
+    on_error: Optional[Callable] = None,
+    on_cancel: Optional[Callable] = None
+):
+    """
+    작업 콜백 데코레이터
+    
+    Usage:
+        def handle_complete(result):
+            print(f"Task completed: {result}")
+        
+        def handle_error(error):
+            print(f"Task failed: {error}")
+        
+        @task_callback(on_complete=handle_complete, on_error=handle_error)
+        async def monitored_task():
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            manager = await get_task_manager()
+            
+            # 콜백 클래스 생성
+            from .base import TaskCallback as BaseCallback
+            
+            class CustomCallback(BaseCallback):
+                def on_start(self, metadata):
+                    pass
+                
+                def on_complete(self, result):
+                    if on_complete:
+                        on_complete(result)
+                
+                def on_error(self, metadata, error):
+                    if on_error:
+                        on_error(error)
+                
+                def on_cancel(self, metadata):
+                    if on_cancel:
+                        on_cancel(metadata)
+                
+                def on_timeout(self, metadata):
+                    if on_error:
+                        on_error(TimeoutError("Task timed out"))
+                
+                def on_retry(self, metadata, attempt):
+                    pass
+            
+            # 콜백 등록
+            callback = CustomCallback()
+            manager.add_callback(callback)
+            
+            # 작업 제출
+            task_id = await manager.submit(func, *args, **kwargs)
+            
+            return task_id
+        
+        return wrapper
+    
+    return decorator
+
+
+def memoized_task(ttl: Optional[timedelta] = None):
+    """
+    메모이제이션 작업 데코레이터
+    
+    결과를 캐시하여 동일한 입력에 대해 재실행하지 않음
+    
+    Usage:
+        @memoized_task(ttl=timedelta(hours=1))
+        async def expensive_computation(x, y):
+            return x ** y
+    """
+    cache = {}
+    cache_times = {}
+    
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # 캐시 키 생성
+            cache_key = (args, tuple(sorted(kwargs.items())))
+            
+            # 캐시 확인
+            if cache_key in cache:
+                if ttl:
+                    # TTL 확인
+                    cached_time = cache_times.get(cache_key)
+                    if cached_time and datetime.now() - cached_time < ttl:
+                        logger.debug(f"Cache hit for {func.__name__}")
+                        return cache[cache_key]
+                else:
+                    logger.debug(f"Cache hit for {func.__name__}")
+                    return cache[cache_key]
+            
+            # 실행
+            if asyncio.iscoroutinefunction(func):
+                result = await func(*args, **kwargs)
+            else:
+                result = func(*args, **kwargs)
+            
+            # 캐시 저장
+            cache[cache_key] = result
+            cache_times[cache_key] = datetime.now()
+            
+            return result
+        
+        wrapper.clear_cache = lambda: cache.clear()
+        
+        return wrapper
+    
+    return decorator
+
+
+def rate_limited(max_calls: int, period: timedelta):
+    """
+    레이트 리미팅 작업 데코레이터
+    
+    Usage:
+        @rate_limited(max_calls=10, period=timedelta(minutes=1))
+        async def api_call():
+            pass
+    """
+    calls = []
+    
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            now = datetime.now()
+            
+            # 오래된 호출 제거
+            nonlocal calls
+            calls = [call_time for call_time in calls if now - call_time < period]
+            
+            # 레이트 체크
+            if len(calls) >= max_calls:
+                wait_time = period - (now - calls[0])
+                logger.warning(f"Rate limit exceeded, waiting {wait_time}")
+                await asyncio.sleep(wait_time.total_seconds())
+                
+                # 다시 체크
+                calls = [call_time for call_time in calls if now - call_time < period]
+            
+            # 호출 기록
+            calls.append(now)
+            
+            # 실행
+            if asyncio.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
+        
+        return wrapper
+    
+    return decorator

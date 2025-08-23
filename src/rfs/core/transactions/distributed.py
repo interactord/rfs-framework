@@ -1,0 +1,639 @@
+"""
+Distributed Transaction Support for RFS Framework
+
+분산 트랜잭션 지원 - 2PC, Saga 패턴
+"""
+
+from typing import Dict, List, Optional, Any, Callable, TypeVar, Generic
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+import uuid
+import asyncio
+from abc import ABC, abstractmethod
+import logging
+
+from ..core import Result, Success, Failure
+from ..events import Event, EventBus, get_event_bus
+from .base import (
+    TransactionStatus,
+    TransactionMetadata,
+    TransactionOptions,
+    TransactionError
+)
+from .manager import TransactionManager, get_transaction_manager
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+
+
+class ParticipantStatus(Enum):
+    """참여자 상태"""
+    UNKNOWN = "unknown"
+    PREPARED = "prepared"
+    COMMITTED = "committed"
+    ABORTED = "aborted"
+    TIMEOUT = "timeout"
+
+
+@dataclass
+class ParticipantInfo:
+    """트랜잭션 참여자 정보"""
+    participant_id: str
+    resource_name: str
+    status: ParticipantStatus = ParticipantStatus.UNKNOWN
+    prepared_at: Optional[datetime] = None
+    committed_at: Optional[datetime] = None
+    aborted_at: Optional[datetime] = None
+    vote: Optional[bool] = None  # True: commit, False: abort
+    data: Dict[str, Any] = field(default_factory=dict)
+
+
+class TransactionCoordinator(ABC):
+    """트랜잭션 코디네이터 인터페이스"""
+    
+    @abstractmethod
+    def prepare(self, transaction_id: str) -> Result[bool, str]:
+        """준비 단계"""
+        pass
+    
+    @abstractmethod
+    def commit(self, transaction_id: str) -> Result[None, str]:
+        """커밋 단계"""
+        pass
+    
+    @abstractmethod
+    def abort(self, transaction_id: str) -> Result[None, str]:
+        """중단 단계"""
+        pass
+
+
+class TwoPhaseCommit:
+    """
+    2단계 커밋 프로토콜
+    
+    분산 트랜잭션을 위한 2PC 구현
+    """
+    
+    def __init__(self, timeout: timedelta = timedelta(seconds=30)):
+        self.participants: Dict[str, ParticipantInfo] = {}
+        self.coordinators: Dict[str, TransactionCoordinator] = {}
+        self.timeout = timeout
+        self.transaction_id = str(uuid.uuid4())
+        self.status = TransactionStatus.ACTIVE
+        
+    def register_participant(
+        self,
+        participant_id: str,
+        coordinator: TransactionCoordinator,
+        resource_name: Optional[str] = None
+    ):
+        """참여자 등록"""
+        self.participants[participant_id] = ParticipantInfo(
+            participant_id=participant_id,
+            resource_name=resource_name or participant_id
+        )
+        self.coordinators[participant_id] = coordinator
+    
+    def execute(self) -> Result[None, str]:
+        """
+        2PC 실행
+        
+        Phase 1: Prepare (투표)
+        Phase 2: Commit/Abort (결정)
+        """
+        # Phase 1: Prepare
+        prepare_result = self._prepare_phase()
+        if isinstance(prepare_result, Failure):
+            # 준비 실패 - 모두 중단
+            self._abort_all()
+            return Failure(f"Prepare phase failed: {prepare_result.error}")
+        
+        # 모든 참여자가 커밋 투표했는지 확인
+        all_voted_commit = all(
+            p.vote for p in self.participants.values()
+        )
+        
+        if not all_voted_commit:
+            # 하나라도 거부하면 모두 중단
+            self._abort_all()
+            return Failure("One or more participants voted to abort")
+        
+        # Phase 2: Commit
+        commit_result = self._commit_phase()
+        if isinstance(commit_result, Failure):
+            # 커밋 실패 - 복구 불가능한 상태
+            logger.error(f"Commit phase failed: {commit_result.error}")
+            self.status = TransactionStatus.FAILED
+            return Failure(f"Commit phase failed: {commit_result.error}")
+        
+        self.status = TransactionStatus.COMMITTED
+        return Success(None)
+    
+    def _prepare_phase(self) -> Result[None, str]:
+        """준비 단계 실행"""
+        errors = []
+        
+        for participant_id, participant in self.participants.items():
+            coordinator = self.coordinators[participant_id]
+            
+            try:
+                # 준비 요청
+                result = coordinator.prepare(self.transaction_id)
+                
+                if isinstance(result, Success):
+                    participant.vote = result.value
+                    participant.status = ParticipantStatus.PREPARED
+                    participant.prepared_at = datetime.now()
+                else:
+                    participant.vote = False
+                    participant.status = ParticipantStatus.ABORTED
+                    errors.append(f"{participant_id}: {result.error}")
+                    
+            except Exception as e:
+                participant.vote = False
+                participant.status = ParticipantStatus.ABORTED
+                errors.append(f"{participant_id}: {str(e)}")
+        
+        if errors:
+            return Failure("; ".join(errors))
+        
+        return Success(None)
+    
+    def _commit_phase(self) -> Result[None, str]:
+        """커밋 단계 실행"""
+        errors = []
+        
+        for participant_id, participant in self.participants.items():
+            if participant.status != ParticipantStatus.PREPARED:
+                continue
+            
+            coordinator = self.coordinators[participant_id]
+            
+            try:
+                # 커밋 요청
+                result = coordinator.commit(self.transaction_id)
+                
+                if isinstance(result, Success):
+                    participant.status = ParticipantStatus.COMMITTED
+                    participant.committed_at = datetime.now()
+                else:
+                    errors.append(f"{participant_id}: {result.error}")
+                    
+            except Exception as e:
+                errors.append(f"{participant_id}: {str(e)}")
+        
+        if errors:
+            return Failure("; ".join(errors))
+        
+        return Success(None)
+    
+    def _abort_all(self):
+        """모든 참여자 중단"""
+        for participant_id, participant in self.participants.items():
+            if participant.status in [ParticipantStatus.COMMITTED, ParticipantStatus.ABORTED]:
+                continue
+            
+            coordinator = self.coordinators[participant_id]
+            
+            try:
+                coordinator.abort(self.transaction_id)
+                participant.status = ParticipantStatus.ABORTED
+                participant.aborted_at = datetime.now()
+            except Exception as e:
+                logger.error(f"Failed to abort participant {participant_id}: {e}")
+
+
+@dataclass
+class SagaStep:
+    """Saga 단계"""
+    name: str
+    action: Callable[..., Result[Any, str]]
+    compensation: Callable[..., Result[None, str]]
+    data: Optional[Dict[str, Any]] = None
+    completed: bool = False
+    compensated: bool = False
+    result: Optional[Any] = None
+
+
+class SagaTransaction:
+    """
+    Saga 패턴 트랜잭션
+    
+    보상 트랜잭션을 통한 분산 트랜잭션 관리
+    """
+    
+    def __init__(self, name: str = "saga"):
+        self.name = name
+        self.saga_id = str(uuid.uuid4())
+        self.steps: List[SagaStep] = []
+        self.completed_steps: List[SagaStep] = []
+        self.status = TransactionStatus.ACTIVE
+        self.event_bus = get_event_bus()
+        
+    def add_step(
+        self,
+        name: str,
+        action: Callable[..., Result[Any, str]],
+        compensation: Callable[..., Result[None, str]],
+        data: Optional[Dict[str, Any]] = None
+    ):
+        """Saga 단계 추가"""
+        step = SagaStep(
+            name=name,
+            action=action,
+            compensation=compensation,
+            data=data or {}
+        )
+        self.steps.append(step)
+    
+    def execute(self) -> Result[Any, str]:
+        """
+        Saga 실행
+        
+        각 단계를 순차적으로 실행하고,
+        실패 시 보상 트랜잭션 실행
+        """
+        results = []
+        
+        # 시작 이벤트 발행
+        self.event_bus.publish(Event(
+            type="saga.started",
+            source=self.name,
+            data={"saga_id": self.saga_id}
+        ))
+        
+        for step in self.steps:
+            try:
+                # 단계 실행
+                logger.info(f"Executing saga step: {step.name}")
+                
+                # 이벤트 발행
+                self.event_bus.publish(Event(
+                    type="saga.step.started",
+                    source=self.name,
+                    data={
+                        "saga_id": self.saga_id,
+                        "step": step.name
+                    }
+                ))
+                
+                result = step.action(**step.data)
+                
+                if isinstance(result, Success):
+                    step.completed = True
+                    step.result = result.value
+                    self.completed_steps.append(step)
+                    results.append(result.value)
+                    
+                    # 성공 이벤트
+                    self.event_bus.publish(Event(
+                        type="saga.step.completed",
+                        source=self.name,
+                        data={
+                            "saga_id": self.saga_id,
+                            "step": step.name,
+                            "result": result.value
+                        }
+                    ))
+                else:
+                    # 실패 - 보상 트랜잭션 실행
+                    logger.error(f"Saga step {step.name} failed: {result.error}")
+                    
+                    # 실패 이벤트
+                    self.event_bus.publish(Event(
+                        type="saga.step.failed",
+                        source=self.name,
+                        data={
+                            "saga_id": self.saga_id,
+                            "step": step.name,
+                            "error": result.error
+                        }
+                    ))
+                    
+                    # 보상 실행
+                    compensation_result = self._compensate()
+                    if isinstance(compensation_result, Failure):
+                        self.status = TransactionStatus.FAILED
+                        return Failure(
+                            f"Step {step.name} failed and compensation failed: "
+                            f"{result.error}, {compensation_result.error}"
+                        )
+                    
+                    self.status = TransactionStatus.ROLLED_BACK
+                    return Failure(f"Saga failed at step {step.name}: {result.error}")
+                    
+            except Exception as e:
+                logger.error(f"Saga step {step.name} raised exception: {e}")
+                
+                # 보상 실행
+                compensation_result = self._compensate()
+                if isinstance(compensation_result, Failure):
+                    self.status = TransactionStatus.FAILED
+                    return Failure(
+                        f"Step {step.name} failed with exception and compensation failed: "
+                        f"{str(e)}, {compensation_result.error}"
+                    )
+                
+                self.status = TransactionStatus.ROLLED_BACK
+                return Failure(f"Saga failed at step {step.name}: {str(e)}")
+        
+        # 완료 이벤트
+        self.event_bus.publish(Event(
+            type="saga.completed",
+            source=self.name,
+            data={
+                "saga_id": self.saga_id,
+                "results": results
+            }
+        ))
+        
+        self.status = TransactionStatus.COMMITTED
+        return Success(results)
+    
+    def _compensate(self) -> Result[None, str]:
+        """보상 트랜잭션 실행"""
+        logger.info(f"Starting compensation for saga {self.saga_id}")
+        
+        # 보상 시작 이벤트
+        self.event_bus.publish(Event(
+            type="saga.compensation.started",
+            source=self.name,
+            data={"saga_id": self.saga_id}
+        ))
+        
+        errors = []
+        
+        # 역순으로 보상 실행
+        for step in reversed(self.completed_steps):
+            if step.compensated:
+                continue
+            
+            try:
+                logger.info(f"Compensating step: {step.name}")
+                
+                # 보상 단계 이벤트
+                self.event_bus.publish(Event(
+                    type="saga.compensation.step",
+                    source=self.name,
+                    data={
+                        "saga_id": self.saga_id,
+                        "step": step.name
+                    }
+                ))
+                
+                # 결과 데이터를 보상 함수에 전달
+                compensation_data = step.data.copy()
+                if step.result:
+                    compensation_data['result'] = step.result
+                
+                result = step.compensation(**compensation_data)
+                
+                if isinstance(result, Success):
+                    step.compensated = True
+                else:
+                    errors.append(f"Failed to compensate {step.name}: {result.error}")
+                    
+            except Exception as e:
+                errors.append(f"Exception during compensation of {step.name}: {str(e)}")
+        
+        if errors:
+            # 보상 실패 이벤트
+            self.event_bus.publish(Event(
+                type="saga.compensation.failed",
+                source=self.name,
+                data={
+                    "saga_id": self.saga_id,
+                    "errors": errors
+                }
+            ))
+            return Failure("; ".join(errors))
+        
+        # 보상 완료 이벤트
+        self.event_bus.publish(Event(
+            type="saga.compensation.completed",
+            source=self.name,
+            data={"saga_id": self.saga_id}
+        ))
+        
+        return Success(None)
+    
+    async def execute_async(self) -> Result[Any, str]:
+        """비동기 Saga 실행"""
+        results = []
+        
+        for step in self.steps:
+            try:
+                # 비동기 액션 실행
+                if asyncio.iscoroutinefunction(step.action):
+                    result = await step.action(**step.data)
+                else:
+                    result = step.action(**step.data)
+                
+                if isinstance(result, Success):
+                    step.completed = True
+                    step.result = result.value
+                    self.completed_steps.append(step)
+                    results.append(result.value)
+                else:
+                    # 보상 실행
+                    compensation_result = await self._compensate_async()
+                    if isinstance(compensation_result, Failure):
+                        self.status = TransactionStatus.FAILED
+                        return Failure(
+                            f"Step {step.name} failed and compensation failed: "
+                            f"{result.error}, {compensation_result.error}"
+                        )
+                    
+                    self.status = TransactionStatus.ROLLED_BACK
+                    return Failure(f"Saga failed at step {step.name}: {result.error}")
+                    
+            except Exception as e:
+                # 보상 실행
+                compensation_result = await self._compensate_async()
+                if isinstance(compensation_result, Failure):
+                    self.status = TransactionStatus.FAILED
+                    return Failure(
+                        f"Step {step.name} failed with exception and compensation failed: "
+                        f"{str(e)}, {compensation_result.error}"
+                    )
+                
+                self.status = TransactionStatus.ROLLED_BACK
+                return Failure(f"Saga failed at step {step.name}: {str(e)}")
+        
+        self.status = TransactionStatus.COMMITTED
+        return Success(results)
+    
+    async def _compensate_async(self) -> Result[None, str]:
+        """비동기 보상 트랜잭션 실행"""
+        errors = []
+        
+        for step in reversed(self.completed_steps):
+            if step.compensated:
+                continue
+            
+            try:
+                compensation_data = step.data.copy()
+                if step.result:
+                    compensation_data['result'] = step.result
+                
+                if asyncio.iscoroutinefunction(step.compensation):
+                    result = await step.compensation(**compensation_data)
+                else:
+                    result = step.compensation(**compensation_data)
+                
+                if isinstance(result, Success):
+                    step.compensated = True
+                else:
+                    errors.append(f"Failed to compensate {step.name}: {result.error}")
+                    
+            except Exception as e:
+                errors.append(f"Exception during compensation of {step.name}: {str(e)}")
+        
+        if errors:
+            return Failure("; ".join(errors))
+        
+        return Success(None)
+
+
+class DistributedTransaction:
+    """
+    분산 트랜잭션 매니저
+    
+    2PC와 Saga 패턴을 통합 관리
+    """
+    
+    def __init__(self):
+        self.transaction_manager = get_transaction_manager()
+        self.active_2pc: Dict[str, TwoPhaseCommit] = {}
+        self.active_sagas: Dict[str, SagaTransaction] = {}
+    
+    def create_2pc(
+        self,
+        transaction_id: Optional[str] = None,
+        timeout: timedelta = timedelta(seconds=30)
+    ) -> TwoPhaseCommit:
+        """2PC 트랜잭션 생성"""
+        tx_id = transaction_id or str(uuid.uuid4())
+        tpc = TwoPhaseCommit(timeout=timeout)
+        self.active_2pc[tx_id] = tpc
+        return tpc
+    
+    def create_saga(
+        self,
+        name: str = "saga",
+        saga_id: Optional[str] = None
+    ) -> SagaTransaction:
+        """Saga 트랜잭션 생성"""
+        saga = SagaTransaction(name=name)
+        if saga_id:
+            saga.saga_id = saga_id
+        self.active_sagas[saga.saga_id] = saga
+        return saga
+    
+    def get_2pc(self, transaction_id: str) -> Optional[TwoPhaseCommit]:
+        """2PC 트랜잭션 조회"""
+        return self.active_2pc.get(transaction_id)
+    
+    def get_saga(self, saga_id: str) -> Optional[SagaTransaction]:
+        """Saga 트랜잭션 조회"""
+        return self.active_sagas.get(saga_id)
+    
+    def cleanup(self):
+        """완료된 트랜잭션 정리"""
+        # 완료된 2PC 정리
+        completed_2pc = [
+            tx_id for tx_id, tpc in self.active_2pc.items()
+            if tpc.status in [TransactionStatus.COMMITTED, TransactionStatus.ROLLED_BACK]
+        ]
+        for tx_id in completed_2pc:
+            del self.active_2pc[tx_id]
+        
+        # 완료된 Saga 정리
+        completed_sagas = [
+            saga_id for saga_id, saga in self.active_sagas.items()
+            if saga.status in [TransactionStatus.COMMITTED, TransactionStatus.ROLLED_BACK]
+        ]
+        for saga_id in completed_sagas:
+            del self.active_sagas[saga_id]
+
+
+# 헬퍼 함수들
+
+def distributed_transaction(use_2pc: bool = False):
+    """
+    분산 트랜잭션 데코레이터
+    
+    Args:
+        use_2pc: 2PC 사용 여부 (False면 Saga 사용)
+    """
+    def decorator(func: Callable) -> Callable:
+        def wrapper(*args, **kwargs):
+            dt = DistributedTransaction()
+            
+            if use_2pc:
+                # 2PC 사용
+                tpc = dt.create_2pc()
+                kwargs['tpc'] = tpc
+                result = func(*args, **kwargs)
+                
+                if result:
+                    exec_result = tpc.execute()
+                    if isinstance(exec_result, Failure):
+                        raise TransactionError(exec_result.error)
+            else:
+                # Saga 사용
+                saga = dt.create_saga(name=func.__name__)
+                kwargs['saga'] = saga
+                result = func(*args, **kwargs)
+                
+                if result:
+                    exec_result = saga.execute()
+                    if isinstance(exec_result, Failure):
+                        raise TransactionError(exec_result.error)
+            
+            return result
+        
+        return wrapper
+    return decorator
+
+
+def saga_step(name: str, compensation: Callable):
+    """
+    Saga 단계 데코레이터
+    
+    Args:
+        name: 단계 이름
+        compensation: 보상 함수
+    """
+    def decorator(action: Callable) -> Callable:
+        action._saga_step = True
+        action._saga_name = name
+        action._saga_compensation = compensation
+        return action
+    return decorator
+
+
+def compensate(func: Callable) -> Callable:
+    """보상 함수 표시 데코레이터"""
+    func._is_compensation = True
+    return func
+
+
+class CompensationAction:
+    """보상 액션"""
+    
+    def __init__(self, action: Callable, data: Optional[Dict[str, Any]] = None):
+        self.action = action
+        self.data = data or {}
+    
+    def execute(self) -> Result[None, str]:
+        """보상 실행"""
+        try:
+            result = self.action(**self.data)
+            if isinstance(result, Result):
+                return result
+            return Success(None)
+        except Exception as e:
+            return Failure(str(e))

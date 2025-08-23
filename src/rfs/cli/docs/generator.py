@@ -455,10 +455,10 @@ RFS_LOG_LEVEL=INFO
 
 ### Result Pattern
 
-RFS v4는 함수형 프로그래밍의 Result 패턴을 사용합니다:
+RFS Framework는 함수형 프로그래밍의 Result 패턴을 사용합니다:
 
 ```python
-from rfs_v4 import Result, Success, Failure
+from rfs import Result, Success, Failure
 
 def divide(a: int, b: int) -> Result[float, str]:
     if b == 0:
@@ -477,7 +477,7 @@ else:
 Google Cloud Run에 최적화된 기능들:
 
 ```python
-from rfs_v4.cloud_run import initialize_cloud_run_services
+from rfs.cloud_run import initialize_cloud_run_services
 
 # Cloud Run 서비스 초기화
 await initialize_cloud_run_services(
@@ -491,7 +491,7 @@ await initialize_cloud_run_services(
 ### 서비스 등록
 
 ```python
-from rfs_v4 import stateless
+from rfs import stateless
 
 @stateless
 class UserService:
@@ -503,7 +503,7 @@ class UserService:
 ### 이벤트 시스템
 
 ```python
-from rfs_v4 import get_event_bus, event_handler
+from rfs import get_event_bus, event_handler
 
 @event_handler("user_created")
 async def handle_user_created(event):
@@ -644,7 +644,7 @@ def calculate_score(user_id: str, metrics: Dict[str, float]) -> Result[float, st
 
 ```python
 import pytest
-from rfs_v4 import Result, Success, Failure
+from rfs import Result, Success, Failure
 
 class TestUserService:
     @pytest.mark.asyncio

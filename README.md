@@ -46,7 +46,7 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 ### Installation
 
 ```bash
-pip install rfs-v4
+pip install rfs-framework
 ```
 
 ### Basic Usage

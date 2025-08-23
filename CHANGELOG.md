@@ -310,8 +310,8 @@ if __name__ == "__main__":
 #### Development Setup
 ```bash
 # 저장소 클론
-git clone https://github.com/rfs-framework/rfs-v4.git
-cd rfs-v4
+git clone https://github.com/interactord/rfs-framework.git
+cd rfs-framework
 
 # 가상환경 설정
 python -m venv venv

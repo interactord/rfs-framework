@@ -123,9 +123,9 @@ class DevCommand(Command):
         # requirements.txt 확인
         if Path('requirements.txt').exists():
             requirements = Path('requirements.txt').read_text()
-            if 'rfs-v4' not in requirements:
+            if 'rfs-framework' not in requirements:
                 if console:
-                    console.print("⚠️  requirements.txt에 rfs-v4가 없습니다.", style="yellow")
+                    console.print("⚠️  requirements.txt에 rfs-framework가 없습니다.", style="yellow")
         
         return True
     

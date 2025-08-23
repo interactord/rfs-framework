@@ -33,7 +33,7 @@ def show_welcome_banner():
     """환영 배너 표시"""
     if console:
         banner = Panel(
-            "🚀 RFS v4 Command Line Interface\n\n"
+            "🚀 RFS Framework Command Line Interface\n\n"
             "Reactive Functional Serverless Framework\n"
             "Google Cloud Run 전용 현대적 Python 프레임워크\n\n"
             "버전: 4.0.0 | Phase 3: Developer Experience",
@@ -43,7 +43,7 @@ def show_welcome_banner():
         )
         console.print(banner)
     else:
-        print("RFS v4 CLI - Reactive Functional Serverless Framework")
+        print("RFS Framework CLI - Reactive Functional Serverless Framework")
         print("버전: 4.0.0 | Phase 3: Developer Experience")
         print()
 
@@ -51,7 +51,7 @@ def show_welcome_banner():
 def show_help():
     """도움말 표시"""
     if console:
-        help_table = Table(title="RFS v4 CLI 명령어", show_header=True, header_style="bold magenta")
+        help_table = Table(title="RFS Framework CLI 명령어", show_header=True, header_style="bold magenta")
         help_table.add_column("명령어", style="cyan", width=15)
         help_table.add_column("설명", style="white")
         help_table.add_column("예시", style="green")
@@ -79,11 +79,11 @@ def show_help():
         console.print(help_table)
         
         console.print("\n💡 각 명령어의 자세한 도움말: rfs <명령어> --help")
-        console.print("📚 문서: https://rfs-v4.readthedocs.io")
-        console.print("🐛 이슈 리포트: https://github.com/rfs-framework/rfs-v4/issues")
+        console.print("📚 문서: https://rfs-framework.readthedocs.io")
+        console.print("🐛 이슈 리포트: https://github.com/rfs-framework/rfs-framework/issues")
     
     else:
-        print("RFS v4 CLI 명령어:")
+        print("RFS Framework CLI 명령어:")
         print()
         print("  init     - 새 RFS 프로젝트 초기화")
         print("  new      - 새 컴포넌트 생성")
@@ -112,12 +112,12 @@ def show_version():
             "🎯 단계: Phase 3 - Developer Experience\n"
             "🐍 Python: 3.10+\n"
             "☁️  플랫폼: Google Cloud Run",
-            title="RFS v4 버전 정보",
+            title="RFS Framework 버전 정보",
             border_style="green"
         )
         console.print(version_info)
     else:
-        print("RFS v4 - 버전 4.0.0")
+        print("RFS Framework - 버전 4.0.0")
         print("Phase 3: Developer Experience")
         print("Python 3.10+ | Google Cloud Run")
 
@@ -190,10 +190,10 @@ def main(args: Optional[List[str]] = None) -> int:
         # Python 3.10+ 확인
         if sys.version_info < (3, 10):
             if console:
-                console.print("❌ RFS v4는 Python 3.10 이상이 필요합니다.", style="red")
+                console.print("❌ RFS Framework는 Python 3.10 이상이 필요합니다.", style="red")
                 console.print(f"현재 버전: {sys.version_info.major}.{sys.version_info.minor}")
             else:
-                print("RFS v4는 Python 3.10 이상이 필요합니다.")
+                print("RFS Framework는 Python 3.10 이상이 필요합니다.")
                 print(f"현재 버전: {sys.version_info.major}.{sys.version_info.minor}")
             return 1
         

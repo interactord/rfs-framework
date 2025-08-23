@@ -51,7 +51,7 @@ For more control over the registration, use the `context7.json` configuration:
    ```json
    {
      "projectTitle": "RFS Framework (Reactive Functional Serverless)",
-     "packageName": "rfs-v4",
+     "packageName": "rfs-framework",
      "repository": "https://github.com/interactord/rfs-framework",
      ...
    }
@@ -102,7 +102,7 @@ Once registered, the framework can be accessed via MCP tools:
 # 1. Resolve library ID
 library_id = resolve_library_id("rfs-framework")
 # or
-library_id = resolve_library_id("rfs-v4")
+library_id = resolve_library_id("rfs-framework")
 
 # 2. Get documentation
 docs = get_library_docs(library_id, "Result pattern")
@@ -115,12 +115,12 @@ examples = get_library_docs(library_id, "Flux examples")
 
 After registration, verify these aspects:
 
-- [ ] **Library Discovery**: Can find "rfs-framework" or "rfs-v4" via `resolve-library-id`
+- [ ] **Library Discovery**: Can find "rfs-framework" via `resolve-library-id`
 - [ ] **Documentation Access**: Can retrieve docs via `get-library-docs`
 - [ ] **Code Examples**: Examples are properly formatted and accessible
 - [ ] **Version Information**: Current version (4.0.1) is correctly displayed
 - [ ] **API Reference**: Core APIs (Result, Flux, Mono) are documented
-- [ ] **Installation Instructions**: `pip install rfs-v4` is prominently shown
+- [ ] **Installation Instructions**: `pip install rfs-framework` is prominently shown
 
 ## Maintaining Context7 Integration
 

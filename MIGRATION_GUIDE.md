@@ -769,7 +769,7 @@ async def error_prone_function():
 
 - **📖 Documentation**: [docs.rfs-framework.dev](https://docs.rfs-framework.dev)
 - **💬 Community**: [Discord](https://discord.gg/rfs-framework)
-- **🐛 Issues**: [GitHub Issues](https://github.com/rfs-framework/rfs-v4/issues)
+- **🐛 Issues**: [GitHub Issues](https://github.com/interactord/rfs-framework/issues)
 - **📧 Email**: migration-help@rfs-framework.dev
 
 ---

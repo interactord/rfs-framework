@@ -407,11 +407,11 @@ def _(obj: Failure) -> bool:
     return True
 
 
-# === RFS Framework v4 새로운 기능들 ===
+# === RFS Framework 새로운 기능들 ===
 
 class ResultAsync(Generic[T, E]):
     """
-    비동기 전용 Result 타입 (RFS v4 신규)
+    비동기 전용 Result 타입 (RFS Framework)
     
     특징:
     - 모든 연산이 비동기
@@ -513,7 +513,7 @@ def from_awaitable(awaitable: Awaitable[T]) -> 'ResultAsync[T, Exception]':
 
 
 async def sequence_async_v4(results: List['ResultAsync[T, E]']) -> 'ResultAsync[List[T], E]':
-    """v4 비동기 시퀀스 (성능 최적화)"""
+    """비동기 시퀀스 (성능 최적화)"""
     async def sequence() -> 'Result[List[T], E]':
         values: List[T] = []
         
@@ -533,7 +533,7 @@ async def sequence_async_v4(results: List['ResultAsync[T, E]']) -> 'ResultAsync[
     return ResultAsync(sequence())
 
 
-# === 함수형 프로그래밍 모나드 (RFS v4 Day 3-4) ===
+# === 함수형 프로그래밍 모나드 (RFS Framework) ===
 
 class Either(Generic[T, E]):
     """

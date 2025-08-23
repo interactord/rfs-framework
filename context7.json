@@ -4,9 +4,9 @@
   "description": "Enterprise-Grade Python Framework combining Spring Reactor patterns, functional programming with Result/Either/Maybe monads, and serverless optimization for Google Cloud Platform",
   "version": "4.0.1",
   "language": "python",
-  "packageName": "rfs-v4",
+  "packageName": "rfs-framework",
   "repository": "https://github.com/interactord/rfs-framework",
-  "homepage": "https://pypi.org/project/rfs-v4/",
+  "homepage": "https://pypi.org/project/rfs-framework/",
   "folders": [
     "src/rfs/",
     "examples/",
@@ -48,7 +48,7 @@
     "saga pattern"
   ],
   "rules": [
-    "Install using: pip install rfs-v4",
+    "Install using: pip install rfs-framework",
     "Import from rfs module: from rfs import Result, Success, Failure, Flux, Mono",
     "Use Result pattern for safe error handling instead of exceptions",
     "Use Flux for 0-N async stream processing, Mono for 0-1 async values",

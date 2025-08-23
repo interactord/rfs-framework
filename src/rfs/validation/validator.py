@@ -250,11 +250,11 @@ class SystemValidator:
         try:
             # 핵심 모듈 임포트 테스트
             core_modules = [
-                "rfs_v4.core",
-                "rfs_v4.cloud_run", 
-                "rfs_v4.reactive",
-                "rfs_v4.events",
-                "rfs_v4.cli"
+                "rfs.core",
+                "rfs.cloud_run", 
+                "rfs.reactive",
+                "rfs.events",
+                "rfs.cli"
             ]
             
             for module_name in core_modules:

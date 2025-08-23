@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "rfs-v4"
-version = "4.0.1"
+name = "rfs-framework"
+version = "4.0.2"
 description = "Enterprise-Grade Reactive Functional Serverless Framework for Python"
 readme = "README.md"
 license = {text = "MIT"}

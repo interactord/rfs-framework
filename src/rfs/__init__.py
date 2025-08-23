@@ -13,7 +13,7 @@ RFS Framework - Enterprise-Grade Reactive Functional Serverless
 Version: 4.0.0 (Production Ready)
 """
 
-__version__ = "4.0.1"
+__version__ = "4.0.2"
 __author__ = "RFS Framework Team"
 __phase__ = "Production Ready"
 

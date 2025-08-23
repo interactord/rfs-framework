@@ -303,7 +303,7 @@ class StatusCommand(Command):
             # Python 패키지 확인
             import pkg_resources
             
-            required_packages = ['rfs-v4', 'pydantic', 'rich']
+            required_packages = ['rfs-framework', 'pydantic', 'rich']
             
             for package in required_packages:
                 try:

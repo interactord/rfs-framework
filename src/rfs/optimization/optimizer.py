@@ -967,7 +967,7 @@ class CloudRunOptimizer:
         """서비스 예열"""
         try:
             # 중요한 연결들 미리 초기화
-            from rfs_v4.cloud_run import initialize_cloud_run_services
+            from rfs.cloud_run import initialize_cloud_run_services
             await initialize_cloud_run_services()
         except Exception as e:
             logging.warning(f"서비스 예열 실패: {e}")
@@ -976,7 +976,7 @@ class CloudRunOptimizer:
     async def cleanup_services():
         """서비스 정리"""
         try:
-            from rfs_v4.cloud_run import shutdown_cloud_run_services
+            from rfs.cloud_run import shutdown_cloud_run_services
             await shutdown_cloud_run_services()
         except Exception as e:
             logging.warning(f"서비스 정리 실패: {e}")

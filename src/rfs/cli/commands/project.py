@@ -1,5 +1,5 @@
 """
-Project Management Commands (RFS v4)
+Project Management Commands (RFS Framework)
 
 프로젝트 초기화, 생성, 설정 관리 명령어들
 - init: RFS 프로젝트 초기화
@@ -45,7 +45,7 @@ class InitCommand(Command):
     """RFS 프로젝트 초기화 명령어"""
     
     name = "init"
-    description = "RFS v4 프로젝트 초기화"
+    description = "RFS Framework 프로젝트 초기화"
     
     def __init__(self):
         super().__init__()
@@ -59,7 +59,7 @@ class InitCommand(Command):
                     ".env": self._get_env_template(),
                     "rfs.yaml": self._get_config_template()
                 },
-                dependencies=["rfs-v4>=4.0.0", "pydantic>=2.0.0"]
+                dependencies=["rfs-framework>=4.0.0", "pydantic>=2.0.0"]
             ),
             "cloud-run": ProjectTemplate(
                 name="Cloud Run",
@@ -73,7 +73,7 @@ class InitCommand(Command):
                     "cloudbuild.yaml": self._get_cloudbuild_template()
                 },
                 dependencies=[
-                    "rfs-v4>=4.0.0", "pydantic>=2.0.0",
+                    "rfs-framework>=4.0.0", "pydantic>=2.0.0",
                     "google-cloud-run>=0.8.0",
                     "google-cloud-tasks>=2.14.0",
                     "google-cloud-monitoring>=2.14.0"
@@ -92,7 +92,7 @@ class InitCommand(Command):
                     "docs/README.md": self._get_readme_template()
                 },
                 dependencies=[
-                    "rfs-v4>=4.0.0", "pydantic>=2.0.0",
+                    "rfs-framework>=4.0.0", "pydantic>=2.0.0",
                     "google-cloud-run>=0.8.0",
                     "google-cloud-tasks>=2.14.0", 
                     "google-cloud-monitoring>=2.14.0",
@@ -126,7 +126,7 @@ class InitCommand(Command):
             # 성공 메시지 출력
             if console:
                 success_panel = Panel(
-                    f"✅ RFS v4 프로젝트 '{config['name']}' 생성 완료!\n\n"
+                    f"✅ RFS Framework 프로젝트 '{config['name']}' 생성 완료!\n\n"
                     f"📁 프로젝트 경로: {project_path.absolute()}\n"
                     f"🎯 템플릿: {template.name}\n"
                     f"🚀 Cloud Run 최적화: {'예' if config.get('cloud_run') else '아니오'}\n\n"
@@ -139,7 +139,7 @@ class InitCommand(Command):
                 )
                 console.print(success_panel)
             
-            return Success(f"RFS v4 프로젝트 '{config['name']}' 생성 완료")
+            return Success(f"RFS Framework 프로젝트 '{config['name']}' 생성 완료")
             
         except Exception as e:
             return Failure(f"프로젝트 초기화 실패: {str(e)}")
@@ -203,22 +203,22 @@ class InitCommand(Command):
     
     def _get_minimal_main_template(self) -> str:
         return '''"""
-RFS v4 Minimal Application
+RFS Framework Minimal Application
 
 최소 구성 RFS 애플리케이션
 """
 
 import asyncio
-from rfs_v4 import RFSConfig, get_config, result_of
+from rfs import RFSConfig, get_config, result_of
 
 async def main():
     """메인 애플리케이션 진입점"""
     config = get_config()
-    print(f"🚀 RFS v4 애플리케이션 시작 - {{name}}")
+    print(f"🚀 RFS Framework 애플리케이션 시작 - {{name}}")
     print(f"⚙️  환경: {{config.environment}}")
     
     # 여기에 비즈니스 로직 추가
-    result = result_of(lambda: "Hello, RFS v4!")
+    result = result_of(lambda: "Hello, RFS Framework!")
     
     if result.is_success():
         print(f"✅ 결과: {{result.unwrap()}}")
@@ -231,13 +231,13 @@ if __name__ == "__main__":
     
     def _get_cloudrun_main_template(self) -> str:
         return '''"""
-RFS v4 Cloud Run Application
+RFS Framework Cloud Run Application
 
 Google Cloud Run 최적화 RFS 애플리케이션
 """
 
 import asyncio
-from rfs_v4 import (
+from rfs import (
     RFSConfig, get_config,
     initialize_cloud_run_services,
     get_cloud_run_status,
@@ -247,7 +247,7 @@ from rfs_v4 import (
 async def main():
     """메인 애플리케이션 진입점"""
     config = get_config()
-    print(f"🚀 RFS v4 Cloud Run 애플리케이션 시작 - {{name}}")
+    print(f"🚀 RFS Framework Cloud Run 애플리케이션 시작 - {{name}}")
     
     # Cloud Run 서비스 초기화
     init_result = await initialize_cloud_run_services(
@@ -279,14 +279,14 @@ if __name__ == "__main__":
 '''
     
     def _get_minimal_requirements(self) -> str:
-        return '''# RFS v4 Minimal Requirements
-rfs-v4>=4.0.0
+        return '''# RFS Framework Minimal Requirements
+rfs-framework>=4.0.0
 pydantic>=2.0.0
 '''
     
     def _get_cloudrun_requirements(self) -> str:
-        return '''# RFS v4 Cloud Run Requirements
-rfs-v4>=4.0.0
+        return '''# RFS Framework Cloud Run Requirements
+rfs-framework>=4.0.0
 pydantic>=2.0.0
 google-cloud-run>=0.8.0
 google-cloud-tasks>=2.14.0
@@ -295,7 +295,7 @@ uvicorn[standard]>=0.23.0
 '''
     
     def _get_env_template(self) -> str:
-        return '''# RFS v4 환경 변수
+        return '''# RFS Framework 환경 변수
 RFS_ENVIRONMENT=development
 RFS_DEBUG=true
 RFS_LOG_LEVEL=INFO
@@ -345,7 +345,7 @@ class NewCommand(Command):
 """
 
 from typing import Any, Dict, List, Optional
-from rfs_v4 import Result, Success, Failure, stateless
+from rfs import Result, Success, Failure, stateless
 
 
 @stateless

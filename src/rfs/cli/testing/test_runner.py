@@ -478,8 +478,8 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch
 
-# RFS v4 임포트
-from rfs_v4 import Result, Success, Failure
+# RFS Framework 임포트
+from rfs import Result, Success, Failure
 
 
 class Test{test_name.title()}:
@@ -560,8 +560,8 @@ import unittest
 import asyncio
 from unittest.mock import Mock, patch
 
-# RFS v4 임포트
-from rfs_v4 import Result, Success, Failure
+# RFS Framework 임포트
+from rfs import Result, Success, Failure
 
 
 class Test{test_name.title()}(unittest.TestCase):

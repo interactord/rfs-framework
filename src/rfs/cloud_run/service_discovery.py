@@ -33,6 +33,7 @@ except ImportError:
     PYDANTIC_AVAILABLE = False
 
 from ..core.result import Result, Success, Failure, Maybe
+from ..core.enhanced_logging import log_info, log_error, log_warning, log_debug
 from ..reactive import Mono, Flux
 
 logger = logging.getLogger(__name__)
@@ -618,6 +619,186 @@ async def get_service_discovery(project_id: str = None, region: str = "us-centra
     
     return _service_discovery
 
+# 향상된 서비스 쿼리 시스템
+@dataclass
+class ServiceQuery:
+    """서비스 검색 쿼리"""
+    service_name: Optional[str] = None
+    version: Optional[str] = None
+    region: Optional[str] = None
+    tags: Optional[List[str]] = None
+    only_healthy: bool = True
+    min_weight: float = 0.0
+    max_response_time_ms: Optional[float] = None
+    
+    def matches(self, endpoint: ServiceEndpoint) -> bool:
+        """엔드포인트가 쿼리와 일치하는지 확인"""
+        if self.service_name and endpoint.service_name != self.service_name:
+            return False
+        
+        if self.region and endpoint.region != self.region:
+            return False
+            
+        if self.only_healthy and not endpoint.is_healthy():
+            return False
+            
+        if endpoint.weight < self.min_weight:
+            return False
+            
+        if (self.max_response_time_ms is not None and 
+            endpoint.response_time_ms > self.max_response_time_ms):
+            return False
+            
+        return True
+
+
+class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
+    """향상된 서비스 검색"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # 서비스 그룹 관리
+        self.service_groups: Dict[str, List[str]] = {}
+        
+        # 향상된 로드 밸런싱
+        self.round_robin_counters: Dict[str, int] = {}
+        self.sticky_sessions: Dict[str, str] = {}  # session_id -> service_instance
+        
+        # 메트릭 수집
+        self.call_metrics: Dict[str, List[float]] = {}  # service_name -> [response_times]
+        self.success_rates: Dict[str, float] = {}
+        
+        # 캐싱
+        self.service_cache: Dict[str, Any] = {}
+        self.cache_ttl: int = 300  # 5분
+    
+    def create_service_group(self, group_name: str, service_names: List[str]) -> None:
+        """서비스 그룹 생성"""
+        self.service_groups[group_name] = service_names
+        log_info(f"서비스 그룹 생성: {group_name} -> {service_names}")
+    
+    def query_services(self, query: ServiceQuery) -> List[ServiceEndpoint]:
+        """고급 서비스 검색"""
+        results = []
+        
+        for service in self.services.values():
+            if query.matches(service):
+                results.append(service)
+        
+        # 성능순으로 정렬
+        results.sort(key=lambda s: (s.response_time_ms, -s.weight))
+        
+        return results
+    
+    async def call_service_with_retry(self,
+                                    service_name: str,
+                                    path: str = "/",
+                                    method: str = "GET",
+                                    max_retries: int = 3,
+                                    retry_delay: float = 1.0,
+                                    **kwargs) -> Result[Dict[str, Any], str]:
+        """재시도 지원 서비스 호출"""
+        last_error = None
+        
+        for attempt in range(max_retries + 1):
+            try:
+                result = await self.call_service(service_name, path, method, **kwargs)
+                
+                if result.is_success():
+                    # 성공 메트릭 수집
+                    self._record_call_success(service_name)
+                    return result
+                else:
+                    last_error = result.error
+                    
+            except Exception as e:
+                last_error = str(e)
+                
+            # 마지막 시도가 아니면 재시도
+            if attempt < max_retries:
+                await asyncio.sleep(retry_delay * (2 ** attempt))  # 지수 백오프
+                log_warning(f"서비스 호출 재시도 {attempt + 1}/{max_retries}: {service_name}")
+        
+        self._record_call_failure(service_name)
+        return Failure(f"서비스 호출 실패 (최대 재시도 초과): {last_error}")
+    
+    def _record_call_success(self, service_name: str) -> None:
+        """호출 성공 기록"""
+        if service_name not in self.success_rates:
+            self.success_rates[service_name] = 1.0
+        else:
+            # 지수 평활화
+            alpha = 0.1
+            self.success_rates[service_name] = (1 - alpha) * self.success_rates[service_name] + alpha * 1.0
+    
+    def _record_call_failure(self, service_name: str) -> None:
+        """호출 실패 기록"""
+        if service_name not in self.success_rates:
+            self.success_rates[service_name] = 0.0
+        else:
+            # 지수 평활화
+            alpha = 0.1
+            self.success_rates[service_name] = (1 - alpha) * self.success_rates[service_name] + alpha * 0.0
+    
+    async def call_service_group(self,
+                               group_name: str,
+                               path: str = "/",
+                               method: str = "GET",
+                               strategy: LoadBalancingStrategy = LoadBalancingStrategy.ROUND_ROBIN,
+                               **kwargs) -> Result[Dict[str, Any], str]:
+        """서비스 그룹 호출"""
+        if group_name not in self.service_groups:
+            return Failure(f"서비스 그룹을 찾을 수 없습니다: {group_name}")
+        
+        service_names = self.service_groups[group_name]
+        selected_service = self.get_load_balanced_service(service_names, strategy)
+        
+        if selected_service.is_none():
+            return Failure(f"서비스 그룹에 사용 가능한 서비스가 없습니다: {group_name}")
+        
+        service = selected_service.unwrap()
+        return await self.call_service(service.service_name, path, method, **kwargs)
+    
+    def get_service_metrics(self, service_name: str) -> Dict[str, Any]:
+        """서비스 메트릭 조회"""
+        if service_name not in self.services:
+            return {}
+        
+        service = self.services[service_name]
+        circuit_breaker = self.circuit_breakers.get(service_name)
+        
+        return {
+            "service_name": service_name,
+            "status": service.status.value,
+            "response_time_ms": service.response_time_ms,
+            "error_rate": service.error_rate,
+            "active_connections": service.active_connections,
+            "weight": service.weight,
+            "success_rate": self.success_rates.get(service_name, 0.0),
+            "circuit_breaker_state": circuit_breaker.state.value if circuit_breaker else "unknown",
+            "last_health_check": service.last_health_check.isoformat() if service.last_health_check else None
+        }
+    
+    def get_comprehensive_stats(self) -> Dict[str, Any]:
+        """종합 통계 조회"""
+        base_stats = self.get_service_stats()
+        
+        # 추가 통계
+        total_calls = sum(len(metrics) for metrics in self.call_metrics.values())
+        avg_success_rate = sum(self.success_rates.values()) / max(len(self.success_rates), 1)
+        
+        enhanced_stats = {
+            **base_stats,
+            "total_calls": total_calls,
+            "avg_success_rate": avg_success_rate,
+            "service_groups": len(self.service_groups),
+            "cached_items": len(self.service_cache)
+        }
+        
+        return enhanced_stats
+
+
 # 편의 함수들
 async def discover_services() -> List[ServiceEndpoint]:
     """서비스 자동 검색"""
@@ -643,3 +824,30 @@ async def health_check_all() -> Dict[str, bool]:
                 results[service_name] = False
     
     return results
+
+# 향상된 편의 함수들
+async def get_enhanced_service_discovery(project_id: str = None, region: str = "us-central1") -> EnhancedServiceDiscovery:
+    """향상된 서비스 검색 인스턴스 획득"""
+    if project_id is None:
+        project_id = os.environ.get('GOOGLE_CLOUD_PROJECT') or os.environ.get('GCP_PROJECT')
+        if not project_id:
+            raise ValueError("프로젝트 ID가 필요합니다.")
+    
+    discovery = EnhancedServiceDiscovery(project_id, region)
+    await discovery.initialize()
+    return discovery
+
+async def find_services(query: ServiceQuery) -> List[ServiceEndpoint]:
+    """고급 서비스 검색"""
+    discovery = await get_enhanced_service_discovery()
+    return discovery.query_services(query)
+
+async def call_service_safely(service_name: str, 
+                            path: str = "/", 
+                            max_retries: int = 3,
+                            **kwargs) -> Result[Dict[str, Any], str]:
+    """안전한 서비스 호출 (재시도 지원)"""
+    discovery = await get_enhanced_service_discovery()
+    return await discovery.call_service_with_retry(
+        service_name, path, max_retries=max_retries, **kwargs
+    )

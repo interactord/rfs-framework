@@ -193,6 +193,43 @@ class Mono(Generic[T]):
             return async_with_side_effect()
         return Mono(with_side_effect)
     
+    # ============= 추가 연산자 =============
+    
+    def cache(self) -> 'Mono[T]':
+        """
+        결과를 캐싱하여 재사용
+        """
+        cached_value = None
+        cached = False
+        
+        def cached_source():
+            async def async_cached():
+                nonlocal cached_value, cached
+                if not cached:
+                    cached_value = await self.source()
+                    cached = True
+                return cached_value
+            return async_cached()
+        
+        return Mono(cached_source)
+    
+    def on_error_map(self, error_mapper: Callable[[Exception], Exception]) -> 'Mono[T]':
+        """
+        에러를 다른 에러로 변환
+        
+        Args:
+            error_mapper: 에러 변환 함수
+        """
+        def with_error_map():
+            async def async_with_error_map():
+                try:
+                    return await self.source()
+                except Exception as e:
+                    raise error_mapper(e)
+            return async_with_error_map()
+        
+        return Mono(with_error_map)
+    
     def do_on_error(self, action: Callable[[Exception], None]) -> 'Mono[T]':
         """에러 시 사이드 이펙트 실행"""
         def with_error_side_effect():

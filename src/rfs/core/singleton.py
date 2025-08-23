@@ -9,6 +9,21 @@ from typing import Dict, Any, Type, Callable
 from functools import wraps
 import inspect
 
+
+class SingletonMeta(type):
+    """
+    Singleton 메타클래스
+    
+    클래스가 SingletonMeta를 메타클래스로 사용하면
+    해당 클래스는 싱글톤이 됩니다.
+    """
+    _instances = {}
+    
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
 class StatelessRegistry:
     """
     무상태 싱글톤 레지스트리 (Spring Bean 컨테이너 영감)

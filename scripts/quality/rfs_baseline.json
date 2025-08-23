@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-08-22T14:34:13.951781",
+  "overall_score": 97.093,
+  "grade": "A+",
+  "maturity_level": 5,
+  "total_opportunities": 72,
+  "category_scores": {
+    "stateless_service": {
+      "current": 1,
+      "total": 20,
+      "percentage": 95.0
+    },
+    "service_method_decorator": {
+      "current": 7,
+      "total": 150,
+      "percentage": 95.33333333333334
+    },
+    "cache_decorator": {
+      "current": 0,
+      "total": 300,
+      "percentage": 100.0
+    },
+    "performance_decorator": {
+      "current": 1,
+      "total": 200,
+      "percentage": 99.5
+    },
+    "validation_decorator": {
+      "current": 20,
+      "total": 400,
+      "percentage": 95.0
+    },
+    "logging_decorator": {
+      "current": 0,
+      "total": 250,
+      "percentage": 100.0
+    },
+    "retry_decorator": {
+      "current": 0,
+      "total": 50,
+      "percentage": 100.0
+    },
+    "railway_pattern": {
+      "current": 2,
+      "total": 500,
+      "percentage": 99.6
+    },
+    "result_type": {
+      "current": 41,
+      "total": 600,
+      "percentage": 93.16666666666666
+    }
+  }
+}

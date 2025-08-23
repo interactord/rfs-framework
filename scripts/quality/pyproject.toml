@@ -1,0 +1,162 @@
+[tool.poetry]
+name = "cosmos"
+version = "2.0.0"
+description = "FastAPI-based document analysis system with AI"
+authors = ["Cosmos Team"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.104.0"
+uvicorn = "^0.24.0"
+redis = "^5.0.0"
+httpx = "^0.25.0"
+openai = "^1.0.0"
+google-generativeai = "^0.3.0"
+boto3 = "^1.28.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+mypy = "^1.7.0"
+pylint = "^3.0.0"
+autoflake = "^2.2.0"
+black = "^23.10.0"
+isort = "^5.12.0"
+pyflakes = "^3.1.0"
+pyright = "^1.1.0"
+ruff = "^0.1.0"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | __pycache__
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["app"]
+skip_glob = ["*/migrations/*", "*/node_modules/*"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_any_generics = false
+ignore_missing_imports = true
+follow_imports = "silent"
+no_implicit_reexport = true
+strict_optional = true
+strict_equality = true
+check_untyped_defs = true
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "app.services.v2.*"
+disallow_untyped_defs = false
+disallow_any_generics = false
+strict = false
+warn_return_any = false
+warn_unused_ignores = false
+
+[tool.pylint.main]
+py-version = "3.9"
+load-plugins = [
+    "pylint.extensions.docparams",
+    "pylint.extensions.docstyle",
+]
+
+[tool.pylint.messages_control]
+disable = [
+    "C0111",  # missing-docstring (한글 주석 사용)
+    "C0103",  # invalid-name (한글 변수명 허용)
+    "R0903",  # too-few-public-methods
+    "R0801",  # duplicate-code
+    "W0511",  # fixme
+    "C0114",  # missing-module-docstring
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "Run", "_", "id", "qa", "op"]
+
+[tool.pylint.design]
+max-args = 7
+max-attributes = 10
+max-bool-expr = 5
+max-branches = 15
+max-locals = 20
+max-parents = 7
+max-public-methods = 25
+max-returns = 6
+max-statements = 60
+
+[tool.autoflake]
+remove-all-unused-imports = true
+remove-unused-variables = true
+remove-duplicate-keys = true
+ignore-init-module-imports = true
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"  # 개발 편의성을 위해 완화
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = "warning"  # 경고로 완화
+reportUnusedClass = "warning"  # 경고로 완화
+reportUnusedFunction = "warning"  # 경고로 완화
+reportUnusedVariable = "warning"  # 경고로 완화
+reportDuplicateImport = true
+reportIncompatibleMethodOverride = true
+reportUnnecessaryIsInstance = "warning"  # isinstance 완전 제거 완료로 경고로 완화
+
+# 타입 관련 설정 완화 (개발 편의성)
+reportUnknownParameterType = "information"  # 정보 수준으로 완화
+reportUnknownMemberType = "information"  # 정보 수준으로 완화
+reportMissingTypeArgument = "information"  # 정보 수준으로 완화
+reportUnknownVariableType = "information"  # 정보 수준으로 완화
+reportUnknownArgumentType = "information"  # 정보 수준으로 완화
+reportUnknownLambdaType = "information"  # 정보 수준으로 완화
+
+# 추가 완화 설정
+reportGeneralTypeIssues = "warning"
+reportOptionalMemberAccess = "warning"
+reportOptionalSubscript = "warning"
+reportOptionalOperand = "warning"
+include = ["app", "tests"]
+exclude = ["**/node_modules", "**/__pycache__", ".venv", "venv"]
+
+[tool.ruff]
+# isinstance 감지를 위한 설정
+select = ["E", "F", "B", "PIE790"]  # PIE790: unnecessary isinstance
+line-length = 120
+target-version = "py311"
+exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    "node_modules",
+]
+
+[tool.ruff.per-file-ignores]
+# 테스트 파일은 isinstance 허용 (테스트 검증용)
+"tests/**/*.py" = ["PIE790"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

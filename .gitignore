@@ -189,3 +189,28 @@ test-reports/
 # Documentation build
 docs/build/
 docs/site/
+
+# Development and testing environments
+test_env/
+*_env/
+.test_env/
+
+# Analysis and planning documents (temporary)
+*_ANALYSIS_REPORT.md
+*_IMPLEMENTATION_PLAN.md
+*_FRAMEWORK_ANALYSIS_*.md
+
+# MCP server test files
+mcp_server*.py
+
+# CLI test files
+test_cli.py
+
+# Build artifacts and distribution (already covered above but being explicit)
+dist/
+build/
+*.egg-info/
+
+# RFS Framework specific temporary files
+rfs_cli_test.py
+cli_test_*.py

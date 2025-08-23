@@ -187,6 +187,42 @@ async def main():
     state_machine = StateMachine("idle")
     print(f"🔄 상태 머신 초기 상태: {state_machine.current_state}")
     
+    # 새로운 기능들 테스트 (v4.0.3)
+    print("\n🆕 v4.0.3 새로운 기능 테스트:")
+    
+    # Reactive Streams 테스트
+    from rfs.reactive import Flux, Mono
+    
+    # 병렬 처리 테스트
+    print("🔄 Reactive Streams - 병렬 처리:")
+    parallel_result = await (
+        Flux.from_iterable(range(10))
+        .parallel(parallelism=2)
+        .map(lambda x: x * 2)
+        .collect_list()
+    )
+    print(f"   병렬 처리 결과: {parallel_result}")
+    
+    # 윈도우 처리 테스트
+    print("📊 Reactive Streams - 윈도우 처리:")
+    window_result = await (
+        Flux.from_iterable(range(20))
+        .window(size=5)
+        .flat_map(lambda w: w.reduce(0, lambda a, b: a + b))
+        .collect_list()
+    )
+    print(f"   윈도우 처리 결과 (5개씩 합계): {window_result}")
+    
+    # 스로틀링 테스트  
+    print("⏱️ Reactive Streams - 스로틀링:")
+    throttle_result = await (
+        Flux.from_iterable(range(100))
+        .throttle(elements=10, duration=0.01)  # 빠른 테스트를 위해 짧은 시간
+        .take(5)  # 처음 5개만
+        .collect_list()
+    )
+    print(f"   스로틀링 결과: {throttle_result}")
+    
     print("\n🚀 전자상거래 예제 완료!")
 
 if __name__ == "__main__":

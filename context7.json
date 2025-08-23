@@ -82,6 +82,13 @@
     "Use EventBus for event-driven architecture patterns",
     "Implement Saga pattern for distributed transactions"
   ],
+  "cliUsage": {
+    "installation": "# PyPI 설치\npip install rfs-framework\n\n# 모든 기능 포함 설치\npip install rfs-framework[all]\n\n# 소스에서 직접 실행\ngit clone https://github.com/interactord/rfs-framework\ncd rfs-framework\npython3 rfs_cli.py version",
+    "basicCommands": "# 버전 정보 (11가지 상세 정보)\nrfs version\n\n# 시스템 상태 (16개 기능 모니터링)\nrfs status\n\n# 도움말 및 사용법\nrfs help\n\n# 설정 정보\nrfs config",
+    "systemMonitoring": "# CLI로 모니터링되는 16개 핵심 기능:\n# Core: Result Pattern, Reactive Streams\n# Architecture: Hexagonal, Dependency Injection\n# Security: RBAC/ABAC, JWT Authentication\n# Resilience: Circuit Breaker, Load Balancing\n# Monitoring: Performance, Security Event Logging\n# Deployment: Blue-Green, Canary, Rolling, Rollback\n# Cloud: Google Cloud Run Optimization\n# Docs: Korean Documentation (13 modules)\nrfs status  # 모든 기능 상태 확인",
+    "richOutput": "# Rich UI 출력 예시:\n╭─────── RFS Framework 버전 정보 ──────╮\n│ 🏷️  버전: 4.3.0                      │\n│ 📅 릴리스: 2024년 8월               │\n│ 🎯 단계: Production Ready          │\n│ 🏗️  아키텍처: Hexagonal            │\n│ 🔒 보안: RBAC/ABAC with JWT        │\n│ 📊 모니터링: Performance & Security │\n│ 🚀 배포: Blue-Green, Canary, Rolling│\n╰────────────────────────────────────╯",
+    "requirements": "# 시스템 요구사항\nPython: 3.10 이상\n운영체제: Linux, macOS, Windows\n메모리: 최소 512MB RAM\n\n# 필수 의존성\npydantic>=2.5.0\ntyping-extensions>=4.8.0\n\n# 권장 의존성 (Rich UI용)\nrich>=13.7.0"
+  },
   "codeExamples": {
     "basicUsage": "from rfs import Result, Success, Failure\n\ndef divide(a: int, b: int) -> Result[float, str]:\n    if b == 0:\n        return Failure('Division by zero')\n    return Success(a / b)\n\nresult = divide(10, 2)\nif result.is_success:\n    print(f'Result: {result.unwrap()}')",
     "hexagonalArchitecture": "from rfs.core.annotations import Port, Adapter, UseCase, Controller\n\n@Port(name='user_repository')\nclass UserRepository(ABC):\n    @abstractmethod\n    async def find_by_id(self, user_id: str) -> Result[User, str]:\n        pass\n\n@Adapter(port='user_repository')\nclass PostgresUserRepository(UserRepository):\n    async def find_by_id(self, user_id: str) -> Result[User, str]:\n        # Implementation\n        pass\n\n@UseCase(dependencies=['user_repository'])\nclass GetUserUseCase:\n    def __init__(self, user_repository: UserRepository):\n        self.repo = user_repository",
@@ -100,6 +107,8 @@
     "dependencyInjection": "https://github.com/interactord/rfs-framework/blob/main/wiki/02-dependency-injection.md",
     "deploymentStrategies": "https://github.com/interactord/rfs-framework/blob/main/wiki/05-deployment.md",
     "security": "https://github.com/interactord/rfs-framework/blob/main/wiki/11-security.md",
+    "cliInterface": "https://github.com/interactord/rfs-framework/blob/main/wiki/14-cli-interface.md",
+    "cliGuide": "https://github.com/interactord/rfs-framework/blob/main/CLI_GUIDE.md",
     "changelog": "https://github.com/interactord/rfs-framework/blob/main/CHANGELOG.md"
   },
   "features": [
@@ -150,6 +159,10 @@
     {
       "name": "Korean Documentation",
       "description": "Complete Korean technical documentation with examples and best practices"
+    },
+    {
+      "name": "CLI Interface",
+      "description": "Enterprise-Grade command line interface with Rich UI, system monitoring, and comprehensive status checking"
     }
   ],
   "dependencies": {

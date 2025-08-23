@@ -7,7 +7,7 @@ Annotation Processor for RFS Framework
 import ast
 import inspect
 import sys
-from typing import Type, Any, Dict, List, Optional, Callable
+from typing import Type, Any, Dict, List, Optional, Callable, Set
 from pathlib import Path
 
 from .base import (
@@ -20,6 +20,7 @@ from .base import (
     get_annotation_metadata
 )
 from .registry import get_annotation_registry
+from ..result import Result, Success, Failure
 
 
 class AnnotationProcessor:

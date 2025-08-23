@@ -26,6 +26,17 @@ class InjectionType(Enum):
     FIELD = "field"  # 필드 주입
 
 
+class AnnotationType(Enum):
+    """어노테이션 타입"""
+    PORT = "port"
+    ADAPTER = "adapter"
+    USE_CASE = "use_case"
+    CONTROLLER = "controller"
+    SERVICE = "service"
+    REPOSITORY = "repository"
+    COMPONENT = "component"
+
+
 @dataclass
 class AnnotationMetadata:
     """애노테이션 메타데이터"""

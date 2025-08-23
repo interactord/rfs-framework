@@ -1,4 +1,4 @@
-# RFS Framework 🚀
+# RFS(Reactive Functional Serverless) Framework 🚀
 
 > **Enterprise-Grade Python Framework for Modern Applications**
 
@@ -522,6 +522,43 @@ COPY . .
 EXPOSE 8080
 CMD ["rfs-cli", "serve", "--port", "8080"]
 ```
+
+## 🖥️ CLI Usage
+
+RFS Framework는 강력한 CLI 도구를 제공하여 개발 워크플로우를 간소화합니다.
+
+### 기본 명령어
+
+```bash
+# 버전 정보 확인
+rfs version
+
+# 시스템 상태 확인 (16개 핵심 기능 상태)
+rfs status
+
+# 설정 정보 보기
+rfs config
+
+# 도움말
+rfs help
+```
+
+### 상세 기능 상태
+
+`rfs status` 명령어로 확인할 수 있는 모든 기능:
+
+- ✅ **Core**: Result Pattern, Reactive Streams
+- ✅ **Architecture**: Hexagonal Architecture, Dependency Injection  
+- ✅ **Security**: RBAC/ABAC Access Control, JWT Authentication
+- ✅ **Resilience**: Circuit Breaker Pattern, Load Balancing
+- ✅ **Monitoring**: Performance Monitoring, Security Event Logging
+- ✅ **Deployment**: Blue-Green, Canary, Rolling Strategies + Rollback
+- ✅ **Cloud**: Google Cloud Run Optimization
+- ✅ **Documentation**: Korean Documentation (13 modules)
+
+### CLI 상세 가이드
+
+완전한 CLI 사용법은 [CLI_GUIDE.md](./CLI_GUIDE.md)를 참조하세요.
 
 ## 📚 Documentation
 

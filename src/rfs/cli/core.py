@@ -357,8 +357,8 @@ class RFSCli:
     def _show_rich_help(self):
         """Rich를 사용한 도움말"""
         # RFS 로고
-        logo = Text("RFS Framework v4", style="bold blue")
-        self.console.print(Panel(logo, title="🚀 Reactive Functional Serverless"))
+        logo = Text("RFS Framework v4.3.0", style="bold blue")
+        self.console.print(Panel(logo, title="🚀 RFS Framework CLI"))
         
         # 명령어 테이블
         table = Table(title="Available Commands")
@@ -387,8 +387,8 @@ class RFSCli:
     
     def _show_plain_help(self):
         """일반 텍스트 도움말"""
-        print("RFS Framework v4 CLI")
-        print("=" * 20)
+        print("RFS Framework v4.3.0 CLI")
+        print("=" * 25)
         print("\nAvailable Commands:")
         
         for cmd_name, cmd in self.commands.items():

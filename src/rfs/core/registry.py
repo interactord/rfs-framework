@@ -232,5 +232,50 @@ class ServiceRegistry:
         return metrics
 
 
-# 전역 레지스트리 인스턴스
+# Stateless 서비스 전용 레지스트리 (v4.0 호환성)
+class StatelessRegistry:
+    """
+    Stateless 서비스 전용 레지스트리 (간소화된 서비스 등록)
+    
+    v4.0 호환성을 위한 간단한 레지스트리 구현
+    """
+    
+    def __init__(self) -> None:
+        self._services: Dict[str, Any] = {}
+        self._classes: Dict[str, Type[Any]] = {}
+    
+    def register(self, name: str, service_class: Type[Any], instance: Any = None) -> None:
+        """Stateless 서비스 등록"""
+        self._classes[name] = service_class
+        if instance is not None:
+            self._services[name] = instance
+    
+    def get(self, name: str) -> Any:
+        """서비스 인스턴스 가져오기 (없으면 생성)"""
+        if name not in self._services:
+            if name in self._classes:
+                self._services[name] = self._classes[name]()
+            else:
+                raise ValueError(f"Service '{name}' not registered")
+        return self._services[name]
+    
+    def list_services(self) -> List[str]:
+        """등록된 서비스 목록"""
+        return list(self._classes.keys())
+    
+    def clear(self) -> None:
+        """모든 서비스 정리"""
+        self._services.clear()
+        self._classes.clear()
+
+
+def stateless(cls: Type[Any]) -> Type[Any]:
+    """Stateless 서비스 데코레이터"""
+    # 전역 stateless 레지스트리에 등록
+    stateless_registry.register(cls.__name__, cls)
+    return cls
+
+
+# 전역 레지스트리 인스턴스들
 default_registry = ServiceRegistry()
+stateless_registry = StatelessRegistry()

@@ -7,6 +7,7 @@ Annotation-based Dependency Injection and Architecture Support for RFS Framework
 from .base import (
     ServiceScope,
     AnnotationMetadata,
+    AnnotationType,
     ComponentMetadata,
     get_annotation_metadata,
     set_annotation_metadata

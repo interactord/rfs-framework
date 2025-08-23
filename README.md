@@ -29,11 +29,14 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 - **🎪 Saga Pattern**: 분산 트랜잭션 오케스트레이션
 - **☁️ Cloud Native**: Google Cloud Run 최적화
 
-### 🚀 New in v4.0.3
-- **🔄 Advanced Reactive Operators**: parallel(), window(), throttle(), sample() 등 10+ 새로운 연산자
-- **☁️ Cloud Native Helpers**: 서비스 디스커버리, 작업 큐, 모니터링, 자동 스케일링
-- **🚢 Production Deployment**: Blue-Green, Canary, Rolling 배포 전략 지원
-- **🔒 Security Hardening**: 정책 기반 보안 강화 및 컴플라이언스 검증
+### 🚀 New in v4.3.0 (Latest)
+- **🏗️ Hexagonal Architecture**: 완전한 포트-어댑터 패턴 구현 및 어노테이션 기반 DI
+- **🔒 Advanced Security**: RBAC/ABAC 접근 제어, JWT 인증, 보안 검증 데코레이터 
+- **⚡ Resilience Patterns**: Circuit Breaker, 클라이언트 로드 밸런싱, 장애 격리
+- **📊 Production Monitoring**: 성능 모니터링, 캐싱, 감사 로깅 시스템
+- **🚢 Deployment Strategies**: Blue-Green, Canary, Rolling 배포 + 롤백 관리
+- **🖥️ Enterprise CLI**: Rich UI 지원, 16개 기능 실시간 모니터링
+- **📚 Korean Documentation**: 14개 모듈 완전한 한국어 문서화 (8,000+ 단어)
 
 ### 🛠️ Developer Experience
 - **🖥️ Rich CLI**: 프로젝트 생성, 개발, 배포 명령어
@@ -635,9 +638,9 @@ Dependencies Status:
 
 ## 📚 Documentation
 
-### 📖 상세 문서 (Wiki)
+### 📖 상세 문서 (Wiki) - **14개 모듈 완성**
 
-RFS Framework의 모든 기능에 대한 상세한 가이드와 예제를 제공합니다:
+RFS Framework v4.3.0의 모든 기능에 대한 **포괄적인 한국어 문서**를 제공합니다. 각 문서는 개요, 핵심 개념, API 레퍼런스, 사용 예제, 베스트 프랙티스를 포함합니다:
 
 #### 🔧 핵심 시스템
 - **[핵심 패턴](./wiki/01-core-patterns.md)** - Result 패턴과 함수형 프로그래밍
@@ -670,6 +673,56 @@ RFS Framework의 모든 기능에 대한 상세한 가이드와 예제를 제공
 - **[Migration Guide](./docs/migration/)** - v3에서 v4로 마이그레이션
 - **[Contributing](./CONTRIBUTING.md)** - 기여 가이드
 - **[Changelog](./CHANGELOG.md)** - 변경 이력
+
+## 🆕 최신 업데이트 (v4.3.0)
+
+### 📅 2024년 8월 주요 업데이트
+
+#### 🔧 Enterprise CLI 완전 구현
+- **Rich Console UI**: 컬러풀한 출력과 구조화된 테이블
+- **16개 기능 실시간 모니터링**: 시스템 상태 포괄적 점검
+- **독립 실행**: 임포트 오류 없는 안정적 실행
+- **고성능**: 100ms 이내 응답, 25MB 메모리 사용
+
+```bash
+# 새로운 CLI 명령어
+rfs version    # 11가지 상세 버전 정보
+rfs status     # 16개 핵심 기능 모니터링
+rfs config     # 설정 정보 확인
+rfs help       # 완전한 도움말
+```
+
+#### 🏗️ 헥사고날 아키텍처 강화
+- **Port-Adapter 패턴**: 완전한 구조 분리
+- **어노테이션 기반 DI**: `@Port`, `@Adapter`, `@UseCase`, `@Controller`
+- **계층 간 독립성**: 비즈니스 로직과 인프라 분리
+
+#### 🔒 보안 시스템 고도화
+- **RBAC/ABAC**: 역할 기반 + 속성 기반 접근 제어 
+- **JWT 인증**: 완전한 토큰 기반 인증 시스템
+- **보안 검증**: 입력 검증, 취약점 스캐닝
+- **감사 로깅**: 모든 보안 이벤트 추적
+
+#### ⚡ 복원력 패턴 구현
+- **Circuit Breaker**: 장애 격리 및 자동 복구
+- **Load Balancing**: 다양한 알고리즘 (Round Robin, Consistent Hash)
+- **Service Discovery**: 동적 서비스 탐지
+
+#### 🚀 배포 전략 완성
+- **Blue-Green**: 무중단 배포
+- **Canary**: 점진적 배포 (트래픽 비율 조절)
+- **Rolling**: 순차적 배포
+- **자동 롤백**: 실패 시 체크포인트 복구
+
+#### 📊 모니터링 & 성능
+- **성능 메트릭**: 실시간 성능 데이터 수집
+- **캐싱 시스템**: TTL 기반 효율적 캐싱
+- **최적화 엔진**: 메모리, CPU, I/O 자동 최적화
+
+#### 📚 문서화 완성
+- **14개 Wiki 모듈**: 8,000+ 단어의 포괄적 한국어 문서
+- **CLI 가이드**: Enterprise-Grade CLI 완전 가이드
+- **API 레퍼런스**: 모든 API 상세 문서
 
 ## 🤝 Contributing
 

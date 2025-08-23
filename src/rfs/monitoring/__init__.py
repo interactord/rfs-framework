@@ -120,6 +120,18 @@ from .profiler import (
     generate_flame_graph
 )
 
+# Performance decorators
+from .performance_decorators import (
+    PerformanceMonitored,
+    Cached,
+    PerformanceMetrics,
+    PerformanceLevel,
+    PerformanceMonitor,
+    get_performance_monitor,
+    get_performance_statistics,
+    set_alert_thresholds
+)
+
 __all__ = [
     # Metrics
     "MetricsCollector",
@@ -195,5 +207,15 @@ __all__ = [
     "profile_memory",
     "profile_cpu",
     "analyze_profile",
-    "generate_flame_graph"
+    "generate_flame_graph",
+    
+    # Performance decorators
+    "PerformanceMonitored",
+    "Cached",
+    "PerformanceMetrics",
+    "PerformanceLevel",
+    "PerformanceMonitor",
+    "get_performance_monitor",
+    "get_performance_statistics",
+    "set_alert_thresholds"
 ]

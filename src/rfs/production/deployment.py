@@ -13,6 +13,18 @@ from dataclasses import dataclass, field
 
 from ..core.result import Result, Success, Failure
 from ..core.singleton import SingletonMeta
+from .strategies import (
+    DeploymentStrategy as StrategyImpl,
+    DeploymentConfig as StrategyConfig,
+    DeploymentType,
+    DeploymentStrategyFactory,
+    DeploymentMetrics
+)
+from .rollback import (
+    RollbackManager as RollbackManagerImpl,
+    RollbackTrigger,
+    DeploymentCheckpoint
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +91,8 @@ class ProductionDeployer:
         self.config = config or DeploymentConfig()
         self._deployments: Dict[str, DeploymentResult] = {}
         self._current_deployment: Optional[str] = None
-        self._rollback_manager = RollbackManager()
+        self._rollback_manager = RollbackManagerImpl()
+        self._strategy_factory = DeploymentStrategyFactory()
     
     async def deploy(
         self,
@@ -115,22 +128,66 @@ class ProductionDeployer:
         self._current_deployment = deployment_id
         
         try:
+            # Create checkpoint before deployment
+            checkpoint_result = await self._rollback_manager.create_checkpoint(
+                service_name=f"service_{environment}",
+                version=version,
+                configuration={"environment": environment, "strategy": strategy.value},
+                metadata={"deployment_id": deployment_id}
+            )
+            
             # Pre-deployment hooks
             await self._run_hooks(self.config.pre_deployment_hooks, result)
             
             # Execute deployment based on strategy
             result.status = DeploymentStatus.IN_PROGRESS
             
-            if strategy == DeploymentStrategy.BLUE_GREEN:
-                await self._deploy_blue_green(version, environment, result)
-            elif strategy == DeploymentStrategy.CANARY:
-                await self._deploy_canary(version, environment, result)
-            elif strategy == DeploymentStrategy.ROLLING:
-                await self._deploy_rolling(version, environment, result)
-            elif strategy == DeploymentStrategy.RECREATE:
-                await self._deploy_recreate(version, environment, result)
-            elif strategy == DeploymentStrategy.A_B_TESTING:
-                await self._deploy_ab_testing(version, environment, result)
+            # Map DeploymentStrategy enum to DeploymentType
+            strategy_mapping = {
+                DeploymentStrategy.BLUE_GREEN: DeploymentType.BLUE_GREEN,
+                DeploymentStrategy.CANARY: DeploymentType.CANARY,
+                DeploymentStrategy.ROLLING: DeploymentType.ROLLING,
+                DeploymentStrategy.RECREATE: DeploymentType.INSTANT,
+                DeploymentStrategy.A_B_TESTING: DeploymentType.AB_TESTING
+            }
+            
+            deployment_type = strategy_mapping.get(strategy, DeploymentType.ROLLING)
+            
+            # Create strategy configuration
+            strategy_config = StrategyConfig(
+                deployment_type=deployment_type,
+                health_check_interval=self.config.health_check_timeout,
+                max_deployment_time=self.config.deployment_timeout,
+                canary_percentage=self.config.canary_percentage,
+                auto_rollback=self.config.rollback_on_failure
+            )
+            
+            # Get strategy implementation
+            strategy_impl = self._strategy_factory.create(deployment_type, strategy_config)
+            
+            # Execute deployment using strategy
+            deployment_result = await strategy_impl.deploy(
+                service_name=f"service_{environment}",
+                new_version=version,
+                instance_count=5  # Can be configured
+            )
+            
+            if isinstance(deployment_result, Failure):
+                raise Exception(deployment_result.error)
+            
+            # Update result with strategy metrics
+            deployment_metrics = deployment_result.value
+            result.metrics.update({
+                "success_rate": deployment_metrics.success_rate,
+                "error_rate": deployment_metrics.error_rate,
+                "deployment_duration": str(deployment_metrics.deployment_duration),
+                "rollback_triggered": deployment_metrics.rollback_triggered
+            })
+            
+            if deployment_metrics.rollback_triggered:
+                result.status = DeploymentStatus.ROLLED_BACK
+                result.rollback_performed = True
+                return Failure(f"Deployment rolled back: {deployment_metrics.rollback_reason}")
             
             # Validation
             result.status = DeploymentStatus.VALIDATING
@@ -165,113 +222,6 @@ class ProductionDeployer:
             logger.error(f"Deployment failed: {e}")
             return Failure(str(e))
     
-    async def _deploy_blue_green(
-        self,
-        version: str,
-        environment: str,
-        result: DeploymentResult
-    ):
-        """Blue-Green 배포 전략"""
-        logger.info(f"Starting Blue-Green deployment: {version}")
-        
-        # 1. Deploy to green environment
-        result.metrics["green_deployment_start"] = datetime.now()
-        await asyncio.sleep(2)  # Simulate deployment
-        
-        # 2. Run health checks on green
-        health_check_passed = await self._health_check(f"{environment}-green")
-        if not health_check_passed:
-            raise Exception("Green environment health check failed")
-        
-        # 3. Switch traffic to green
-        result.metrics["traffic_switch_time"] = datetime.now()
-        await asyncio.sleep(1)  # Simulate traffic switch
-        
-        # 4. Keep blue as backup for rollback
-        result.metrics["blue_backup_retained"] = True
-        
-    async def _deploy_canary(
-        self,
-        version: str,
-        environment: str,
-        result: DeploymentResult
-    ):
-        """Canary 배포 전략"""
-        logger.info(f"Starting Canary deployment: {version}")
-        
-        # 1. Deploy to canary instances
-        canary_percentage = self.config.canary_percentage
-        result.metrics["canary_percentage"] = canary_percentage
-        await asyncio.sleep(2)  # Simulate canary deployment
-        
-        # 2. Route percentage of traffic to canary
-        result.metrics["canary_traffic_start"] = datetime.now()
-        
-        # 3. Monitor canary metrics
-        await asyncio.sleep(self.config.validation_duration)
-        
-        # 4. Gradually increase traffic if successful
-        for percentage in [25, 50, 75, 100]:
-            await asyncio.sleep(1)
-            result.metrics[f"traffic_{percentage}%"] = datetime.now()
-    
-    async def _deploy_rolling(
-        self,
-        version: str,
-        environment: str,
-        result: DeploymentResult
-    ):
-        """Rolling 배포 전략"""
-        logger.info(f"Starting Rolling deployment: {version}")
-        
-        # Simulate rolling update across instances
-        instance_count = 5
-        for i in range(instance_count):
-            result.metrics[f"instance_{i}_updated"] = datetime.now()
-            await asyncio.sleep(1)
-            
-            # Health check after each instance
-            if not await self._health_check(f"{environment}-{i}"):
-                raise Exception(f"Instance {i} health check failed")
-    
-    async def _deploy_recreate(
-        self,
-        version: str,
-        environment: str,
-        result: DeploymentResult
-    ):
-        """Recreate 배포 전략"""
-        logger.info(f"Starting Recreate deployment: {version}")
-        
-        # 1. Stop all existing instances
-        result.metrics["shutdown_start"] = datetime.now()
-        await asyncio.sleep(2)
-        
-        # 2. Deploy new version
-        result.metrics["deployment_start"] = datetime.now()
-        await asyncio.sleep(3)
-        
-        # 3. Start new instances
-        result.metrics["startup_complete"] = datetime.now()
-    
-    async def _deploy_ab_testing(
-        self,
-        version: str,
-        environment: str,
-        result: DeploymentResult
-    ):
-        """A/B Testing 배포 전략"""
-        logger.info(f"Starting A/B Testing deployment: {version}")
-        
-        # Deploy both versions
-        result.metrics["version_a"] = "current"
-        result.metrics["version_b"] = version
-        result.metrics["traffic_split"] = "50/50"
-        
-        await asyncio.sleep(2)  # Simulate deployment
-        
-        # Configure traffic routing for A/B testing
-        result.metrics["ab_test_configured"] = datetime.now()
     
     async def _validate_deployment(self, result: DeploymentResult) -> bool:
         """배포 검증"""
@@ -303,17 +253,20 @@ class ProductionDeployer:
         # Execute rollback hooks
         await self._run_hooks(self.config.rollback_hooks, result)
         
-        # Perform rollback
+        # Perform rollback using new RollbackManager
+        service_name = f"service_{result.environment}"
         rollback_result = await self._rollback_manager.rollback(
-            deployment_id=result.deployment_id,
-            strategy=result.strategy
+            service_name=service_name,
+            trigger=RollbackTrigger.AUTO_ERROR_RATE,
+            reason=f"Deployment {result.deployment_id} failed validation"
         )
         
-        if rollback_result.is_success():
+        if isinstance(rollback_result, Success):
             result.rollback_performed = True
             result.metrics["rollback_time"] = datetime.now()
+            result.metrics["rollback_id"] = rollback_result.value.rollback_id
         else:
-            result.errors.append("Rollback failed")
+            result.errors.append(f"Rollback failed: {rollback_result.error}")
     
     async def _run_hooks(self, hooks: List[Callable], result: DeploymentResult):
         """훅 실행"""
@@ -346,139 +299,11 @@ class ProductionDeployer:
         )
 
 
-class RollbackManager:
-    """
-    롤백 관리자
-    
-    배포 실패 시 자동 롤백 및 복구 기능 제공
-    """
-    
-    def __init__(self):
-        self._rollback_history: List[Dict[str, Any]] = []
-        self._snapshots: Dict[str, Any] = {}
-    
-    async def create_snapshot(self, deployment_id: str) -> Result[str, str]:
-        """
-        배포 전 스냅샷 생성
-        
-        Args:
-            deployment_id: 배포 ID
-            
-        Returns:
-            Result[스냅샷 ID, 에러 메시지]
-        """
-        snapshot_id = f"snapshot_{deployment_id}"
-        
-        try:
-            # Create snapshot of current state
-            snapshot = {
-                "id": snapshot_id,
-                "deployment_id": deployment_id,
-                "timestamp": datetime.now(),
-                "state": await self._capture_current_state()
-            }
-            
-            self._snapshots[snapshot_id] = snapshot
-            
-            logger.info(f"Snapshot created: {snapshot_id}")
-            return Success(snapshot_id)
-            
-        except Exception as e:
-            logger.error(f"Snapshot creation failed: {e}")
-            return Failure(str(e))
-    
-    async def rollback(
-        self,
-        deployment_id: str,
-        strategy: DeploymentStrategy = None
-    ) -> Result[Dict[str, Any], str]:
-        """
-        배포 롤백 실행
-        
-        Args:
-            deployment_id: 배포 ID
-            strategy: 롤백 전략
-            
-        Returns:
-            Result[롤백 결과, 에러 메시지]
-        """
-        try:
-            rollback_id = f"rollback_{int(datetime.now().timestamp())}"
-            
-            rollback_info = {
-                "id": rollback_id,
-                "deployment_id": deployment_id,
-                "strategy": strategy,
-                "start_time": datetime.now(),
-                "status": "in_progress"
-            }
-            
-            # Find snapshot
-            snapshot_id = f"snapshot_{deployment_id}"
-            if snapshot_id not in self._snapshots:
-                # Try to rollback without snapshot
-                logger.warning(f"No snapshot found for {deployment_id}, attempting rollback")
-            
-            # Execute rollback based on strategy
-            if strategy == DeploymentStrategy.BLUE_GREEN:
-                await self._rollback_blue_green(rollback_info)
-            elif strategy == DeploymentStrategy.CANARY:
-                await self._rollback_canary(rollback_info)
-            else:
-                await self._rollback_standard(rollback_info)
-            
-            rollback_info["status"] = "completed"
-            rollback_info["end_time"] = datetime.now()
-            
-            self._rollback_history.append(rollback_info)
-            
-            logger.info(f"Rollback completed: {rollback_id}")
-            return Success(rollback_info)
-            
-        except Exception as e:
-            logger.error(f"Rollback failed: {e}")
-            return Failure(str(e))
-    
-    async def _rollback_blue_green(self, rollback_info: Dict[str, Any]):
-        """Blue-Green 롤백"""
-        # Switch traffic back to blue
-        await asyncio.sleep(1)
-        rollback_info["method"] = "traffic_switch_to_blue"
-    
-    async def _rollback_canary(self, rollback_info: Dict[str, Any]):
-        """Canary 롤백"""
-        # Stop canary instances and route all traffic to stable
-        await asyncio.sleep(1)
-        rollback_info["method"] = "canary_termination"
-    
-    async def _rollback_standard(self, rollback_info: Dict[str, Any]):
-        """표준 롤백"""
-        # Restore from snapshot or previous version
-        await asyncio.sleep(2)
-        rollback_info["method"] = "version_restore"
-    
-    async def _capture_current_state(self) -> Dict[str, Any]:
-        """현재 상태 캡처"""
-        return {
-            "timestamp": datetime.now().isoformat(),
-            "version": "current",
-            "configuration": {},
-            "metrics": {}
-        }
-    
-    def get_rollback_history(self) -> List[Dict[str, Any]]:
-        """롤백 이력 조회"""
-        return self._rollback_history
-    
-    def can_rollback(self, deployment_id: str) -> bool:
-        """롤백 가능 여부 확인"""
-        snapshot_id = f"snapshot_{deployment_id}"
-        return snapshot_id in self._snapshots
 
 
 # Export functions for easy access
 _production_deployer: Optional[ProductionDeployer] = None
-_rollback_manager: Optional[RollbackManager] = None
+_rollback_manager: Optional[RollbackManagerImpl] = None
 
 
 def get_production_deployer(config: DeploymentConfig = None) -> ProductionDeployer:
@@ -497,7 +322,7 @@ def get_production_deployer(config: DeploymentConfig = None) -> ProductionDeploy
     return _production_deployer
 
 
-def get_rollback_manager() -> RollbackManager:
+def get_rollback_manager() -> RollbackManagerImpl:
     """
     전역 RollbackManager 인스턴스 반환
     
@@ -506,7 +331,7 @@ def get_rollback_manager() -> RollbackManager:
     """
     global _rollback_manager
     if _rollback_manager is None:
-        _rollback_manager = RollbackManager()
+        _rollback_manager = RollbackManagerImpl()
     return _rollback_manager
 
 
@@ -554,7 +379,6 @@ __all__ = [
     "DeploymentStatus",
     "DeploymentConfig",
     "DeploymentResult",
-    "RollbackManager",
     "get_production_deployer",
     "get_rollback_manager",
     "deploy_to_production",

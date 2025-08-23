@@ -1,0 +1,157 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "RFS Framework (Reactive Functional Serverless)",
+  "description": "Enterprise-Grade Python Framework combining Spring Reactor patterns, functional programming with Result/Either/Maybe monads, and serverless optimization for Google Cloud Platform",
+  "version": "4.0.1",
+  "language": "python",
+  "packageName": "rfs-v4",
+  "repository": "https://github.com/interactord/rfs-framework",
+  "homepage": "https://pypi.org/project/rfs-v4/",
+  "folders": [
+    "src/rfs/",
+    "examples/",
+    "docs/",
+    "README.md",
+    "API_REFERENCE.md"
+  ],
+  "excludeFolders": [
+    "dist/",
+    "build/",
+    "__pycache__/",
+    ".git/",
+    ".github/",
+    "test_env/",
+    "*.egg-info/"
+  ],
+  "fileExtensions": [
+    ".py",
+    ".md",
+    ".txt",
+    ".toml"
+  ],
+  "keywords": [
+    "reactive",
+    "functional",
+    "serverless",
+    "flux",
+    "mono",
+    "result",
+    "either",
+    "maybe",
+    "spring reactor",
+    "railway oriented programming",
+    "cloud run",
+    "google cloud",
+    "state machine",
+    "event sourcing",
+    "cqrs",
+    "saga pattern"
+  ],
+  "rules": [
+    "Install using: pip install rfs-v4",
+    "Import from rfs module: from rfs import Result, Success, Failure, Flux, Mono",
+    "Use Result pattern for safe error handling instead of exceptions",
+    "Use Flux for 0-N async stream processing, Mono for 0-1 async values",
+    "Follow Railway Oriented Programming principles with bind() and map()",
+    "Use StatelessRegistry for dependency injection (Spring Bean style)",
+    "Leverage CloudRunOptimizer for serverless optimizations",
+    "Apply @stateless decorator for singleton services",
+    "Use EventBus for event-driven architecture patterns",
+    "Implement Saga pattern for distributed transactions"
+  ],
+  "codeExamples": {
+    "basicUsage": "from rfs import Result, Success, Failure\n\ndef divide(a: int, b: int) -> Result[float, str]:\n    if b == 0:\n        return Failure('Division by zero')\n    return Success(a / b)\n\nresult = divide(10, 2)\nif result.is_success:\n    print(f'Result: {result.unwrap()}')",
+    "reactiveStreams": "from rfs import Flux, Mono\nimport asyncio\n\nasync def process_stream():\n    result = await (\n        Flux.from_iterable([1, 2, 3, 4, 5])\n        .map(lambda x: x * 2)\n        .filter(lambda x: x > 5)\n        .collect_list()\n    )\n    return result\n\nasyncio.run(process_stream())",
+    "stateManagement": "from rfs import StateMachine, State, Transition\n\nmachine = StateMachine(\n    initial_state='pending',\n    states=['pending', 'processing', 'completed']\n)\n\nmachine.transition_to('processing')\nprint(f'Current state: {machine.current_state}')"
+  },
+  "documentation": {
+    "gettingStarted": "https://github.com/interactord/rfs-framework#quick-start",
+    "apiReference": "https://github.com/interactord/rfs-framework/blob/main/API_REFERENCE.md",
+    "examples": "https://github.com/interactord/rfs-framework/tree/main/examples",
+    "changelog": "https://github.com/interactord/rfs-framework/blob/main/CHANGELOG.md"
+  },
+  "features": [
+    {
+      "name": "Result Pattern",
+      "description": "Railway Oriented Programming for safe error handling without exceptions"
+    },
+    {
+      "name": "Reactive Streams",
+      "description": "Spring Reactor-inspired Flux/Mono for async stream processing"
+    },
+    {
+      "name": "State Machine",
+      "description": "Functional and class-based state machines with transitions"
+    },
+    {
+      "name": "Event Sourcing",
+      "description": "Event-driven architecture with EventBus, CQRS, and Saga patterns"
+    },
+    {
+      "name": "Serverless Optimization",
+      "description": "Google Cloud Run and Cloud Tasks optimization with cold start detection"
+    },
+    {
+      "name": "Dependency Injection",
+      "description": "Spring Bean-style singleton registry for stateless services"
+    }
+  ],
+  "dependencies": {
+    "required": [
+      "pydantic>=2.5.0",
+      "typing-extensions>=4.8.0",
+      "python-dotenv>=1.0.0",
+      "rich>=13.7.0"
+    ],
+    "optional": {
+      "cloud": [
+        "google-cloud-run>=0.10.0",
+        "google-cloud-tasks>=2.15.0",
+        "google-cloud-monitoring>=2.16.0"
+      ],
+      "web": [
+        "fastapi>=0.104.0",
+        "uvicorn[standard]>=0.24.0"
+      ],
+      "database": [
+        "sqlalchemy>=2.0.23",
+        "asyncpg>=0.29.0",
+        "redis>=5.0.1"
+      ]
+    }
+  },
+  "compatibility": {
+    "python": ">=3.10",
+    "platforms": ["Linux", "macOS", "Windows"],
+    "frameworks": ["FastAPI", "Flask", "Django", "Google Cloud Functions", "AWS Lambda"]
+  },
+  "tags": [
+    "framework",
+    "reactive-programming",
+    "functional-programming",
+    "serverless",
+    "cloud-native",
+    "async",
+    "microservices",
+    "enterprise",
+    "result-pattern",
+    "monad",
+    "spring-reactor",
+    "railway-oriented-programming"
+  ],
+  "maintainers": [
+    {
+      "name": "RFS Framework Team",
+      "email": "team@rfs-framework.dev"
+    }
+  ],
+  "lastUpdated": "2024-01-23",
+  "context7": {
+    "priority": "high",
+    "updateFrequency": "weekly",
+    "includeExamples": true,
+    "includeTests": false,
+    "parseDocstrings": true,
+    "generateTypeHints": true
+  }
+}

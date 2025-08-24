@@ -1,0 +1,517 @@
+================================================================================
+🎯 RFS Framework Code Quality Report
+================================================================================
+📅 Generated: 2025-08-24 15:45:38
+📁 Project: rfs-framework
+🎯 Analysis Target: src/rfs
+
+📊 Overview
+----------------------------------------
+Overall Quality Score: 0.0%
+Total Python Files: 184
+Total Lines of Code: 60981
+Average Lines per File: 331
+
+🔍 Functional Programming Analysis
+----------------------------------------
+Files Checked: 184
+Total Violations: 855
+Violation Summary: rfs-framework/src/rfs/database/query.py: 1, rfs-framework/src/rfs/database/session.py: 1, rfs-framework/src/rfs/database/repository.py: 2, rfs-framework/src/rfs/database/migration.py: 1, rfs-framework/src/rfs/database/base.py: 1, rfs-framework/src/rfs/core/config_validation.py: 7, rfs-framework/src/rfs/core/enhanced_logging.py: 3, rfs-framework/src/rfs/core/transaction_decorators.py: 4, rfs-framework/src/rfs/core/logging_decorators.py: 1, rfs-framework/src/rfs/core/registry.py: 13, rfs-framework/src/rfs/core/transactions.py: 5, rfs-framework/src/rfs/core/singleton.py: 8, rfs-framework/src/rfs/core/helpers.py: 1, rfs-framework/src/rfs/core/annotation_registry.py: 10, rfs-framework/src/rfs/core/annotation_processor.py: 14, rfs-framework/src/rfs/cache/metrics.py: 16, rfs-framework/src/rfs/cache/distributed.py: 16, rfs-framework/src/rfs/cache/redis_cache.py: 21, rfs-framework/src/rfs/cache/base.py: 5, rfs-framework/src/rfs/security/scanner.py: 1, rfs-framework/src/rfs/security/audit.py: 2, rfs-framework/src/rfs/security/validation_decorators.py: 1, rfs-framework/src/rfs/security/hardening.py: 48, rfs-framework/src/rfs/serverless/functions.py: 4, rfs-framework/src/rfs/serverless/cloud_run.py: 6, rfs-framework/src/rfs/serverless/cloud_tasks.py: 4, rfs-framework/src/rfs/web/server.py: 3, rfs-framework/src/rfs/web/handlers.py: 2, rfs-framework/src/rfs/web/routing.py: 2, rfs-framework/src/rfs/web/middleware.py: 10, rfs-framework/src/rfs/state_machine/persistence.py: 3, rfs-framework/src/rfs/state_machine/actions.py: 8, rfs-framework/src/rfs/state_machine/machine.py: 3, rfs-framework/src/rfs/state_machine/transitions.py: 3, rfs-framework/src/rfs/state_machine/states.py: 3, rfs-framework/src/rfs/integration/web_integration.py: 11, rfs-framework/src/rfs/integration/api_gateway.py: 19, rfs-framework/src/rfs/optimization/cold_start_optimizer.py: 9, rfs-framework/src/rfs/optimization/optimizer.py: 3, rfs-framework/src/rfs/workflow/engine.py: 2, rfs-framework/src/rfs/workflow/definition.py: 1, rfs-framework/src/rfs/production/deployment.py: 7, rfs-framework/src/rfs/production/rollback.py: 2, rfs-framework/src/rfs/production/readiness.py: 1, rfs-framework/src/rfs/async_tasks/queue.py: 5, rfs-framework/src/rfs/async_tasks/task_scheduler.py: 11, rfs-framework/src/rfs/async_tasks/monitoring.py: 15, rfs-framework/src/rfs/async_tasks/task_manager.py: 12, rfs-framework/src/rfs/async_tasks/scheduler.py: 2, rfs-framework/src/rfs/async_tasks/manager.py: 3, rfs-framework/src/rfs/async_tasks/base.py: 4, rfs-framework/src/rfs/async_tasks/executor.py: 13, rfs-framework/src/rfs/async_tasks/task_result.py: 9, rfs-framework/src/rfs/async_tasks/decorators.py: 1, rfs-framework/src/rfs/monitoring/metrics.py: 19, rfs-framework/src/rfs/monitoring/performance_decorators.py: 8, rfs-framework/src/rfs/events/event_handler.py: 8, rfs-framework/src/rfs/events/saga.py: 11, rfs-framework/src/rfs/events/cqrs.py: 9, rfs-framework/src/rfs/events/event_bus.py: 8, rfs-framework/src/rfs/events/event_store.py: 4, rfs-framework/src/rfs/service_discovery/discovery.py: 10, rfs-framework/src/rfs/service_discovery/registry.py: 2, rfs-framework/src/rfs/service_discovery/health.py: 7, rfs-framework/src/rfs/service_discovery/client.py: 6, rfs-framework/src/rfs/service_discovery/load_balancer.py: 18, rfs-framework/src/rfs/service_discovery/circuit_breaker.py: 9, rfs-framework/src/rfs/service_discovery/base.py: 3, rfs-framework/src/rfs/messaging/redis_broker.py: 15, rfs-framework/src/rfs/messaging/patterns.py: 10, rfs-framework/src/rfs/messaging/subscriber.py: 18, rfs-framework/src/rfs/messaging/publisher.py: 14, rfs-framework/src/rfs/messaging/base.py: 4, rfs-framework/src/rfs/messaging/memory_broker.py: 24, rfs-framework/src/rfs/messaging/decorators.py: 1, rfs-framework/src/rfs/logging/logger.py: 2, rfs-framework/src/rfs/cloud_run/task_queue.py: 5, rfs-framework/src/rfs/cloud_run/monitoring.py: 11, rfs-framework/src/rfs/cloud_run/__init__.py: 13, rfs-framework/src/rfs/cloud_run/helpers.py: 1, rfs-framework/src/rfs/cloud_run/autoscaling.py: 1, rfs-framework/src/rfs/cloud_run/service_discovery.py: 7, rfs-framework/src/rfs/analytics/data_source.py: 1, rfs-framework/src/rfs/analytics/charts.py: 2, rfs-framework/src/rfs/analytics/visualization.py: 1, rfs-framework/src/rfs/analytics/dashboard.py: 6, rfs-framework/src/rfs/analytics/kpi.py: 7, rfs-framework/src/rfs/core/annotations/registry.py: 4, rfs-framework/src/rfs/core/annotations/di.py: 1, rfs-framework/src/rfs/core/annotations/processor.py: 12, rfs-framework/src/rfs/core/transactions/distributed.py: 6, rfs-framework/src/rfs/core/transactions/manager.py: 6, rfs-framework/src/rfs/core/transactions/base.py: 4, rfs-framework/src/rfs/optimization/optimizers/database_optimizer.py: 18, rfs-framework/src/rfs/optimization/optimizers/cpu_optimizer.py: 19, rfs-framework/src/rfs/optimization/optimizers/io_optimizer.py: 13, rfs-framework/src/rfs/optimization/optimizers/network_optimizer.py: 29, rfs-framework/src/rfs/optimization/optimizers/cloud_run_optimizer.py: 1, rfs-framework/src/rfs/optimization/optimizers/memory_optimizer.py: 9, rfs-framework/src/rfs/optimization/profiling/memory_profiler.py: 1, rfs-framework/src/rfs/optimization/profiling/io_profiler.py: 4, rfs-framework/src/rfs/optimization/profiling/__init__.py: 6, rfs-framework/src/rfs/optimization/profiling/cpu_profiler.py: 2, rfs-framework/src/rfs/cli/workflows/ci_cd.py: 2, rfs-framework/src/rfs/cli/workflows/automation.py: 4, rfs-framework/src/rfs/cli/docs/generator.py: 19, rfs-framework/src/rfs/cli/testing/test_runner.py: 2, rfs-framework/src/rfs/cli/commands/deployment.py: 5, rfs-framework/src/rfs/production/recovery/backup_manager.py: 5, rfs-framework/src/rfs/production/recovery/disaster_recovery_manager.py: 20, rfs-framework/src/rfs/production/recovery/compliance_validator.py: 1, rfs-framework/src/rfs/production/monitoring/alert_manager.py: 13, rfs-framework/src/rfs/production/monitoring/production_monitor.py: 9, rfs-framework/src/rfs/production/monitoring/health_checker.py: 12
+
+Violation Details:
+  • rfs-framework/src/rfs/database/query.py: 1 issues
+    - :99
+  • rfs-framework/src/rfs/database/session.py: 1 issues
+    - :365
+  • rfs-framework/src/rfs/database/repository.py: 2 issues
+    - :218
+    - :219
+  • rfs-framework/src/rfs/database/migration.py: 1 issues
+    - :352
+  • rfs-framework/src/rfs/database/base.py: 1 issues
+    - :354
+  • rfs-framework/src/rfs/core/config_validation.py: 7 issues
+    - :82
+    - :88
+    - :93
+    ... and 4 more
+  • rfs-framework/src/rfs/core/enhanced_logging.py: 3 issues
+    - :182
+    - :255
+    - :311
+  • rfs-framework/src/rfs/core/transaction_decorators.py: 4 issues
+    - :357
+    - :381
+    - :385
+    ... and 1 more
+  • rfs-framework/src/rfs/core/logging_decorators.py: 1 issues
+    - :372
+  • rfs-framework/src/rfs/core/registry.py: 13 issues
+    - :113
+    - :125
+    - :145
+    ... and 10 more
+  • rfs-framework/src/rfs/core/transactions.py: 5 issues
+    - :168
+    - :334
+    - :456
+    ... and 2 more
+  • rfs-framework/src/rfs/core/singleton.py: 8 issues
+    - :22
+    - :51
+    - :52
+    ... and 5 more
+  • rfs-framework/src/rfs/core/helpers.py: 1 issues
+    - :35
+  • rfs-framework/src/rfs/core/annotation_registry.py: 10 issues
+    - :202
+    - :203
+    - :204
+    ... and 7 more
+  • rfs-framework/src/rfs/core/annotation_processor.py: 14 issues
+    - :102
+    - :137
+    - :229
+    ... and 11 more
+  • rfs-framework/src/rfs/cache/metrics.py: 16 issues
+    - :133
+    - :134
+    - :152
+    ... and 13 more
+  • rfs-framework/src/rfs/cache/distributed.py: 16 issues
+    - :154
+    - :212
+    - :219
+    ... and 13 more
+  • rfs-framework/src/rfs/cache/redis_cache.py: 21 issues
+    - :94
+    - :102
+    - :105
+    ... and 18 more
+  • rfs-framework/src/rfs/cache/base.py: 5 issues
+    - :128
+    - :140
+    - :152
+    ... and 2 more
+  • rfs-framework/src/rfs/security/scanner.py: 1 issues
+    - :117
+  • rfs-framework/src/rfs/security/audit.py: 2 issues
+    - :188
+    - :244
+  • rfs-framework/src/rfs/security/validation_decorators.py: 1 issues
+    - :425
+  • rfs-framework/src/rfs/security/hardening.py: 48 issues
+    - :236
+    - :240
+    - :242
+    ... and 45 more
+  • rfs-framework/src/rfs/serverless/functions.py: 4 issues
+    - :93
+    - :108
+    - :232
+    ... and 1 more
+  • rfs-framework/src/rfs/serverless/cloud_run.py: 6 issues
+    - :121
+    - :125
+    - :129
+    ... and 3 more
+  • rfs-framework/src/rfs/serverless/cloud_tasks.py: 4 issues
+    - :188
+    - :174
+    - :234
+    ... and 1 more
+  • rfs-framework/src/rfs/web/server.py: 3 issues
+    - :161
+    - :329
+    - :363
+  • rfs-framework/src/rfs/web/handlers.py: 2 issues
+    - :109
+    - :189
+  • rfs-framework/src/rfs/web/routing.py: 2 issues
+    - :125
+    - :126
+  • rfs-framework/src/rfs/web/middleware.py: 10 issues
+    - :98
+    - :148
+    - :149
+    ... and 7 more
+  • rfs-framework/src/rfs/state_machine/persistence.py: 3 issues
+    - :285
+    - :287
+    - :95
+  • rfs-framework/src/rfs/state_machine/actions.py: 8 issues
+    - :78
+    - :80
+    - :97
+    ... and 5 more
+  • rfs-framework/src/rfs/state_machine/machine.py: 3 issues
+    - :147
+    - :153
+    - :121
+  • rfs-framework/src/rfs/state_machine/transitions.py: 3 issues
+    - :107
+    - :109
+    - :122
+  • rfs-framework/src/rfs/state_machine/states.py: 3 issues
+    - :74
+    - :86
+    - :88
+  • rfs-framework/src/rfs/integration/web_integration.py: 11 issues
+    - :176
+    - :232
+    - :289
+    ... and 8 more
+  • rfs-framework/src/rfs/integration/api_gateway.py: 19 issues
+    - :183
+    - :216
+    - :225
+    ... and 16 more
+  • rfs-framework/src/rfs/optimization/cold_start_optimizer.py: 9 issues
+    - :233
+    - :234
+    - :237
+    ... and 6 more
+  • rfs-framework/src/rfs/optimization/optimizer.py: 3 issues
+    - :126
+    - :187
+    - :319
+  • rfs-framework/src/rfs/workflow/engine.py: 2 issues
+    - :236
+    - :287
+  • rfs-framework/src/rfs/workflow/definition.py: 1 issues
+    - :258
+  • rfs-framework/src/rfs/production/deployment.py: 7 issues
+    - :239
+    - :266
+    - :267
+    ... and 4 more
+  • rfs-framework/src/rfs/production/rollback.py: 2 issues
+    - :108
+    - :129
+  • rfs-framework/src/rfs/production/readiness.py: 1 issues
+    - :106
+  • rfs-framework/src/rfs/async_tasks/queue.py: 5 issues
+    - :101
+    - :120
+    - :186
+    ... and 2 more
+  • rfs-framework/src/rfs/async_tasks/task_scheduler.py: 11 issues
+    - :114
+    - :183
+    - :185
+    ... and 8 more
+  • rfs-framework/src/rfs/async_tasks/monitoring.py: 15 issues
+    - :64
+    - :66
+    - :68
+    ... and 12 more
+  • rfs-framework/src/rfs/async_tasks/task_manager.py: 12 issues
+    - :256
+    - :290
+    - :309
+    ... and 9 more
+  • rfs-framework/src/rfs/async_tasks/scheduler.py: 2 issues
+    - :244
+    - :266
+  • rfs-framework/src/rfs/async_tasks/manager.py: 3 issues
+    - :294
+    - :204
+    - :363
+  • rfs-framework/src/rfs/async_tasks/base.py: 4 issues
+    - :332
+    - :336
+    - :339
+    ... and 1 more
+  • rfs-framework/src/rfs/async_tasks/executor.py: 13 issues
+    - :85
+    - :101
+    - :107
+    ... and 10 more
+  • rfs-framework/src/rfs/async_tasks/task_result.py: 9 issues
+    - :105
+    - :106
+    - :221
+    ... and 6 more
+  • rfs-framework/src/rfs/async_tasks/decorators.py: 1 issues
+    - :305
+  • rfs-framework/src/rfs/monitoring/metrics.py: 19 issues
+    - :55
+    - :91
+    - :97
+    ... and 16 more
+  • rfs-framework/src/rfs/monitoring/performance_decorators.py: 8 issues
+    - :92
+    - :93
+    - :95
+    ... and 5 more
+  • rfs-framework/src/rfs/events/event_handler.py: 8 issues
+    - :259
+    - :260
+    - :349
+    ... and 5 more
+  • rfs-framework/src/rfs/events/saga.py: 11 issues
+    - :102
+    - :109
+    - :116
+    ... and 8 more
+  • rfs-framework/src/rfs/events/cqrs.py: 9 issues
+    - :113
+    - :142
+    - :144
+    ... and 6 more
+  • rfs-framework/src/rfs/events/event_bus.py: 8 issues
+    - :126
+    - :163
+    - :165
+    ... and 5 more
+  • rfs-framework/src/rfs/events/event_store.py: 4 issues
+    - :68
+    - :149
+    - :150
+    ... and 1 more
+  • rfs-framework/src/rfs/service_discovery/discovery.py: 10 issues
+    - :69
+    - :70
+    - :154
+    ... and 7 more
+  • rfs-framework/src/rfs/service_discovery/registry.py: 2 issues
+    - :346
+    - :425
+  • rfs-framework/src/rfs/service_discovery/health.py: 7 issues
+    - :73
+    - :82
+    - :91
+    ... and 4 more
+  • rfs-framework/src/rfs/service_discovery/client.py: 6 issues
+    - :83
+    - :90
+    - :149
+    ... and 3 more
+  • rfs-framework/src/rfs/service_discovery/load_balancer.py: 18 issues
+    - :156
+    - :225
+    - :230
+    ... and 15 more
+  • rfs-framework/src/rfs/service_discovery/circuit_breaker.py: 9 issues
+    - :136
+    - :145
+    - :146
+    ... and 6 more
+  • rfs-framework/src/rfs/service_discovery/base.py: 3 issues
+    - :110
+    - :114
+    - :115
+  • rfs-framework/src/rfs/messaging/redis_broker.py: 15 issues
+    - :158
+    - :164
+    - :189
+    ... and 12 more
+  • rfs-framework/src/rfs/messaging/patterns.py: 10 issues
+    - :118
+    - :292
+    - :121
+    ... and 7 more
+  • rfs-framework/src/rfs/messaging/subscriber.py: 18 issues
+    - :150
+    - :156
+    - :232
+    ... and 15 more
+  • rfs-framework/src/rfs/messaging/publisher.py: 14 issues
+    - :39
+    - :40
+    - :45
+    ... and 11 more
+  • rfs-framework/src/rfs/messaging/base.py: 4 issues
+    - :80
+    - :262
+    - :267
+    ... and 1 more
+  • rfs-framework/src/rfs/messaging/memory_broker.py: 24 issues
+    - :91
+    - :92
+    - :107
+    ... and 21 more
+  • rfs-framework/src/rfs/messaging/decorators.py: 1 issues
+    - :214
+  • rfs-framework/src/rfs/logging/logger.py: 2 issues
+    - :121
+    - :52
+  • rfs-framework/src/rfs/cloud_run/task_queue.py: 5 issues
+    - :200
+    - :224
+    - :229
+    ... and 2 more
+  • rfs-framework/src/rfs/cloud_run/monitoring.py: 11 issues
+    - :232
+    - :234
+    - :235
+    ... and 8 more
+  • rfs-framework/src/rfs/cloud_run/__init__.py: 13 issues
+    - :95
+    - :97
+    - :99
+    ... and 10 more
+  • rfs-framework/src/rfs/cloud_run/helpers.py: 1 issues
+    - :169
+  • rfs-framework/src/rfs/cloud_run/autoscaling.py: 1 issues
+    - :455
+  • rfs-framework/src/rfs/cloud_run/service_discovery.py: 7 issues
+    - :166
+    - :172
+    - :331
+    ... and 4 more
+  • rfs-framework/src/rfs/analytics/data_source.py: 1 issues
+    - :537
+  • rfs-framework/src/rfs/analytics/charts.py: 2 issues
+    - :74
+    - :147
+  • rfs-framework/src/rfs/analytics/visualization.py: 1 issues
+    - :417
+  • rfs-framework/src/rfs/analytics/dashboard.py: 6 issues
+    - :115
+    - :142
+    - :143
+    ... and 3 more
+  • rfs-framework/src/rfs/analytics/kpi.py: 7 issues
+    - :366
+    - :385
+    - :389
+    ... and 4 more
+  • rfs-framework/src/rfs/core/annotations/registry.py: 4 issues
+    - :278
+    - :287
+    - :288
+    ... and 1 more
+  • rfs-framework/src/rfs/core/annotations/di.py: 1 issues
+    - :490
+  • rfs-framework/src/rfs/core/annotations/processor.py: 12 issues
+    - :62
+    - :66
+    - :67
+    ... and 9 more
+  • rfs-framework/src/rfs/core/transactions/distributed.py: 6 issues
+    - :75
+    - :76
+    - :327
+    ... and 3 more
+  • rfs-framework/src/rfs/core/transactions/manager.py: 6 issues
+    - :313
+    - :342
+    - :147
+    ... and 3 more
+  • rfs-framework/src/rfs/core/transactions/base.py: 4 issues
+    - :325
+    - :326
+    - :327
+    ... and 1 more
+  • rfs-framework/src/rfs/optimization/optimizers/database_optimizer.py: 18 issues
+    - :217
+    - :222
+    - :227
+    ... and 15 more
+  • rfs-framework/src/rfs/optimization/optimizers/cpu_optimizer.py: 19 issues
+    - :109
+    - :111
+    - :148
+    ... and 16 more
+  • rfs-framework/src/rfs/optimization/optimizers/io_optimizer.py: 13 issues
+    - :116
+    - :119
+    - :135
+    ... and 10 more
+  • rfs-framework/src/rfs/optimization/optimizers/network_optimizer.py: 29 issues
+    - :108
+    - :169
+    - :243
+    ... and 26 more
+  • rfs-framework/src/rfs/optimization/optimizers/cloud_run_optimizer.py: 1 issues
+    - :442
+  • rfs-framework/src/rfs/optimization/optimizers/memory_optimizer.py: 9 issues
+    - :91
+    - :92
+    - :96
+    ... and 6 more
+  • rfs-framework/src/rfs/optimization/profiling/memory_profiler.py: 1 issues
+    - :296
+  • rfs-framework/src/rfs/optimization/profiling/io_profiler.py: 4 issues
+    - :373
+    - :380
+    - :283
+    ... and 1 more
+  • rfs-framework/src/rfs/optimization/profiling/__init__.py: 6 issues
+    - :30
+    - :38
+    - :46
+    ... and 3 more
+  • rfs-framework/src/rfs/optimization/profiling/cpu_profiler.py: 2 issues
+    - :354
+    - :236
+  • rfs-framework/src/rfs/cli/workflows/ci_cd.py: 2 issues
+    - :167
+    - :168
+  • rfs-framework/src/rfs/cli/workflows/automation.py: 4 issues
+    - :183
+    - :259
+    - :185
+    ... and 1 more
+  • rfs-framework/src/rfs/cli/docs/generator.py: 19 issues
+    - :108
+    - :110
+    - :123
+    ... and 16 more
+  • rfs-framework/src/rfs/cli/testing/test_runner.py: 2 issues
+    - :179
+    - :183
+  • rfs-framework/src/rfs/cli/commands/deployment.py: 5 issues
+    - :99
+    - :100
+    - :101
+    ... and 2 more
+  • rfs-framework/src/rfs/production/recovery/backup_manager.py: 5 issues
+    - :418
+    - :440
+    - :462
+    ... and 2 more
+  • rfs-framework/src/rfs/production/recovery/disaster_recovery_manager.py: 20 issues
+    - :263
+    - :266
+    - :275
+    ... and 17 more
+  • rfs-framework/src/rfs/production/recovery/compliance_validator.py: 1 issues
+    - :171
+  • rfs-framework/src/rfs/production/monitoring/alert_manager.py: 13 issues
+    - :259
+    - :261
+    - :262
+    ... and 10 more
+  • rfs-framework/src/rfs/production/monitoring/production_monitor.py: 9 issues
+    - :383
+    - :425
+    - :429
+    ... and 6 more
+  • rfs-framework/src/rfs/production/monitoring/health_checker.py: 12 issues
+    - :497
+    - :527
+    - :529
+    ... and 9 more
+
+🚀 RFS Framework Adoption
+----------------------------------------
+Files Analyzed: 145
+Analysis Summary: Analyzed 145 files
+
+🛠️ Basic Linting Results
+----------------------------------------
+Tools Pass Rate: 0.0% (0/2)
+  ❌ pyflakes
+  ❌ black
+
+💡 Recommendations
+----------------------------------------
+🔴 Needs attention - multiple quality issues found.
+
+🚀 Next Steps:
+1. Address functional programming violations
+2. Improve RFS Framework pattern adoption
+3. Fix linting issues with: rfs-cli dev lint
+4. Regular quality monitoring

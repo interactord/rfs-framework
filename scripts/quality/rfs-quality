@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+"""
+RFS Quality Management CLI
+통합 품질 관리 시스템 CLI 인터페이스
+"""
+
+import argparse
+import sys
+from pathlib import Path
+import json
+from datetime import datetime
+
+# 모듈 경로 추가
+sys.path.insert(0, str(Path(__file__).parent / "unified"))
+
+from backup_manager import BackupManager
+from safe_transformer import SafeTransformer
+from quality_engine import QualityEngine
+
+
+def cmd_check(args):
+    """품질 검사 명령"""
+    engine = QualityEngine()
+    
+    # 대상 디렉토리
+    target = Path(args.target) if args.target else Path("src/rfs")
+    
+    # 자동 백업
+    if args.auto_backup:
+        print("📦 자동 백업 활성화")
+        engine.backup_manager.create_session("품질 검사 백업")
+    
+    # 검사 실행
+    results = engine.check_all(target)
+    
+    # 결과 출력
+    if args.format == "json":
+        print(json.dumps(results, indent=2, ensure_ascii=False))
+    
+    return 0 if results["summary"]["failed"] == 0 else 1
+
+
+def cmd_fix(args):
+    """코드 자동 수정 명령"""
+    engine = QualityEngine()
+    
+    # 대상 디렉토리
+    target = Path(args.target) if args.target else Path("src/rfs")
+    
+    # Dry run 모드
+    if args.dry_run:
+        print("🔍 Dry run 모드 - 실제 변경하지 않음")
+        engine.transformer.dry_run = True
+    
+    # Safe 모드
+    if args.safe:
+        print("🛡️ Safe 모드 - 자동 백업 및 검증")
+        engine.transformer.rollback_on_error = True
+    
+    # 변환 유형
+    transformation_type = args.type or "all"
+    
+    if transformation_type == "all":
+        # 모든 변환 순차 실행
+        transformations = ["syntax_fix", "isort", "black", "functional", "match_case"]
+        for trans in transformations:
+            print(f"\n🔧 {trans} 적용 중...")
+            success = engine.transform_all(trans, target)
+            if not success and args.safe:
+                print("❌ 변환 실패 - 중단")
+                return 1
+    else:
+        # 특정 변환만 실행
+        success = engine.transform_all(transformation_type, target)
+        if not success:
+            return 1
+    
+    return 0
+
+
+def cmd_backup(args):
+    """백업 관리 명령"""
+    manager = BackupManager()
+    
+    if args.action == "create":
+        # 백업 생성
+        description = args.description or "수동 백업"
+        session = manager.create_session(description)
+        print(f"✅ 백업 세션 생성: {session.name}")
+        
+    elif args.action == "list":
+        # 백업 목록
+        sessions = manager.list_sessions()
+        print(f"\n📋 백업 세션 목록 ({len(sessions)}개):")
+        for session in sessions:
+            status_icon = "🟢" if session["status"] == "active" else "⚪"
+            print(f"{status_icon} {session['name']} - {session['description']} ({session['files_count']}개 파일)")
+            
+    elif args.action == "rollback":
+        # 롤백
+        if args.session:
+            # 특정 세션으로 롤백
+            session_path = manager.sessions_dir / args.session
+            if session_path.exists():
+                manager.current_session = session_path
+                rolled_back = manager.rollback_session()
+                print(f"✅ {rolled_back}개 파일 롤백 완료")
+            else:
+                print(f"❌ 세션을 찾을 수 없음: {args.session}")
+                return 1
+        else:
+            # 현재 세션 롤백
+            if manager.current_session:
+                rolled_back = manager.rollback_session()
+                print(f"✅ {rolled_back}개 파일 롤백 완료")
+            else:
+                print("❌ 활성 세션이 없습니다")
+                return 1
+                
+    elif args.action == "clear":
+        # 백업 정리
+        if args.all:
+            manager.clear_all_backups(confirm=True)
+        elif args.old:
+            removed = manager.clear_old_backups()
+            print(f"✅ {removed}개 오래된 백업 삭제")
+        else:
+            print("--all 또는 --old 옵션을 지정하세요")
+            return 1
+            
+    elif args.action == "status":
+        # 현재 세션 상태
+        info = manager.get_session_info()
+        if info:
+            print(f"\n📊 현재 세션 정보:")
+            print(f"  경로: {info['path']}")
+            print(f"  시간: {info['timestamp']}")
+            print(f"  상태: {info['status']}")
+            print(f"  파일: {info['files']}개")
+            print(f"  크기: {info['size_mb']:.2f} MB")
+        else:
+            print("활성 세션이 없습니다")
+    
+    return 0
+
+
+def cmd_session(args):
+    """세션 관리 명령"""
+    manager = BackupManager()
+    
+    if args.action == "info":
+        # 세션 정보
+        info = manager.get_session_info()
+        if info:
+            print(json.dumps(info, indent=2, ensure_ascii=False))
+        else:
+            print("활성 세션이 없습니다")
+            
+    elif args.action == "metrics":
+        # 세션 메트릭
+        if manager.current_session:
+            manifest = manager.load_manifest(manager.current_session)
+            metrics = manifest.get("metrics", {})
+            print(json.dumps(metrics, indent=2, ensure_ascii=False))
+        else:
+            print("활성 세션이 없습니다")
+            
+    elif args.action == "export":
+        # 세션 내보내기
+        if manager.current_session:
+            export_path = Path(f"quality_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar.gz")
+            archive_path = manager.archive_session(manager.current_session)
+            shutil.move(archive_path, export_path)
+            print(f"✅ 세션 내보내기 완료: {export_path}")
+        else:
+            print("활성 세션이 없습니다")
+            return 1
+    
+    return 0
+
+
+def main():
+    """메인 함수"""
+    parser = argparse.ArgumentParser(
+        description="RFS Framework 통합 품질 관리 시스템",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    subparsers = parser.add_subparsers(dest="command", help="명령어")
+    
+    # check 명령
+    check_parser = subparsers.add_parser("check", help="품질 검사")
+    check_parser.add_argument("target", nargs="?", help="대상 디렉토리")
+    check_parser.add_argument("--auto-backup", action="store_true", help="자동 백업")
+    check_parser.add_argument("--format", choices=["text", "json"], default="text", help="출력 형식")
+    
+    # fix 명령
+    fix_parser = subparsers.add_parser("fix", help="자동 수정")
+    fix_parser.add_argument("target", nargs="?", help="대상 디렉토리")
+    fix_parser.add_argument("--type", choices=["black", "isort", "functional", "match_case", "syntax_fix", "all"], help="변환 유형")
+    fix_parser.add_argument("--safe", action="store_true", help="안전 모드")
+    fix_parser.add_argument("--dry-run", action="store_true", help="시뮬레이션 모드")
+    
+    # backup 명령
+    backup_parser = subparsers.add_parser("backup", help="백업 관리")
+    backup_parser.add_argument("action", choices=["create", "list", "rollback", "clear", "status"], help="액션")
+    backup_parser.add_argument("--session", help="세션 이름")
+    backup_parser.add_argument("--description", help="백업 설명")
+    backup_parser.add_argument("--all", action="store_true", help="모든 백업")
+    backup_parser.add_argument("--old", action="store_true", help="오래된 백업")
+    
+    # session 명령
+    session_parser = subparsers.add_parser("session", help="세션 관리")
+    session_parser.add_argument("action", choices=["info", "metrics", "export"], help="액션")
+    
+    # 인자 파싱
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    # 명령 실행
+    if args.command == "check":
+        return cmd_check(args)
+    elif args.command == "fix":
+        return cmd_fix(args)
+    elif args.command == "backup":
+        return cmd_backup(args)
+    elif args.command == "session":
+        return cmd_session(args)
+    else:
+        parser.print_help()
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

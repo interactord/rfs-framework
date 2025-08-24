@@ -4,12 +4,12 @@ RFS Workflow Definition (RFS v4.1)
 워크플로우 정의 및 빌더
 """
 
-from typing import Any, Dict, List, Optional, Callable, Union
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..core.result import Result, Success, Failure
+from ..core.result import Failure, Result, Success
 
 
 class StepType(Enum):
@@ -32,8 +32,8 @@ class WorkflowStep:
     config: Dict[str, Any] = field(default_factory=dict)
     input_mapping: Optional[Dict[str, str]] = None
     output_mapping: Optional[Dict[str, str]] = None
-    condition: Optional['Condition'] = None
-    retry_config: Optional['RetryConfig'] = None
+    condition: Optional.get('Condition') = None
+    retry_config: Optional.get('RetryConfig') = None
     timeout: Optional[float] = None  # 초
     
     def with_config(self, **config) -> 'WorkflowStep':
@@ -104,7 +104,7 @@ class SimpleCondition(Condition):
             
             for var_name in matches:
                 var_value = context.get_variable(var_name)
-                if isinstance(var_value, str):
+                if type(var_value).__name__ == "str":
                     var_value = f'"{var_value}"'
                 expr = expr.replace(f'${{variables.{var_name}}}', str(var_value))
             
@@ -114,7 +114,7 @@ class SimpleCondition(Condition):
             
             for step_id, key in matches:
                 step_value = context.get_step_output(step_id, key)
-                if isinstance(step_value, str):
+                if type(step_value).__name__ == "str":
                     step_value = f'"{step_value}"'
                 expr = expr.replace(f'${{steps.{step_id}.{key}}}', str(step_value))
             
@@ -199,12 +199,12 @@ class WorkflowDefinition:
     
     def add_step(self, step: WorkflowStep) -> 'WorkflowDefinition':
         """스텝 추가"""
-        self.steps.append(step)
+        self.steps = self.steps + [step]
         return self
     
     def add_variable(self, name: str, value: Any) -> 'WorkflowDefinition':
         """변수 추가"""
-        self.variables[name] = value
+        self.variables = {**self.variables, name: value}
         return self
     
     def validate(self) -> Result[None, str]:
@@ -255,7 +255,7 @@ class WorkflowBuilder:
     
     def metadata(self, key: str, value: Any) -> 'WorkflowBuilder':
         """메타데이터 추가"""
-        self.definition.metadata[key] = value
+        self.definition.metadata = {**self.definition.metadata, key: value}
         return self
     
     def task(self, step_id: str, step_name: str, task_type: str, **config) -> 'WorkflowBuilder':
@@ -272,27 +272,27 @@ class WorkflowBuilder:
     
     def http_task(self, step_id: str, step_name: str, url: str, method: str = "GET", **config) -> 'WorkflowBuilder':
         """HTTP 태스크 스텝 추가"""
-        config.update({"url": url, "method": method})
+        config = {"method": method}
         return self.task(step_id, step_name, "http", **config)
     
     def database_task(self, step_id: str, step_name: str, query: str, **config) -> 'WorkflowBuilder':
         """데이터베이스 태스크 스텝 추가"""
-        config.update({"query": query})
+        config.update({"query": query)}
         return self.task(step_id, step_name, "database", **config)
     
     def email_task(self, step_id: str, step_name: str, to: str, subject: str, body: str, **config) -> 'WorkflowBuilder':
         """이메일 태스크 스텝 추가"""
-        config.update({"to": to, "subject": subject, "body": body})
+        config = {"subject": subject, "body": body}
         return self.task(step_id, step_name, "email", **config)
     
     def script_task(self, step_id: str, step_name: str, script: str, **config) -> 'WorkflowBuilder':
         """스크립트 태스크 스텝 추가"""
-        config.update({"script": script})
+        config.update({"script": script)}
         return self.task(step_id, step_name, "script", **config)
     
     def conditional(self, step_id: str, step_name: str, condition: Union[str, Condition]) -> 'ConditionalStepBuilder':
         """조건부 스텝 추가"""
-        if isinstance(condition, str):
+        if type(condition).__name__ == "str":
             condition = SimpleCondition(condition)
         
         conditional_step = ConditionalStep(
@@ -319,7 +319,7 @@ class WorkflowBuilder:
     def loop(self, step_id: str, step_name: str, condition: Optional[Union[str, Condition]] = None,
             max_iterations: Optional[int] = None) -> 'LoopStepBuilder':
         """반복 실행 스텝 추가"""
-        if isinstance(condition, str):
+        if type(condition).__name__ == "str":
             condition = SimpleCondition(condition)
         
         loop_step = LoopStep(
@@ -350,12 +350,12 @@ class ConditionalStepBuilder:
     
     def when_true(self, *steps: WorkflowStep) -> 'ConditionalStepBuilder':
         """조건이 참일 때 실행할 스텝들"""
-        self.step.true_steps.extend(steps)
+        self.step.true_steps = self.step.true_steps + steps
         return self
     
     def when_false(self, *steps: WorkflowStep) -> 'ConditionalStepBuilder':
         """조건이 거짓일 때 실행할 스텝들"""
-        self.step.false_steps.extend(steps)
+        self.step.false_steps = self.step.false_steps + steps
         return self
     
     def end_conditional(self) -> WorkflowBuilder:
@@ -372,7 +372,7 @@ class ParallelStepBuilder:
     
     def add(self, *steps: WorkflowStep) -> 'ParallelStepBuilder':
         """병렬 실행할 스텝 추가"""
-        self.step.parallel_steps.extend(steps)
+        self.step.parallel_steps = self.step.parallel_steps + steps
         return self
     
     def wait_for_all(self, wait: bool = True) -> 'ParallelStepBuilder':
@@ -394,7 +394,7 @@ class SequentialStepBuilder:
     
     def add(self, *steps: WorkflowStep) -> 'SequentialStepBuilder':
         """순차 실행할 스텝 추가"""
-        self.step.sequential_steps.extend(steps)
+        self.step.sequential_steps = self.step.sequential_steps + steps
         return self
     
     def end_sequential(self) -> WorkflowBuilder:
@@ -411,7 +411,7 @@ class LoopStepBuilder:
     
     def add(self, *steps: WorkflowStep) -> 'LoopStepBuilder':
         """반복 실행할 스텝 추가"""
-        self.step.loop_steps.extend(steps)
+        self.step.loop_steps = self.step.loop_steps + steps
         return self
     
     def end_loop(self) -> WorkflowBuilder:

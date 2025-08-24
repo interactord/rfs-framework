@@ -5,13 +5,13 @@ RFS Memory Message Broker (RFS v4.1)
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional, Callable, Set
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Set
 
-from ..core.result import Result, Success, Failure
 from ..core.enhanced_logging import get_logger
-from .base import MessageBroker, MessageConfig, Message, MessagePriority
+from ..core.result import Failure, Result, Success
+from .base import Message, MessageBroker, MessageConfig, MessagePriority
 
 logger = get_logger(__name__)
 
@@ -54,10 +54,10 @@ class MemoryTopic:
         """메시지 발행"""
         try:
             # 우선순위에 따른 삽입 위치 결정
-            if message.priority == MessagePriority.CRITICAL:
-                self.messages.appendleft(message)
-            elif message.priority == MessagePriority.HIGH:
-                # HIGH는 CRITICAL 다음에 삽입
+            match message.priority:
+                case MessagePriority.CRITICAL:
+                    self.messages.appendleft(message)
+                case MessagePriority.HIGH:                # HIGH는 CRITICAL 다음에 삽입
                 insert_pos = 0
                 for i, msg in enumerate(self.messages):
                     if msg.priority != MessagePriority.CRITICAL:
@@ -72,11 +72,10 @@ class MemoryTopic:
                     # deque는 중간 삽입이 비효율적이므로 리스트로 변환
                     temp_list = list(self.messages)
                     temp_list.insert(insert_pos, message)
-                    self.messages.clear()
-                    self.messages.extend(temp_list)
-            else:
-                # NORMAL, LOW는 뒤에 추가
-                self.messages.append(message)
+                    messages = {}
+                    self.messages = messages + temp_list
+                case _:                # NORMAL, LOW는 뒤에 추가
+                self.messages = messages + [message]
             
             # 히스토리에 추가
             self.message_history.append({
@@ -88,8 +87,8 @@ class MemoryTopic:
             })
             
             # 통계 업데이트
-            self.stats["messages_published"] += 1
-            self.stats["total_size"] = len(self.messages)
+            self.stats = {**self.stats, "messages_published": self.stats["messages_published"] + 1}
+            self.stats = {**self.stats, "total_size": len(self.messages)}
             
             # 구독자들에게 알림
             await self._notify_subscribers(message)
@@ -104,8 +103,8 @@ class MemoryTopic:
         try:
             if self.messages:
                 message = self.messages.popleft()
-                self.stats["messages_consumed"] += 1
-                self.stats["total_size"] = len(self.messages)
+                self.stats = {**self.stats, "messages_consumed": self.stats["messages_consumed"] + 1}
+                self.stats = {**self.stats, "total_size": len(self.messages)}
                 return message
             return None
             
@@ -116,12 +115,12 @@ class MemoryTopic:
     def add_subscriber(self, handler: Callable):
         """구독자 추가"""
         self.subscribers.add(handler)
-        self.stats["subscriber_count"] = len(self.subscribers)
+        self.stats = {**self.stats, "subscriber_count": len(self.subscribers)}
     
     def remove_subscriber(self, handler: Callable):
         """구독자 제거"""
         self.subscribers.discard(handler)
-        self.stats["subscriber_count"] = len(self.subscribers)
+        self.stats = {**self.stats, "subscriber_count": len(self.subscribers)}
     
     async def _notify_subscribers(self, message: Message):
         """구독자들에게 메시지 알림"""
@@ -139,7 +138,7 @@ class MemoryTopic:
                     task = asyncio.create_task(
                         asyncio.get_event_loop().run_in_executor(None, handler, message)
                     )
-                tasks.append(task)
+                tasks = [*tasks, task]
             except Exception as e:
                 logger.error(f"구독자 알림 생성 실패: {e}")
         
@@ -204,11 +203,11 @@ class MemoryMessageBroker(MessageBroker):
                 if consumers:
                     await asyncio.gather(*consumers, return_exceptions=True)
             
-            self.work_queue_consumers.clear()
-            self.work_queues.clear()
+            work_queue_consumers = {}
+            work_queues = {}
             
             # 토픽 정리
-            self.topics.clear()
+            topics = {}
             
             self._connected = False
             logger.info("메모리 메시지 브로커 정리 완료")
@@ -245,15 +244,15 @@ class MemoryMessageBroker(MessageBroker):
                         "timestamp": asyncio.get_event_loop().time()
                     })
                 
-                self._stats["messages_sent"] += 1
+                self._stats = {**self._stats, "messages_sent": self._stats["messages_sent"] + 1}
                 logger.debug(f"메모리 메시지 발행: {topic} - {message.id}")
             else:
-                self._stats["errors"] += 1
+                self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
             
             return result
             
         except Exception as e:
-            self._stats["errors"] += 1
+            self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
             error_msg = f"메모리 메시지 발행 실패: {str(e)}"
             logger.error(error_msg)
             return Failure(error_msg)
@@ -283,8 +282,8 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                memory_topic.subscribers.clear()
-                memory_topic.stats["subscriber_count"] = 0
+                subscribers = {}
+                memory_topic.stats = {**memory_topic.stats, "subscriber_count": 0}
             
             logger.info(f"메모리 구독 해제: {topic}")
             return Success(None)
@@ -315,7 +314,7 @@ class MemoryMessageBroker(MessageBroker):
                 return Failure(f"최대 토픽 수 초과: {self.config.max_topics}")
             
             if topic not in self.topics:
-                self.topics[topic] = MemoryTopic(
+                self.topics = {**self.topics, topic: MemoryTopic(}
                     topic, 
                     kwargs.get('max_size', self.config.max_queue_size)
                 )
@@ -346,7 +345,7 @@ class MemoryMessageBroker(MessageBroker):
                     del self.work_queue_consumers[topic]
                 
                 # Work Queue 정리
-                self.work_queues.pop(topic, None)
+                work_queues = {k: v for k, v in work_queues.items() if k != 'topic, None'}
                 
                 # 토픽 삭제
                 del self.topics[topic]
@@ -386,7 +385,7 @@ class MemoryMessageBroker(MessageBroker):
             
             # 큐 생성
             queue = asyncio.Queue(maxsize=self.config.max_queue_size)
-            self.work_queues[topic] = queue
+            self.work_queues = {**self.work_queues, topic: queue}
             
             # 워커 생성
             consumers = []
@@ -394,9 +393,9 @@ class MemoryMessageBroker(MessageBroker):
                 consumer = asyncio.create_task(
                     self._work_queue_consumer(topic, queue, f"worker-{i}")
                 )
-                consumers.append(consumer)
+                consumers = [*consumers, consumer]
             
-            self.work_queue_consumers[topic] = consumers
+            self.work_queue_consumers = {**self.work_queue_consumers, topic: consumers}
             
             logger.info(f"Work Queue 생성: {topic} ({worker_count}개 워커)")
             return Success(None)
@@ -415,11 +414,11 @@ class MemoryMessageBroker(MessageBroker):
             queue = self.work_queues[topic]
             await queue.put(message)
             
-            self._stats["messages_sent"] += 1
+            self._stats = {**self._stats, "messages_sent": self._stats["messages_sent"] + 1}
             return Success(None)
             
         except Exception as e:
-            self._stats["errors"] += 1
+            self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
             error_msg = f"Work Queue 발행 실패: {str(e)}"
             logger.error(error_msg)
             return Failure(error_msg)
@@ -440,7 +439,7 @@ class MemoryMessageBroker(MessageBroker):
                     # 작업 완료 표시
                     queue.task_done()
                     
-                    self._stats["messages_received"] += 1
+                    self._stats = {**self._stats, "messages_received": self._stats["messages_received"] + 1}
                     
                 except Exception as e:
                     logger.error(f"Work Queue 컨슈머 오류 ({worker_id}): {e}")
@@ -462,12 +461,12 @@ class MemoryMessageBroker(MessageBroker):
             message = await memory_topic.consume()
             
             if message:
-                self._stats["messages_received"] += 1
+                self._stats = {**self._stats, "messages_received": self._stats["messages_received"] + 1}
             
             return Success(message)
             
         except Exception as e:
-            self._stats["errors"] += 1
+            self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
             error_msg = f"메시지 소비 실패: {str(e)}"
             logger.error(error_msg)
             return Failure(error_msg)
@@ -484,8 +483,8 @@ class MemoryMessageBroker(MessageBroker):
         for topic_name, topic in self.topics.items():
             topic_stat = topic.get_stats()
             topic_stats[topic_name] = topic_stat
-            total_messages += topic_stat["queue_size"]
-            total_subscribers += topic_stat["subscriber_count"]
+            total_messages = total_messages + topic_stat["queue_size"]
+            total_subscribers = total_subscribers + topic_stat["subscriber_count"]
         
         memory_stats = {
             "topic_count": len(self.topics),
@@ -496,9 +495,7 @@ class MemoryMessageBroker(MessageBroker):
             "topic_stats": topic_stats
         }
         
-        return {**base_stats, **memory_stats}
-    
-    async def get_topic_messages(self, topic: str, limit: int = 10) -> Result[List[Dict[str, Any]], str]:
+        return {limit: int = 10) -> Result[List[Dict[str, Any]], str]:
         """토픽의 메시지 히스토리 조회"""
         try:
             if topic not in self.topics:
@@ -519,8 +516,8 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                memory_topic.messages.clear()
-                memory_topic.stats["total_size"] = 0
+                messages = {}
+                memory_topic.stats = {**memory_topic.stats, "total_size": 0}
                 
                 logger.info(f"토픽 메시지 삭제: {topic}")
             

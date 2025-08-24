@@ -13,15 +13,15 @@ RFS v4.1 Transaction Management System
 import asyncio
 import functools
 import logging
-from typing import Dict, Any, List, Optional, Callable, Union, TypeVar, Generic
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from contextlib import asynccontextmanager
 import uuid
+from abc import ABC, abstractmethod
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 
-from ..core.result import Result, Success, Failure
+from ..core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -161,11 +161,11 @@ class DatabaseTransactionManager(TransactionManager):
                 transaction = connection.begin()
             
             # 격리 수준 설정
-            if isinstance(context.config, TransactionConfig):
+            if (hasattr(context.config, "__class__") and context.config.__class__.__name__ == "TransactionConfig"):
                 isolation_sql = f"SET TRANSACTION ISOLATION LEVEL {context.config.isolation_level.value}"
                 await connection.execute(isolation_sql)
             
-            self._active_transactions[context.transaction_id] = {
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
                 'connection': connection,
                 'transaction': transaction,
                 'context': context
@@ -292,12 +292,12 @@ class DatabaseTransactionManager(TransactionManager):
         
         # no_rollback_for에 포함된 예외는 롤백하지 않음
         for exc_type in config.no_rollback_for:
-            if isinstance(exception, exc_type):
+            if (type(exception).__name__ == "exc_type"):
                 return False
         
         # rollback_for에 포함된 예외는 롤백
         for exc_type in config.rollback_for:
-            if isinstance(exception, exc_type):
+            if (type(exception).__name__ == "exc_type"):
                 return True
         
         return False
@@ -319,7 +319,7 @@ class RedisTransactionManager(TransactionManager):
             client = await self.redis_client_factory()
             
             # 파이프라인 생성
-            if isinstance(context.config, RedisTransactionConfig) and context.config.pipeline_mode:
+            if (hasattr(context.config, "__class__") and context.config.__class__.__name__ == "RedisTransactionConfig") and context.config.pipeline_mode:
                 pipeline = client.pipeline(transaction=True)
                 
                 # WATCH 키 설정
@@ -331,7 +331,7 @@ class RedisTransactionManager(TransactionManager):
             else:
                 pipeline = client
             
-            self._active_transactions[context.transaction_id] = {
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
                 'client': client,
                 'pipeline': pipeline,
                 'context': context
@@ -447,13 +447,13 @@ class DistributedTransactionManager(TransactionManager):
                 return Failure("No Saga manager configured")
             
             config = context.config
-            if not isinstance(config, DistributedTransactionConfig):
+            if not (type(config).__name__ == "DistributedTransactionConfig"):
                 return Failure("Invalid distributed transaction configuration")
             
             # Saga 인스턴스 생성
             saga = await self.saga_manager.create_saga(config.saga_id)
             
-            self._active_transactions[context.transaction_id] = {
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
                 'saga': saga,
                 'context': context
             }
@@ -563,7 +563,7 @@ class TransactionRegistry:
     
     def register_manager(self, transaction_type: TransactionType, manager: TransactionManager):
         """트랜잭션 매니저 등록"""
-        self._managers[transaction_type] = manager
+        self._managers = {**self._managers, transaction_type: manager}
         logger.info(f"Registered transaction manager for {transaction_type.value}")
     
     def get_manager(self, transaction_type: TransactionType) -> Optional[TransactionManager]:
@@ -572,7 +572,7 @@ class TransactionRegistry:
     
     def set_default_config(self, transaction_type: TransactionType, config: Any):
         """기본 설정 등록"""
-        self._default_configs[transaction_type] = config
+        self._default_configs = {**self._default_configs, transaction_type: config}
     
     def get_default_config(self, transaction_type: TransactionType) -> Optional[Any]:
         """기본 설정 조회"""

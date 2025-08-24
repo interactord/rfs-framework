@@ -5,20 +5,21 @@ Health Check Implementation
 """
 
 import asyncio
-import aiohttp
-import socket
-from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime, timedelta
 import logging
+import socket
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional
 
-from ..core import Result, Success, Failure
+import aiohttp
+
+from ..core import Failure, Result, Success
 from .base import (
-    ServiceInfo,
-    ServiceHealth,
-    HealthStatus,
     HealthCheck,
+    HealthCheckError,
+    HealthStatus,
     ServiceEndpoint,
-    HealthCheckError
+    ServiceHealth,
+    ServiceInfo,
 )
 from .registry import ServiceRegistry, get_service_registry
 
@@ -53,24 +54,22 @@ class HealthChecker:
         start_time = datetime.now()
         
         try:
-            if config.check_type == "http":
-                result = await self._check_http(endpoint, config)
-            elif config.check_type == "tcp":
-                result = await self._check_tcp(endpoint, config)
-            elif config.check_type == "grpc":
-                result = await self._check_grpc(endpoint, config)
-            else:
-                return Failure(f"Unsupported check type: {config.check_type}")
+            match config.check_type:
+                case "http":
+                    result = await self._check_http(endpoint, config)
+                case "tcp":                result = await self._check_tcp(endpoint, config)
+                case "grpc":                result = await self._check_grpc(endpoint, config)
+                case _:                return Failure(f"Unsupported check type: {config.check_type}")
             
             response_time = datetime.now() - start_time
             
-            if isinstance(result, Success):
+            if (type(result).__name__ == "Success"):
                 health = ServiceHealth(
                     status=HealthStatus.HEALTHY,
                     last_check=datetime.now(),
                     response_time=response_time
                 )
-                health.success_count += 1
+                success_count = success_count + 1
                 return Success(health)
             else:
                 health = ServiceHealth(
@@ -79,7 +78,7 @@ class HealthChecker:
                     response_time=response_time,
                     details={'error': result.error}
                 )
-                health.error_count += 1
+                error_count = error_count + 1
                 return Success(health)
                 
         except Exception as e:
@@ -88,7 +87,7 @@ class HealthChecker:
                 last_check=datetime.now(),
                 details={'error': str(e)}
             )
-            health.error_count += 1
+            error_count = error_count + 1
             return Success(health)
     
     async def _check_http(
@@ -248,7 +247,7 @@ class HealthMonitor:
         if self.monitor_tasks:
             await asyncio.gather(*self.monitor_tasks.values(), return_exceptions=True)
         
-        self.monitor_tasks.clear()
+        monitor_tasks = {}
         logger.info("HealthMonitor stopped")
     
     async def monitor(
@@ -266,23 +265,23 @@ class HealthMonitor:
         service_id = service.service_id
         
         # 모니터링 대상 추가
-        self.monitored_services[service_id] = service
-        self.health_checks[service_id] = health_check or self.default_check
+        self.monitored_services = {**self.monitored_services, service_id: service}
+        self.health_checks = {**self.health_checks, service_id: health_check or self.default_check}
         
         # 모니터링 태스크 시작
         if service_id not in self.monitor_tasks:
             task = asyncio.create_task(
                 self._monitor_loop(service_id)
             )
-            self.monitor_tasks[service_id] = task
+            self.monitor_tasks = {**self.monitor_tasks, service_id: task}
         
         logger.info(f"Monitoring service {service.name} ({service_id})")
     
     async def unmonitor(self, service_id: str):
         """서비스 모니터링 중지"""
         # 모니터링 대상 제거
-        self.monitored_services.pop(service_id, None)
-        self.health_checks.pop(service_id, None)
+        monitored_services = {k: v for k, v in monitored_services.items() if k != 'service_id, None'}
+        health_checks = {k: v for k, v in health_checks.items() if k != 'service_id, None'}
         
         # 모니터링 태스크 취소
         if service_id in self.monitor_tasks:
@@ -305,7 +304,7 @@ class HealthMonitor:
                     # 헬스 체크 수행
                     result = await self.checker.check(service.endpoint, health_check)
                     
-                    if isinstance(result, Success):
+                    if (type(result).__name__ == "Success"):
                         health = result.value
                         
                         # 연속 실패/성공 처리
@@ -316,7 +315,7 @@ class HealthMonitor:
                             if health.success_count >= health_check.healthy_threshold:
                                 health.status = HealthStatus.HEALTHY
                         else:
-                            consecutive_failures += 1
+                            consecutive_failures = consecutive_failures + 1
                             
                             # 비정상 임계값 확인
                             if consecutive_failures >= health_check.unhealthy_threshold:
@@ -363,7 +362,7 @@ _global_monitor: Optional[HealthMonitor] = None
 
 async def get_health_monitor() -> HealthMonitor:
     """전역 헬스 모니터 반환"""
-    global _global_monitor
+    # global _global_monitor - removed for functional programming
     if _global_monitor is None:
         _global_monitor = HealthMonitor()
         await _global_monitor.start()

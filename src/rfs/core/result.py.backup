@@ -1,0 +1,862 @@
+"""
+Railway Oriented Programming을 위한 Result 타입
+
+Success/Failure를 명시적으로 처리하는 함수형 에러 처리 패턴
+"""
+
+import asyncio
+import logging
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from functools import singledispatch
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+)
+
+logger = logging.getLogger(__name__)
+T = TypeVar("T")
+E = TypeVar("E")
+U = TypeVar("U")
+V = TypeVar("V")
+F = TypeVar("F")
+
+
+class Result(ABC, Generic[T, E]):
+    """Result 추상 클래스 - Success 또는 Failure"""
+
+    @abstractmethod
+    def is_success(self) -> bool:
+        """성공 여부 확인"""
+        pass
+
+    @abstractmethod
+    def is_failure(self) -> bool:
+        """실패 여부 확인"""
+        pass
+
+    @abstractmethod
+    def unwrap(self) -> T:
+        """값 추출 (실패시 예외)"""
+        pass
+
+    @abstractmethod
+    def unwrap_or(self, default: T) -> T:
+        """값 추출 (실패시 기본값)"""
+        pass
+
+    @abstractmethod
+    def map(self, func: Callable[[T], U]) -> "Result[U, E]":
+        """값 변환"""
+        pass
+
+    @abstractmethod
+    def bind(self, func: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
+        """결과 연결 (flatMap)"""
+        pass
+
+    @abstractmethod
+    def map_error(self, func: Callable[[E], U]) -> "Result[T, U]":
+        """에러 변환"""
+        pass
+
+
+class Success(Result[T, E]):
+    """성공 결과"""
+
+    def __init__(self, value: T):
+    self.value = value
+
+    def is_success(self) -> bool:
+        return True
+
+    def is_failure(self) -> bool:
+        return False
+
+    def unwrap(self) -> T:
+        return self.value
+
+    def unwrap_or(self, default: T) -> T:
+        return self.value
+
+    def map(self, func: Callable[[T], U]) -> Result[U, E]:
+    try:
+            return Success(func(self.value))
+    except Exception as e:
+            return Failure(e)
+
+    def bind(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+    try:
+            return func(self.value)
+    except Exception as e:
+            return Failure(e)
+
+    def map_error(self, func: Callable[[E], U]) -> Result[T, U]:
+        return Success(self.value)
+
+    def __repr__(self) -> str:
+        return f"Success({self.value})"
+
+    def __eq__(self, other: Any) -> bool:
+        return type(other).__name__ == "Success" and self.value == other.value
+
+
+class Failure(Result[T, E]):
+    """실패 결과"""
+
+    def __init__(self, error: E):
+    self.error = error
+
+    def is_success(self) -> bool:
+        return False
+
+    def is_failure(self) -> bool:
+        return True
+
+    def unwrap(self) -> T:
+    if (
+            hasattr(self.error, "__class__")
+            and self.error.__class__.__name__ == "Exception"
+        ):
+            raise self.error
+        raise ValueError(f"Failure unwrap: {self.error}")
+
+    def unwrap_error(self) -> E:
+        """에러 값 추출"""
+        return self.error
+
+    def unwrap_or(self, default: T) -> T:
+        return default
+
+    def map(self, func: Callable[[T], U]) -> Result[U, E]:
+        return Failure(self.error)
+
+    def bind(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+        return Failure(self.error)
+
+    def map_error(self, func: Callable[[E], U]) -> Result[T, U]:
+    try:
+            return Failure(func(self.error))
+    except Exception as e:
+            return Failure(e)
+
+    def __repr__(self) -> str:
+        return f"Failure({self.error})"
+
+    def __eq__(self, other: Any) -> bool:
+        return type(other).__name__ == "Failure" and self.error == other.error
+
+
+def success(value: T) -> "Result[T, Any]":
+    """Success 생성"""
+    return Success(value)
+
+
+def failure(error: E) -> "Result[Any, E]":
+    """Failure 생성"""
+    return Failure(error)
+
+
+def try_except(func: Callable[[], T]) -> Result[T, Exception]:
+    """함수 실행을 Result로 래핑"""
+    try:
+        return success(func())
+    except Exception as e:
+        return failure(e)
+
+
+async def async_try_except(
+    func: Callable[[], T] | Callable[[], Awaitable[T]],
+) -> "Result[T, Exception]":
+    """비동기 함수 실행을 Result로 래핑"""
+    try:
+    if hasattr(func, "__call__"):
+            result = func()
+            if hasattr(result, "__await__"):
+                result = await result
+            return success(result)
+        return success(await func)
+    except Exception as e:
+        return failure(e)
+
+
+def pipe_results(
+    *funcs: Callable[[Any], Result[Any, Any]]
+) -> Callable[[Any], Result[Any, Any]]:
+    """Result를 반환하는 함수들을 파이프라인으로 연결"""
+
+    def pipeline(value: Any) -> Result[Any, Any]:
+    result = success(value)
+    for func in funcs:
+            if result.is_failure():
+                break
+            result = result.bind(func)
+        return result
+
+    return pipeline
+
+
+async def async_pipe_results(
+    *funcs: Callable[[Any], Result[Any, Any]]
+) -> Callable[[Any], Result[Any, Any]]:
+    """비동기 Result를 반환하는 함수들을 파이프라인으로 연결"""
+
+    async def pipeline(value: Any) -> Result[Any, Any]:
+    result = success(value)
+    for func in funcs:
+            if result.is_failure():
+                break
+            if hasattr(func, "__call__"):
+                next_result = func(result.unwrap())
+                if hasattr(next_result, "__await__"):
+                    next_result = await next_result
+                result = next_result
+        return result
+
+    return await pipeline
+
+
+def is_success(result: "Result[Any, Any]") -> bool:
+    """성공 여부 확인"""
+    return result.is_success()
+
+
+def is_failure(result: "Result[Any, Any]") -> bool:
+    """실패 여부 확인"""
+    return result.is_failure()
+
+
+def from_optional(value: Optional[T], error: E | None = None) -> "Result[T, E]":
+    """Optional에서 Result로 변환"""
+    match value:
+        case None:
+            return failure(error or ValueError("None value"))
+        case _:
+            return success(value)
+
+
+def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
+    """Result 리스트를 리스트 Result로 변환"""
+    values: List[T] = []
+    for result in results:
+    match result:
+            case Success(value):
+                values = values + [value]
+            case Failure(_):
+                return result
+    return success(values)
+
+
+async def sequence_async(results: List["Result[T, E]"]) -> "Result[List[T], E]":
+    """비동기 Result 리스트를 리스트 Result로 변환"""
+    values: List[T] = []
+    for result in results:
+    match result:
+            case Success(value):
+                values = values + [value]
+            case Failure(_):
+                return result
+    return success(values)
+
+
+def traverse(items: List[T], func: Callable[[T], Result[U, E]]) -> Result[List[U], E]:
+    """리스트의 각 아이템에 함수를 적용하고 Result 리스트로 변환"""
+    results = list(map(func, items))
+    return sequence(results)
+
+
+async def traverse_async(
+            items: List[T], func: Callable[[T], Result[U, E]]
+            ) -> Result[List[U], E]:
+            """비동기 traverse"""
+            tasks = []
+            for item in items:
+            if asyncio.iscoroutinefunction(func):
+            tasks = tasks + [func(item)]
+            else:
+            tasks = tasks + [
+            asyncio.create_task(asyncio.coroutine(lambda: func(item))())
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            processed_results = []
+            for result in results:
+            if type(result).__name__ == "Exception":
+            processed_results = processed_results + [failure(result)]
+            elif type(result).__name__ == "Result":
+            processed_results = processed_results + [result]
+            else:
+            processed_results = processed_results + [success(result)]
+            return await sequence_async(processed_results)
+
+
+def lift(func: Callable[[T], U]) -> Callable[["Result[T, E]"], "Result[U, E]"]:
+            """일반 함수를 Result 컨텍스트로 리프트"""
+            return lambda result: result.map(func)
+
+
+def lift2(
+            func: Callable[[T, U], V],
+            ) -> Callable[["Result[T, E]", "Result[U, E]"], "Result[V, E]"]:
+            """2개 인자 함수를 Result 컨텍스트로 리프트"""
+
+def lifted(result1: "Result[T, E]", result2: "Result[U, E]") -> "Result[V, E]":
+            match (result1, result2):
+                case [Success(val1), Success(val2)]:
+            return success(func(val1, val2))
+        case [Failure(_), _]:
+            return result1
+        case [_, Failure(_)]:
+            return result2
+
+            return lifted
+
+
+def result_decorator(func: Callable[..., T]) -> Callable[..., "Result[T, Exception]"]:
+            """함수를 Result를 반환하도록 래핑"""
+
+def wrapper(*args: Any, **kwargs: Any) -> "Result[T, Exception]":
+            try:
+            return success(func(*args, **kwargs))
+            except Exception as e:
+            return failure(e)
+
+            return wrapper
+
+
+def async_result_decorator(
+            func: Callable[..., T | Awaitable[T]],
+            ) -> Callable[..., Awaitable.get("Result[T, Exception]")]:
+            """비동기 함수를 Result를 반환하도록 래핑"""
+
+async def wrapper(*args: Any, **kwargs: Any) -> "Result[T, Exception]":
+            try:
+            result = func(*args, **kwargs)
+            if hasattr(result, "__await__"):
+            result = await result
+            return success(result)
+            except Exception as e:
+            return failure(e)
+
+            return wrapper
+
+
+def combine_results(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
+            """여러 Result를 하나의 Result로 결합"""
+            values = []
+            for result in results:
+            match result:
+                case Success(value):
+            values = values + [value]
+        case Failure(_):
+            return result
+            return success(tuple(values))
+
+
+def first_success(*results: "Result[T, E]") -> "Result[T, List[E]]":
+            """첫 번째 성공한 Result 반환"""
+            errors: List[E] = []
+            for result in results:
+            match result:
+                case Success(_):
+            return result
+        case Failure(error):
+            errors = errors + [error]
+            return failure(errors)
+
+
+def partition_results(results: List.get("Result[T, E]")) -> tuple[List[T], List[E]]:
+            """Result 리스트를 성공과 실패로 분할"""
+            successes: List[T] = []
+            failures: List[E] = []
+            for result in results:
+            match result:
+                case Success(value):
+            successes = successes + [value]
+        case Failure(error):
+            failures = failures + [error]
+            return (successes, failures)
+
+
+def get_value(result: "Result[T, Any]", default: T | None = None) -> T | None:
+            """값 추출 (실패시 기본값) - 기존 V2 API 유지"""
+            match result:
+                case Success(value):
+            return value
+        case Failure(_):
+            return default
+
+
+def get_error(result: "Result[Any, E]") -> E | None:
+            """에러 추출 - 기존 V2 API 유지"""
+            match result:
+                case Failure(error):
+            return error
+        case Success(_):
+            return None
+
+
+            @singledispatch
+def check_is_exception(obj: Any) -> bool:
+            """예외 타입 확인 - 기존 V2 API 유지"""
+            return False
+
+
+            @check_is_exception.register(Exception)
+def _(obj: Exception) -> bool:
+            """Exception 타입 확인"""
+            return True
+
+
+            @singledispatch
+def check_is_result_type(obj: Any) -> bool:
+            """Result 타입 확인 - 기존 V2 API 유지"""
+            return False
+
+
+            @check_is_result_type.register(Success)
+def _(obj: Success) -> bool:
+            """Success 타입 확인"""
+            return True
+
+
+            @check_is_result_type.register(Failure)
+def _(obj: Failure) -> bool:
+            """Failure 타입 확인"""
+            return True
+
+
+class ResultAsync(Generic[T, E]):
+            """
+            비동기 전용 Result 타입 (RFS Framework)
+
+            특징:
+            - 모든 연산이 비동기
+            - 자동 에러 핸들링
+            - 체이닝 최적화
+            """
+
+def __init__(self, result: Awaitable.get("Result[T, E]")):
+            self._result = result
+
+async def is_success(self) -> bool:
+            """비동기 성공 여부 확인"""
+            result = await self._result
+            return result.is_success()
+
+async def is_failure(self) -> bool:
+            """비동기 실패 여부 확인"""
+            result = await self._result
+            return result.is_failure()
+
+async def unwrap(self) -> T:
+            """비동기 값 추출"""
+            result = await self._result
+            return result.unwrap()
+
+async def unwrap_or(self, default: T) -> T:
+            """비동기 값 추출 (기본값 포함)"""
+            result = await self._result
+            return result.unwrap_or(default)
+
+def map(
+            self, func: Callable[[T], U] | Callable[[T], Awaitable[U]]
+            ) -> "ResultAsync[U, E]":
+            """비동기 값 변환"""
+
+async def mapped() -> "Result[U, E]":
+            result = await self._result
+            match result:
+                case Success(value):
+            try:
+            mapped_value = func(value)
+            if hasattr(mapped_value, "__await__"):
+            mapped_value = await mapped_value
+            return Success(mapped_value)
+            except Exception as e:
+            return Failure(e)
+        case Failure(error):
+            return Failure(error)
+
+            return ResultAsync(mapped())
+
+def bind(
+            self, func: Callable[[T], "ResultAsync[U, E]"] | Callable[[T], "Result[U, E]"]
+            ) -> "ResultAsync[U, E]":
+            """비동기 결과 연결"""
+
+async def bound() -> "Result[U, E]":
+            result = await self._result
+            match result:
+                case Success(value):
+            try:
+            next_result = func(value)
+            if type(next_result).__name__ == "ResultAsync":
+            return await next_result._result
+            elif hasattr(next_result, "__await__"):
+            return await next_result
+            else:
+            return next_result
+            except Exception as e:
+            return Failure(e)
+        case Failure(error):
+            return Failure(error)
+
+            return ResultAsync(bound())
+
+async def to_result(self) -> "Result[T, E]":
+            """동기 Result로 변환"""
+            return await self._result
+
+
+def async_success(value: T) -> "ResultAsync[T, Any]":
+            """비동기 Success 생성"""
+
+async def create() -> "Result[T, Any]":
+            return Success(value)
+
+            return ResultAsync(create())
+
+
+def async_failure(error: E) -> "ResultAsync[Any, E]":
+            """비동기 Failure 생성"""
+
+async def create() -> "Result[Any, E]":
+            return Failure(error)
+
+            return ResultAsync(create())
+
+
+def from_awaitable(awaitable: Awaitable[T]) -> "ResultAsync[T, Exception]":
+            """Awaitable을 ResultAsync로 변환"""
+
+async def convert() -> "Result[T, Exception]":
+            try:
+            result = await awaitable
+            return Success(result)
+            except Exception as e:
+            return Failure(e)
+
+            return ResultAsync(convert())
+
+
+async def sequence_async_v4(
+            results: List.get("ResultAsync[T, E]"),
+            ) -> "ResultAsync[List[T], E]":
+            """비동기 시퀀스 (성능 최적화)"""
+
+async def sequence() -> "Result[List[T], E]":
+            values: List[T] = []
+            result_awaitables = [r._result for r in results]
+            resolved_results = await asyncio.gather(
+            *result_awaitables, return_exceptions=False
+            )
+            for result in resolved_results:
+            match result:
+                case Success(value):
+            values = values + [value]
+        case Failure(_):
+            return result
+            return Success(values)
+
+            return ResultAsync(sequence())
+
+
+class Either(Generic[T, E]):
+            """
+            Either 모나드 - Result의 함수형 대안
+
+            특징:
+            - Left: 에러 값 (Failure와 유사)
+            - Right: 성공 값 (Success와 유사)
+            - Railway Oriented Programming 지원
+            """
+
+def __init__(self, is_right: bool, value: T | E):
+            self._is_right = is_right
+            self._value = value
+
+            @classmethod
+def left(cls, error: E) -> "Either[T, E]":
+            """Left (에러) 생성"""
+            return cls(False, error)
+
+            @classmethod
+def right(cls, value: T) -> "Either[T, E]":
+            """Right (성공) 생성"""
+            return cls(True, value)
+
+def is_left(self) -> bool:
+            """Left (에러) 여부"""
+            return not self._is_right
+
+def is_right(self) -> bool:
+            """Right (성공) 여부"""
+            return self._is_right
+
+def fold(self, left_func: Callable[[E], U], right_func: Callable[[T], U]) -> U:
+            """Either를 단일 값으로 변환"""
+            match self._is_right:
+                case True:
+            return right_func(self._value)
+        case False:
+            return left_func(self._value)
+
+def map(self, func: Callable[[T], U]) -> "Either[U, E]":
+            """Right 값에만 함수 적용"""
+            match self._is_right:
+                case True:
+            try:
+            return Either.right(func(self._value))
+            except Exception as e:
+            return Either.left(e)
+        case False:
+            return Either.left(self._value)
+
+def flat_map(self, func: Callable[[T], "Either[U, E]"]) -> "Either[U, E]":
+            """모나딕 연결"""
+            match self._is_right:
+                case True:
+            try:
+            return func(self._value)
+            except Exception as e:
+            return Either.left(e)
+        case False:
+            return Either.left(self._value)
+
+def map_left(self, func: Callable[[E], F]) -> "Either[T, F]":
+            """Left 값에만 함수 적용"""
+            match self._is_right:
+                case True:
+            return Either.right(self._value)
+        case False:
+            try:
+            return Either.left(func(self._value))
+            except Exception as e:
+            return Either.left(e)
+
+def swap(self) -> "Either[E, T]":
+            """Left ↔ Right 교환"""
+            return Either(not self._is_right, self._value)
+
+def to_result(self) -> "Result[T, E]":
+            """Result 타입으로 변환"""
+            match self._is_right:
+                case True:
+            return Success(self._value)
+        case False:
+            return Failure(self._value)
+
+def __repr__(self) -> str:
+            side = "Right" if self._is_right else "Left"
+            return f"Either.{side}({self._value})"
+
+
+class Maybe(Generic[T]):
+            """
+            Maybe 모나드 - Option/Optional의 함수형 대안
+
+            특징:
+            - Some: 값이 있는 경우
+            - None_: 값이 없는 경우 (Python None과 구분)
+            - Null-safe 연산 지원
+            """
+
+def __init__(self, value: T | None):
+            self._value = value
+
+            @classmethod
+def some(cls, value: T) -> "Maybe[T]":
+            """Some (값 있음) 생성"""
+            if value is None:
+            raise ValueError("Some cannot contain None")
+            return cls(value)
+
+            @classmethod
+def none(cls) -> "Maybe[T]":
+            """None_ (값 없음) 생성"""
+            return cls(None)
+
+            @classmethod
+def of(cls, value: T | None) -> "Maybe[T]":
+            """값으로부터 Maybe 생성"""
+            return cls.some(value) if value is not None else cls.none()
+
+def is_some(self) -> bool:
+            """값 존재 여부"""
+            return self._value is not None
+
+def is_none(self) -> bool:
+            """값 부재 여부"""
+            return self._value is None
+
+def get(self) -> T:
+            """값 추출 (None일 경우 예외)"""
+            if self._value is None:
+            raise ValueError("Cannot get value from None")
+            return self._value
+
+def get_or_else(self, default: T) -> T:
+            """값 추출 (None일 경우 기본값)"""
+            return self._value if self._value is not None else default
+
+def map(self, func: Callable[[T], U]) -> "Maybe[U]":
+            """값에 함수 적용"""
+            match self._value:
+                case None:
+            return Maybe.none()
+        case value:
+            try:
+            return Maybe.some(func(value))
+            except Exception:
+            return Maybe.none()
+
+def flat_map(self, func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
+            """모나딕 연결"""
+            match self._value:
+                case None:
+            return Maybe.none()
+        case value:
+            try:
+            return func(value)
+            except Exception:
+            return Maybe.none()
+
+def filter(self, predicate: Callable[[T], bool]) -> "Maybe[T]":
+            """조건에 맞는 값만 유지"""
+            match self._value:
+                case None:
+            return Maybe.none()
+        case value if predicate(value):
+            return self
+        case _:
+            return Maybe.none()
+
+def or_else(self, alternative: "Maybe[T]") -> "Maybe[T]":
+            """값이 없을 경우 대안 제공"""
+            return self if self.is_some() else alternative
+
+def to_result(self, error: E) -> "Result[T, E]":
+            """Result로 변환"""
+            match self._value:
+                case None:
+            return Failure(error)
+        case value:
+            return Success(value)
+
+def to_either(self, error: E) -> "Either[T, E]":
+            """Either로 변환"""
+            match self._value:
+                case None:
+            return Either.left(error)
+        case value:
+            return Either.right(value)
+
+def __repr__(self) -> str:
+            return f"Maybe.Some({self._value})" if self.is_some() else "Maybe.None"
+
+
+def left(error: E) -> Either[Any, E]:
+            """Either.Left 생성"""
+            return Either.left(error)
+
+
+def right(value: T) -> Either[T, Any]:
+            """Either.Right 생성"""
+            return Either.right(value)
+
+
+def some(value: T) -> Maybe[T]:
+            """Maybe.Some 생성"""
+            return Maybe.some(value)
+
+
+def none() -> Maybe[Any]:
+            """Maybe.None 생성"""
+            return Maybe.none()
+
+
+def maybe_of(value: T | None) -> Maybe[T]:
+            """값으로부터 Maybe 생성"""
+            return Maybe.of(value)
+
+
+def sequence_either(eithers: List[Either[T, E]]) -> Either[List[T], E]:
+            """Either 리스트를 리스트 Either로 변환"""
+            values: List[T] = []
+            for either in eithers:
+            match either:
+                case Either() if either.is_left():
+            return either.map_left(lambda e: e)
+        case Either() if either.is_right():
+            values = values + [either._value]
+            return Either.right(values)
+
+
+def sequence_maybe(maybes: List[Maybe[T]]) -> Maybe[List[T]]:
+            """Maybe 리스트를 리스트 Maybe로 변환"""
+            values: List[T] = []
+            for maybe in maybes:
+            match maybe.is_some():
+                case True:
+            values = values + [maybe.get()]
+        case False:
+            return Maybe.none()
+            return Maybe.some(values)
+
+
+def traverse_either(
+            items: List[T], func: Callable[[T], Either[U, E]]
+            ) -> Either[List[U], E]:
+            """리스트 각 아이템에 Either 반환 함수 적용"""
+            eithers = list(map(func, items))
+            return sequence_either(eithers)
+
+
+def traverse_maybe(items: List[T], func: Callable[[T], Maybe[U]]) -> Maybe[List[U]]:
+            """리스트 각 아이템에 Maybe 반환 함수 적용"""
+            maybes = list(map(func, items))
+            return sequence_maybe(maybes)
+
+
+def result_to_either(result: Result[T, E]) -> Either[T, E]:
+            """Result를 Either로 변환"""
+            match result:
+                case Success(value):
+            return Either.right(value)
+        case Failure(error):
+            return Either.left(error)
+
+
+def either_to_result(either: Either[T, E]) -> Result[T, E]:
+            """Either를 Result로 변환"""
+            return either.to_result()
+
+
+def maybe_to_result(maybe: Maybe[T], error: E) -> Result[T, E]:
+            """Maybe를 Result로 변환"""
+            return maybe.to_result(error)
+
+
+def result_of(func: Callable[[], T]) -> Result[T, Exception]:
+            """함수 실행 결과를 Result로 감싸기"""
+            try:
+            return Success(func())
+            except Exception as e:
+            return Failure(e)
+
+
+def maybe_of(value: Optional[T]) -> Maybe[T]:
+            """Optional 값을 Maybe로 변환"""
+            return Maybe.some(value) if value is not None else Maybe.none()
+
+
+def either_of(value: T, error: Optional[E] = None) -> Either[T, E]:
+            """값 또는 에러로 Either 생성"""
+            return Either.left(error) if error is not None else Either.right(value)

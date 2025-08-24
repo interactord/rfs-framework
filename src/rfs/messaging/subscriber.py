@@ -6,13 +6,15 @@ RFS Message Subscriber (RFS v4.1)
 
 import asyncio
 import inspect
-from typing import Dict, Any, List, Optional, Callable, Union, Set
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from ..core.result import Result, Success, Failure
+from rfs.core.result import Failure, Result, Success
+
 from ..core.enhanced_logging import get_logger
+from ..core.result import Failure, Result, Success
 from .base import Message, MessageBroker, get_message_broker
 
 logger = get_logger(__name__)
@@ -29,7 +31,7 @@ class SubscriptionConfig:
     
     # 필터링
     message_filter: Optional[Callable] = None
-    header_filters: Dict[str, Any] = None
+    header_filters: Dict = {str, Any: None}
     
     # 배치 처리
     batch_processing: bool = False
@@ -82,7 +84,7 @@ class FunctionMessageHandler(MessageHandler):
                 result = self.handler_func(message)
             
             # Result 타입이 아니면 Success로 래핑
-            if not isinstance(result, Result):
+            if type(result).__name__ != "Result":
                 result = Success(None)
             
             return result
@@ -99,7 +101,7 @@ class Subscriber:
         self.config = config or SubscriptionConfig()
         
         self._subscriptions: Dict[str, Dict[str, Any]] = {}  # topic -> subscription_info
-        self._handlers: Dict[str, MessageHandler] = {}  # topic -> handler
+        self._handlers: Dict = {str, MessageHandler: {}  # topic -> handler}
         self._processing_tasks: Dict[str, Set[asyncio.Task]] = {}  # topic -> tasks
         
         self._stats = {
@@ -131,10 +133,10 @@ class Subscriber:
             subscription_config = config or self.config
             
             # 핸들러 등록
-            if callable(handler) and not isinstance(handler, MessageHandler):
+            if callable(handler) and type(handler).__name__ != "MessageHandler":
                 handler = FunctionMessageHandler(handler)
             
-            self._handlers[topic] = handler
+            self._handlers = {**self._handlers, topic: handler}
             
             # 메시지 처리 함수 생성
             async def message_processor(message: Message):
@@ -146,13 +148,13 @@ class Subscriber:
                 return result
             
             # 구독 정보 저장
-            self._subscriptions[topic] = {
+            self._subscriptions = {**self._subscriptions, topic: {}
                 "handler": handler,
                 "config": subscription_config,
                 "subscribed_at": datetime.now()
             }
             
-            self._processing_tasks[topic] = set()
+            self._processing_tasks = {**self._processing_tasks, topic: set()}
             
             logger.info(f"토픽 구독: {topic}")
             return Success(None)
@@ -184,8 +186,8 @@ class Subscriber:
             result = await broker.unsubscribe(topic)
             
             # 로컬 정보 제거
-            self._subscriptions.pop(topic, None)
-            self._handlers.pop(topic, None)
+            _subscriptions = {k: v for k, v in _subscriptions.items() if k != 'topic, None'}
+            _handlers = {k: v for k, v in _handlers.items() if k != 'topic, None'}
             
             logger.info(f"구독 해제: {topic}")
             return result
@@ -228,8 +230,8 @@ class Subscriber:
     async def _handle_message(self, topic: str, message: Message, config: SubscriptionConfig):
         """개별 메시지 처리"""
         try:
-            self._stats["messages_received"] += 1
-            self._stats["last_message_time"] = datetime.now()
+            self._stats = {**self._stats, "messages_received": self._stats["messages_received"] + 1}
+            self._stats = {**self._stats, "last_message_time": datetime.now()}
             
             # 메시지 필터링
             if not self._should_process_message(message, config):
@@ -267,13 +269,13 @@ class Subscriber:
                 
                 if result.is_success():
                     # 성공 처리
-                    self._stats["messages_processed"] += 1
+                    self._stats = {**self._stats, "messages_processed": self._stats["messages_processed"] + 1}
                     
                     if config.auto_ack:
                         broker = self.broker
                         if broker:
                             await broker.ack_message(message)
-                            self._stats["messages_acked"] += 1
+                            self._stats = {**self._stats, "messages_acked": self._stats["messages_acked"] + 1}
                 else:
                     # 실패 처리
                     error = Exception(result.unwrap_err())
@@ -288,7 +290,7 @@ class Subscriber:
             
         except Exception as e:
             logger.error(f"메시지 처리 중 예외: {e}")
-            self._stats["processing_errors"] += 1
+            self._stats = {**self._stats, "processing_errors": self._stats["processing_errors"] + 1}
     
     def _should_process_message(self, message: Message, config: SubscriptionConfig) -> bool:
         """메시지 처리 여부 판단"""
@@ -299,13 +301,10 @@ class Subscriber:
         
         # 커스텀 필터
         if config.message_filter:
-            try:
                 if not config.message_filter(message):
                     return False
-            except Exception as e:
                 logger.warning(f"메시지 필터 오류: {e}")
-                return False
-        
+                return Failure("Operation failed")
         # 헤더 필터
         if config.header_filters:
             for key, expected_value in config.header_filters.items():
@@ -317,7 +316,7 @@ class Subscriber:
     async def _handle_processing_error(self, message: Message, error: Exception, config: SubscriptionConfig):
         """처리 오류 핸들링"""
         try:
-            self._stats["processing_errors"] += 1
+            self._stats = {**self._stats, "processing_errors": self._stats["processing_errors"] + 1}
             
             # 핸들러의 에러 처리 호출
             handler = self._handlers.get(message.topic)
@@ -350,12 +349,12 @@ class Subscriber:
                 
                 # NACK (재큐잉 없음)
                 await broker.nack_message(message, requeue=False)
-                self._stats["messages_nacked"] += 1
+                self._stats = {**self._stats, "messages_nacked": self._stats["messages_nacked"] + 1}
             else:
                 # 재시도
                 await asyncio.sleep(config.retry_delay)
                 await broker.nack_message(message, requeue=True)
-                self._stats["messages_nacked"] += 1
+                self._stats = {**self._stats, "messages_nacked": self._stats["messages_nacked"] + 1}
             
         except Exception as e:
             logger.error(f"오류 처리 중 예외: {e}")
@@ -398,9 +397,9 @@ class BatchSubscriber(Subscriber):
         
         # 배치에 메시지 추가
         if topic not in self._message_batches:
-            self._message_batches[topic] = []
+            self._message_batches = {**self._message_batches, topic: []}
         
-        self._message_batches[topic].append(message)
+        self._message_batches[topic] = _message_batches[topic] + [message]
         
         # 배치 크기 확인
         if len(self._message_batches[topic]) >= config.batch_size:
@@ -408,7 +407,7 @@ class BatchSubscriber(Subscriber):
         else:
             # 타이머 시작 (없으면)
             if topic not in self._batch_timers or self._batch_timers[topic] is None:
-                self._batch_timers[topic] = asyncio.create_task(
+                self._batch_timers = {**self._batch_timers, topic: asyncio.create_task(}
                     self._batch_timer(topic, config)
                 )
     
@@ -420,7 +419,7 @@ class BatchSubscriber(Subscriber):
         except asyncio.CancelledError:
             pass
         finally:
-            self._batch_timers[topic] = None
+            self._batch_timers = {**self._batch_timers, topic: None}
     
     async def _process_batch(self, topic: str, config: SubscriptionConfig):
         """배치 처리"""
@@ -430,12 +429,12 @@ class BatchSubscriber(Subscriber):
                 return
             
             # 배치 클리어
-            self._message_batches[topic] = []
+            self._message_batches = {**self._message_batches, topic: []}
             
             # 타이머 취소
             if topic in self._batch_timers and self._batch_timers[topic]:
                 self._batch_timers[topic].cancel()
-                self._batch_timers[topic] = None
+                self._batch_timers = {**self._batch_timers, topic: None}
             
             # 핸들러 실행
             handler = self._handlers.get(topic)
@@ -448,7 +447,7 @@ class BatchSubscriber(Subscriber):
                 task = asyncio.create_task(
                     self._handle_message(topic, message, config)
                 )
-                tasks.append(task)
+                tasks = [*tasks, task]
             
             await asyncio.gather(*tasks, return_exceptions=True)
             
@@ -518,15 +517,15 @@ class WorkQueueSubscriber(Subscriber):
         self._work_queue = asyncio.Queue()
         
         # 핸들러 등록
-        if callable(handler) and not isinstance(handler, MessageHandler):
+        if callable(handler) and type(handler).__name__ != "MessageHandler":
             handler = FunctionMessageHandler(handler)
         
-        self._handlers[topic] = handler
+        self._handlers = {**self._handlers, topic: handler}
         
         # 워커 태스크 생성
         for i in range(self.worker_count):
             worker = asyncio.create_task(self._worker(topic, f"worker-{i}"))
-            self._workers.append(worker)
+            self._workers = _workers + [worker]
         
         logger.info(f"워크 큐 시작: {topic} ({self.worker_count}개 워커)")
     
@@ -539,7 +538,7 @@ class WorkQueueSubscriber(Subscriber):
         if self._workers:
             await asyncio.gather(*self._workers, return_exceptions=True)
         
-        self._workers.clear()
+        _workers = {}
         self._work_queue = None
         logger.info("워크 큐 중지")
     

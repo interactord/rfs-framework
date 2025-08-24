@@ -16,10 +16,10 @@ from .standalone import main as standalone_main
 def main(args: Optional[List[str]] = None) -> int:
     """
     RFS CLI 메인 진입점
-    
+
     Args:
         args: CLI 인자 리스트 (None이면 sys.argv 사용)
-    
+
     Returns:
         int: 종료 코드 (0: 성공, 1+: 오류)
     """

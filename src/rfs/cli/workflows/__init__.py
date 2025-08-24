@@ -9,21 +9,26 @@ Workflow Automation Module (RFS v4)
 - 배포 자동화
 """
 
-from .ci_cd import CICDManager, PipelineConfig, DeploymentStrategy
-from .git_workflow import GitWorkflowManager, BranchStrategy, MergeStrategy
+from .automation import ActionRunner, AutomationEngine, WorkflowTrigger
+from .ci_cd import CICDManager, DeploymentStrategy, PipelineConfig
 from .code_quality import CodeQualityManager, QualityConfig, QualityGate
-from .automation import AutomationEngine, WorkflowTrigger, ActionRunner
+from .git_workflow import BranchStrategy, GitWorkflowManager, MergeStrategy
 
 __all__ = [
     # CI/CD 자동화
-    "CICDManager", "PipelineConfig", "DeploymentStrategy",
-    
+    "CICDManager",
+    "PipelineConfig",
+    "DeploymentStrategy",
     # Git 워크플로우
-    "GitWorkflowManager", "BranchStrategy", "MergeStrategy",
-    
+    "GitWorkflowManager",
+    "BranchStrategy",
+    "MergeStrategy",
     # 코드 품질
-    "CodeQualityManager", "QualityConfig", "QualityGate",
-    
+    "CodeQualityManager",
+    "QualityConfig",
+    "QualityGate",
     # 자동화 엔진
-    "AutomationEngine", "WorkflowTrigger", "ActionRunner"
+    "AutomationEngine",
+    "WorkflowTrigger",
+    "ActionRunner",
 ]

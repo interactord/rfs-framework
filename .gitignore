@@ -214,3 +214,52 @@ build/
 # RFS Framework specific temporary files
 rfs_cli_test.py
 cli_test_*.py
+rfs_cli.py
+
+.cursor/
+
+# AI/Claude/MCP related files (not needed for PyPI distribution)
+CLAUDE.md
+README-MCP.md
+context7.json
+mcp-config.json
+mcp_server*.py
+install_mcp.py
+docs/CONTEXT7_REGISTRATION.md
+
+# Quality check scripts and fix files (development tools)
+comprehensive_fix.py
+final_quality_fix.py
+fix_all_style_issues.py
+fix_all_syntax_comprehensive.py
+fix_all_syntax_errors.py
+fix_indentation.py
+fix_match_case.py
+fix_remaining_syntax.py
+fix_syntax_batch.py
+fix_syntax_errors_targeted.py
+fix_syntax_final.py
+fix_syntax_manually.py
+systematic_syntax_fix.py
+scripts/quality/auto_fix.py
+
+# Quality reports and artifacts
+baseline_quality.json
+quality_final_report.json
+style_fix_quality_report.json
+quality_improvement_report.md
+quality_progress_report.json
+functional_final_report.md
+functional_improvement_report.md
+rfs_quality_achievement_report.md
+rfs_quality_report.txt
+rfs_functional_rules.json
+scripts/quality/rfs_functional_rules.json
+
+# Quality check artifacts and backup directories
+.rfs-quality/
+scripts/quality/.rfs-quality/
+scripts/quality/unified/
+
+# Development reports and cleanup files
+CLEANUP_REPORT.md

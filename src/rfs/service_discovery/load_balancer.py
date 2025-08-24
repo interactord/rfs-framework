@@ -10,19 +10,19 @@ RFS v4.1 Client-Side Load Balancing
 """
 
 import asyncio
-import random
-import time
-import logging
 import hashlib
-from typing import Any, Callable, Optional, Dict, List, Union, TypeVar, Tuple
+import logging
+import random
+import threading
+import time
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from abc import ABC, abstractmethod
-import threading
-from collections import defaultdict
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
-from ..core.result import Result, Success, Failure
+from ..core.result import Failure, Result, Success
 from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ class RoundRobinAlgorithm(LoadBalancingAlgorithm):
         
         with self.lock:
             instance = available[self.current_index % len(available)]
-            self.current_index += 1
+            current_index = current_index + 1
             return instance
     
     def reset(self) -> None:
@@ -222,25 +222,25 @@ class WeightedRoundRobinAlgorithm(LoadBalancingAlgorithm):
             # 가중치 초기화
             for instance in available:
                 if instance.id not in self.current_weights:
-                    self.current_weights[instance.id] = 0
+                    self.current_weights = {**self.current_weights, instance.id: 0}
             
             # 가중치 증가
             total_weight = 0
             for instance in available:
-                self.current_weights[instance.id] += instance.weight
-                total_weight += instance.weight
+                self.current_weights[instance.id]  =                 self.current_weights[instance.id]  + (instance.weight)
+                total_weight = total_weight + instance.weight
             
             # 최대 가중치 인스턴스 선택
             selected = max(available, key=lambda i: self.current_weights[i.id])
             
             # 선택된 인스턴스 가중치 감소
-            self.current_weights[selected.id] -= total_weight
+            self.current_weights[selected.id]  =             self.current_weights[selected.id]  - (total_weight)
             
             return selected
     
     def reset(self) -> None:
         """가중치 리셋"""
-        self.current_weights.clear()
+        current_weights = {}
 
 
 class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
@@ -257,14 +257,14 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
     
     def _build_ring(self, instances: List[ServiceInstance]) -> None:
         """해시 링 구축"""
-        self.ring.clear()
+        ring = {}
         
         for instance in instances:
             if instance.is_available():
                 for i in range(self.virtual_nodes):
                     virtual_key = f"{instance.id}:{i}"
                     hash_value = self._hash(virtual_key)
-                    self.ring[hash_value] = instance
+                    self.ring = {**self.ring, hash_value: instance}
         
         self.sorted_keys = sorted(self.ring.keys())
     
@@ -305,8 +305,8 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
     
     def reset(self) -> None:
         """링 리셋"""
-        self.ring.clear()
-        self.sorted_keys.clear()
+        ring = {}
+        sorted_keys = {}
 
 
 class LeastResponseTimeAlgorithm(LoadBalancingAlgorithm):
@@ -359,7 +359,7 @@ class LoadBalancer:
         self.health_check_task: Optional[asyncio.Task] = None
         
         # 세션 고정
-        self.session_affinity: Dict[str, str] = {}  # session_id -> instance_id
+        self.session_affinity: Dict = {str, str: {}  # session_id -> instance_id}
         
         # 통계
         self.total_requests = 0
@@ -382,11 +382,11 @@ class LoadBalancer:
     def add_instance(self, instance: ServiceInstance) -> None:
         """인스턴스 추가"""
         with self.lock:
-            self.instances[instance.id] = instance
+            self.instances = {**self.instances, instance.id: instance}
             
             # 서킷 브레이커 생성
             if self.config.circuit_breaker_enabled:
-                self.circuit_breakers[instance.id] = CircuitBreaker(
+                self.circuit_breakers = {**self.circuit_breakers, instance.id: CircuitBreaker(}
                     name=f"{self.service_name}:{instance.id}",
                     config=self.config.circuit_breaker_config
                 )
@@ -432,7 +432,7 @@ class LoadBalancer:
             if selected and self.config.sticky_sessions and context:
                 session_id = context.get("session_id")
                 if session_id:
-                    self.session_affinity[session_id] = selected.id
+                    self.session_affinity = {**self.session_affinity, session_id: selected.id}
             
             return selected
     
@@ -455,8 +455,8 @@ class LoadBalancer:
             
             try:
                 # 연결 수 증가
-                instance.active_connections += 1
-                self.total_requests += 1
+                active_connections = active_connections + 1
+                total_requests = total_requests + 1
                 
                 start_time = time.perf_counter()
                 
@@ -475,8 +475,8 @@ class LoadBalancer:
                 
                 # 메트릭 업데이트
                 response_time = time.perf_counter() - start_time
-                instance.total_requests += 1
-                instance.total_response_time += response_time
+                total_requests = total_requests + 1
+                total_response_time = total_response_time + response_time
                 instance.last_response_time = response_time
                 instance.consecutive_failures = 0
                 
@@ -484,8 +484,8 @@ class LoadBalancer:
                 
             except Exception as e:
                 last_error = e
-                instance.consecutive_failures += 1
-                self.failed_requests += 1
+                consecutive_failures = consecutive_failures + 1
+                failed_requests = failed_requests + 1
                 
                 # 최대 실패 횟수 초과 시 인스턴스 비활성화
                 if instance.consecutive_failures >= self.config.max_consecutive_failures:
@@ -494,7 +494,7 @@ class LoadBalancer:
                 
                 # 재시도
                 if self.config.retry_enabled and retries < self.config.max_retries:
-                    retries += 1
+                    retries = retries + 1
                     await asyncio.sleep(self.config.retry_delay * retries)
                 else:
                     raise

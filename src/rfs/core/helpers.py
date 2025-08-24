@@ -6,33 +6,34 @@ RFS Framework의 핵심 헬퍼 함수들
 """
 
 import logging
-from typing import Optional, Dict, Any, TypeVar
 from datetime import datetime
+from typing import Any, Dict, Optional, TypeVar
 
+from ..events import Event, EventBus
 from .config import ConfigManager, RFSConfig
+from .enhanced_logging import LogContext, LogLevel, get_default_logger
 from .singleton import SingletonMeta
-from ..events import EventBus, Event
-from .enhanced_logging import get_default_logger, LogLevel, LogContext
 
 # 로거 설정 - Enhanced Logger 통합
 logger = logging.getLogger(__name__)
 _enhanced_logger = get_default_logger()
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 # ============= Configuration Helpers =============
 
 _config_instance: Optional[RFSConfig] = None
 
+
 def get_config() -> RFSConfig:
     """
     전역 설정 인스턴스 반환
-    
+
     Returns:
         RFSConfig: 애플리케이션 설정
     """
-    global _config_instance
+    # global _config_instance - removed for functional programming
     if _config_instance is None:
         config_manager = ConfigManager()
         _config_instance = config_manager.from_env()
@@ -42,25 +43,25 @@ def get_config() -> RFSConfig:
 def get(key: str, default: Any = None) -> Any:
     """
     설정 값 가져오기
-    
+
     Args:
         key: 설정 키 (점 표기법 지원)
         default: 기본값
-        
+
     Returns:
         설정 값 또는 기본값
     """
     config = get_config()
-    
+
     # 점 표기법 처리 (예: "database.host")
-    keys = key.split('.')
+    keys = key.split(".")
     value = config
-    
+
     try:
         for k in keys:
             if hasattr(value, k):
                 value = getattr(value, k)
-            elif isinstance(value, dict):
+            elif type(value).__name__ == "dict":
                 value = value.get(k)
             else:
                 return default
@@ -71,12 +72,13 @@ def get(key: str, default: Any = None) -> Any:
 
 # ============= Event System Helpers =============
 
+
 class GlobalEventBus(metaclass=SingletonMeta):
     """전역 이벤트 버스 싱글톤"""
-    
+
     def __init__(self):
         self._bus = EventBus()
-    
+
     @property
     def bus(self) -> EventBus:
         return self._bus
@@ -85,7 +87,7 @@ class GlobalEventBus(metaclass=SingletonMeta):
 def get_event_bus() -> EventBus:
     """
     전역 이벤트 버스 인스턴스 반환
-    
+
     Returns:
         EventBus: 전역 이벤트 버스
     """
@@ -97,18 +99,18 @@ def create_event(
     data: Dict[str, Any] = None,
     metadata: Dict[str, Any] = None,
     source: str = None,
-    correlation_id: str = None
+    correlation_id: str = None,
 ) -> Event:
     """
     이벤트 생성 헬퍼
-    
+
     Args:
         event_type: 이벤트 타입
         data: 이벤트 데이터
         metadata: 메타데이터
         source: 이벤트 소스
         correlation_id: 상관관계 ID
-        
+
     Returns:
         Event: 생성된 이벤트
     """
@@ -117,18 +119,14 @@ def create_event(
         data=data or {},
         metadata=metadata or {},
         source=source or "system",
-        correlation_id=correlation_id
+        correlation_id=correlation_id,
     )
 
 
-async def publish_event(
-    event_type: str,
-    data: Dict[str, Any] = None,
-    **kwargs
-) -> None:
+async def publish_event(event_type: str, data: Dict[str, Any] = None, **kwargs) -> None:
     """
     이벤트 발행 헬퍼
-    
+
     Args:
         event_type: 이벤트 타입
         data: 이벤트 데이터
@@ -141,32 +139,29 @@ async def publish_event(
 
 # ============= Logging Helpers =============
 
+
 def setup_logging(
-    level: str = "INFO",
-    format: str = None,
-    handlers: list = None
+    level: str = "INFO", format: str = None, handlers: list = None
 ) -> None:
     """
     로깅 설정
-    
+
     Args:
         level: 로그 레벨
         format: 로그 포맷
         handlers: 로그 핸들러 리스트
     """
     log_format = format or "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
     logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        format=log_format,
-        handlers=handlers
+        level=getattr(logging, level.upper()), format=log_format, handlers=handlers
     )
 
 
 def log_info(message: str, **kwargs) -> None:
     """
     INFO 레벨 로그
-    
+
     Args:
         message: 로그 메시지
         **kwargs: 추가 컨텍스트
@@ -174,7 +169,7 @@ def log_info(message: str, **kwargs) -> None:
     # Enhanced Logger 통합
     context = LogContext(extra_data=kwargs, timestamp=datetime.now())
     _enhanced_logger.log(LogLevel.INFO, message, context=context)
-    
+
     # Backward compatibility
     extra = {"timestamp": datetime.now().isoformat(), **kwargs}
     logger.info(message, extra=extra)
@@ -183,7 +178,7 @@ def log_info(message: str, **kwargs) -> None:
 def log_warning(message: str, **kwargs) -> None:
     """
     WARNING 레벨 로그
-    
+
     Args:
         message: 로그 메시지
         **kwargs: 추가 컨텍스트
@@ -191,7 +186,7 @@ def log_warning(message: str, **kwargs) -> None:
     # Enhanced Logger 통합
     context = LogContext(extra_data=kwargs, timestamp=datetime.now())
     _enhanced_logger.log(LogLevel.WARNING, message, context=context)
-    
+
     # Backward compatibility
     extra = {"timestamp": datetime.now().isoformat(), **kwargs}
     logger.warning(message, extra=extra)
@@ -200,7 +195,7 @@ def log_warning(message: str, **kwargs) -> None:
 def log_error(message: str, exception: Exception = None, **kwargs) -> None:
     """
     ERROR 레벨 로그
-    
+
     Args:
         message: 로그 메시지
         exception: 예외 객체
@@ -208,14 +203,16 @@ def log_error(message: str, exception: Exception = None, **kwargs) -> None:
     """
     # Enhanced Logger 통합
     error_data = {"exception": str(exception) if exception else None, **kwargs}
-    context = LogContext(extra_data=error_data, timestamp=datetime.now(), exception=exception)
+    context = LogContext(
+        extra_data=error_data, timestamp=datetime.now(), exception=exception
+    )
     _enhanced_logger.log(LogLevel.ERROR, message, context=context)
-    
+
     # Backward compatibility
     extra = {
         "timestamp": datetime.now().isoformat(),
         "exception": str(exception) if exception else None,
-        **kwargs
+        **kwargs,
     }
     logger.error(message, exc_info=exception, extra=extra)
 
@@ -223,7 +220,7 @@ def log_error(message: str, exception: Exception = None, **kwargs) -> None:
 def log_debug(message: str, **kwargs) -> None:
     """
     DEBUG 레벨 로그
-    
+
     Args:
         message: 로그 메시지
         **kwargs: 추가 컨텍스트
@@ -231,7 +228,7 @@ def log_debug(message: str, **kwargs) -> None:
     # Enhanced Logger 통합
     context = LogContext(extra_data=kwargs, timestamp=datetime.now())
     _enhanced_logger.log(LogLevel.DEBUG, message, context=context)
-    
+
     # Backward compatibility
     extra = {"timestamp": datetime.now().isoformat(), **kwargs}
     logger.debug(message, extra=extra)
@@ -247,16 +244,16 @@ from contextlib import contextmanager
 def monitor_performance(operation_name: str):
     """
     성능 모니터링 컨텍스트 매니저
-    
+
     Args:
         operation_name: 작업 이름
-        
+
     Example:
         with monitor_performance("database_query"):
             result = await db.query()
     """
     start_time = time.time()
-    
+
     try:
         log_debug(f"Starting operation: {operation_name}")
         yield
@@ -265,19 +262,16 @@ def monitor_performance(operation_name: str):
         log_info(
             f"Operation completed: {operation_name}",
             duration_ms=elapsed_time * 1000,
-            operation=operation_name
+            operation=operation_name,
         )
 
 
 def record_metric(
-    metric_name: str,
-    value: float,
-    unit: str = None,
-    tags: Dict[str, str] = None
+    metric_name: str, value: float, unit: str = None, tags: Dict[str, str] = None
 ) -> None:
     """
     메트릭 기록
-    
+
     Args:
         metric_name: 메트릭 이름
         value: 메트릭 값
@@ -289,26 +283,29 @@ def record_metric(
         metric_name=metric_name,
         value=value,
         unit=unit,
-        tags=tags or {}
+        tags=tags or {},
     )
 
 
 # ============= Enhanced Logging Convenience Functions =============
 
+
 def get_enhanced_logger():
     """
     Enhanced Logger 인스턴스 반환
-    
+
     Returns:
         EnhancedLogger: 전역 Enhanced Logger
     """
     return _enhanced_logger
 
 
-def log_with_context(level: str, message: str, context_data: Dict[str, Any] = None, **kwargs) -> None:
+def log_with_context(
+    level: str, message: str, context_data: Dict[str, Any] = None, **kwargs
+) -> None:
     """
     컨텍스트와 함께 로그 기록
-    
+
     Args:
         level: 로그 레벨 (info, warning, error, debug)
         message: 로그 메시지
@@ -328,12 +325,10 @@ __all__ = [
     # Configuration
     "get_config",
     "get",
-    
     # Event System
     "get_event_bus",
     "create_event",
     "publish_event",
-    
     # Logging (Legacy + Enhanced)
     "setup_logging",
     "log_info",
@@ -342,7 +337,6 @@ __all__ = [
     "log_debug",
     "get_enhanced_logger",
     "log_with_context",
-    
     # Performance
     "monitor_performance",
     "record_metric",

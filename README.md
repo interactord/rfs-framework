@@ -43,6 +43,7 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 - **🤖 Automation**: CI/CD 파이프라인 자동화
 - **🧪 Testing**: 통합 테스트 프레임워크
 - **📖 Docs**: 자동 문서 생성
+- **🔧 Code Quality**: 통합 품질 관리 시스템 (rfs-quality CLI)
 
 ### 🔒 Production Ready
 - **✅ Validation**: 포괄적인 시스템 검증
@@ -212,6 +213,36 @@ print(f"현재 상태: {order_machine.current_state}")  # pending
 order_machine.transition_to("processing")
 print(f"변경된 상태: {order_machine.current_state}")  # processing
 ```
+
+### Code Quality Management (New!)
+
+```bash
+# 품질 검사 - 코드베이스 전체 검증
+rfs-quality check
+rfs-quality check src/rfs/core --auto-backup  # 특정 디렉토리, 자동 백업
+
+# 자동 수정 - 안전 모드로 코드 개선
+rfs-quality fix --safe  # 자동 백업/롤백 활성화
+rfs-quality fix --type functional  # 함수형 패턴 적용
+rfs-quality fix --dry-run  # 시뮬레이션 모드
+
+# 백업 관리 - 변경 전 안전 보장
+rfs-quality backup create --description "리팩토링 전 백업"
+rfs-quality backup list  # 백업 세션 목록
+rfs-quality backup rollback  # 이전 상태로 복원
+
+# 세션 관리 - 작업 추적
+rfs-quality session info  # 현재 세션 정보
+rfs-quality session metrics  # 품질 메트릭 확인
+```
+
+변환 유형:
+- `syntax_fix`: Python 구문 오류 수정
+- `isort`: import 문 자동 정렬  
+- `black`: 코드 포맷팅 표준화
+- `functional`: 함수형 프로그래밍 패턴 적용
+- `match_case`: if-elif 체인을 match-case로 변환
+- `all`: 모든 변환 순차 적용
 
 ## 🖥️ CLI Usage
 

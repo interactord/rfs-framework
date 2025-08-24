@@ -4,118 +4,79 @@ RFS Advanced Analytics (RFS v4.1)
 고급 분석 및 대시보드 시스템
 """
 
-from .dashboard import (
-    # 대시보드 시스템
-    Dashboard,
-    DashboardLayout,
-    Widget,
-    WidgetType,
-    
-    # 위젯 구현체
+from .charts import (  # 차트 시스템; 차트 구현체; 차트 빌더
+    BarChart,
+    Chart,
+    ChartBuilder,
+    ChartData,
+    ChartOptions,
+    ChartType,
+    HeatmapChart,
+    HistogramChart,
+    LineChart,
+    PieChart,
+    ScatterChart,
+    create_chart,
+)
+from .dashboard import (  # 대시보드 시스템; 위젯 구현체; 대시보드 빌더; 대시보드 관리
     ChartWidget,
+    Dashboard,
+    DashboardBuilder,
+    DashboardLayout,
+    DashboardManager,
     MetricWidget,
     TableWidget,
     TextWidget,
-    
-    # 대시보드 빌더
-    DashboardBuilder,
+    Widget,
+    WidgetType,
     create_dashboard,
-    
-    # 대시보드 관리
-    DashboardManager,
-    get_dashboard_manager
+    get_dashboard_manager,
 )
-
-from .charts import (
-    # 차트 시스템
-    Chart,
-    ChartType,
-    ChartData,
-    ChartOptions,
-    
-    # 차트 구현체
-    LineChart,
-    BarChart,
-    PieChart,
-    ScatterChart,
-    HistogramChart,
-    HeatmapChart,
-    
-    # 차트 빌더
-    ChartBuilder,
-    create_chart
-)
-
-from .data_source import (
-    # 데이터 소스
-    DataSource,
-    DataSourceType,
-    DataQuery,
-    
-    # 데이터 소스 구현체
-    DatabaseDataSource,
-    FileDataSource,
+from .data_source import (  # 데이터 소스; 데이터 소스 구현체; 데이터 소스 관리
     APIDataSource,
-    MetricsDataSource,
-    
-    # 데이터 소스 관리
+    DatabaseDataSource,
+    DataQuery,
+    DataSource,
     DataSourceManager,
-    register_data_source
+    DataSourceType,
+    FileDataSource,
+    MetricsDataSource,
+    register_data_source,
 )
-
-from .visualization import (
-    # 시각화 엔진
-    VisualizationEngine,
-    PlotConfig,
-    ColorScheme,
-    
-    # 시각화 유틸리티
-    generate_plot,
-    export_chart,
-    create_interactive_plot,
-    
-    # 테마 관리
-    Theme,
-    DefaultTheme,
-    DarkTheme,
-    apply_theme
+from .kpi import (  # KPI 관리; KPI 타입; KPI 대시보드
+    KPI,
+    AverageKPI,
+    CountKPI,
+    KPICalculator,
+    KPIDashboard,
+    KPIThreshold,
+    PercentageKPI,
+    TrendKPI,
+    create_kpi_dashboard,
 )
-
-from .reports import (
-    # 리포트 시스템
+from .reports import (  # 리포트 시스템; 리포트 타입; 리포트 생성; 리포트 템플릿
+    ExcelReport,
+    HTMLReport,
+    PDFReport,
     Report,
     ReportBuilder,
     ReportSection,
-    
-    # 리포트 타입
-    PDFReport,
-    HTMLReport,
-    ExcelReport,
-    
-    # 리포트 생성
+    ReportTemplate,
+    create_report_template,
     generate_report,
     schedule_report,
-    
-    # 리포트 템플릿
-    ReportTemplate,
-    create_report_template
 )
-
-from .kpi import (
-    # KPI 관리
-    KPI,
-    KPICalculator,
-    KPIThreshold,
-    
-    # KPI 타입
-    CountKPI,
-    AverageKPI,
-    PercentageKPI,
-    TrendKPI,
-    
-    # KPI 대시보드
-    KPIDashboard,
-    create_kpi_dashboard
+from .visualization import (  # 시각화 엔진; 시각화 유틸리티; 테마 관리
+    ColorScheme,
+    DarkTheme,
+    DefaultTheme,
+    PlotConfig,
+    Theme,
+    VisualizationEngine,
+    apply_theme,
+    create_interactive_plot,
+    export_chart,
+    generate_plot,
 )
 
 __all__ = [
@@ -125,14 +86,13 @@ __all__ = [
     "Widget",
     "WidgetType",
     "ChartWidget",
-    "MetricWidget", 
+    "MetricWidget",
     "TableWidget",
     "TextWidget",
     "DashboardBuilder",
     "create_dashboard",
     "DashboardManager",
     "get_dashboard_manager",
-    
     # Charts
     "Chart",
     "ChartType",
@@ -146,7 +106,6 @@ __all__ = [
     "HeatmapChart",
     "ChartBuilder",
     "create_chart",
-    
     # Data Source
     "DataSource",
     "DataSourceType",
@@ -157,7 +116,6 @@ __all__ = [
     "MetricsDataSource",
     "DataSourceManager",
     "register_data_source",
-    
     # Visualization
     "VisualizationEngine",
     "PlotConfig",
@@ -169,7 +127,6 @@ __all__ = [
     "DefaultTheme",
     "DarkTheme",
     "apply_theme",
-    
     # Reports
     "Report",
     "ReportBuilder",
@@ -181,7 +138,6 @@ __all__ = [
     "schedule_report",
     "ReportTemplate",
     "create_report_template",
-    
     # KPI
     "KPI",
     "KPICalculator",
@@ -191,5 +147,5 @@ __all__ = [
     "PercentageKPI",
     "TrendKPI",
     "KPIDashboard",
-    "create_kpi_dashboard"
+    "create_kpi_dashboard",
 ]

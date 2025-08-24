@@ -5,19 +5,19 @@ Service Discovery Implementation
 """
 
 import asyncio
-import random
-from typing import Dict, List, Optional, Any, Set, Callable
-from datetime import datetime, timedelta
 import logging
+import random
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional, Set
 
-from ..core import Result, Success, Failure
+from ..core import Failure, Result, Success
 from .base import (
-    ServiceInfo,
-    ServiceStatus,
-    ServiceEndpoint,
-    ServiceMetadata,
     LoadBalancerType,
-    ServiceNotFoundError
+    ServiceEndpoint,
+    ServiceInfo,
+    ServiceMetadata,
+    ServiceNotFoundError,
+    ServiceStatus,
 )
 from .registry import ServiceRegistry, get_service_registry
 
@@ -60,14 +60,14 @@ class ServiceResolver:
         else:
             # 레지스트리에서 조회
             result = await self.registry.get_services(service_name)
-            if isinstance(result, Failure):
+            if (type(result).__name__ == "Failure"):
                 return Failure(f"Failed to resolve service {service_name}: {result.error}")
             
             services = result.value
             
             # 캐시 업데이트
-            self.cache[service_name] = services
-            self.cache_timestamps[service_name] = datetime.now()
+            self.cache = {**self.cache, service_name: services}
+            self.cache_timestamps = {**self.cache_timestamps, service_name: datetime.now()}
         
         # 필터링
         filtered_services = self._filter_services(services, tags, labels)
@@ -103,7 +103,7 @@ class ServiceResolver:
             선택된 서비스 엔드포인트
         """
         result = await self.resolve(service_name, tags, labels)
-        if isinstance(result, Failure):
+        if (type(result).__name__ == "Failure"):
             return result
         
         endpoints = result.value
@@ -151,11 +151,11 @@ class ServiceResolver:
     def clear_cache(self, service_name: Optional[str] = None):
         """캐시 클리어"""
         if service_name:
-            self.cache.pop(service_name, None)
-            self.cache_timestamps.pop(service_name, None)
+            cache = {k: v for k, v in cache.items() if k != 'service_name, None'}
+            cache_timestamps = {k: v for k, v in cache_timestamps.items() if k != 'service_name, None'}
         else:
-            self.cache.clear()
-            self.cache_timestamps.clear()
+            cache = {}
+            cache_timestamps = {}
 
 
 class ServiceWatcher:
@@ -188,7 +188,7 @@ class ServiceWatcher:
         if self.watch_tasks:
             await asyncio.gather(*self.watch_tasks.values(), return_exceptions=True)
         
-        self.watch_tasks.clear()
+        watch_tasks = {}
         logger.info("ServiceWatcher stopped")
     
     async def watch(
@@ -207,15 +207,15 @@ class ServiceWatcher:
         """
         # 콜백 등록
         if service_name not in self.callbacks:
-            self.callbacks[service_name] = []
-        self.callbacks[service_name].append(callback)
+            self.callbacks = {**self.callbacks, service_name: []}
+        self.callbacks[service_name] = callbacks[service_name] + [callback]
         
         # 감시 태스크 시작
         if service_name not in self.watch_tasks:
             task = asyncio.create_task(
                 self._watch_loop(service_name, interval)
             )
-            self.watch_tasks[service_name] = task
+            self.watch_tasks = {**self.watch_tasks, service_name: task}
         
         # 레지스트리 워치 등록
         await self.registry.watch(service_name, self._handle_registry_event)
@@ -225,7 +225,7 @@ class ServiceWatcher:
     async def unwatch(self, service_name: str):
         """서비스 감시 중지"""
         # 콜백 제거
-        self.callbacks.pop(service_name, None)
+        callbacks = {k: v for k, v in callbacks.items() if k != 'service_name, None'}
         
         # 감시 태스크 취소
         if service_name in self.watch_tasks:
@@ -236,13 +236,13 @@ class ServiceWatcher:
     
     async def _watch_loop(self, service_name: str, interval: timedelta):
         """감시 루프"""
-        previous_services: Dict[str, ServiceInfo] = {}
+        previous_services: Dict = {str, ServiceInfo: {}
         
         while self._running:
             try:
                 # 현재 서비스 목록 조회
                 result = await self.registry.get_services(service_name)
-                if isinstance(result, Success):
+                if (type(result).__name__ == "Success"):
                     current_services = {s.service_id: s for s in result.value}
                     
                     # 변경 감지
@@ -373,8 +373,8 @@ class ServiceDiscovery:
         """서비스 등록"""
         result = await self.registry.register(service)
         
-        if isinstance(result, Success):
-            self.local_services[service.service_id] = service
+        if (type(result).__name__ == "Success"):
+            self.local_services = {**self.local_services, service.service_id: service}
             
             # 하트비트 시작
             asyncio.create_task(self._heartbeat_loop(service.service_id))
@@ -385,8 +385,8 @@ class ServiceDiscovery:
         """서비스 등록 해제"""
         result = await self.registry.deregister(service_id)
         
-        if isinstance(result, Success):
-            self.local_services.pop(service_id, None)
+        if (type(result).__name__ == "Success"):
+            local_services = {k: v for k, v in local_services.items() if k != 'service_id, None'}
         
         return result
     
@@ -438,7 +438,7 @@ class ServiceDiscovery:
                 
                 # 하트비트 전송
                 result = await self.registry.heartbeat(service_id)
-                if isinstance(result, Failure):
+                if (type(result).__name__ == "Failure"):
                     logger.error(f"Heartbeat failed for {service_id}: {result.error}")
                     
                     # 재등록 시도
@@ -458,7 +458,7 @@ _global_discovery: Optional[ServiceDiscovery] = None
 
 async def get_service_discovery() -> ServiceDiscovery:
     """전역 서비스 디스커버리 반환"""
-    global _global_discovery
+    # global _global_discovery - removed for functional programming
     if _global_discovery is None:
         _global_discovery = ServiceDiscovery()
         await _global_discovery.start()

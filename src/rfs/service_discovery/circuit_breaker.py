@@ -10,17 +10,17 @@ RFS v4.1 Circuit Breaker Pattern
 """
 
 import asyncio
-import time
+import functools
 import logging
-from typing import Any, Callable, Optional, Dict, List, Union, TypeVar
+import threading
+import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from collections import deque
-import threading
-import functools
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
-from ..core.result import Result, Success, Failure
+from ..core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -120,20 +120,19 @@ class CircuitBreaker:
     def _should_allow_request(self) -> bool:
         """요청 허용 여부 결정"""
         with self.lock:
-            if self.state == CircuitState.CLOSED:
-                return True
+            match self.state:
+                case CircuitState.CLOSED:
+                    return True
             
-            elif self.state == CircuitState.OPEN:
-                # 리셋 타임아웃 확인
+                case CircuitState.OPEN:                # 리셋 타임아웃 확인
                 if (datetime.now() - self.last_state_change).total_seconds() > self.config.reset_timeout:
                     self._transition_to_half_open()
                     return True
                 return False
             
-            elif self.state == CircuitState.HALF_OPEN:
-                # 테스트 요청 수 제한
+                case CircuitState.HALF_OPEN:                # 테스트 요청 수 제한
                 if self.half_open_requests < self.config.half_open_max_requests:
-                    self.half_open_requests += 1
+                    half_open_requests = half_open_requests + 1
                     return True
                 return False
             
@@ -142,14 +141,14 @@ class CircuitBreaker:
     def _record_success(self, response_time: float) -> None:
         """성공 기록"""
         with self.lock:
-            self.metrics.successful_requests += 1
-            self.metrics.total_requests += 1
-            self.metrics.total_response_time += response_time
+            successful_requests = successful_requests + 1
+            total_requests = total_requests + 1
+            total_response_time = total_response_time + response_time
             self.metrics.last_success_time = datetime.now()
             
             # 슬라이딩 윈도우 업데이트
-            self.failure_window.append(False)
-            self.request_times.append(datetime.now())
+            self.failure_window = self.failure_window + [False]
+            self.request_times = self.request_times + [datetime.now()]
             self._clean_old_requests()
             
             # HALF_OPEN 상태에서 성공하면 CLOSED로
@@ -165,21 +164,21 @@ class CircuitBreaker:
         with self.lock:
             # 제외할 예외인지 확인
             if error and self.config.exclude_exceptions:
-                if any(isinstance(error, exc_type) for exc_type in self.config.exclude_exceptions):
+                if any((type(error).__name__ == "exc_type") for exc_type in self.config.exclude_exceptions):
                     return
             
             # 포함할 예외만 처리
             if error and self.config.include_exceptions:
-                if not any(isinstance(error, exc_type) for exc_type in self.config.include_exceptions):
+                if not any((type(error).__name__ == "exc_type") for exc_type in self.config.include_exceptions):
                     return
             
-            self.metrics.failed_requests += 1
-            self.metrics.total_requests += 1
+            failed_requests = failed_requests + 1
+            total_requests = total_requests + 1
             self.metrics.last_failure_time = datetime.now()
             
             # 슬라이딩 윈도우 업데이트
-            self.failure_window.append(True)
-            self.request_times.append(datetime.now())
+            self.failure_window = self.failure_window + [True]
+            self.request_times = self.request_times + [datetime.now()]
             self._clean_old_requests()
             
             # 실패 임계값 확인
@@ -199,7 +198,7 @@ class CircuitBreaker:
     def _record_rejection(self) -> None:
         """거부 기록"""
         with self.lock:
-            self.metrics.rejected_requests += 1
+            rejected_requests = rejected_requests + 1
     
     def _clean_old_requests(self) -> None:
         """오래된 요청 기록 정리"""
@@ -216,7 +215,7 @@ class CircuitBreaker:
             old_state = self.state
             self.state = CircuitState.OPEN
             self.last_state_change = datetime.now()
-            self.metrics.state_changes.append((datetime.now(), old_state, CircuitState.OPEN))
+            self.metrics.state_changes = self.metrics.state_changes + [(datetime.now(), old_state, CircuitState.OPEN)]
             
             logger.warning(f"Circuit breaker '{self.name}' opened")
             
@@ -230,7 +229,7 @@ class CircuitBreaker:
             self.state = CircuitState.CLOSED
             self.last_state_change = datetime.now()
             self.half_open_requests = 0
-            self.metrics.state_changes.append((datetime.now(), old_state, CircuitState.CLOSED))
+            self.metrics.state_changes = self.metrics.state_changes + [(datetime.now(), old_state, CircuitState.CLOSED)]
             
             logger.info(f"Circuit breaker '{self.name}' closed")
             
@@ -244,7 +243,7 @@ class CircuitBreaker:
             self.state = CircuitState.HALF_OPEN
             self.last_state_change = datetime.now()
             self.half_open_requests = 0
-            self.metrics.state_changes.append((datetime.now(), old_state, CircuitState.HALF_OPEN))
+            self.metrics.state_changes = self.metrics.state_changes + [(datetime.now(), old_state, CircuitState.HALF_OPEN)]
             
             logger.info(f"Circuit breaker '{self.name}' half-opened")
             
@@ -303,8 +302,8 @@ class CircuitBreaker:
         with self.lock:
             self.state = CircuitState.CLOSED
             self.metrics = CircuitBreakerMetrics()
-            self.failure_window.clear()
-            self.request_times.clear()
+            failure_window = {}
+            request_times = {}
             self.half_open_requests = 0
             self.last_state_change = datetime.now()
             
@@ -348,7 +347,7 @@ class CircuitBreakerRegistry:
         """서킷 브레이커 가져오기 또는 생성"""
         with self.lock:
             if name not in self.breakers:
-                self.breakers[name] = CircuitBreaker(name, config)
+                self.breakers = {**self.breakers, name: CircuitBreaker(name, config)}
             return self.breakers[name]
     
     def remove(self, name: str) -> None:

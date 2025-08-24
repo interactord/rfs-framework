@@ -8,37 +8,48 @@ RFS CLI Module (RFS v4)
 - 디버깅 및 테스팅 지원
 """
 
-from .core import RFSCli, Command, CommandGroup
-from .commands import (
-    # 프로젝트 관리
-    InitCommand, NewCommand, ConfigCommand,
-    
-    # 개발 워크플로우
-    DevCommand, BuildCommand, TestCommand, 
-    
-    # 배포 및 운영
-    DeployCommand, MonitorCommand, LogsCommand,
-    
-    # 디버깅 및 유틸리티
-    DebugCommand, StatusCommand, HealthCommand
+from .commands import (  # 프로젝트 관리; 개발 워크플로우; 배포 및 운영; 디버깅 및 유틸리티
+    BuildCommand,
+    ConfigCommand,
+    DebugCommand,
+    DeployCommand,
+    DevCommand,
+    HealthCommand,
+    InitCommand,
+    LogsCommand,
+    MonitorCommand,
+    NewCommand,
+    StatusCommand,
+    TestCommand,
 )
+from .core import Command, CommandGroup, RFSCli
 
 __all__ = [
-    "RFSCli", "Command", "CommandGroup",
-    "InitCommand", "NewCommand", "ConfigCommand",
-    "DevCommand", "BuildCommand", "TestCommand",
-    "DeployCommand", "MonitorCommand", "LogsCommand", 
-    "DebugCommand", "StatusCommand", "HealthCommand"
+    "RFSCli",
+    "Command",
+    "CommandGroup",
+    "InitCommand",
+    "NewCommand",
+    "ConfigCommand",
+    "DevCommand",
+    "BuildCommand",
+    "TestCommand",
+    "DeployCommand",
+    "MonitorCommand",
+    "LogsCommand",
+    "DebugCommand",
+    "StatusCommand",
+    "HealthCommand",
 ]
 
 __version__ = "4.0.0"
 __cli_features__ = [
     "🚀 Interactive Project Initialization",
-    "⚡ Hot Reload Development Server", 
+    "⚡ Hot Reload Development Server",
     "🔧 Configuration Management",
     "☁️  One-Click Cloud Run Deployment",
     "📊 Real-time Monitoring Dashboard",
     "🐛 Integrated Debugging Tools",
     "🧪 Automated Testing Pipeline",
-    "📚 Auto-generated Documentation"
+    "📚 Auto-generated Documentation",
 ]

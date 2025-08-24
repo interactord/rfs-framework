@@ -5,46 +5,43 @@ Annotation-based Dependency Injection and Architecture Support for RFS Framework
 """
 
 from .base import (
-    ServiceScope,
     AnnotationMetadata,
     AnnotationType,
     ComponentMetadata,
+    ServiceScope,
     get_annotation_metadata,
-    set_annotation_metadata
+    set_annotation_metadata,
 )
-
 from .di import (
-    Component,
-    Port,
     Adapter,
-    UseCase,
-    Controller,
-    Service,
-    Repository,
-    Injectable,
     Autowired,
-    Qualifier,
-    Scope,
-    Primary,
+    Component,
+    ConfigProperty,
+    Controller,
+    Injectable,
     Lazy,
+    Port,
+    Primary,
+    Qualifier,
+    Repository,
+    Scope,
+    Service,
+    UseCase,
     Value,
-    ConfigProperty
 )
-
-from .registry import (
-    AnnotationRegistry,
-    get_annotation_registry,
-    scan_and_register,
-    auto_wire,
-    get_component,
-    get_all_components
-)
-
 from .processor import (
     AnnotationProcessor,
     process_annotations,
     register_component,
-    resolve_dependencies
+    resolve_dependencies,
+)
+from .registry import (
+    AnnotationRegistry,
+    auto_wire,
+    get_all_components,
+    get_annotation_registry,
+    get_component,
+    scan_and_register,
 )
 
 __all__ = [
@@ -54,7 +51,6 @@ __all__ = [
     "ComponentMetadata",
     "get_annotation_metadata",
     "set_annotation_metadata",
-    
     # DI Annotations
     "Component",
     "Port",
@@ -71,7 +67,6 @@ __all__ = [
     "Lazy",
     "Value",
     "ConfigProperty",
-    
     # Registry
     "AnnotationRegistry",
     "get_annotation_registry",
@@ -79,10 +74,9 @@ __all__ = [
     "auto_wire",
     "get_component",
     "get_all_components",
-    
     # Processor
     "AnnotationProcessor",
     "process_annotations",
     "register_component",
-    "resolve_dependencies"
+    "resolve_dependencies",
 ]

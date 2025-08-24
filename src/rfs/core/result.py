@@ -95,7 +95,8 @@ class Success(Result[T, E]):
         return f"Success({self.value})"
     
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Success) and self.value == other.value
+        # 함수형 패턴: isinstance 대신 type 비교
+        return type(other).__name__ == "Success" and self.value == other.value
 
 
 class Failure(Result[T, E]):
@@ -111,7 +112,8 @@ class Failure(Result[T, E]):
         return True
     
     def unwrap(self) -> T:
-        if isinstance(self.error, Exception):
+        # 함수형 패턴: isinstance 대신 type 비교
+        if hasattr(self.error, '__class__') and issubclass(self.error.__class__, Exception):
             raise self.error
         raise ValueError(f"Failure unwrap: {self.error}")
     
@@ -138,7 +140,62 @@ class Failure(Result[T, E]):
         return f"Failure({self.error})"
     
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Failure) and self.error == other.error
+        # 함수형 패턴: isinstance 대신 type 비교
+        return type(other).__name__ == "Failure" and self.error == other.error
+
+
+# Monad 패턴 구현 (고급 함수형 프로그래밍)
+class ResultM(Result[T, E]):
+    """Monad 인터페이스를 구현한 Result - Haskell 스타일"""
+    
+    @classmethod
+    def pure(cls, value: T) -> 'Result[T, Any]':
+        """Monad의 return/pure - 값을 Result 컨텍스트로 리프트"""
+        return Success(value)
+    
+    @classmethod
+    def wrap(cls, result: Result[T, E]) -> 'ResultM[T, E]':
+        """기존 Result를 ResultM으로 변환"""
+        if result.is_success():
+            return cls.pure(result.value)
+        return Failure(result.error)
+    
+    def kleisli_compose(self, f: Callable[[T], 'Result[U, E]'], 
+                       g: Callable[[U], 'Result[V, E]']) -> Callable[[T], 'Result[V, E]']:
+        """Kleisli 화살표 합성 (>=>) - f >=> g"""
+        return lambda x: f(x).bind(g)
+    
+    @classmethod
+    def lift_a2(cls, func: Callable[[T, U], V], 
+                ra: 'Result[T, E]', rb: 'Result[U, E]') -> 'Result[V, E]':
+        """Applicative의 liftA2 - 2개의 Result에 함수 적용"""
+        return ra.bind(lambda a: rb.map(lambda b: func(a, b)))
+    
+    @classmethod
+    def ap(cls, rf: 'Result[Callable[[T], U], E]', ra: 'Result[T, E]') -> 'Result[U, E]':
+        """Applicative의 <*> (ap) - Result 안의 함수를 Result 안의 값에 적용"""
+        return rf.bind(lambda f: ra.map(f))
+    
+    @classmethod
+    def traverse_a(cls, func: Callable[[T], 'Result[U, E]'], items: List[T]) -> 'Result[List[U], E]':
+        """Applicative traverse - 더 효율적인 버전"""
+        if not items:
+            return cls.pure([])
+        
+        # Applicative 스타일: 순차적이지만 효율적
+        results = [func(item) for item in items]
+        return sequence_m(results)
+    
+    @classmethod 
+    def fold_m(cls, func: Callable[[U, T], 'Result[U, E]'], 
+               init: U, items: List[T]) -> 'Result[U, E]':
+        """Monadic fold - 누적 연산 with early termination"""
+        acc = cls.pure(init)
+        for item in items:
+            acc = acc.bind(lambda a: func(a, item))
+            if acc.is_failure():
+                break  # Early termination
+        return acc
 
 
 # 편의 함수들
@@ -221,24 +278,26 @@ def from_optional(value: Optional[T], error: E | None = None) -> 'Result[T, E]':
 
 
 def sequence(results: List['Result[T, E]']) -> 'Result[List[T], E]':
-    """Result 리스트를 리스트 Result로 변환"""
+    """Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
     values: List[T] = []
     for result in results:
         match result:
             case Success(value):
-                values.append(value)
+                # 함수형 패턴: append 대신 리스트 연결
+                values = values + [value]
             case Failure(_):
                 return result
     return success(values)
 
 
 async def sequence_async(results: List['Result[T, E]']) -> 'Result[List[T], E]':
-    """비동기 Result 리스트를 리스트 Result로 변환"""
+    """비동기 Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
     values: List[T] = []
     for result in results:
         match result:
             case Success(value):
-                values.append(value)
+                # 함수형 패턴: append 대신 리스트 연결
+                values = values + [value]
             case Failure(_):
                 return result
     return success(values)
@@ -251,25 +310,27 @@ def traverse(items: List[T], func: Callable[[T], Result[U, E]]) -> Result[List[U
 
 
 async def traverse_async(items: List[T], func: Callable[[T], Result[U, E]]) -> Result[List[U], E]:
-    """비동기 traverse"""
-    tasks = []
-    for item in items:
-        if asyncio.iscoroutinefunction(func):
-            tasks.append(func(item))
-        else:
-            tasks.append(asyncio.create_task(asyncio.coroutine(lambda: func(item))()))
+    """비동기 traverse - 함수형 패턴 적용"""
+    # 함수형 패턴: List comprehension으로 tasks 생성
+    tasks = [
+        func(item) if asyncio.iscoroutinefunction(func)
+        else asyncio.create_task(asyncio.coroutine(lambda i=item: func(i))())
+        for item in items
+    ]
     
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
-    # 예외를 Failure로 변환
+    # 예외를 Failure로 변환 - 함수형 패턴 적용
     processed_results = []
     for result in results:
-        if isinstance(result, Exception):
-            processed_results.append(failure(result))
-        elif isinstance(result, Result):
-            processed_results.append(result)
+        # 함수형 패턴: isinstance 대신 type 비교 및 hasattr 사용
+        # 함수형 패턴: append 대신 리스트 연결
+        if hasattr(result, '__class__') and issubclass(result.__class__, Exception):
+            processed_results = processed_results + [failure(result)]
+        elif hasattr(result, 'is_success') and hasattr(result, 'is_failure'):
+            processed_results = processed_results + [result]
         else:
-            processed_results.append(success(result))
+            processed_results = processed_results + [success(result)]
     
     return await sequence_async(processed_results)
 
@@ -320,42 +381,84 @@ def async_result_decorator(func: Callable[..., T | Awaitable[T]]) -> Callable[..
 
 # 함수형 조합자들
 def combine_results(*results: 'Result[Any, E]') -> 'Result[tuple[Any, ...], E]':
-    """여러 Result를 하나의 Result로 결합"""
+    """여러 Result를 하나의 Result로 결합 - 함수형 패턴 적용"""
+    # 함수형 패턴: 리스트 연결 사용 (early return 유지)
     values = []
     for result in results:
         match result:
             case Success(value):
-                values.append(value)
+                values = values + [value]  # 함수형 패턴: 리스트 연결
             case Failure(_):
                 return result
     return success(tuple(values))
 
 
 def first_success(*results: 'Result[T, E]') -> 'Result[T, List[E]]':
-    """첫 번째 성공한 Result 반환"""
-    errors: List[E] = []
+    """첫 번째 성공한 Result 반환 - 함수형 패턴 적용"""
+    # Early return을 유지하면서 함수형 스타일 적용
     for result in results:
-        match result:
-            case Success(_):
-                return result
-            case Failure(error):
-                errors.append(error)
+        if result.is_success():
+            return result
+    
+    # 함수형 패턴: list comprehension으로 에러 수집
+    errors = [r.error for r in results if r.is_failure()]
     return failure(errors)
 
 
 def partition_results(results: List['Result[T, E]']) -> tuple[List[T], List[E]]:
-    """Result 리스트를 성공과 실패로 분할"""
-    successes: List[T] = []
-    failures: List[E] = []
-    
-    for result in results:
-        match result:
-            case Success(value):
-                successes.append(value)
-            case Failure(error):
-                failures.append(error)
+    """Result 리스트를 성공과 실패로 분할 - 함수형 패턴 적용"""
+    # 함수형 패턴: filter와 list comprehension 사용
+    successes = [r.value for r in results if r.is_success()]
+    failures = [r.error for r in results if r.is_failure()]
     
     return successes, failures
+
+
+# 고급 함수형 조합자 (Higher-Order Functions)
+def take_until_failure(func: Callable[[List[T], T], List[T]], results: List['Result[T, E]']) -> 'Result[List[T], E]':
+    """첫 Failure까지만 처리하는 fold - Haskell 스타일"""
+    from functools import reduce
+    
+    def folder(result: 'Result[T, E]', acc: 'Result[List[T], E]') -> 'Result[List[T], E]':
+        # Early termination: 이미 실패한 경우 그대로 반환
+        if acc.is_failure():
+            return acc
+        
+        match result:
+            case Success(value):
+                # acc가 Success인 경우만 여기 도달
+                return Success(func(acc.value, value))
+            case Failure(_):
+                return result
+    
+    return reduce(folder, results, Success([]))
+
+
+def sequence_m(results: List['Result[T, E]']) -> 'Result[List[T], E]':
+    """Monadic bind를 이용한 sequence - early termination 자동 지원"""
+    from functools import reduce
+    
+    def bind_append(acc: 'Result[List[T], E]', result: 'Result[T, E]') -> 'Result[List[T], E]':
+        # Monadic bind: acc가 Failure면 자동으로 전파
+        return acc.bind(
+            lambda xs: result.map(lambda x: xs + [x])
+        )
+    
+    return reduce(bind_append, results, Success([]))
+
+
+def traverse_m(func: Callable[[T], 'Result[U, E]'], items: List[T]) -> 'Result[List[U], E]':
+    """Monadic traverse - Haskell 스타일"""
+    if not items:
+        return Success([])
+    
+    head, *tail = items
+    # 재귀적 구조로 early termination 지원
+    return func(head).bind(
+        lambda h: traverse_m(func, tail).map(
+            lambda t: [h] + t
+        )
+    )
 
 
 # 호환성 함수들 (기존 Cosmos V2 API)
@@ -468,7 +571,8 @@ class ResultAsync(Generic[T, E]):
                 case Success(value):
                     try:
                         next_result = func(value)
-                        if isinstance(next_result, ResultAsync):
+                        # 함수형 패턴: isinstance 대신 type 비교
+                        if type(next_result).__name__ == "ResultAsync":
                             return await next_result._result
                         elif hasattr(next_result, '__await__'):
                             return await next_result

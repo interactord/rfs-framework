@@ -10,9 +10,9 @@ from .functions import ServerlessFunction, serverless_handler
 
 __all__ = [
     "CloudRunOptimizer",
-    "cold_start_optimization", 
+    "cold_start_optimization",
     "CloudTasksClient",
     "task_queue",
     "ServerlessFunction",
-    "serverless_handler"
+    "serverless_handler",
 ]

@@ -6,8 +6,8 @@ RFS Test Assertions (RFS v4.1)
 
 import asyncio
 import time
-from typing import Any, Optional, Callable, Union, Type, Collection
 from functools import wraps
+from typing import Any, Callable, Collection, Optional, Type, Union
 
 from ..core.result import Result
 
@@ -119,7 +119,7 @@ def assert_length(collection: Collection, expected_length: int, message: Optiona
 
 # 예외 어설션들
 def assert_raises(expected_exception: Type[Exception], callable_obj: Callable, 
-                 *args, message: Optional[str] = None, **kwargs):
+                 *args, message: Optional[str] = None
     """예외가 발생하는지 확인"""
     try:
         callable_obj(*args, **kwargs)
@@ -137,7 +137,7 @@ def assert_raises(expected_exception: Type[Exception], callable_obj: Callable,
 
 
 def assert_not_raises(unexpected_exception: Type[Exception], callable_obj: Callable,
-                     *args, message: Optional[str] = None, **kwargs):
+                     *args, message: Optional[str] = None
     """특정 예외가 발생하지 않는지 확인"""
     try:
         result = callable_obj(*args, **kwargs)

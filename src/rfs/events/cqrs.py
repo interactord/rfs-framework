@@ -9,15 +9,15 @@ CQRS (Command Query Responsibility Segregation) 패턴 구현
 
 import asyncio
 import functools
-from typing import Dict, Any, List, Callable, Optional, TypeVar, Generic, Type
+import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from abc import ABC, abstractmethod
-import logging
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 
+from ..reactive import Flux, Mono
 from .event_bus import Event, EventBus, get_event_bus
 from .event_store import EventStore, get_event_store
-from ..reactive import Mono, Flux
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +101,16 @@ class CommandBus:
     
     def register_handler(self, command_type: Type, handler: CommandHandler):
         """핸들러 등록"""
-        self.handlers[command_type] = handler
+        self.handlers = {**self.handlers, command_type: handler}
         logger.info(f"Command handler registered: {command_type.__name__}")
     
     def add_middleware(self, middleware: Callable[[Command], Command]):
         """미들웨어 추가"""
-        self.middlewares.append(middleware)
+        self.middlewares = self.middlewares + [middleware]
     
     async def send(self, command: Command) -> CommandResult:
         """커맨드 전송"""
-        self.total_commands += 1
+        total_commands = total_commands + 1
         
         try:
             # 미들웨어 적용
@@ -136,17 +136,17 @@ class CommandBus:
             if result.success and self.event_store and result.events:
                 stream_id = f"command_{command.command_id}"
                 stream = self.event_store.get_stream(stream_id)
-                await stream.append(*result.events)
+                await stream = stream + [*result.events]
             
             if result.success:
-                self.successful_commands += 1
+                successful_commands = successful_commands + 1
             else:
-                self.failed_commands += 1
+                failed_commands = failed_commands + 1
             
             return result
             
         except Exception as e:
-            self.failed_commands += 1
+            failed_commands = failed_commands + 1
             logger.error(f"Command handling failed: {e}")
             
             return CommandResult(
@@ -181,16 +181,16 @@ class QueryBus:
     
     def register_handler(self, query_type: Type, handler: QueryHandler):
         """핸들러 등록"""
-        self.handlers[query_type] = handler
+        self.handlers = {**self.handlers, query_type: handler}
         logger.info(f"Query handler registered: {query_type.__name__}")
     
     def add_middleware(self, middleware: Callable[[Query], Query]):
         """미들웨어 추가"""
-        self.middlewares.append(middleware)
+        self.middlewares = self.middlewares + [middleware]
     
     async def send(self, query: Query) -> QueryResult:
         """쿼리 전송"""
-        self.total_queries += 1
+        total_queries = total_queries + 1
         
         try:
             # 미들웨어 적용
@@ -207,14 +207,14 @@ class QueryBus:
             result = await handler.handle(processed_query)
             
             if result.success:
-                self.successful_queries += 1
+                successful_queries = successful_queries + 1
             else:
-                self.failed_queries += 1
+                failed_queries = failed_queries + 1
             
             return result
             
         except Exception as e:
-            self.failed_queries += 1
+            failed_queries = failed_queries + 1
             logger.error(f"Query handling failed: {e}")
             
             return QueryResult(
@@ -317,7 +317,7 @@ def create_command_result(success: bool,
                          command_id: str, 
                          correlation_id: str,
                          events: List[Event] = None,
-                         data: Dict[str, Any] = None,
+                         data: Dict = {str, Any: None,}
                          error: str = None) -> CommandResult:
     """커맨드 결과 생성"""
     return CommandResult(
@@ -383,19 +383,19 @@ class ReactiveQueryBus:
 # 미들웨어 함수들
 def logging_middleware(item: Any) -> Any:
     """로깅 미들웨어"""
-    if isinstance(item, Command):
+    if (type(item).__name__ == "Command"):
         logger.info(f"Command: {type(item).__name__} ({item.command_id})")
-    elif isinstance(item, Query):
+    elif (type(item).__name__ == "Query"):
         logger.info(f"Query: {type(item).__name__} ({item.query_id})")
     
     return item
 
 def validation_middleware(item: Any) -> Any:
     """검증 미들웨어"""
-    if isinstance(item, Command):
+    if (type(item).__name__ == "Command"):
         if not hasattr(item, 'command_id') or not item.command_id:
             raise ValueError("Command ID is required")
-    elif isinstance(item, Query):
+    elif (type(item).__name__ == "Query"):
         if not hasattr(item, 'query_id') or not item.query_id:
             raise ValueError("Query ID is required")
     
@@ -406,7 +406,7 @@ _mediator: Optional[CQRSMediator] = None
 
 async def get_mediator() -> CQRSMediator:
     """CQRS 중재자 인스턴스 획득"""
-    global _mediator
+    # global _mediator - removed for functional programming
     
     if _mediator is None:
         event_bus = await get_event_bus()

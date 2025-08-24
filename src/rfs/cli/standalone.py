@@ -5,15 +5,16 @@ RFS Framework CLI - Standalone Version
 임포트 문제 없이 독립적으로 실행 가능한 CLI
 """
 
-import sys
 import asyncio
+import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 try:
     from rich.console import Console
     from rich.panel import Panel
     from rich.table import Table
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -34,7 +35,7 @@ def show_welcome_banner():
             "버전: 4.3.0 | Production Ready",
             title="RFS Framework CLI",
             border_style="blue",
-            padding=(1, 2)
+            padding=(1, 2),
         )
         console.print(banner)
     else:
@@ -57,7 +58,7 @@ def show_version():
             "📊 모니터링: Performance & Security\n"
             "⚡ 최적화: Circuit Breaker & Load Balancing",
             title="RFS Framework 버전 정보",
-            border_style="green"
+            border_style="green",
         )
         console.print(version_info)
     else:
@@ -71,15 +72,17 @@ def show_status():
     if console:
         console.print("[bold]RFS Framework System Status[/bold]")
         console.print("Framework: [green]✅ Ready[/green]")
-        console.print(f"Python: [blue]{sys.version_info.major}.{sys.version_info.minor}[/blue]")
+        console.print(
+            f"Python: [blue]{sys.version_info.major}.{sys.version_info.minor}[/blue]"
+        )
         console.print("Environment: [cyan]Production Ready[/cyan]")
-        
+
         # 기능 테이블
         table = Table(title="Framework Features Status")
         table.add_column("Feature", style="cyan", no_wrap=True)
         table.add_column("Status", style="green", justify="center")
         table.add_column("Description", style="white")
-        
+
         features = [
             ("Result Pattern", "✅", "Functional error handling"),
             ("Reactive Streams", "✅", "Mono/Flux async processing"),
@@ -91,12 +94,12 @@ def show_status():
             ("Performance Monitoring", "✅", "Metrics & caching"),
             ("Deployment Strategies", "✅", "Blue-Green, Canary, Rolling"),
             ("Cloud Run Optimization", "✅", "Serverless optimizations"),
-            ("Korean Documentation", "✅", "13 modules documented")
+            ("Korean Documentation", "✅", "13 modules documented"),
         ]
-        
+
         for name, status, desc in features:
             table.add_row(name, status, desc)
-        
+
         console.print(table)
     else:
         print("RFS Framework System Status")
@@ -116,13 +119,13 @@ def show_help():
     if console:
         console.print("[bold green]RFS Framework CLI v4.3.0[/bold green]")
         console.print("Enterprise-Grade Reactive Functional Serverless Framework")
-        
+
         # 명령어 테이블
         table = Table(title="Available Commands")
         table.add_column("Command", style="cyan", no_wrap=True)
         table.add_column("Description", style="white")
         table.add_column("Example", style="green")
-        
+
         commands = [
             ("version", "Show framework version", "rfs version"),
             ("status", "Check system status", "rfs status"),
@@ -133,17 +136,17 @@ def show_help():
             ("build", "Build for production", "rfs build --cloud-run"),
             ("deploy", "Deploy to Cloud Run", "rfs deploy --region asia-northeast3"),
         ]
-        
+
         for cmd, desc, example in commands:
             table.add_row(cmd, desc, example)
-        
+
         console.print(table)
-        
+
         console.print("\n[bold]Global Options:[/bold]")
         console.print("  [yellow]--verbose, -v[/yellow]     Enable verbose output")
         console.print("  [yellow]--help, -h[/yellow]        Show help message")
         console.print("  [yellow]--version[/yellow]          Show version information")
-        
+
         console.print("\n[bold]Documentation:[/bold]")
         console.print("  📚 Korean Wiki: 13 comprehensive modules")
         console.print("  🔗 GitHub: https://github.com/interactord/rfs-framework")
@@ -152,7 +155,7 @@ def show_help():
         print("RFS Framework CLI v4.3.0")
         print("Available Commands:")
         print("  version  - Show version information")
-        print("  status   - Check system status") 
+        print("  status   - Check system status")
         print("  help     - Show this help message")
         print("  config   - Manage configuration")
         print("  init     - Initialize new project")
@@ -178,7 +181,7 @@ def main(args: Optional[List[str]] = None) -> int:
     """메인 진입점"""
     if args is None:
         args = sys.argv[1:]
-    
+
     # Python 버전 확인
     if sys.version_info < (3, 10):
         if console:
@@ -186,42 +189,42 @@ def main(args: Optional[List[str]] = None) -> int:
         else:
             print("❌ RFS Framework requires Python 3.10 or higher")
         return 1
-    
+
     # 명령어 처리
     if not args:
         show_welcome_banner()
         show_help()
         return 0
-    
+
     command = args[0].lower()
-    
+
     match command:
-        case 'version' | '--version' | '-v':
+        case "version" | "--version" | "-v":
             show_version()
-        case 'status':
+        case "status":
             show_status()
-        case 'help' | '--help' | '-h':
+        case "help" | "--help" | "-h":
             show_help()
-        case 'config':
+        case "config":
             show_config()
         case _:
             if console:
-                console.print(f"[red]❌ Unknown command: {command}[/red]")
-                console.print("Run '[cyan]rfs help[/cyan]' to see available commands")
+            console.print(f"[red]❌ Unknown command: {command}[/red]")
+            console.print("Run '[cyan]rfs help[/cyan]' to see available commands")
             else:
-                print(f"❌ Unknown command: {command}")
-                print("Run 'rfs help' to see available commands")
+            print(f"❌ Unknown command: {command}")
+            print("Run 'rfs help' to see available commands")
             return 1
-    
-    return 0
+
+            return 0
 
 
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        if console:
+            if __name__ == "__main__":
+            try:
+            sys.exit(main())
+            except KeyboardInterrupt:
+            if console:
             console.print("\n[yellow]🛑 Operation cancelled by user[/yellow]")
-        else:
+            else:
             print("\n🛑 Operation cancelled by user")
-        sys.exit(130)
+            sys.exit(130)

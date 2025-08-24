@@ -4,16 +4,16 @@ RFS Web Middleware (RFS v4.1)
 통합 미들웨어 시스템
 """
 
+import logging
 import time
 import uuid
-from typing import Dict, Any, List, Callable, Optional, Type
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import logging
+from typing import Any, Callable, Dict, List, Optional, Type
 
-from ..core.result import Result, Success, Failure
-from ..core.enhanced_logging import get_logger
 from ..cloud_run.monitoring import record_metric
+from ..core.enhanced_logging import get_logger
+from ..core.result import Failure, Result, Success
 
 logger = get_logger(__name__)
 
@@ -95,7 +95,7 @@ class LoggingMiddleware(RFSMiddleware):
             })
             await record_metric("http_request_duration_ms", duration * 1000)
             
-            self.request_count += 1
+            request_count = request_count + 1
             
             return response
             
@@ -145,15 +145,15 @@ class MetricsMiddleware(RFSMiddleware):
             
             # 메트릭 업데이트
             metric_key = f"{method.lower()}_requests"
-            self.metrics[metric_key] = self.metrics.get(metric_key, 0) + 1
-            self.metrics['avg_response_time'] = (
+            self.metrics = {**self.metrics, metric_key: self.metrics.get(metric_key, 0) + 1}
+            self.metrics = {**self.metrics, 'avg_response_time': (}
                 self.metrics.get('avg_response_time', 0) * 0.9 + duration * 0.1
             )
             
             return response
             
         except Exception as e:
-            self.metrics['error_count'] = self.metrics.get('error_count', 0) + 1
+            self.metrics = {**self.metrics, 'error_count': self.metrics.get('error_count', 0) + 1}
             raise
     
     def get_metrics(self) -> Dict[str, float]:
@@ -184,7 +184,7 @@ class SecurityMiddleware(RFSMiddleware):
         # 보안 헤더 추가
         if hasattr(response, 'headers'):
             for header, value in self.security_headers.items():
-                response.headers[header] = value
+                response.headers = {**response.headers, header: value}
         
         return response
 
@@ -236,10 +236,10 @@ class CorsMiddleware(RFSMiddleware):
     def _add_cors_headers(self, response: Any, request: Any):
         """CORS 헤더 추가"""
         if hasattr(response, 'headers'):
-            response.headers["Access-Control-Allow-Origin"] = self.allow_origins[0]
-            response.headers["Access-Control-Allow-Methods"] = ", ".join(self.allow_methods)
-            response.headers["Access-Control-Allow-Headers"] = ", ".join(self.allow_headers)
-            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers = {**response.headers, "Access-Control-Allow-Origin": self.allow_origins[0]}
+            response.headers = {**response.headers, "Access-Control-Allow-Methods": ", ".join(self.allow_methods)}
+            response.headers = {**response.headers, "Access-Control-Allow-Headers": ", ".join(self.allow_headers)}
+            response.headers = {**response.headers, "Access-Control-Allow-Credentials": "true"}
 
 
 class AuthMiddleware(RFSMiddleware):
@@ -315,7 +315,7 @@ class MiddlewareStack:
     
     def add(self, middleware: RFSMiddleware):
         """미들웨어 추가"""
-        self.middlewares.append(middleware)
+        self.middlewares = middlewares + [middleware]
         logger.info(f"미들웨어 추가됨: {middleware.name}")
     
     def remove(self, middleware_name: str):
@@ -358,7 +358,7 @@ _middleware_stack: Optional[MiddlewareStack] = None
 
 def get_middleware_stack() -> MiddlewareStack:
     """미들웨어 스택 인스턴스 반환"""
-    global _middleware_stack
+    # global _middleware_stack - removed for functional programming
     if _middleware_stack is None:
         _middleware_stack = MiddlewareStack()
     return _middleware_stack

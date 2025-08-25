@@ -124,17 +124,19 @@ class CircuitBreaker:
                 case CircuitState.CLOSED:
                     return True
             
-                case CircuitState.OPEN:                # 리셋 타임아웃 확인
-                if (datetime.now() - self.last_state_change).total_seconds() > self.config.reset_timeout:
-                    self._transition_to_half_open()
-                    return True
-                return False
+                case CircuitState.OPEN:
+                    # 리셋 타임아웃 확인
+                    if (datetime.now() - self.last_state_change).total_seconds() > self.config.reset_timeout:
+                        self._transition_to_half_open()
+                        return True
+                    return False
             
-                case CircuitState.HALF_OPEN:                # 테스트 요청 수 제한
-                if self.half_open_requests < self.config.half_open_max_requests:
-                    half_open_requests = half_open_requests + 1
-                    return True
-                return False
+                case CircuitState.HALF_OPEN:
+                    # 테스트 요청 수 제한
+                    if self.half_open_requests < self.config.half_open_max_requests:
+                        self.half_open_requests = self.half_open_requests + 1
+                        return True
+                    return False
             
             return False
     

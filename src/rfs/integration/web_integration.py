@@ -442,7 +442,7 @@ class WebIntegrationManager:
             if integration_id not in self.graphql_integrations:
                 return Failure(f"GraphQL integration {integration_id} not found")
             integration = self.graphql_integrations[integration_id]
-            request_body = {"query": query, "variables": variables or {}
+            request_body = {"query": query, "variables": variables or {}}
             if operation_name:
                 request_body = {
                     **request_body,
@@ -659,15 +659,15 @@ class WebIntegrationManager:
             headers = await self._get_auth_headers(
                 endpoint.auth_type, integration.auth_config
             )
-            headers.update(endpoint.headers)
+            headers = {**headers, **endpoint.headers}
             query_params = dict(endpoint.query_params)
             if params:
-                query_params.update(params)
+                query_params = {**query_params, **params}
             request_body = None
             if body or endpoint.body_template:
                 request_body = dict(endpoint.body_template or {})
                 if body:
-                    request_body.update(body)
+                    request_body = {**request_body, **body}
             async with self._session.request(
                 method=endpoint.method.value,
                 url=url,
@@ -691,30 +691,31 @@ class WebIntegrationManager:
         match auth_type:
             case AuthType.API_KEY:
                 headers = {
-                **headers,
-                auth_config.get("header_name", "X-API-Key"): {
+                    **headers,
                     auth_config.get("header_name", "X-API-Key"): auth_config["api_key"]
-                },
-            }
-            case AuthType.BEARER_TOKEN:            headers = {
-                **headers,
-                "Authorization": {"Authorization": f"Bearer {auth_config['token']}"},
-            }
-            case AuthType.BASIC:            import base64
-
-            credentials = base64.b64encode(
-                f"{auth_config.get('username')}:{auth_config.get('password')}".encode()
-            ).decode()
-            headers = {
-                **headers,
-                "Authorization": {"Authorization": f"Basic {credentials}"},
-            }
-            case AuthType.JWT:            token = jwt.encode(
-                auth_config.get("payload", {}),
-                auth_config["secret"],
-                algorithm=auth_config.get("algorithm", "HS256"),
-            )
-            headers["Authorization"] = {"Authorization": f"Bearer {token"}}
+                }
+            case AuthType.BEARER_TOKEN:
+                headers = {
+                    **headers,
+                    "Authorization": f"Bearer {auth_config['token']}"
+                }
+            case AuthType.BASIC:
+                import base64
+                
+                credentials = base64.b64encode(
+                    f"{auth_config.get('username')}:{auth_config.get('password')}".encode()
+                ).decode()
+                headers = {
+                    **headers,
+                    "Authorization": f"Basic {credentials}"
+                }
+            case AuthType.JWT:
+                token = jwt.encode(
+                    auth_config.get("payload", {}),
+                    auth_config["secret"],
+                    algorithm=auth_config.get("algorithm", "HS256"),
+                )
+                headers["Authorization"] = f"Bearer {token}"
         return headers
 
     async def _establish_websocket_connection(
@@ -739,13 +740,15 @@ class WebIntegrationManager:
                 match msg.type:
                     case aiohttp.WSMsgType.TEXT:
                         data = json.loads(msg.data)
-                    for pattern, handler in connection.message_handlers.items():
-                        if pattern in str(data):
-                            await handler(data)
-                    case aiohttp.WSMsgType.ERROR:                    connection.state = WebSocketState.ERROR
-                    break
-                    case aiohttp.WSMsgType.CLOSED:                    connection.state = WebSocketState.DISCONNECTED
-                    break
+                        for pattern, handler in connection.message_handlers.items():
+                            if pattern in str(data):
+                                await handler(data)
+                    case aiohttp.WSMsgType.ERROR:
+                        connection.state = WebSocketState.ERROR
+                        break
+                    case aiohttp.WSMsgType.CLOSED:
+                        connection.state = WebSocketState.DISCONNECTED
+                        break
         except Exception as e:
             print(f"WebSocket message handling error: {e}")
             connection.state = WebSocketState.ERROR

@@ -137,11 +137,14 @@ class TestRunner:
             match self.config.framework:
                 case TestFramework.PYTEST:
                     result = await self._run_pytest(test_type)
-                case TestFramework.UNITTEST:                result = await self._run_unittest(test_type)
-                case TestFramework.ASYNCIO:                result = await self._run_asyncio_tests(test_type)
-                case _:                return Failure(
-                    f"지원하지 않는 테스트 프레임워크: {self.config.framework}"
-                )
+                case TestFramework.UNITTEST:
+                    result = await self._run_unittest(test_type)
+                case TestFramework.ASYNCIO:
+                    result = await self._run_asyncio_tests(test_type)
+                case _:
+                    return Failure(
+                        f"지원하지 않는 테스트 프레임워크: {self.config.framework}"
+                    )
             if result.is_failure():
                 return result
             test_result = result.unwrap()

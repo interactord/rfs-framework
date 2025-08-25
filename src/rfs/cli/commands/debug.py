@@ -79,180 +79,174 @@ class DebugCommand(Command):
                     case _:
                         match tool:
                             case "config":
-                        return await self._debug_config(args[1:])
-                    case "dependencies":
-                        return await self._debug_dependencies(args[1:])
-                    case "logs":
-                        return await self._debug_logs(args[1:])
-                        except Exception as e:
-                        return Failure(f"디버깅 실패: {str(e)}")
+                                return await self._debug_config(args[1:])
+                            case "dependencies":
+                                return await self._debug_dependencies(args[1:])
+                            case "logs":
+                                return await self._debug_logs(args[1:])
+        except Exception as e:
+            return Failure(f"디버깅 실패: {str(e)}")
 
-                        async def _show_debug_menu(self) -> Result[str, str]:
-                        """디버깅 도구 메뉴 표시"""
-                        if console:
-                        console.print(
-                        Panel(
-                        "🔍 RFS v4 디버깅 도구", title="디버깅 도구", border_style="yellow"
-                        )
-                        )
-                        debug_table = Table(show_header=True, header_style="bold magenta")
-                        debug_table.add_column("도구", style="cyan", width=15)
-                        debug_table.add_column("설명", style="white")
-                        debug_table.add_column("사용법", style="green")
-                        for tool, description in self.debug_tools.items():
-                        debug_table.add_row(tool, description, f"rfs debug {tool}")
-                        console.print(debug_table)
-                        return Success("디버깅 도구 메뉴 표시 완료")
+    async def _show_debug_menu(self) -> Result[str, str]:
+        """디버깅 도구 메뉴 표시"""
+        if console:
+            console.print(
+                Panel(
+                    "🔍 RFS v4 디버깅 도구", title="디버깅 도구", border_style="yellow"
+                )
+            )
+            debug_table = Table(show_header=True, header_style="bold magenta")
+            debug_table.add_column("도구", style="cyan", width=15)
+            debug_table.add_column("설명", style="white")
+            debug_table.add_column("사용법", style="green")
+            for tool, description in self.debug_tools.items():
+                debug_table.add_row(tool, description, f"rfs debug {tool}")
+            console.print(debug_table)
+        return Success("디버깅 도구 메뉴 표시 완료")
 
-                        async def _debug_trace(self, args: List[str]) -> Result[str, str]:
-                        """실행 추적"""
-                        try:
-                        target = args[0] if args else "main.py"
-                        if not Path(target).exists():
-                        return Failure(f"대상 파일을 찾을 수 없습니다: {target}")
-                        if console:
-                        console.print(f"📊 실행 추적 시작: {target}")
-                        cmd = ["python", "-m", "trace", "--trace", target]
-                        process = await asyncio.create_subprocess_exec(
-                        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-                        )
-                        stdout, stderr = await process.communicate()
-                        if process.returncode == 0:
-                        trace_output = stdout.decode()
-                        if console:
-                        syntax = Syntax(
+    async def _debug_trace(self, args: List[str]) -> Result[str, str]:
+        """실행 추적"""
+        try:
+            target = args[0] if args else "main.py"
+            if not Path(target).exists():
+                return Failure(f"대상 파일을 찾을 수 없습니다: {target}")
+            if console:
+                console.print(f"📊 실행 추적 시작: {target}")
+            cmd = ["python", "-m", "trace", "--trace", target]
+            process = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+            if process.returncode == 0:
+                trace_output = stdout.decode()
+                if console:
+                    syntax = Syntax(
                         trace_output[:2000],
                         "python",
                         theme="monokai",
                         line_numbers=True,
-                        )
-                        console.print(Panel(syntax, title="실행 추적 결과"))
-                        else:
-                        print(trace_output[:2000])
-                        return Success("실행 추적 완료")
-                        else:
-                        error_msg = stderr.decode()
-                        return Failure(f"추적 실행 실패: {error_msg}")
-                        except Exception as e:
-                        return Failure(f"추적 실패: {str(e)}")
+                    )
+                    console.print(Panel(syntax, title="실행 추적 결과"))
+                else:
+                    print(trace_output[:2000])
+                return Success("실행 추적 완료")
+            else:
+                error_msg = stderr.decode()
+                return Failure(f"추적 실행 실패: {error_msg}")
+        except Exception as e:
+            return Failure(f"추적 실패: {str(e)}")
 
-                        async def _debug_profile(self, args: List[str]) -> Result[str, str]:
-                        """성능 프로파일링"""
-                        try:
-                        target = args[0] if args else "main.py"
-                        if not Path(target).exists():
-                        return Failure(f"대상 파일을 찾을 수 없습니다: {target}")
-                        if console:
-                        with Progress(
-                        SpinnerColumn(),
-                        TextColumn("[progress.description]{task.description}"),
-                        console=console,
-                        ) as progress:
-                        task = progress.add_task("성능 프로파일링 실행 중...", total=None)
-                        cmd = ["python", "-m", "cProfile", "-s", "cumtime", target]
-                        process = await asyncio.create_subprocess_exec(
+    async def _debug_profile(self, args: List[str]) -> Result[str, str]:
+        """성능 프로파일링"""
+        try:
+            target = args[0] if args else "main.py"
+            if not Path(target).exists():
+                return Failure(f"대상 파일을 찾을 수 없습니다: {target}")
+            if console:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console,
+                ) as progress:
+                    task = progress.add_task("성능 프로파일링 실행 중...", total=None)
+                    cmd = ["python", "-m", "cProfile", "-s", "cumtime", target]
+                    process = await asyncio.create_subprocess_exec(
                         *cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
-                        )
-                        stdout, stderr = await process.communicate()
-                        progress.remove_task(task)
-                        if process.returncode == 0:
-                        profile_output = stdout.decode()
-                        if console:
+                    )
+                    stdout, stderr = await process.communicate()
+                    progress.remove_task(task)
+                if process.returncode == 0:
+                    profile_output = stdout.decode()
+                    if console:
                         lines = profile_output.split("\n")
                         profile_table = Table(
-                        title="성능 프로파일링 결과", show_header=True
+                            title="성능 프로파일링 결과", show_header=True
                         )
                         profile_table.add_column("호출 횟수", justify="right")
                         profile_table.add_column("누적 시간", justify="right")
                         profile_table.add_column("함수")
                         for line in lines[5:15]:
-                        if line.strip():
-                        parts = line.split()
-                        if len(parts) >= 6:
-                        profile_table.add_row(
-                        parts[0], parts[3], " ".join(parts[5:])
-                        )
+                            if line.strip():
+                                parts = line.split()
+                                if len(parts) >= 6:
+                                    profile_table.add_row(
+                                        parts[0], parts[3], " ".join(parts[5:])
+                                    )
                         console.print(profile_table)
-                        else:
+                    else:
                         print(profile_output[:1000])
-                        return Success("성능 프로파일링 완료")
-                        else:
-                        error_msg = stderr.decode()
-                        return Failure(f"프로파일링 실패: {error_msg}")
-                        except Exception as e:
-                        return Failure(f"프로파일링 실패: {str(e)}")
+                    return Success("성능 프로파일링 완료")
+                else:
+                    error_msg = stderr.decode()
+                    return Failure(f"프로파일링 실패: {error_msg}")
+        except Exception as e:
+            return Failure(f"프로파일링 실패: {str(e)}")
 
 
-                        class StatusCommand(Command):
-                        """시스템 상태 확인 명령어"""
+class StatusCommand(Command):
+    """시스템 상태 확인 명령어"""
 
-                        name = "status"
-                        description = "RFS 시스템 상태 및 환경 정보 확인"
+    name = "status"
+    description = "RFS 시스템 상태 및 환경 정보 확인"
 
-                        async def execute(self, args: List[str]) -> Result[str, str]:
-                        """시스템 상태 확인"""
-                        try:
-                        if console:
-                        console.print(
-                        Panel(
+    async def execute(self, args: List[str]) -> Result[str, str]:
+        """시스템 상태 확인"""
+        try:
+            if console:
+                console.print(
+                    Panel(
                         "📊 RFS v4 시스템 상태 확인",
                         title="시스템 상태",
                         border_style="blue",
-                        )
-                        )
-                        status_info = await self._collect_status_info()
-                        await self._display_status_info(status_info)
-                        return Success("시스템 상태 확인 완료")
-                        except Exception as e:
-                        return Failure(f"상태 확인 실패: {str(e)}")
+                    )
+                )
+            status_info = await self._collect_status_info()
+            await self._display_status_info(status_info)
+            return Success("시스템 상태 확인 완료")
+        except Exception as e:
+            return Failure(f"상태 확인 실패: {str(e)}")
 
-                        async def _collect_status_info(self) -> Dict[str, Any]:
-                        """시스템 상태 정보 수집"""
-                        status = {}
-                        try:
-                        status = {
-                        **status,
-                        "system": {
-                        "system": {
-                        "platform": os.name,
-                        "python_version": os.sys.version.split()[0],
-                        "cwd": str(Path.cwd()),
-                        "timestamp": datetime.now().isoformat(),
-                        }
-                        },
-                        }
-                        if hasattr(psutil, "virtual_memory"):
-                        memory = psutil.virtual_memory()
-                        status = {
-                        **status,
-                        "resources": {
-                        "resources": {
+    async def _collect_status_info(self) -> Dict[str, Any]:
+        """시스템 상태 정보 수집"""
+        status = {}
+        try:
+            status = {
+                **status,
+                "system": {
+                    "platform": os.name,
+                    "python_version": os.sys.version.split()[0],
+                    "cwd": str(Path.cwd()),
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
+            if hasattr(psutil, "virtual_memory"):
+                memory = psutil.virtual_memory()
+                status = {
+                    **status,
+                    "resources": {
                         "cpu_percent": psutil.cpu_percent(interval=1),
                         "memory_percent": memory.percent,
                         "memory_total": f"{memory.total / 1024 ** 3:.1f}GB",
                         "memory_used": f"{memory.used / 1024 ** 3:.1f}GB",
-                        }
-                        },
-                        }
-                        try:
-                        config = get_config()
-                        status = {
-                        **status,
-                        "rfs_config": {
-                        "rfs_config": {
+                    },
+                }
+            try:
+                config = get_config()
+                status = {
+                    **status,
+                    "rfs_config": {
                         "environment": getattr(config, "environment", "Unknown"),
                         "debug": getattr(config, "debug", False),
                         "log_level": getattr(config, "log_level", "INFO"),
-                        }
-                        },
-                        }
-                        except Exception:
-                        status = {
-                        **status,
-                        "rfs_config": {"rfs_config": {"error": "RFS 설정 로드 실패"},
-                        }
+                    }
+                }
+            except Exception:
+                status = {
+                    **status,
+                    "rfs_config": {"error": "RFS 설정 로드 실패"}
+                }
                         status = {
                         **status,
                         "project": {

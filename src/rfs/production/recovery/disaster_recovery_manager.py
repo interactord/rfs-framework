@@ -221,13 +221,15 @@ class RecoveryProcedure:
                 match method:
                     case "GET":
                         async with session.get(url, headers=headers) as response:
-                        content = await response.text()
-                        return Success({'status_code': response.status, 'content': content, 'headers': dict(response.headers)})
-                    case "POST":                    data = self.config.get('data', {})
-                    async with session.post(url, json=data, headers=headers) as response:
-                        content = await response.text()
-                        return Success({'status_code': response.status, 'content': content, 'headers': dict(response.headers)})
-                    case _:                    return Failure(f'Unsupported HTTP method: {method}')
+                            content = await response.text()
+                            return Success({'status_code': response.status, 'content': content, 'headers': dict(response.headers)})
+                    case "POST":
+                        data = self.config.get('data', {})
+                        async with session.post(url, json=data, headers=headers) as response:
+                            content = await response.text()
+                            return Success({'status_code': response.status, 'content': content, 'headers': dict(response.headers)})
+                    case _:
+                        return Failure(f'Unsupported HTTP method: {method}')
         except asyncio.TimeoutError:
             return Failure(f'API call timeout ({self.timeout_seconds}s)')
         except Exception as e:
@@ -240,8 +242,8 @@ class HealthMonitor:
         self.config = config
         self.health_checks: Dict[str, Callable] = {}
         self.health_status: Dict[str, bool] = {}
-        self.failure_counts: Dict = {str, int: defaultdict(int)}
-        self.success_counts: Dict = {str, int: defaultdict(int)}
+        self.failure_counts: Dict[str, int] = defaultdict(int)
+        self.success_counts: Dict[str, int] = defaultdict(int)
 
     def register_health_check(self, name: str, check_func: Callable) -> None:
         """헬스 체크 등록"""
@@ -366,7 +368,7 @@ class BackupValidator:
             sha256_hash = hashlib.sha256()
             with open(backup_path, 'rb') as f:
                 for byte_block in iter(lambda: f.read(4096), b''):
-                    sha256_hash.update(byte_block)
+                    sha256_hash = {**sha256_hash, **byte_block}
             calculated_checksum = sha256_hash.hexdigest()
             with open(checksum_file, 'r') as f:
                 stored_checksum = f.read().strip()

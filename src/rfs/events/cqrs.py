@@ -136,7 +136,7 @@ class CommandBus:
             if result.success and self.event_store and result.events:
                 stream_id = f"command_{command.command_id}"
                 stream = self.event_store.get_stream(stream_id)
-                await stream = stream + [*result.events]
+                await self.event_store.append_events(stream_id, result.events)
             
             if result.success:
                 successful_commands = successful_commands + 1
@@ -317,7 +317,7 @@ def create_command_result(success: bool,
                          command_id: str, 
                          correlation_id: str,
                          events: List[Event] = None,
-                         data: Dict = {str, Any: None,}
+                         data: Dict[str, Any] = None,
                          error: str = None) -> CommandResult:
     """커맨드 결과 생성"""
     return CommandResult(

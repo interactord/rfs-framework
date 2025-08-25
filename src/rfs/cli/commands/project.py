@@ -256,69 +256,67 @@ class NewCommand(Command):
                         return await self._create_task_handler(name)
                     case _:
                         return Failure(f"지원하지 않는 컴포넌트 타입: {component_type}")
-                        except Exception as e:
-                        return Failure(f"컴포넌트 생성 실패: {str(e)}")
+        except Exception as e:
+            return Failure(f"컴포넌트 생성 실패: {str(e)}")
 
-                        async def _create_service(self, name: str) -> Result[str, str]:
-                        """서비스 클래스 생성"""
-                        service_content = f'"""\n{name.title()} Service\n\n{name} 서비스 구현\n"""\n\nfrom typing import Any, Dict, List, Optional\nfrom rfs import Result, Success, Failure, stateless\n\n\n@stateless\nclass {name.title()}Service:\n    """\n    {name.title()} 서비스\n    \n    비즈니스 로직을 구현하세요.\n    """\n    \n    async def process(self, data: Dict[str, Any]) -> Result[Dict[str, Any], str]:\n        """\n        주요 처리 로직\n        \n        Args:\n            data: 입력 데이터\n            \n        Returns:\n            Result[Dict[str, Any], str]: 처리 결과 또는 오류\n        """\n        try:\n            # TODO: 비즈니스 로직 구현\n            result = {{\n                "service": "{name}",\n                "status": "success",\n                "data": data\n            }}\n            \n            return Success(result)\n            \n        except Exception as e:\n            return Failure(f"{name} 서비스 처리 실패: {{str(e)}}")\n    \n    async def validate(self, data: Dict[str, Any]) -> Result[bool, str]:\n        """\n        데이터 검증\n        \n        Args:\n            data: 검증할 데이터\n            \n        Returns:\n            Result[bool, str]: 검증 결과\n        """\n        try:\n            # TODO: 검증 로직 구현\n            if not data:\n                return Failure("데이터가 비어있습니다")\n            \n            return Success(True)\n            \n        except Exception as e:\n            return Failure(f"데이터 검증 실패: {{str(e)}}")\n\n\n# 서비스 인스턴스\n{name}_service = {name.title()}Service()\n'
-                        service_path = Path(f"services/{name}_service.py")
-                        service_path.parent.mkdir(parents=True, exist_ok=True)
-                        service_path.write_text(service_content, encoding="utf-8")
-                        return Success(f"서비스 '{name}' 생성 완료: {service_path}")
+    async def _create_service(self, name: str) -> Result[str, str]:
+        """서비스 클래스 생성"""
+        service_content = f'"""\n{name.title()} Service\n\n{name} 서비스 구현\n"""\n\nfrom typing import Any, Dict, List, Optional\nfrom rfs import Result, Success, Failure, stateless\n\n\n@stateless\nclass {name.title()}Service:\n    """\n    {name.title()} 서비스\n    \n    비즈니스 로직을 구현하세요.\n    """\n    \n    async def process(self, data: Dict[str, Any]) -> Result[Dict[str, Any], str]:\n        """\n        주요 처리 로직\n        \n        Args:\n            data: 입력 데이터\n            \n        Returns:\n            Result[Dict[str, Any], str]: 처리 결과 또는 오류\n        """\n        try:\n            # TODO: 비즈니스 로직 구현\n            result = {{\n                "service": "{name}",\n                "status": "success",\n                "data": data\n            }}\n            \n            return Success(result)\n            \n        except Exception as e:\n            return Failure(f"{name} 서비스 처리 실패: {{str(e)}}")\n    \n    async def validate(self, data: Dict[str, Any]) -> Result[bool, str]:\n        """\n        데이터 검증\n        \n        Args:\n            data: 검증할 데이터\n            \n        Returns:\n            Result[bool, str]: 검증 결과\n        """\n        try:\n            # TODO: 검증 로직 구현\n            if not data:\n                return Failure("데이터가 비어있습니다")\n            \n            return Success(True)\n            \n        except Exception as e:\n            return Failure(f"데이터 검증 실패: {{str(e)}}")\n\n\n# 서비스 인스턴스\n{name}_service = {name.title()}Service()\n'
+        service_path = Path(f"services/{name}_service.py")
+        service_path.parent.mkdir(parents=True, exist_ok=True)
+        service_path.write_text(service_content, encoding="utf-8")
+        return Success(f"서비스 '{name}' 생성 완료: {service_path}")
 
 
-                        class ConfigCommand(Command):
-                        """설정 관리 명령어"""
+class ConfigCommand(Command):
+    """설정 관리 명령어"""
 
-                        name = "config"
-                        description = "RFS 프로젝트 설정 관리"
+    name = "config"
+    description = "RFS 프로젝트 설정 관리"
 
-                        async def execute(self, args: List[str]) -> Result[str, str]:
-                        """설정 관리 실행"""
-                        if not args:
-                        return await self._show_config()
-                        action = args[0].lower()
-                        try:
-                        match action:
-                            case "show":
-                        return await self._show_config()
-                    case "set":
-                        if len(args) < 3:
+    async def execute(self, args: List[str]) -> Result[str, str]:
+        """설정 관리 실행"""
+        if not args:
+            return await self._show_config()
+        action = args[0].lower()
+        try:
+            match action:
+                case "show":
+                    return await self._show_config()
+                case "set":
+                    if len(args) < 3:
                         return Failure("사용법: rfs config set <키> <값>")
-                        return await self._set_config(args[1], args[2])
-                    case _:
-                        match action:
-                            case "get":
-                        if len(args) < 2:
+                    return await self._set_config(args[1], args[2])
+                case "get":
+                    if len(args) < 2:
                         return Failure("사용법: rfs config get <키>")
-                        return await self._get_config(args[1])
-                    case "validate":
-                        return await self._validate_config()
-                    case _:
-                        return Failure(f"지원하지 않는 액션: {action}")
-                        except Exception as e:
-                        return Failure(f"설정 관리 실패: {str(e)}")
+                    return await self._get_config(args[1])
+                case "validate":
+                    return await self._validate_config()
+                case _:
+                    return Failure(f"지원하지 않는 액션: {action}")
+        except Exception as e:
+            return Failure(f"설정 관리 실패: {str(e)}")
 
-                        async def _show_config(self) -> Result[str, str]:
-                        """현재 설정 표시"""
-                        try:
-                        config = get_config()
-                        if console:
-                        config_table = Table(
-                        title="RFS v4 설정", show_header=True, header_style="bold magenta"
-                        )
-                        config_table.add_column("키", style="cyan", width=20)
-                        config_table.add_column("값", style="green")
-                        config_table.add_column("타입", style="yellow", width=12)
-                        config_dict = config.model_dump()
-                        for key, value in config_dict.items():
-                        config_table.add_row(
+    async def _show_config(self) -> Result[str, str]:
+        """현재 설정 표시"""
+        try:
+            config = get_config()
+            if console:
+                config_table = Table(
+                    title="RFS v4 설정", show_header=True, header_style="bold magenta"
+                )
+                config_table.add_column("키", style="cyan", width=20)
+                config_table.add_column("값", style="green")
+                config_table.add_column("타입", style="yellow", width=12)
+                config_dict = config.model_dump()
+                for key, value in config_dict.items():
+                    config_table.add_row(
                         key,
                         str(value) if value is not None else "None",
                         type(value).__name__,
-                        )
-                        console.print(config_table)
-                        return Success("설정 표시 완료")
-                        except Exception as e:
-                        return Failure(f"설정 조회 실패: {str(e)}")
+                    )
+                console.print(config_table)
+                return Success("설정 표시 완료")
+        except Exception as e:
+            return Failure(f"설정 조회 실패: {str(e)}")

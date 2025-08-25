@@ -354,11 +354,13 @@ class HybridExecutor(TaskExecutor):
         match task_type:
             case "cpu":
                 # CPU 집약적 작업
-            return await self.process_executor.execute(task, context)
-            case "io":            # I/O 집약적 작업 (동기)
-            return await self.thread_executor.execute(task, context)
-            case _:            # 기본: 비동기 작업
-            return await self.async_executor.execute(task, context)
+                return await self.process_executor.execute(task, context)
+            case "io":
+                # I/O 집약적 작업 (동기)
+                return await self.thread_executor.execute(task, context)
+            case _:
+                # 기본: 비동기 작업
+                return await self.async_executor.execute(task, context)
 
     async def submit(self, func: Callable, *args, **kwargs):
         """작업 제출"""

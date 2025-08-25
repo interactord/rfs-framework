@@ -420,7 +420,9 @@ class Flux(Generic[T]):
                 return items
 
             tasks = tasks + [collect_from_source(self.source)]
-            tasks = tasks + list(map(lambda other: collect_from_source(other.source), others))
+            tasks = tasks + list(
+                map(lambda other: collect_from_source(other.source), others)
+            )
             all_results = await asyncio.gather(*tasks)
             for results in all_results:
                 for item in results:

@@ -150,16 +150,16 @@ class MetricsCollector:
     async def collect_metrics(self) -> Result[ProductionMetrics, str]:
         """메트릭 수집"""
         try:
-            metrics_data = {"timestamp": datetime.now(), "custom_metrics": {}
+            metrics_data = {"timestamp": datetime.now(), "custom_metrics": {}}
             if self.config.enable_system_monitoring:
                 system_metrics = await self._collect_system_metrics()
-            # TODO: Fix this line - metrics_data.update(system_metrics)
+                metrics_data.update(system_metrics)
             if self.config.enable_application_monitoring:
                 app_metrics = await self._collect_application_metrics()
-            # TODO: Fix this line - metrics_data.update(app_metrics)
+                metrics_data.update(app_metrics)
             if self.config.enable_network_monitoring:
                 network_metrics = await self._collect_network_metrics()
-            # TODO: Fix this line - metrics_data.update(network_metrics)
+                metrics_data.update(network_metrics)
             if self.config.enable_custom_metrics:
                 custom_metrics = await self._collect_custom_metrics()
                 metrics_data = {

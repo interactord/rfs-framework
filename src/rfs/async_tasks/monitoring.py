@@ -80,9 +80,12 @@ class TaskMetrics:
         match metadata.status:
             case TaskStatus.COMPLETED:
                 successful_tasks = successful_tasks + 1
-            case TaskStatus.FAILED:            failed_tasks = failed_tasks + 1
-            case TaskStatus.CANCELLED:            cancelled_tasks = cancelled_tasks + 1
-            case TaskStatus.TIMEOUT:            timeout_tasks = timeout_tasks + 1
+            case TaskStatus.FAILED:
+                failed_tasks = failed_tasks + 1
+            case TaskStatus.CANCELLED:
+                cancelled_tasks = cancelled_tasks + 1
+            case TaskStatus.TIMEOUT:
+                timeout_tasks = timeout_tasks + 1
         if metadata.retry_count > 0:
             retried_tasks = retried_tasks + 1
         priority_name = metadata.priority.name
@@ -313,8 +316,10 @@ class TaskMonitor:
         match format:
             case "json":
                 return json.dumps(metrics_dict, indent=2, default=str)
-            case "prometheus":            return self._format_prometheus(metrics_dict)
-            case _:            raise ValueError(f"Unsupported format: {format}")
+            case "prometheus":
+                return self._format_prometheus(metrics_dict)
+            case _:
+                raise ValueError(f"Unsupported format: {format}")
 
     def _format_prometheus(self, metrics: Dict[str, Any]) -> str:
         """Prometheus 형식으로 포맷"""

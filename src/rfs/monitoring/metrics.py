@@ -297,9 +297,11 @@ class Summary:
             match quantile:
                 case 0:
                     return values[0]
-                case 1:                return values[-1]
-                case _:                index = int(quantile * (len(values) - 1))
-                return values[index]
+                case 1:
+                    return values[-1]
+                case _:
+                    index = int(quantile * (len(values) - 1))
+                    return values[index]
 
     def get_statistics(self) -> Dict[str, float]:
         """기본 통계 반환"""

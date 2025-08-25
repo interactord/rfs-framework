@@ -232,10 +232,12 @@ class DistributedCache(CacheBackend):
                     nodes = self.hash_ring.get_nodes(
                     cache_key, len(self.hash_ring.get_all_nodes())
                 )
-                case "quorum":                quorum_size = self.config.replication_factor // 2 + 1
-                nodes = self.hash_ring.get_nodes(cache_key, quorum_size)
-                case _:                primary_node = self.hash_ring.get_node(cache_key)
-                nodes = [primary_node] if primary_node else []
+                case "quorum":
+                    quorum_size = self.config.replication_factor // 2 + 1
+                    nodes = self.hash_ring.get_nodes(cache_key, quorum_size)
+                case _:
+                    primary_node = self.hash_ring.get_node(cache_key)
+                    nodes = [primary_node] if primary_node else []
             available_nodes = [
                 node
                 for node in nodes
@@ -273,11 +275,13 @@ class DistributedCache(CacheBackend):
                     nodes = self.hash_ring.get_nodes(
                     cache_key, len(self.hash_ring.get_all_nodes())
                 )
-                case "quorum":                quorum_size = self.config.replication_factor // 2 + 1
-                nodes = self.hash_ring.get_nodes(cache_key, quorum_size)
-                case _:                nodes = self.hash_ring.get_nodes(
-                    cache_key, self.config.replication_factor
-                )
+                case "quorum":
+                    quorum_size = self.config.replication_factor // 2 + 1
+                    nodes = self.hash_ring.get_nodes(cache_key, quorum_size)
+                case _:
+                    nodes = self.hash_ring.get_nodes(
+                        cache_key, self.config.replication_factor
+                    )
             available_nodes = [
                 node
                 for node in nodes

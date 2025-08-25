@@ -172,7 +172,7 @@ class PerformanceOptimizer:
                     results = await task
                     if results:
                         self.optimization_results = self.optimization_results + results
-            # TODO: Fix this line - progress.update(task_id)
+                    progress.update(task_id, completed=100)
             self.optimization_results.sort(key=lambda x: x.roi_score, reverse=True)
             if suite.auto_apply:
                 await self._apply_safe_optimizations(suite)

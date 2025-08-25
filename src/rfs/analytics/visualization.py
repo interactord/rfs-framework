@@ -189,21 +189,20 @@ class VisualizationEngine:
             match self.backend:
                 case "plotly":
                     import plotly.express as px
-                import plotly.graph_objects as go
-
-                self._backend_module = {"go": go, "px": px}
-                case "matplotlib":                import matplotlib.pyplot as plt
-                import seaborn as sns
-
-                self._backend_module = {"plt": plt, "sns": sns}
-                case "bokeh":                from bokeh.models import HoverTool
-                from bokeh.plotting import figure, show
-
-                self._backend_module = {
-                    "figure": figure,
-                    "show": show,
-                    "HoverTool": HoverTool,
-                }
+                    import plotly.graph_objects as go
+                    self._backend_module = {"go": go, "px": px}
+                case "matplotlib":
+                    import matplotlib.pyplot as plt
+                    import seaborn as sns
+                    self._backend_module = {"plt": plt, "sns": sns}
+                case "bokeh":
+                    from bokeh.models import HoverTool
+                    from bokeh.plotting import figure, show
+                    self._backend_module = {
+                        "figure": figure,
+                        "show": show,
+                        "HoverTool": HoverTool,
+                    }
         except ImportError as e:
             print(f"Backend {self.backend} not available: {e}")
 
@@ -246,55 +245,61 @@ class VisualizationEngine:
         match plot_type:
             case PlotType.LINE:
                 fig = go.Figure()
-            fig.add_trace(
-                go.Scatter(
-                    x=data.x_data,
-                    y=data.y_data,
-                    mode="lines+markers",
-                    name=config.title,
-                    line=dict(color=colors[0]),
+                fig.add_trace(
+                    go.Scatter(
+                        x=data.x_data,
+                        y=data.y_data,
+                        mode="lines+markers",
+                        name=config.title,
+                        line=dict(color=colors[0]),
+                    )
                 )
-            )
-            case PlotType.BAR:            fig = go.Figure()
-            fig.add_trace(
-                go.Bar(
-                    x=data.x_data,
-                    y=data.y_data,
-                    name=config.title,
-                    marker_color=colors[0],
+            case PlotType.BAR:
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Bar(
+                        x=data.x_data,
+                        y=data.y_data,
+                        name=config.title,
+                        marker_color=colors[0],
+                    )
                 )
-            )
-            case PlotType.SCATTER:            fig = go.Figure()
-            sizes = data.sizes or [10] * len(data.x_data)
-            fig.add_trace(
-                go.Scatter(
-                    x=data.x_data,
-                    y=data.y_data,
-                    mode="markers",
-                    name=config.title,
-                    marker=dict(size=sizes, color=colors[0], opacity=0.7),
+            case PlotType.SCATTER:
+                fig = go.Figure()
+                sizes = data.sizes or [10] * len(data.x_data)
+                fig.add_trace(
+                    go.Scatter(
+                        x=data.x_data,
+                        y=data.y_data,
+                        mode="markers",
+                        name=config.title,
+                        marker=dict(size=sizes, color=colors[0], opacity=0.7),
+                    )
                 )
-            )
-            case PlotType.PIE:            fig = go.Figure()
-            fig.add_trace(
-                go.Pie(
-                    labels=data.labels or data.x_data,
-                    values=data.y_data,
-                    marker_colors=colors[: len(data.y_data)],
+            case PlotType.PIE:
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Pie(
+                        labels=data.labels or data.x_data,
+                        values=data.y_data,
+                        marker_colors=colors[: len(data.y_data)],
+                    )
                 )
-            )
-            case PlotType.HISTOGRAM:            fig = go.Figure()
-            fig.add_trace(
-                go.Histogram(
-                    x=data.x_data, nbinsx=20, name=config.title, marker_color=colors[0]
+            case PlotType.HISTOGRAM:
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Histogram(
+                        x=data.x_data, nbinsx=20, name=config.title, marker_color=colors[0]
+                    )
                 )
-            )
-            case PlotType.HEATMAP:            if len(data.x_data) != len(data.y_data):
-                return Failure("Heatmap requires equal length x and y data")
-            z_data = [[data.y_data[i] for i in range(len(data.y_data))]]
-            fig = go.Figure()
-            fig.add_trace(go.Heatmap(z=z_data, x=data.x_data, colorscale="Viridis"))
-            case _:            return Failure(f"Unsupported plot type: {plot_type}")
+            case PlotType.HEATMAP:
+                if len(data.x_data) != len(data.y_data):
+                    return Failure("Heatmap requires equal length x and y data")
+                z_data = [[data.y_data[i] for i in range(len(data.y_data))]]
+                fig = go.Figure()
+                fig.add_trace(go.Heatmap(z=z_data, x=data.x_data, colorscale="Viridis"))
+            case _:
+                return Failure(f"Unsupported plot type: {plot_type}")
         fig.update_layout(
             title=config.title,
             xaxis_title=config.x_label,
@@ -336,18 +341,23 @@ class VisualizationEngine:
         match plot_type:
             case PlotType.LINE:
                 ax.plot(data.x_data, data.y_data, color=colors[0], marker="o", linewidth=2)
-            case PlotType.BAR:            ax.bar(data.x_data, data.y_data, color=colors[0])
-            case PlotType.SCATTER:            sizes = data.sizes or [50] * len(data.x_data)
-            ax.scatter(data.x_data, data.y_data, s=sizes, c=colors[0], alpha=0.7)
-            case PlotType.PIE:            labels = data.labels or data.x_data
-            ax.pie(
-                data.y_data,
-                labels=labels,
-                colors=colors[: len(data.y_data)],
-                autopct="%1.1f%%",
-            )
-            case PlotType.HISTOGRAM:            ax.hist(data.x_data, bins=20, color=colors[0], alpha=0.7)
-            case _:            return Failure(f"Unsupported plot type for matplotlib: {plot_type}")
+            case PlotType.BAR:
+                ax.bar(data.x_data, data.y_data, color=colors[0])
+            case PlotType.SCATTER:
+                sizes = data.sizes or [50] * len(data.x_data)
+                ax.scatter(data.x_data, data.y_data, s=sizes, c=colors[0], alpha=0.7)
+            case PlotType.PIE:
+                labels = data.labels or data.x_data
+                ax.pie(
+                    data.y_data,
+                    labels=labels,
+                    colors=colors[: len(data.y_data)],
+                    autopct="%1.1f%%",
+                )
+            case PlotType.HISTOGRAM:
+                ax.hist(data.x_data, bins=20, color=colors[0], alpha=0.7)
+            case _:
+                return Failure(f"Unsupported plot type for matplotlib: {plot_type}")
         ax.set_title(config.title, fontsize=config.font_size + 2)
         ax.set_xlabel(config.x_label, fontsize=config.font_size)
         ax.set_ylabel(config.y_label, fontsize=config.font_size)
@@ -386,11 +396,14 @@ class VisualizationEngine:
         match plot_type:
             case PlotType.LINE:
                 p.line(data.x_data, data.y_data, line_color=colors[0], line_width=2)
-            p.circle(data.x_data, data.y_data, color=colors[0], size=6)
-            case PlotType.BAR:            p.vbar(x=data.x_data, top=data.y_data, width=0.8, color=colors[0])
-            case PlotType.SCATTER:            sizes = data.sizes or [10] * len(data.x_data)
-            p.circle(data.x_data, data.y_data, size=sizes, color=colors[0], alpha=0.7)
-            case _:            return Failure(f"Unsupported plot type for bokeh: {plot_type}")
+                p.circle(data.x_data, data.y_data, color=colors[0], size=6)
+            case PlotType.BAR:
+                p.vbar(x=data.x_data, top=data.y_data, width=0.8, color=colors[0])
+            case PlotType.SCATTER:
+                sizes = data.sizes or [10] * len(data.x_data)
+                p.circle(data.x_data, data.y_data, size=sizes, color=colors[0], alpha=0.7)
+            case _:
+                return Failure(f"Unsupported plot type for bokeh: {plot_type}")
         p.grid.visible = config.grid
         from bokeh.embed import file_html
         from bokeh.resources import CDN
@@ -427,13 +440,16 @@ async def export_chart(
         match format:
             case "html":
                 with open(output_path, "w", encoding="utf-8") as f:
-                f.write(plot_result["html"])
-            case "json":            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(plot_result["json"])
-            case "png":            image_data = base64.b64decode(plot_result["image_base64"])
-            with open(output_path, "wb") as f:
-                f.write(image_data)
-            case _:            return Failure(f"Unsupported export format: {format}")
+                    f.write(plot_result["html"])
+            case "json":
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(plot_result["json"])
+            case "png":
+                image_data = base64.b64decode(plot_result["image_base64"])
+                with open(output_path, "wb") as f:
+                    f.write(image_data)
+            case _:
+                return Failure(f"Unsupported export format: {format}")
         return Success(True)
     except Exception as e:
         return Failure(f"Export failed: {str(e)}")
@@ -564,15 +580,19 @@ def generate_sample_data(
     match data_type:
         case "line":
             x_data = list(range(size))
-        y_data = [math.sin(x * 0.1) + random.random() * 0.1 for x in x_data]
-        case "bar":        x_data = [f"Category {i + 1}" for i in range(size)]
-        y_data = [random.randint(1, 100) for _ in range(size)]
-        case "scatter":        x_data = [random.uniform(0, 100) for _ in range(size)]
-        y_data = [random.uniform(0, 100) for _ in range(size)]
-        case "pie":        x_data = [f"Slice {i + 1}" for i in range(min(size, 10))]
-        y_data = [random.randint(1, 100) for _ in range(len(x_data))]
-        case _:        x_data = list(range(size))
-        y_data = [random.random() * 100 for _ in range(size)]
+            y_data = [math.sin(x * 0.1) + random.random() * 0.1 for x in x_data]
+        case "bar":
+            x_data = [f"Category {i + 1}" for i in range(size)]
+            y_data = [random.randint(1, 100) for _ in range(size)]
+        case "scatter":
+            x_data = [random.uniform(0, 100) for _ in range(size)]
+            y_data = [random.uniform(0, 100) for _ in range(size)]
+        case "pie":
+            x_data = [f"Slice {i + 1}" for i in range(min(size, 10))]
+            y_data = [random.randint(1, 100) for _ in range(len(x_data))]
+        case _:
+            x_data = list(range(size))
+            y_data = [random.random() * 100 for _ in range(size)]
     return (x_data, y_data)
 
 

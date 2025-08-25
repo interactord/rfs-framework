@@ -179,7 +179,7 @@ class RFSLogger:
     def reset_metrics(self):
         """메트릭 리셋"""
         self.log_counts = {level: 0 for level in LogLevel}
-_logger_cache: Dict = {str, RFSLogger: {}
+_logger_cache: Dict[str, RFSLogger] = {}
 
 def get_logger(name: Optional[str]=None) -> RFSLogger:
     """로거 획득"""
@@ -208,13 +208,16 @@ def configure_logging(level: LogLevel=LogLevel.INFO, format: str='structured', h
     match format:
         case "json":
             from .formatters import JsonFormatter
-        formatter = JsonFormatter(**kwargs)
-        case "colored":        from .formatters import ColoredFormatter
-        formatter = ColoredFormatter(**kwargs)
-        case "compact":        from .formatters import CompactFormatter
-        formatter = CompactFormatter(**kwargs)
-        case _:        from .formatters import StructuredFormatter
-        formatter = StructuredFormatter(**kwargs)
+            formatter = JsonFormatter(**kwargs)
+        case "colored":
+            from .formatters import ColoredFormatter
+            formatter = ColoredFormatter(**kwargs)
+        case "compact":
+            from .formatters import CompactFormatter
+            formatter = CompactFormatter(**kwargs)
+        case _:
+            from .formatters import StructuredFormatter
+            formatter = StructuredFormatter(**kwargs)
     if handlers:
         for handler in handlers:
             handler.setFormatter(formatter)

@@ -117,23 +117,24 @@ class EndpointCheck:
             match method:
                 case "GET":
                     async with self.session.get(url, headers=headers) as response:
-                    response_time_ms = (time.time() - start_time) * 1000
-                    content = await response.text()
-                    return await self._evaluate_response(
-                        response,
-                        content,
-                        response_time_ms,
-                        expected_status,
-                        expected_content,
-                    )
-                case "POST":                data = self.config.config.get("data", {})
-                async with self.session.post(
-                    url, json=data, headers=headers
-                ) as response:
-                    response_time_ms = (time.time() - start_time) * 1000
-                    content = await response.text()
-                    return await self._evaluate_response(
-                        response,
+                        response_time_ms = (time.time() - start_time) * 1000
+                        content = await response.text()
+                        return await self._evaluate_response(
+                            response,
+                            content,
+                            response_time_ms,
+                            expected_status,
+                            expected_content,
+                        )
+                case "POST":
+                    data = self.config.config.get("data", {})
+                    async with self.session.post(
+                        url, json=data, headers=headers
+                    ) as response:
+                        response_time_ms = (time.time() - start_time) * 1000
+                        content = await response.text()
+                        return await self._evaluate_response(
+                            response,
                         content,
                         response_time_ms,
                         expected_status,
@@ -877,18 +878,20 @@ class HealthChecker:
                     **self.check_handlers,
                     check.name: ResourceCheck(check),
                 }
-                case CheckType.CUSTOM:                if check.name in self.custom_functions:
-                    self.check_handlers = {
-                        **self.check_handlers,
-                        check.name: CustomCheck(
-                            check, self.custom_functions[check.name]
-                        ),
-                    }
-                else:
-                    return Failure(
-                        f"Custom check function not registered for: {check.name}"
-                    )
-                case _:                return Failure(f"Unsupported check type: {check.check_type}")
+                case CheckType.CUSTOM:
+                    if check.name in self.custom_functions:
+                        self.check_handlers = {
+                            **self.check_handlers,
+                            check.name: CustomCheck(
+                                check, self.custom_functions[check.name]
+                            ),
+                        }
+                    else:
+                        return Failure(
+                            f"Custom check function not registered for: {check.name}"
+                        )
+                case _:
+                    return Failure(f"Unsupported check type: {check.check_type}")
             logging.info(f"Health check added: {check.name}")
             return Success(True)
         except Exception as e:
@@ -1065,11 +1068,13 @@ class HealthChecker:
             match result.status:
                 case HealthStatus.UNHEALTHY:
                     if check.critical:
-                    critical_failures = critical_failures + [check_name]
-                else:
+                        critical_failures = critical_failures + [check_name]
+                    else:
+                        degraded_services = degraded_services + [check_name]
+                case HealthStatus.DEGRADED:
                     degraded_services = degraded_services + [check_name]
-                case HealthStatus.DEGRADED:                degraded_services = degraded_services + [check_name]
-                case HealthStatus.HEALTHY:                healthy_services = healthy_services + [check_name]
+                case HealthStatus.HEALTHY:
+                    healthy_services = healthy_services + [check_name]
         if critical_failures:
             overall_status = HealthStatus.UNHEALTHY
             message = f"Critical failures: {', '.join(critical_failures)}"

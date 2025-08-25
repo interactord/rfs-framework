@@ -338,8 +338,10 @@ class ServiceClient:
         match self.retry_strategy:
             case RetryStrategy.EXPONENTIAL:
                 delay = 2**attempt
-            case RetryStrategy.LINEAR:            delay = attempt + 1
-            case _:            delay = 1
+            case RetryStrategy.LINEAR:
+                delay = attempt + 1
+            case _:
+                delay = 1
         await asyncio.sleep(delay)
 
     async def _on_service_change(self, event: str, service):

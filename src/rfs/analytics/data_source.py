@@ -119,23 +119,23 @@ class DatabaseDataSource(DataSource):
             match self.driver:
                 case "postgresql":
                     import asyncpg
-
-                self._connection = await asyncpg.connect(self.connection_string)
-                case "mysql":                import aiomysql
-
-                self._connection = await aiomysql.connect(
+                    self._connection = await asyncpg.connect(self.connection_string)
+                case "mysql":
+                    import aiomysql
+                    self._connection = await aiomysql.connect(
                     host=self.config.get("host"),
                     port=self.config.get("port", 3306),
                     user=self.config.get("user"),
                     password=self.config.get("password"),
                     db=self.config.get("database"),
                 )
-                case "sqlite":                import aiosqlite
-
-                self._connection = await aiosqlite.connect(
-                    self.config.get("database", ":memory:")
-                )
-                case _:                return Failure(f"Unsupported database driver: {self.driver}")
+                case "sqlite":
+                    import aiosqlite
+                    self._connection = await aiosqlite.connect(
+                        self.config.get("database", ":memory:")
+                    )
+                case _:
+                    return Failure(f"Unsupported database driver: {self.driver}")
             self._connected = True
             return Success(True)
         except Exception as e:
@@ -162,21 +162,24 @@ class DatabaseDataSource(DataSource):
             match self.driver:
                 case "postgresql":
                     rows = await self._connection.fetch(
-                    query.query, *query.parameters.values()
-                )
-                return Success([dict(row) for row in rows])
-                case "mysql":                async with self._connection.cursor() as cursor:
-                    await cursor.execute(query.query, query.parameters)
-                    rows = await cursor.fetchall()
-                    columns = [desc[0] for desc in cursor.description]
-                    return Success([dict(zip(columns, row)) for row in rows])
-                case "sqlite":                async with self._connection.execute(
-                    query.query, query.parameters
-                ) as cursor:
-                    rows = await cursor.fetchall()
-                    columns = [desc[0] for desc in cursor.description]
-                    return Success([dict(zip(columns, row)) for row in rows])
-                case _:                return Failure(f"Unsupported driver: {self.driver}")
+                        query.query, *query.parameters.values()
+                    )
+                    return Success([dict(row) for row in rows])
+                case "mysql":
+                    async with self._connection.cursor() as cursor:
+                        await cursor.execute(query.query, query.parameters)
+                        rows = await cursor.fetchall()
+                        columns = [desc[0] for desc in cursor.description]
+                        return Success([dict(zip(columns, row)) for row in rows])
+                case "sqlite":
+                    async with self._connection.execute(
+                        query.query, query.parameters
+                    ) as cursor:
+                        rows = await cursor.fetchall()
+                        columns = [desc[0] for desc in cursor.description]
+                        return Success([dict(zip(columns, row)) for row in rows])
+                case _:
+                    return Failure(f"Unsupported driver: {self.driver}")
         except Exception as e:
             return Failure(f"Query execution failed: {str(e)}")
 
@@ -649,11 +652,11 @@ def create_api_source(
     source_id: str, name: str, base_url: str, headers: Optional[Dict[str, str]] = None
 ) -> APIDataSource:
     """API 데이터 소스 생성"""
-    config = {"base_url": base_url, "headers": headers or {}
+    config = {"base_url": base_url, "headers": headers or {}}
     return APIDataSource(source_id, name, config)
 
 
 def create_metrics_source(source_id: str, name: str) -> MetricsDataSource:
     """메트릭 데이터 소스 생성"""
-    config = {"metrics": {}
+    config = {"metrics": {}}
     return MetricsDataSource(source_id, name, config)

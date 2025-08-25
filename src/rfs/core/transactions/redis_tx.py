@@ -156,7 +156,7 @@ class RedisTransactionResource(TransactionResource):
     def resume(self, suspended_resource: Any) -> Result[None, str]:
         """트랜잭션 재개"""
         if type(suspended_resource).__name__ == "dict":
-            self.pipelines.update(suspended_resource)
+            self.pipelines = {**pipelines, **suspended_resource}
         return Success(None)
 
 

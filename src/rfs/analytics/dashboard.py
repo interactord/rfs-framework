@@ -155,7 +155,7 @@ class ChartWidget(Widget):
     ):
         super().__init__(widget_id, title, WidgetType.CHART, position)
         self.chart_type = chart_type
-        self.config.update(config)
+        self.config = {**config, **config}
 
     async def render(self) -> Result[Dict[str, Any], str]:
         """차트 렌더링"""
@@ -200,7 +200,7 @@ class MetricWidget(Widget):
         super().__init__(widget_id, title, WidgetType.METRIC, position)
         self.metric_type = metric_type
         self.format_string = format_string
-        self.config.update(config)
+        self.config = {**config, **config}
 
     async def render(self) -> Result[Dict[str, Any], str]:
         """메트릭 렌더링"""
@@ -263,7 +263,7 @@ class TableWidget(Widget):
     ):
         super().__init__(widget_id, title, WidgetType.TABLE, position)
         self.columns = columns or []
-        self.config.update(config)
+        self.config = {**config, **config}
 
     async def render(self) -> Result[Dict[str, Any], str]:
         """테이블 렌더링"""
@@ -308,7 +308,7 @@ class TextWidget(Widget):
         super().__init__(widget_id, title, WidgetType.TEXT, position)
         self.content = content
         self.markdown = markdown
-        self.config.update(config)
+        self.config = {**config, **config}
 
     async def render(self) -> Result[Dict[str, Any], str]:
         """텍스트 렌더링"""

@@ -556,7 +556,7 @@ class IOProfiler:
 
     def set_bottleneck_thresholds(self, **thresholds):
         """병목 탐지 임계값 설정"""
-        self.bottleneck_thresholds.update(thresholds)
+        self.bottleneck_thresholds = {**bottleneck_thresholds, **thresholds}
 
     def get_current_snapshot(self) -> Optional[IOSnapshot]:
         """현재 I/O 스냅샷 반환"""

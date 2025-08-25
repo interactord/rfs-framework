@@ -354,7 +354,7 @@ class ConsulRegistry(ServiceRegistry):
         try:
             service_def = {'ID': service.service_id, 'Name': service.name, 'Tags': service.metadata.tags, 'Address': service.endpoint.host, 'Port': service.endpoint.port, 'Meta': service.metadata.labels, 'Check': {'HTTP': f'{service.endpoint.url}/health', 'Interval': '10s', 'Timeout': '5s'}}
             if service.ttl:
-                service_def.get('Check') = {**service_def.get('Check'), 'TTL': f'{int(service.ttl.total_seconds())}s'}
+                service_def['Check'] = {**service_def.get('Check'), 'TTL': f'{int(service.ttl.total_seconds())}s'}
             success = self.consul.agent.service.register(service_def)
             if success:
                 logger.info(f'Service {service.name} ({service.service_id}) registered to Consul')

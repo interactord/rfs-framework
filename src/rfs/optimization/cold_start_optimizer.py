@@ -256,7 +256,7 @@ class ColdStartOptimizer:
         self, warmup_functions: List[tuple], timeout: float
     ) -> Dict[str, Any]:
         """비동기 워밍업 실행"""
-        results = {"successful": 0, "failed": 0, "function_results": {}
+        results = {"successful": 0, "failed": 0, "function_results": {}}
 
         async def execute_warmup(priority_func_tuple):
             priority, func = priority_func_tuple
@@ -310,7 +310,7 @@ class ColdStartOptimizer:
         self, warmup_functions: List[tuple], timeout: float
     ) -> Dict[str, Any]:
         """동기 워밍업 실행"""
-        results = {"successful": 0, "failed": 0, "function_results": {}
+        results = {"successful": 0, "failed": 0, "function_results": {}}
         start_time = time.time()
         for priority, func in warmup_functions:
             if time.time() - start_time > timeout:

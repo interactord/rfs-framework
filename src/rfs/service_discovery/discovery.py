@@ -236,7 +236,7 @@ class ServiceWatcher:
     
     async def _watch_loop(self, service_name: str, interval: timedelta):
         """감시 루프"""
-        previous_services: Dict = {str, ServiceInfo: {}
+        previous_services: Dict[str, ServiceInfo] = {}
         
         while self._running:
             try:

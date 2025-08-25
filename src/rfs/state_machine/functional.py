@@ -355,7 +355,7 @@ def process_next_event(machine: StateMachineState) -> StateMachineState:
         try:
             action_result = executable_transition.action(new_context)
             if type(action_result).__name__ == "dict":
-                new_context.update(action_result)
+                new_context = {**new_context, **action_result}
         except:
             pass
     new_current_state = machine.current_state

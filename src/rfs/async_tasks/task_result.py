@@ -152,7 +152,7 @@ class TaskResultStore:
             if result.task_name not in self._results_by_name:
                 self._results_by_name = {**self._results_by_name, result.task_name: []}
             self._results_by_name[result.task_name] = self._results_by_name.get(result.task_name, []) + [result.task_id]
-            self._results_by_status[result.status] = status] + [result.task_id]
+            self._results_by_status[result.status] = self._results_by_status.get(result.status, []) + [result.task_id]
             self._insert_by_time(result.task_id, result.start_time)
             self._update_statistics(result)
             if self.storage_path:
@@ -298,7 +298,7 @@ class TaskResultStore:
                             if result.task_name not in self._results_by_name:
                                 self._results_by_name = {**self._results_by_name, result.task_name: []}
                             self._results_by_name[result.task_name] = self._results_by_name.get(result.task_name, []) + [result.task_id]
-                            self._results_by_status[result.status] = status] + [result.task_id]
+                            self._results_by_status[result.status] = self._results_by_status.get(result.status, []) + [result.task_id]
                             self._insert_by_time(result.task_id, result.start_time)
                     except Exception as e:
                         print(f'Failed to load result file {result_file}: {e}')
@@ -347,7 +347,7 @@ class ResultAnalyzer:
             failure_by_type[error_type] =             failure_by_type[error_type] + [result]
             if result.task_name not in failure_by_task:
                 failure_by_task[result.task_name] = {result.task_name: []}
-            failure_by_task[result.task_name] = task_name] + [result]
+            failure_by_task[result.task_name] = failure_by_task[result.task_name] + [result]
         return {'analysis_period_days': days, 'total_failures': len(failed_results), 'failure_by_type': {error_type: len(results) for error_type, results in failure_by_type.items()}, 'failure_by_task': {task_name: len(results) for task_name, results in failure_by_task.items()}, 'most_common_errors': [{'error_type': error_type, 'count': len(results), 'example_message': results[0].error_message} for error_type, results in sorted(failure_by_type.items(), key=lambda x: len(x[1]), reverse=True)[:5]]}
 _default_result_store: Optional[TaskResultStore] = None
 

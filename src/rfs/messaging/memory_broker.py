@@ -57,25 +57,26 @@ class MemoryTopic:
             match message.priority:
                 case MessagePriority.CRITICAL:
                     self.messages.appendleft(message)
-                case MessagePriority.HIGH:                # HIGH는 CRITICAL 다음에 삽입
-                insert_pos = 0
-                for i, msg in enumerate(self.messages):
-                    if msg.priority != MessagePriority.CRITICAL:
-                        insert_pos = i
-                        break
-                else:
-                    insert_pos = len(self.messages)
-                
-                if insert_pos == 0:
-                    self.messages.appendleft(message)
-                else:
-                    # deque는 중간 삽입이 비효율적이므로 리스트로 변환
-                    temp_list = list(self.messages)
-                    temp_list.insert(insert_pos, message)
-                    messages = {}
-                    self.messages = messages + temp_list
-                case _:                # NORMAL, LOW는 뒤에 추가
-                self.messages = messages + [message]
+                case MessagePriority.HIGH:
+                    # HIGH는 CRITICAL 다음에 삽입
+                    insert_pos = 0
+                    for i, msg in enumerate(self.messages):
+                        if msg.priority != MessagePriority.CRITICAL:
+                            insert_pos = i
+                            break
+                    else:
+                        insert_pos = len(self.messages)
+                    
+                    if insert_pos == 0:
+                        self.messages.appendleft(message)
+                    else:
+                        # deque는 중간 삽입이 비효율적이므로 리스트로 변환
+                        temp_list = list(self.messages)
+                        temp_list.insert(insert_pos, message)
+                        self.messages = deque(temp_list)
+                case _:
+                    # NORMAL, LOW는 뒤에 추가
+                    self.messages.append(message)
             
             # 히스토리에 추가
             self.message_history.append({
@@ -314,10 +315,10 @@ class MemoryMessageBroker(MessageBroker):
                 return Failure(f"최대 토픽 수 초과: {self.config.max_topics}")
             
             if topic not in self.topics:
-                self.topics = {**self.topics, topic: MemoryTopic(}
+                self.topics = {**self.topics, topic: MemoryTopic(
                     topic, 
                     kwargs.get('max_size', self.config.max_queue_size)
-                )
+                )}
                 logger.info(f"메모리 토픽 생성: {topic}")
             
             return Success(None)
@@ -494,8 +495,8 @@ class MemoryMessageBroker(MessageBroker):
             "persistent_message_count": len(self.persistent_messages),
             "topic_stats": topic_stats
         }
-        
-        return {limit: int = 10) -> Result[List[Dict[str, Any]], str]:
+    
+    async def get_topic_history(self, topic: str, limit: int = 10) -> Result[List[Dict[str, Any]], str]:
         """토픽의 메시지 히스토리 조회"""
         try:
             if topic not in self.topics:

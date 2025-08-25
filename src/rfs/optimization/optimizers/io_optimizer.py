@@ -135,7 +135,7 @@ class IOCache:
         with self.lock:
             if self.current_size + size > self.max_size:
                 self._evict_lru(size)
-            self.cache = {**self.cache, key: {'data': data, 'created_at': datetime.now()}
+            self.cache = {**self.cache, key: {'data': data, 'created_at': datetime.now()}}
             self.access_times = {**self.access_times, key: datetime.now()}
             self.sizes = {**self.sizes, key: size}
             current_size = current_size + size
@@ -189,7 +189,7 @@ class CompressionManager:
                 case _:                compressed = data
             duration = time.time() - start_time
             ratio = len(compressed) / max(1, len(data))
-            self.compression_stats[method] = compression_stats[method] + [{'original_size': len(data], 'compressed_size': len(compressed), 'ratio': ratio, 'duration': duration})
+            self.compression_stats[method] = self.compression_stats.get(method, []) + [{'original_size': len(data), 'compressed_size': len(compressed), 'ratio': ratio, 'duration': duration}]
             return Success(compressed)
         except Exception as e:
             return Failure(f'Compression failed: {e}')
@@ -211,14 +211,17 @@ class CompressionManager:
         match self.strategy:
             case CompressionStrategy.NONE:
                 return CompressionStrategy.NONE.value
-            case CompressionStrategy.GZIP:            return CompressionStrategy.GZIP.value
-            case CompressionStrategy.ZLIB:            return CompressionStrategy.ZLIB.value
-            case CompressionStrategy.ADAPTIVE:            if len(data) < 1024:
-                return CompressionStrategy.NONE.value
-            elif len(data) < 100 * 1024:
-                return CompressionStrategy.ZLIB.value
-            else:
+            case CompressionStrategy.GZIP:
                 return CompressionStrategy.GZIP.value
+            case CompressionStrategy.ZLIB:
+                return CompressionStrategy.ZLIB.value
+            case CompressionStrategy.ADAPTIVE:
+                if len(data) < 1024:
+                    return CompressionStrategy.NONE.value
+                elif len(data) < 100 * 1024:
+                    return CompressionStrategy.ZLIB.value
+                else:
+                    return CompressionStrategy.GZIP.value
         return CompressionStrategy.NONE.value
 
     def get_compression_stats(self) -> Dict[str, Any]:
@@ -247,15 +250,19 @@ class DiskIOOptimizer:
         match self.config.buffering_strategy:
             case BufferingStrategy.NO_BUFFER:
                 return 0
-            case BufferingStrategy.SMALL_BUFFER:            return 4 * 1024
-            case BufferingStrategy.MEDIUM_BUFFER:            return 64 * 1024
-            case BufferingStrategy.LARGE_BUFFER:            return 1024 * 1024
-            case BufferingStrategy.ADAPTIVE:            if file_size and file_size < 64 * 1024:
+            case BufferingStrategy.SMALL_BUFFER:
                 return 4 * 1024
-            elif file_size and file_size < 1024 * 1024:
+            case BufferingStrategy.MEDIUM_BUFFER:
                 return 64 * 1024
-            else:
-                return 256 * 1024
+            case BufferingStrategy.LARGE_BUFFER:
+                return 1024 * 1024
+            case BufferingStrategy.ADAPTIVE:
+                if file_size and file_size < 64 * 1024:
+                    return 4 * 1024
+                elif file_size and file_size < 1024 * 1024:
+                    return 64 * 1024
+                else:
+                    return 256 * 1024
         return 64 * 1024
 
     async def read_file(self, file_path: str, use_cache: bool=True) -> Result[bytes, str]:
@@ -279,7 +286,7 @@ class DiskIOOptimizer:
                     if decomp_result.is_success():
                         data = decomp_result.unwrap()
                 duration = time.time() - start_time
-                self.operation_stats['read'] = operation_stats['read'] + [{'file_path': file_path, 'size': len(data], 'duration': duration, 'speed_mb_per_sec': len(data) / 1024 / 1024 / max(0.001, duration)})
+                self.operation_stats['read'] = operation_stats['read'] + [{'file_path': file_path, 'size': len(data), 'duration': duration, 'speed_mb_per_sec': len(data) / 1024 / 1024 / max(0.001, duration)}]
                 if use_cache and self.cache:
                     self.cache.put(file_path, data)
                 return Success(data)
@@ -309,7 +316,7 @@ class DiskIOOptimizer:
                     await f.write(compressed_data)
                     await f.fsync()
                 duration = time.time() - start_time
-                self.operation_stats['write'] = operation_stats['write'] + [{'file_path': file_path, 'original_size': len(data], 'written_size': len(compressed_data), 'compression_method': compression_method, 'duration': duration, 'speed_mb_per_sec': len(compressed_data) / 1024 / 1024 / max(0.001, duration)})
+                self.operation_stats['write'] = operation_stats['write'] + [{'file_path': file_path, 'original_size': len(data), 'written_size': len(compressed_data), 'compression_method': compression_method, 'duration': duration, 'speed_mb_per_sec': len(compressed_data) / 1024 / 1024 / max(0.001, duration)}]
                 if self.cache:
                     self.cache.put(file_path, data)
                 return Success(True)
@@ -331,14 +338,14 @@ class DiskIOOptimizer:
 
     def get_stats(self) -> Dict[str, Any]:
         """디스크 I/O 통계"""
-        stats = {'cache_stats': self.cache.get_stats() if self.cache else {}
+        stats = {'cache_stats': self.cache.get_stats() if self.cache else {}}
         for operation, records in self.operation_stats.items():
             if records:
                 total_operations = len(records)
                 total_size = sum((r.get('size', r.get('original_size', 0)) for r in records))
                 avg_duration = sum((r['duration'] for r in records)) / total_operations
                 avg_speed = sum((r['speed_mb_per_sec'] for r in records)) / total_operations
-                stats[f'{operation}_stats'] = {f'{operation_stats': {'total_operations': total_operations, 'total_mb': total_size / 1024 / 1024, 'avg_duration': avg_duration, 'avg_speed_mb_per_sec': avg_speed}}}
+                stats[f'{operation}_stats'] = {'total_operations': total_operations, 'total_mb': total_size / 1024 / 1024, 'avg_duration': avg_duration, 'avg_speed_mb_per_sec': avg_speed}
         return stats
 
 class NetworkIOOptimizer:
@@ -375,7 +382,7 @@ class NetworkIOOptimizer:
                     if response.status == 200:
                         data = await response.read()
                         duration = time.time() - start_time
-                        self.operation_stats['http_get'] = operation_stats['http_get'] + [{'url': url, 'size': len(data], 'duration': duration, 'speed_mb_per_sec': len(data) / 1024 / 1024 / max(0.001, duration)})
+                        self.operation_stats['http_get'] = self.operation_stats['http_get'] + [{'url': url, 'size': len(data), 'duration': duration, 'speed_mb_per_sec': len(data) / 1024 / 1024 / max(0.001, duration)}]
                         if use_cache and self.cache:
                             self.cache.put(url, data, cache_params)
                         return Success(data)
@@ -393,7 +400,7 @@ class NetworkIOOptimizer:
                 async with session.post(url, data=data, headers=headers) as response:
                     response_data = await response.read()
                     duration = time.time() - start_time
-                    self.operation_stats['http_post'] = operation_stats['http_post'] + [{'url': url, 'request_size': len(data], 'response_size': len(response_data), 'duration': duration, 'speed_mb_per_sec': (len(data) + len(response_data)) / 1024 / 1024 / max(0.001, duration)})
+                    self.operation_stats['http_post'] = self.operation_stats['http_post'] + [{'url': url, 'request_size': len(data), 'response_size': len(response_data), 'duration': duration, 'speed_mb_per_sec': (len(data) + len(response_data)) / 1024 / 1024 / max(0.001, duration)}]
                     if response.status in [200, 201]:
                         return Success(response_data)
                     else:
@@ -438,7 +445,7 @@ class NetworkIOOptimizer:
                     case _:                    total_size = 0
                 avg_duration = sum((r['duration'] for r in records)) / total_operations
                 avg_speed = sum((r['speed_mb_per_sec'] for r in records)) / total_operations
-                stats[f'{operation}_stats'] = {f'{operation_stats': {'total_operations': total_operations, 'total_mb': total_size / 1024 / 1024, 'avg_duration': avg_duration, 'avg_speed_mb_per_sec': avg_speed}}}
+                stats[f'{operation}_stats'] = {'total_operations': total_operations, 'total_mb': total_size / 1024 / 1024, 'avg_duration': avg_duration, 'avg_speed_mb_per_sec': avg_speed}
         return stats
 
 class IOOptimizer:

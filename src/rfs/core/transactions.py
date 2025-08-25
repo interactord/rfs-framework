@@ -165,11 +165,11 @@ class DatabaseTransactionManager(TransactionManager):
                 isolation_sql = f"SET TRANSACTION ISOLATION LEVEL {context.config.isolation_level.value}"
                 await connection.execute(isolation_sql)
             
-            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {
                 'connection': connection,
                 'transaction': transaction,
                 'context': context
-            }
+            }}
             
             context.status = TransactionStatus.ACTIVE
             logger.debug(f"Database transaction {context.transaction_id} started")
@@ -331,11 +331,11 @@ class RedisTransactionManager(TransactionManager):
             else:
                 pipeline = client
             
-            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {
                 'client': client,
                 'pipeline': pipeline,
                 'context': context
-            }
+            }}
             
             context.status = TransactionStatus.ACTIVE
             logger.debug(f"Redis transaction {context.transaction_id} started")
@@ -453,10 +453,10 @@ class DistributedTransactionManager(TransactionManager):
             # Saga 인스턴스 생성
             saga = await self.saga_manager.create_saga(config.saga_id)
             
-            self._active_transactions = {**self._active_transactions, context.transaction_id: {}
+            self._active_transactions = {**self._active_transactions, context.transaction_id: {
                 'saga': saga,
                 'context': context
-            }
+            }}
             
             context.status = TransactionStatus.ACTIVE
             logger.debug(f"Distributed transaction {context.transaction_id} started with saga {config.saga_id}")

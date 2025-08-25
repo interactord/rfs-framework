@@ -251,7 +251,7 @@ class SystemProfiler:
 
     def set_alert_thresholds(self, **thresholds):
         """알림 임계값 설정"""
-        self.alert_thresholds.update(thresholds)
+        self.alert_thresholds = {**self.alert_thresholds, **thresholds}
 
     def get_current_usage(self) -> Optional[ResourceUsage]:
         """현재 리소스 사용량 반환"""
@@ -305,7 +305,7 @@ class SystemProfiler:
                         memory_trend = "decreasing"
                 summary = {
                     **summary,
-                    "trends": {"trends": {"cpu": cpu_trend, "memory": memory_trend},
+                    "trends": {"cpu": cpu_trend, "memory": memory_trend}
                 }
             return summary
         except Exception as e:

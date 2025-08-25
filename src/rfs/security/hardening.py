@@ -153,9 +153,12 @@ class SecurityHardening:
             match self.policy.level:
                 case SecurityLevel.BASIC:
                     self._apply_basic_hardening(target, result)
-                case SecurityLevel.STANDARD:                self._apply_standard_hardening(target, result)
-                case SecurityLevel.HIGH:                self._apply_high_hardening(target, result)
-                case SecurityLevel.CRITICAL:                self._apply_critical_hardening(target, result)
+                case SecurityLevel.STANDARD:
+                    self._apply_standard_hardening(target, result)
+                case SecurityLevel.HIGH:
+                    self._apply_high_hardening(target, result)
+                case SecurityLevel.CRITICAL:
+                    self._apply_critical_hardening(target, result)
 
             # Check compliance
             self._check_compliance(target, result)
@@ -457,21 +460,24 @@ class SecurityHardening:
             match standard:
                 case ComplianceStandard.PCI_DSS:
                     result.compliance_status = {
-                    **result.compliance_status,
-                    "PCI_DSS": self._check_pci_dss_compliance(),
-                }
-                case ComplianceStandard.GDPR:                result.compliance_status = {
-                    **result.compliance_status,
-                    "GDPR": self._check_gdpr_compliance(),
-                }
-                case ComplianceStandard.HIPAA:                result.compliance_status = {
-                    **result.compliance_status,
-                    "HIPAA": self._check_hipaa_compliance(),
-                }
-                case ComplianceStandard.SOC2:                result.compliance_status = {
-                    **result.compliance_status,
-                    "SOC2": self._check_soc2_compliance(),
-                }
+                        **result.compliance_status,
+                        "PCI_DSS": self._check_pci_dss_compliance(),
+                    }
+                case ComplianceStandard.GDPR:
+                    result.compliance_status = {
+                        **result.compliance_status,
+                        "GDPR": self._check_gdpr_compliance(),
+                    }
+                case ComplianceStandard.HIPAA:
+                    result.compliance_status = {
+                        **result.compliance_status,
+                        "HIPAA": self._check_hipaa_compliance(),
+                    }
+                case ComplianceStandard.SOC2:
+                    result.compliance_status = {
+                        **result.compliance_status,
+                        "SOC2": self._check_soc2_compliance(),
+                    }
 
     def _check_pci_dss_compliance(self) -> bool:
         """PCI DSS 컴플라이언스 검사"""

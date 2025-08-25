@@ -177,46 +177,46 @@ class CircuitBreaker:
         match self.state:
             case CircuitBreakerState.OPEN:
                 if self._should_attempt_reset():
-                self.state = CircuitBreakerState.HALF_OPEN
-                logger.info("회로 차단기 복구 시도 모드로 전환")
+                    self.state = CircuitBreakerState.HALF_OPEN
+                    logger.info("회로 차단기 복구 시도 모드로 전환")
                 else:
-                raise Exception("Circuit breaker is OPEN")
+                    raise Exception("Circuit breaker is OPEN")
             case CircuitBreakerState.HALF_OPEN:
                 if self.success_count >= self.success_threshold:
-                self._reset()
-                logger.info("회로 차단기 복구 완료")
+                    self._reset()
+                    logger.info("회로 차단기 복구 완료")
                 try:
-                result = func()
-                self._on_success()
-                return result
+                    result = func()
+                    self._on_success()
+                    return result
                 except Exception as e:
-                self._on_failure()
-                raise
+                    self._on_failure()
+                    raise
 
-                def _should_attempt_reset(self) -> bool:
-                """복구 시도 여부 확인"""
-                if self.last_failure_time is None:
-                return True
-                return datetime.now() - self.last_failure_time > timedelta(
-                seconds=self.recovery_timeout
-                )
+    def _should_attempt_reset(self) -> bool:
+        """복구 시도 여부 확인"""
+        if self.last_failure_time is None:
+            return True
+        return datetime.now() - self.last_failure_time > timedelta(
+            seconds=self.recovery_timeout
+        )
 
-                def _on_success(self) -> None:
-                """성공 시 처리"""
-                match self.state:
-                    case CircuitBreakerState.HALF_OPEN:
+    def _on_success(self) -> None:
+        """성공 시 처리"""
+        match self.state:
+            case CircuitBreakerState.HALF_OPEN:
                 success_count = success_count + 1
             case _:
                 self._reset()
 
-                def _on_failure(self) -> None:
-                """실패 시 처리"""
-                failure_count = failure_count + 1
-                self.last_failure_time = datetime.now()
-                match self.state:
-                    case CircuitBreakerState.CLOSED:
+    def _on_failure(self) -> None:
+        """실패 시 처리"""
+        self.failure_count = self.failure_count + 1
+        self.last_failure_time = datetime.now()
+        match self.state:
+            case CircuitBreakerState.CLOSED:
                 if self.failure_count >= self.failure_threshold:
-                self.state = CircuitBreakerState.OPEN
+                    self.state = CircuitBreakerState.OPEN
                 logger.warning("회로 차단기가 OPEN 상태로 전환되었습니다")
             case CircuitBreakerState.HALF_OPEN:
                 self.state = CircuitBreakerState.OPEN

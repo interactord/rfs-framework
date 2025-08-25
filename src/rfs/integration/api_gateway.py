@@ -496,41 +496,42 @@ class APIGatewayEnhancer:
         match route.authentication:
             case AuthenticationMethod.API_KEY:
                 api_key = context.headers.get("X-API-Key")
-            if not api_key or api_key not in self.api_keys:
-                return Failure("Invalid API key")
-            key_obj = self.api_keys[api_key]
-            if key_obj.expires_at and datetime.now() > key_obj.expires_at:
-                return Failure("API key expired")
-            if not key_obj.active:
-                return Failure("API key is inactive")
-            if key_obj.allowed_ips and context.client_ip not in key_obj.allowed_ips:
-                return Failure("IP not allowed")
-            if key_obj.allowed_routes and route.id not in key_obj.allowed_routes:
-                return Failure("Route not allowed")
-            if key_obj.usage_quota and key_obj.current_usage >= key_obj.usage_quota:
-                return Failure("Usage quota exceeded")
-            current_usage = current_usage + 1
-            context.api_key = api_key
-            case AuthenticationMethod.JWT:            auth_header = context.headers.get("Authorization", "")
-            if not auth_header.startswith("Bearer "):
-                return Failure("Missing or invalid JWT token")
-            token = auth_header[7:]
-            try:
-                payload = jwt.decode(token, "secret", algorithms=["HS256"])
-                context.user_id = payload.get("user_id")
-            except jwt.InvalidTokenError:
-                return Failure("Invalid JWT token")
-            case AuthenticationMethod.BASIC:            auth_header = context.headers.get("Authorization", "")
-            if not auth_header.startswith("Basic "):
-                return Failure("Missing or invalid Basic auth")
-            import base64
-
-            try:
-                credentials = base64.b64decode(auth_header[6:]).decode()
-                username, password = credentials.split(":", 1)
-                context.user_id = username
-            except Exception:
-                return Failure("Invalid Basic auth credentials")
+                if not api_key or api_key not in self.api_keys:
+                    return Failure("Invalid API key")
+                key_obj = self.api_keys[api_key]
+                if key_obj.expires_at and datetime.now() > key_obj.expires_at:
+                    return Failure("API key expired")
+                if not key_obj.active:
+                    return Failure("API key is inactive")
+                if key_obj.allowed_ips and context.client_ip not in key_obj.allowed_ips:
+                    return Failure("IP not allowed")
+                if key_obj.allowed_routes and route.id not in key_obj.allowed_routes:
+                    return Failure("Route not allowed")
+                if key_obj.usage_quota and key_obj.current_usage >= key_obj.usage_quota:
+                    return Failure("Usage quota exceeded")
+                key_obj.current_usage = key_obj.current_usage + 1
+                context.api_key = api_key
+            case AuthenticationMethod.JWT:
+                auth_header = context.headers.get("Authorization", "")
+                if not auth_header.startswith("Bearer "):
+                    return Failure("Missing or invalid JWT token")
+                token = auth_header[7:]
+                try:
+                    payload = jwt.decode(token, "secret", algorithms=["HS256"])
+                    context.user_id = payload.get("user_id")
+                except jwt.InvalidTokenError:
+                    return Failure("Invalid JWT token")
+            case AuthenticationMethod.BASIC:
+                auth_header = context.headers.get("Authorization", "")
+                if not auth_header.startswith("Basic "):
+                    return Failure("Missing or invalid Basic auth")
+                import base64
+                try:
+                    credentials = base64.b64decode(auth_header[6:]).decode()
+                    username, password = credentials.split(":", 1)
+                    context.user_id = username
+                except Exception:
+                    return Failure("Invalid Basic auth credentials")
         return Success(True)
 
     async def _check_rate_limit(
@@ -561,7 +562,7 @@ class APIGatewayEnhancer:
         for transformation in route.transformations:
             if transformation["type"] == TransformationType.REQUEST_HEADER.value:
                 if "add" in transformation:
-                    context.headers.update(transformation["add"])
+                    context.headers = {**headers, **transformation["add"]}
                 if "remove" in transformation:
                     for header in transformation["remove"]:
                         headers = {
@@ -576,7 +577,7 @@ class APIGatewayEnhancer:
                         )
             elif transformation["type"] == TransformationType.REQUEST_QUERY.value:
                 if "add" in transformation:
-                    context.query_params.update(transformation["add"])
+                    context.query_params = {**query_params, **transformation["add"]}
                 if "remove" in transformation:
                     for param in transformation["remove"]:
                         query_params = {
@@ -591,7 +592,7 @@ class APIGatewayEnhancer:
         for transformation in route.transformations:
             if transformation["type"] == TransformationType.RESPONSE_HEADER.value:
                 if "add" in transformation:
-                    response.headers.update(transformation["add"])
+                    response.headers = {**headers, **transformation["add"]}
                 if "remove" in transformation:
                     for header in transformation["remove"]:
                         headers = {
@@ -731,7 +732,7 @@ class APIGatewayEnhancer:
                             "security": {"security": [{"BearerAuth": []}]},
                         }
                 if endpoint.documentation:
-                    operation.update(endpoint.documentation)
+                    operation = {**operation, **endpoint.documentation}
                 path_item[endpoint.method.lower()] = operation
             return openapi_spec
         except Exception as e:

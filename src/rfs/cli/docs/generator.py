@@ -154,7 +154,7 @@ class DocumentationGenerator:
                         case _:                        result = Failure(f'지원하지 않는 문서 유형: {doc_type}')
                     if result.is_success():
                         generated_docs[doc_type.value] = {doc_type.value: result.unwrap()}
-                    progress.update(task)
+                    progress = {**progress, **task}
             if self.config.generate_index:
                 await self._generate_index_page(generated_docs)
             if console:
@@ -356,7 +356,7 @@ class DocumentationGenerator:
             if self.output_path.exists():
                 for file in self.output_path.glob('*'):
                     if file.is_file():
-                        status['generated_files'] = status.get('generated_files') + [{'name': file.name, 'size': file.stat(].st_size, 'modified': datetime.fromtimestamp(file.stat().st_mtime).isoformat()})
+                        status['generated_files'] = status.get('generated_files', []) + [{'name': file.name, 'size': file.stat().st_size, 'modified': datetime.fromtimestamp(file.stat().st_mtime).isoformat()}]
             return status
         except Exception as e:
             return {'error': str(e)}

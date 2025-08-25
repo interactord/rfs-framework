@@ -73,13 +73,20 @@ class MemoryEventStore:
         current_version = len(stream) - 1
         if expected_version != -1 and current_version != expected_version:
             raise ValueError(f'Expected version {expected_version}, but current version is {current_version}')
-        stream = stream + events
+        new_stream = stream + events
+        self.streams = {**self.streams, stream_id: new_stream}
         self.all_events = self.all_events + events
-        metadata.version = len(stream) - 1
-        metadata.updated_at = datetime.now()
-        metadata.event_count = len(stream)
+        
+        updated_metadata = EventStreamMetadata(
+            stream_id=stream_id,
+            version=len(new_stream) - 1,
+            created_at=metadata.created_at,
+            updated_at=datetime.now(),
+            event_count=len(new_stream)
+        )
+        self.metadata = {**self.metadata, stream_id: updated_metadata}
         logger.info(f'Appended {len(events)} events to stream {stream_id}')
-        return metadata.version
+        return updated_metadata.version
 
     async def read_events(self, stream_id: str, from_version: int=0, max_count: int=None) -> List[Event]:
         """이벤트 읽기"""
@@ -201,7 +208,6 @@ class EventStream:
     async def append(self, *events: Event) -> int:
         """이벤트 추가"""
         version = await self.store.append_events(self.stream_id, list(events), self._version)
-        self._version = version
         return version
 
     async def read(self, from_version: int=0, max_count: int=None) -> List[Event]:
@@ -262,7 +268,7 @@ class EventStore:
         """스냅샷 생성"""
         snapshot_event = Event(event_type='__snapshot__', data=snapshot_data, metadata={'snapshot_version': version, 'stream_id': stream_id})
         stream = self.get_stream(f'{stream_id}__snapshots__')
-        await stream = stream + [snapshot_event]
+        await stream.append(snapshot_event)
 
     async def get_latest_snapshot(self, stream_id: str) -> Optional[Event]:
         """최신 스냅샷 조회"""
@@ -276,13 +282,13 @@ def create_event_stream(stream_id: str, store: EventStore) -> EventStream:
     """이벤트 스트림 생성"""
     return store.get_stream(stream_id)
 
-def append_to_stream(stream: EventStream, *events: Event) -> asyncio.Task:
+async def append_to_stream(stream: EventStream, *events: Event) -> int:
     """스트림에 이벤트 추가"""
-    return asyncio.create_task(stream = stream + [*events])
+    return await stream.append(*events)
 
-def read_from_stream(stream: EventStream, from_version: int=0) -> asyncio.Task:
+async def read_from_stream(stream: EventStream, from_version: int=0) -> List[Event]:
     """스트림에서 이벤트 읽기"""
-    return asyncio.create_task(stream.read(from_version))
+    return await stream.read(from_version)
 _event_store: Optional[EventStore] = None
 
 def get_event_store(storage_type: StorageType=StorageType.MEMORY, **config) -> EventStore:

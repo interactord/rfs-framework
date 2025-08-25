@@ -120,7 +120,10 @@ class AnnotationProcessor:
             for module in discovered_modules:
                 module_classes = self._discover_classes_in_module(module)
                 # 함수형 패턴: update 대신 스프레드 연산자 사용
-                self._discovered_classes = {**self._discovered_classes, **module_classes}
+                self._discovered_classes = {
+                    **self._discovered_classes,
+                    **module_classes,
+                }
                 total_scanned = total_scanned + len(module_classes)
             if context.auto_register:
                 registration_results = self._register_discovered_classes(context)
@@ -161,7 +164,10 @@ class AnnotationProcessor:
                     module = module_item
                 module_classes = self._discover_classes_in_module(module)
                 # 함수형 패턴: update 대신 스프레드 연산자 사용
-                self._discovered_classes = {**self._discovered_classes, **module_classes}
+                self._discovered_classes = {
+                    **self._discovered_classes,
+                    **module_classes,
+                }
                 total_scanned = total_scanned + len(module_classes)
             except Exception as e:
                 result.warnings = result.warnings + [

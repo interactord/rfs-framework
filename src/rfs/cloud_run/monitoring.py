@@ -316,16 +316,16 @@ class CloudMonitoringClient:
             case _:
                 return monitoring_v3.MetricDescriptor.MetricKind.GAUGE
 
-                async def record_metric(
-                self,
-                metric_name: str,
-                value: float,
-                labels: Dict[str, str] = None,
-                timestamp: datetime = None,
-                ) -> Result[None, str]:
-                """메트릭 값 기록"""
-                try:
-                if metric_name not in self.registered_metrics:
+    async def record_metric(
+        self,
+        metric_name: str,
+        value: float,
+        labels: Dict[str, str] = None,
+        timestamp: datetime = None,
+    ) -> Result[None, str]:
+        """메트릭 값 기록"""
+        try:
+            if metric_name not in self.registered_metrics:
                 return Failure(f"등록되지 않은 메트릭: {metric_name}")
                 metric_def = self.registered_metrics[metric_name]
                 metric_data = {
@@ -335,34 +335,34 @@ class CloudMonitoringClient:
                 "timestamp": timestamp or datetime.now(),
                 "definition": metric_def,
                 }
-                self.metrics_buffer = self.metrics_buffer + [metric_data]
-                if len(self.metrics_buffer) >= self.buffer_size:
+            self.metrics_buffer = self.metrics_buffer + [metric_data]
+            if len(self.metrics_buffer) >= self.buffer_size:
                 await self._flush_metrics()
-                return Success(None)
-                except Exception as e:
-                error_msg = f"메트릭 기록 실패: {metric_name} - {str(e)}"
-                logger.error(error_msg)
-                return Failure(error_msg)
+            return Success(None)
+        except Exception as e:
+            error_msg = f"메트릭 기록 실패: {metric_name} - {str(e)}"
+            logger.error(error_msg)
+            return Failure(error_msg)
 
-                async def _flush_metrics(self):
-                """메트릭 배치 전송"""
-                if not self.metrics_buffer:
-                return
-                if not GOOGLE_CLOUD_AVAILABLE or not self.monitoring_client:
-                logger.debug(f"메트릭 {len(self.metrics_buffer)}개 기록 (로컬)")
-                metrics_buffer = {}
-                return
-                try:
-                time_series_list = []
-                for metric_data in self.metrics_buffer:
+    async def _flush_metrics(self):
+        """메트릭 배치 전송"""
+        if not self.metrics_buffer:
+            return
+        if not GOOGLE_CLOUD_AVAILABLE or not self.monitoring_client:
+            logger.debug(f"메트릭 {len(self.metrics_buffer)}개 기록 (로컬)")
+            metrics_buffer = {}
+            return
+        try:
+            time_series_list = []
+            for metric_data in self.metrics_buffer:
                 metric_def = metric_data["definition"]
                 time_series = TimeSeries()
                 time_series.metric.type = metric_def.get_full_name(self.project_id)
                 for key, value in metric_data.get("labels").items():
-                time_series.metric.labels = {
-                **time_series.metric.labels,
-                key: str(value),
-                }
+                    time_series.metric.labels = {
+                        **time_series.metric.labels,
+                        key: str(value),
+                    }
                 time_series.resource.type = "cloud_run_revision"
                 time_series.resource.labels = {
                 **time_series.resource.labels,
@@ -383,206 +383,207 @@ class CloudMonitoringClient:
                 point.interval.end_time = timestamp
                 time_series.points = time_series.points + [point]
                 time_series_list = time_series_list + [time_series]
-                self.monitoring_client.create_time_series(
+            self.monitoring_client.create_time_series(
                 name=self.project_path, time_series=time_series_list
-                )
-                logger.debug(f"메트릭 {len(time_series_list)}개 전송 완료")
-                except Exception as e:
-                logger.error(f"메트릭 전송 실패: {e}")
-                finally:
-                metrics_buffer = {}
+            )
+            logger.debug(f"메트릭 {len(time_series_list)}개 전송 완료")
+        except Exception as e:
+            logger.error(f"메트릭 전송 실패: {e}")
+        finally:
+            self.metrics_buffer = {}
 
-                async def log_structured(self, entry: LogEntry) -> Result[None, str]:
-                """구조화된 로그 기록"""
-                try:
-                self.logs_buffer = self.logs_buffer + [entry]
-                if len(self.logs_buffer) >= self.buffer_size:
+    async def log_structured(self, entry: LogEntry) -> Result[None, str]:
+        """구조화된 로그 기록"""
+        try:
+            self.logs_buffer = self.logs_buffer + [entry]
+            if len(self.logs_buffer) >= self.buffer_size:
                 await self._flush_logs()
-                if entry.level in [LogLevel.ERROR, LogLevel.CRITICAL]:
+            if entry.level in [LogLevel.ERROR, LogLevel.CRITICAL]:
                 await self._flush_logs()
-                return Success(None)
-                except Exception as e:
-                error_msg = f"로그 기록 실패: {str(e)}"
-                logger.error(error_msg)
-                return Failure(error_msg)
+            return Success(None)
+        except Exception as e:
+            error_msg = f"로그 기록 실패: {str(e)}"
+            logger.error(error_msg)
+            return Failure(error_msg)
 
-                async def _flush_logs(self):
-                """로그 배치 전송"""
-                if not self.logs_buffer:
-                return
-                if not GOOGLE_CLOUD_AVAILABLE or not self.logging_client:
-                for log_entry in self.logs_buffer:
+    async def _flush_logs(self):
+        """로그 배치 전송"""
+        if not self.logs_buffer:
+            return
+        if not GOOGLE_CLOUD_AVAILABLE or not self.logging_client:
+            for log_entry in self.logs_buffer:
                 logger.log(
-                getattr(logging, log_entry.level.value),
-                log_entry.message,
-                extra=log_entry.extra_data,
+                    getattr(logging, log_entry.level.value),
+                    log_entry.message,
+                    extra=log_entry.extra_data,
                 )
-                logs_buffer = {}
-                return
-                try:
-                cloud_logger = self.logging_client.logger("rfs-application")
-                for log_entry in self.logs_buffer:
+            self.logs_buffer = []
+            return
+        try:
+            cloud_logger = self.logging_client.logger("rfs-application")
+            for log_entry in self.logs_buffer:
                 cloud_entry = log_entry.to_cloud_logging_entry()
                 match log_entry.level:
                     case LogLevel.DEBUG:
-                cloud_logger.log_text(log_entry.message, severity="DEBUG")
-            case LogLevel.INFO:
-                cloud_logger.log_text(log_entry.message, severity="INFO")
-            case LogLevel.WARNING:
-                cloud_logger.log_text(log_entry.message, severity="WARNING")
-            case LogLevel.ERROR:
-                cloud_logger.log_text(log_entry.message, severity="ERROR")
-            case LogLevel.CRITICAL:
-                cloud_logger.log_text(log_entry.message, severity="CRITICAL")
-                logger.debug(f"로그 {len(self.logs_buffer)}개 전송 완료")
-                except Exception as e:
-                logger.error(f"로그 전송 실패: {e}")
-                finally:
-                logs_buffer = {}
+                        cloud_logger.log_text(log_entry.message, severity="DEBUG")
+                    case LogLevel.INFO:
+                        cloud_logger.log_text(log_entry.message, severity="INFO")
+                    case LogLevel.WARNING:
+                        cloud_logger.log_text(log_entry.message, severity="WARNING")
+                    case LogLevel.ERROR:
+                        cloud_logger.log_text(log_entry.message, severity="ERROR")
+                    case LogLevel.CRITICAL:
+                        cloud_logger.log_text(log_entry.message, severity="CRITICAL")
+            logger.debug(f"로그 {len(self.logs_buffer)}개 전송 완료")
+        except Exception as e:
+            logger.error(f"로그 전송 실패: {e}")
+        finally:
+            self.logs_buffer = []
 
-                async def _flush_scheduler(self):
-                """정기적 배치 전송"""
-                while self._running:
-                try:
+    async def _flush_scheduler(self):
+        """정기적 배치 전송"""
+        while self._running:
+            try:
                 await asyncio.sleep(self.flush_interval)
                 await self._flush_metrics()
                 await self._flush_logs()
-                except Exception as e:
+            except Exception as e:
                 logger.error(f"배치 전송 스케줄러 오류: {e}")
 
-                async def shutdown(self):
-                """모니터링 클라이언트 종료"""
-                self._running = False
-                if self.flush_task:
-                self.flush_task.cancel()
-                try:
+    async def shutdown(self):
+        """모니터링 클라이언트 종료"""
+        self._running = False
+        if self.flush_task:
+            self.flush_task.cancel()
+            try:
                 await self.flush_task
-                except asyncio.CancelledError:
+            except asyncio.CancelledError:
                 pass
-                await self._flush_metrics()
-                await self._flush_logs()
-                logger.info("Cloud Monitoring 클라이언트가 종료되었습니다")
+        await self._flush_metrics()
+        await self._flush_logs()
+        logger.info("Cloud Monitoring 클라이언트가 종료되었습니다")
 
 
-                class PerformanceMonitor:
-                """성능 모니터링 도우미"""
+class PerformanceMonitor:
+    """성능 모니터링 도우미"""
 
-                def __init__(self, monitoring_client: CloudMonitoringClient):
-                self.client = monitoring_client
-                self.active_requests: Dict[str, float] = {}
+    def __init__(self, monitoring_client: CloudMonitoringClient):
+        self.client = monitoring_client
+        self.active_requests: Dict[str, float] = {}
 
-                def start_request_monitoring(self, request_id: str, method: str, path: str) -> None:
-                """요청 모니터링 시작"""
-                self.active_requests = {**self.active_requests, request_id: time.time()}
-                asyncio.create_task(
-                self.client.record_metric(
+    def start_request_monitoring(self, request_id: str, method: str, path: str) -> None:
+        """요청 모니터링 시작"""
+        self.active_requests = {**self.active_requests, request_id: time.time()}
+        asyncio.create_task(
+            self.client.record_metric(
                 "request_count",
                 1.0,
                 {"method": method, "path": path, "status": "started"},
-                )
-                )
+            )
+        )
 
-                def end_request_monitoring(
-                self, request_id: str, status_code: int, method: str, path: str
-                ) -> None:
-                """요청 모니터링 종료"""
-                if request_id not in self.active_requests:
-                return
-                active_requests = {
-                k: v for k, v in active_requests.items() if k != "request_id"
-                }
-                duration_ms = (time.time() - start_time) * 1000
-                labels = {"method": method, "path": path, "status_code": str(status_code)}
-                asyncio.create_task(
-                self.client.record_metric("request_duration", duration_ms, labels)
-                )
-                asyncio.create_task(
-                self.client.record_metric(
+    def end_request_monitoring(
+        self, request_id: str, status_code: int, method: str, path: str
+    ) -> None:
+        """요청 모니터링 종료"""
+        if request_id not in self.active_requests:
+            return
+        start_time = self.active_requests[request_id]
+        self.active_requests = {
+            k: v for k, v in self.active_requests.items() if k != request_id
+        }
+        duration_ms = (time.time() - start_time) * 1000
+        labels = {"method": method, "path": path, "status_code": str(status_code)}
+        asyncio.create_task(
+            self.client.record_metric("request_duration", duration_ms, labels)
+        )
+        asyncio.create_task(
+            self.client.record_metric(
                 "request_count", 1.0, {**labels, "status": "completed"}
-                )
-                )
-                if status_code >= 400:
-                asyncio.create_task(self.client.record_metric("error_rate", 1.0, labels))
+            )
+        )
+        if status_code >= 400:
+            asyncio.create_task(self.client.record_metric("error_rate", 1.0, labels))
 
-                def request_monitor(self, method: str, path: str):
-                """요청 모니터링 데코레이터"""
+    def request_monitor(self, method: str, path: str):
+        """요청 모니터링 데코레이터"""
 
-                def decorator(func: Callable):
+        def decorator(func: Callable):
 
-                async def wrapper(*args, **kwargs):
+            async def wrapper(*args, **kwargs):
                 import uuid
 
                 request_id = str(uuid.uuid4())
                 self.start_request_monitoring(request_id, method, path)
                 try:
-                result = await func(*args, **kwargs)
-                self.end_request_monitoring(request_id, 200, method, path)
-                return result
+                    result = await func(*args, **kwargs)
+                    self.end_request_monitoring(request_id, 200, method, path)
+                    return result
                 except Exception as e:
-                self.end_request_monitoring(request_id, 500, method, path)
-                raise
+                    self.end_request_monitoring(request_id, 500, method, path)
+                    raise
 
-                return wrapper
+            return wrapper
 
-                return decorator
-
-
-                _monitoring_client: Optional[CloudMonitoringClient] = None
+        return decorator
 
 
-                async def get_monitoring_client(project_id: str = None) -> CloudMonitoringClient:
-                """모니터링 클라이언트 인스턴스 획득"""
-                # global _monitoring_client - removed for functional programming
-                if _monitoring_client is None:
-                if project_id is None:
-                project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-                if not project_id:
-                raise ValueError("프로젝트 ID가 필요합니다")
-                _monitoring_client = CloudMonitoringClient(project_id)
-                await _monitoring_client.initialize()
-                return _monitoring_client
+_monitoring_client: Optional[CloudMonitoringClient] = None
 
 
-                async def record_metric(
-                metric_name: str, value: float, labels: Dict[str, str] = None
-                ) -> Result[None, str]:
-                """메트릭 기록"""
-                client = await get_monitoring_client()
-                return await client.record_metric(metric_name, value, labels)
+async def get_monitoring_client(project_id: str = None) -> CloudMonitoringClient:
+    """모니터링 클라이언트 인스턴스 획득"""
+    # global _monitoring_client - removed for functional programming
+    if _monitoring_client is None:
+        if project_id is None:
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+            raise ValueError("프로젝트 ID가 필요합니다")
+        _monitoring_client = CloudMonitoringClient(project_id)
+        await _monitoring_client.initialize()
+    return _monitoring_client
 
 
-                async def log_info(message: str, **extra_data):
-                """정보 로그 기록"""
-                client = await get_monitoring_client()
-                entry = LogEntry(message=message, level=LogLevel.INFO, extra_data=extra_data)
-                return await client.log_structured(entry)
+async def record_metric(
+    metric_name: str, value: float, labels: Dict[str, str] = None
+) -> Result[None, str]:
+    """메트릭 기록"""
+    client = await get_monitoring_client()
+    return await client.record_metric(metric_name, value, labels)
 
 
-                async def log_warning(message: str, **extra_data):
-                """경고 로그 기록"""
-                client = await get_monitoring_client()
-                entry = LogEntry(message=message, level=LogLevel.WARNING, extra_data=extra_data)
-                return await client.log_structured(entry)
+async def log_info(message: str, **extra_data):
+    """정보 로그 기록"""
+    client = await get_monitoring_client()
+    entry = LogEntry(message=message, level=LogLevel.INFO, extra_data=extra_data)
+    return await client.log_structured(entry)
 
 
-                async def log_error(message: str, **extra_data):
-                """에러 로그 기록"""
-                client = await get_monitoring_client()
-                entry = LogEntry(message=message, level=LogLevel.ERROR, extra_data=extra_data)
-                return await client.log_structured(entry)
+async def log_warning(message: str, **extra_data):
+    """경고 로그 기록"""
+    client = await get_monitoring_client()
+    entry = LogEntry(message=message, level=LogLevel.WARNING, extra_data=extra_data)
+    return await client.log_structured(entry)
 
 
-                def monitor_performance(method: str = "GET", path: str = "/"):
-                """성능 모니터링 데코레이터"""
+async def log_error(message: str, **extra_data):
+    """에러 로그 기록"""
+    client = await get_monitoring_client()
+    entry = LogEntry(message=message, level=LogLevel.ERROR, extra_data=extra_data)
+    return await client.log_structured(entry)
 
-                def decorator(func: Callable):
 
-                async def wrapper(*args, **kwargs):
-                client = await get_monitoring_client()
-                monitor = PerformanceMonitor(client)
-                decorated_func = monitor.request_monitor(method, path)(func)
-                return await decorated_func(*args, **kwargs)
+def monitor_performance(method: str = "GET", path: str = "/"):
+    """성능 모니터링 데코레이터"""
 
-                return wrapper
+    def decorator(func: Callable):
 
-                return decorator
+        async def wrapper(*args, **kwargs):
+            client = await get_monitoring_client()
+            monitor = PerformanceMonitor(client)
+            decorated_func = monitor.request_monitor(method, path)(func)
+            return await decorated_func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

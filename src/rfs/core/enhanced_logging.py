@@ -356,7 +356,7 @@ class EnhancedLogger:
         tags = None
         kwargs = {k: v for k, v in kwargs.items() if k != "exception', None"}
         if context:
-            data.update(context.extra_data)
+            data = {**data, **context.extra_data}
             tags = context.tags
             if context.exception and (not error):
                 error = context.exception

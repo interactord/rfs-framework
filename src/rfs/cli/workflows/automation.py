@@ -104,12 +104,18 @@ class ActionRunner:
             match self.action_type:
                 case ActionType.COMMAND:
                     return await self._execute_command(context)
-                case ActionType.SCRIPT:                return await self._execute_script(context)
-                case ActionType.HTTP_REQUEST:                return await self._execute_http_request(context)
-                case ActionType.NOTIFICATION:                return await self._execute_notification(context)
-                case ActionType.GIT_OPERATION:                return await self._execute_git_operation(context)
-                case ActionType.DEPLOYMENT:                return await self._execute_deployment(context)
-                case _:                return Failure(f"지원하지 않는 액션 유형: {self.action_type}")
+                case ActionType.SCRIPT:
+                    return await self._execute_script(context)
+                case ActionType.HTTP_REQUEST:
+                    return await self._execute_http_request(context)
+                case ActionType.NOTIFICATION:
+                    return await self._execute_notification(context)
+                case ActionType.GIT_OPERATION:
+                    return await self._execute_git_operation(context)
+                case ActionType.DEPLOYMENT:
+                    return await self._execute_deployment(context)
+                case _:
+                    return Failure(f"지원하지 않는 액션 유형: {self.action_type}")
         except Exception as e:
             return Failure(f"액션 실행 실패: {str(e)}")
 

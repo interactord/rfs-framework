@@ -304,130 +304,130 @@ class MemoryCache(CacheBackend):
             case _:
                 match policy:
                     case "fifo":
-                return self._select_fifo_victim()
-            case "ttl":
-                return self._select_ttl_victim()
-            case _:
-                return next(iter(self._data.keys()))
+                        return self._select_fifo_victim()
+                    case "ttl":
+                        return self._select_ttl_victim()
+                    case _:
+                        return next(iter(self._data.keys()))
 
-                def _select_lru_victim(self) -> Optional[str]:
-                """LRU 희생자 선택"""
-                if not self._access_order:
-                return None
-                return next(iter(self._access_order))
+    def _select_lru_victim(self) -> Optional[str]:
+        """LRU 희생자 선택"""
+        if not self._access_order:
+            return None
+        return next(iter(self._access_order))
 
-                def _select_lfu_victim(self) -> Optional[str]:
-                """LFU 희생자 선택"""
-                if not self._frequency:
-                return None
-                min_freq = min(self._frequency.values())
-                for key, freq in self._frequency.items():
-                if freq == min_freq:
+    def _select_lfu_victim(self) -> Optional[str]:
+        """LFU 희생자 선택"""
+        if not self._frequency:
+            return None
+        min_freq = min(self._frequency.values())
+        for key, freq in self._frequency.items():
+            if freq == min_freq:
                 return key
-                return None
+        return None
 
-                def _select_fifo_victim(self) -> Optional[str]:
-                """FIFO 희생자 선택"""
-                if not self._insertion_order:
-                return None
-                return self._insertion_order[0]
+    def _select_fifo_victim(self) -> Optional[str]:
+        """FIFO 희생자 선택"""
+        if not self._insertion_order:
+            return None
+        return self._insertion_order[0]
 
-                def _select_ttl_victim(self) -> Optional[str]:
-                """TTL 기반 희생자 선택"""
-                current_time = time.time()
-                for key, item in self._data.items():
-                if item.expires_at and item.expires_at <= current_time:
+    def _select_ttl_victim(self) -> Optional[str]:
+        """TTL 기반 희생자 선택"""
+        current_time = time.time()
+        for key, item in self._data.items():
+            if item.expires_at and item.expires_at <= current_time:
                 return key
-                min_expires = None
-                victim = None
-                for key, item in self._data.items():
-                if item.expires_at:
+        min_expires = None
+        victim = None
+        for key, item in self._data.items():
+            if item.expires_at:
                 if min_expires is None or item.expires_at < min_expires:
-                min_expires = item.expires_at
-                victim = key
-                return victim or next(iter(self._data.keys()))
+                    min_expires = item.expires_at
+                    victim = key
+        return victim or next(iter(self._data.keys()))
 
-                def _remove_item(self, key: str):
-                """항목 제거"""
-                if key not in self._data:
-                return
-                item = self._data[key]
-                del self._data[key]
-                self._current_size = self._current_size - 1
-                self._current_memory = self._current_memory - item.size
-                if key in self._access_order:
-                del self._access_order[key]
-                if key in self._frequency:
-                del self._frequency[key]
-                if key in self._insertion_order:
-                self._insertion_order = [i for i in self._insertion_order if i != key]
+    def _remove_item(self, key: str):
+        """항목 제거"""
+        if key not in self._data:
+            return
+        item = self._data[key]
+        del self._data[key]
+        self._current_size = self._current_size - 1
+        self._current_memory = self._current_memory - item.size
+        if key in self._access_order:
+            del self._access_order[key]
+        if key in self._frequency:
+            del self._frequency[key]
+        if key in self._insertion_order:
+            self._insertion_order = [i for i in self._insertion_order if i != key]
 
-                def _update_access_tracking(self, key: str):
-                """접근 추적 업데이트"""
-                if key in self._access_order:
-                self._access_order.move_to_end(key)
-                else:
-                self._access_order = {**self._access_order, key: True}
-                self._frequency = {**self._frequency, key: self._frequency.get(key, 0) + 1}
+    def _update_access_tracking(self, key: str):
+        """접근 추적 업데이트"""
+        if key in self._access_order:
+            self._access_order.move_to_end(key)
+        else:
+            self._access_order = {**self._access_order, key: True}
+        self._frequency = {**self._frequency, key: self._frequency.get(key, 0) + 1}
 
-                def _update_insertion_tracking(self, key: str):
-                """삽입 추적 업데이트"""
-                if key not in self._insertion_order:
-                self._insertion_order = self._insertion_order + [key]
-                self._update_access_tracking(key)
+    def _update_insertion_tracking(self, key: str):
+        """삽입 추적 업데이트"""
+        if key not in self._insertion_order:
+            self._insertion_order = self._insertion_order + [key]
+        self._update_access_tracking(key)
 
-                async def _cleanup_expired_items(self):
-                """만료된 항목 정리"""
-                while self._connected:
-                try:
+    async def _cleanup_expired_items(self):
+        """만료된 항목 정리"""
+        while self._connected:
+            try:
                 await asyncio.sleep(self.config.cleanup_interval)
                 current_time = time.time()
                 expired_keys = []
                 with self._lock:
-                while self._ttl_heap:
-                expires_at, key = self._ttl_heap[0]
-                if expires_at <= current_time:
-                heapq.heappop(self._ttl_heap)
-                if key in self._data:
-                item = self._data[key]
-                if item.is_expired():
-                expired_keys = expired_keys + [key]
-                else:
+                    while self._ttl_heap:
+                        expires_at, key = self._ttl_heap[0]
+                        if expires_at <= current_time:
+                            heapq.heappop(self._ttl_heap)
+                            if key in self._data:
+                                item = self._data[key]
+                                if item.is_expired():
+                                    expired_keys = expired_keys + [key]
+                        else:
+                            break
+                    for key in expired_keys:
+                        self._remove_item(key)
+                    if expired_keys:
+                        logger.debug(f"만료된 항목 {len(expired_keys)}개 정리")
+            except asyncio.CancelledError:
                 break
-                for key in expired_keys:
-                self._remove_item(key)
-                if expired_keys:
-                logger.debug(f"만료된 항목 {len(expired_keys)}개 정리")
-                except asyncio.CancelledError:
-                break
-                except Exception as e:
+            except Exception as e:
                 logger.error(f"TTL 정리 오류: {e}")
 
-                def get_stats(self) -> Dict[str, Any]:
-                """상세 통계"""
-                base_stats = super().get_stats()
-                with self._lock:
-                memory_stats = {
+    def get_stats(self) -> Dict[str, Any]:
+        """상세 통계"""
+        base_stats = super().get_stats()
+        with self._lock:
+            memory_stats = {
                 "current_size": self._current_size,
                 "max_size": self.config.max_size,
                 "current_memory": self._current_memory,
                 "max_memory": self.config.memory_limit,
                 "eviction_policy": self.config.eviction_policy,
                 }
-                return {**base_stats, **memory_stats}
+            return {**base_stats, **memory_stats}
 
 
-                class LRUCache(MemoryCache):
-                """LRU 전용 캐시"""
+class LRUCache(MemoryCache):
+    """LRU 전용 캐시"""
 
-                def __init__(self, config: MemoryCacheConfig):
-                config.eviction_policy = "lru"
-                super().__init__(config)
+    def __init__(self, config: MemoryCacheConfig):
+        config.eviction_policy = "lru"
+        super().__init__(config)
 
 
-                class LFUCache(MemoryCache):
-                """LFU 전용 캐시"""
+class LFUCache(MemoryCache):
+    """LFU 전용 캐시"""
 
-                def __init__(self, config: MemoryCacheConfig):
-                config.eviction_policy = "lfu"
-                super().__init__(config)
+    def __init__(self, config: MemoryCacheConfig):
+        config.eviction_policy = "lfu"
+        super().__init__(config)

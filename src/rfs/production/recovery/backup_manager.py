@@ -433,12 +433,20 @@ class BackupManager:
             match policy.backup_type:
                 case BackupType.FULL:
                     result = await self._create_full_backup(target, metadata, policy)
-                case BackupType.INCREMENTAL:                result = await self._create_incremental_backup(target, metadata, policy)
-                case BackupType.DIFFERENTIAL:                result = await self._create_differential_backup(
-                    target, metadata, policy
-                )
-                case BackupType.SNAPSHOT:                result = await self._create_snapshot_backup(target, metadata, policy)
-                case _:                result = Failure(f"Unsupported backup type: {policy.backup_type}")
+                case BackupType.INCREMENTAL:
+                    result = await self._create_incremental_backup(
+                        target, metadata, policy
+                    )
+                case BackupType.DIFFERENTIAL:
+                    result = await self._create_differential_backup(
+                        target, metadata, policy
+                    )
+                case BackupType.SNAPSHOT:
+                    result = await self._create_snapshot_backup(
+                        target, metadata, policy
+                    )
+                case _:
+                    result = Failure(f"Unsupported backup type: {policy.backup_type}")
             if type(result).__name__ == "Failure":
                 operation.status = BackupStatus.FAILED
                 operation.error_message = result.error
@@ -658,7 +666,7 @@ class BackupManager:
         sha256_hash = hashlib.sha256()
         async with aiofiles.open(file_path, "rb") as f:
             while chunk := (await f.read(8192)):
-                sha256_hash.update(chunk)
+                sha256_hash = {**sha256_hash, **chunk}
         return sha256_hash.hexdigest()
 
     async def _verify_backup_integrity(self, backup_path: str) -> Result[bool, str]:
@@ -735,12 +743,14 @@ class BackupManager:
         match schedule:
             case "hourly":
                 return current_time.minute == 0
-            case "daily":            return current_time.hour == 0 and current_time.minute == 0
-            case "weekly":            return (
-                current_time.weekday() == 0
-                and current_time.hour == 0
-                and (current_time.minute == 0)
-            )
+            case "daily":
+                return current_time.hour == 0 and current_time.minute == 0
+            case "weekly":
+                return (
+                    current_time.weekday() == 0
+                    and current_time.hour == 0
+                    and (current_time.minute == 0)
+                )
         return False
 
     async def _save_metadata(self):

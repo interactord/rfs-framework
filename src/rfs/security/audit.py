@@ -119,19 +119,25 @@ class MemoryAuditStorage(AuditStorage):
                     match key:
                         case "event_type":
                             match = False
-                        break
-                        case "level":                        match = False
-                        break
-                        case "user_id":                        match = False
-                        break
-                        case "action":                        match = False
-                        break
-                        case "outcome":                        match = False
-                        break
-                        case "start_time":                        match = False
-                        break
-                        case "end_time":                        match = False
-                        break
+                            break
+                        case "level":
+                            match = False
+                            break
+                        case "user_id":
+                            match = False
+                            break
+                        case "action":
+                            match = False
+                            break
+                        case "outcome":
+                            match = False
+                            break
+                        case "start_time":
+                            match = False
+                            break
+                        case "end_time":
+                            match = False
+                            break
                 if match:
                     filtered_events = filtered_events + [event]
             start = offset

@@ -63,13 +63,20 @@ class KPIThreshold:
         match self.threshold_type:
             case ThresholdType.GREATER_THAN:
                 return value > self.values[0]
-            case ThresholdType.LESS_THAN:            return value < self.values[0]
-            case ThresholdType.GREATER_EQUAL:            return value >= self.values[0]
-            case ThresholdType.LESS_EQUAL:            return value <= self.values[0]
-            case ThresholdType.EQUAL:            return value == self.values[0]
-            case ThresholdType.NOT_EQUAL:            return value != self.values[0]
-            case ThresholdType.BETWEEN:            return self.values[0] <= value <= self.values[1]
-            case ThresholdType.NOT_BETWEEN:            return not self.values[0] <= value <= self.values[1]
+            case ThresholdType.LESS_THAN:
+                return value < self.values[0]
+            case ThresholdType.GREATER_EQUAL:
+                return value >= self.values[0]
+            case ThresholdType.LESS_EQUAL:
+                return value <= self.values[0]
+            case ThresholdType.EQUAL:
+                return value == self.values[0]
+            case ThresholdType.NOT_EQUAL:
+                return value != self.values[0]
+            case ThresholdType.BETWEEN:
+                return self.values[0] <= value <= self.values[1]
+            case ThresholdType.NOT_BETWEEN:
+                return not self.values[0] <= value <= self.values[1]
         return False
 
 
@@ -606,42 +613,46 @@ async def create_kpi_dashboard(
             match kpi_type:
                 case "count":
                     kpi = CountKPI(
-                    kpi_id=config["id"],
-                    name=config["name"],
-                    query=config["query"],
-                    description=config.get("description", ""),
-                    unit=config.get("unit", ""),
-                    data_source=data_source,
-                )
-                case "average":                kpi = AverageKPI(
-                    kpi_id=config["id"],
-                    name=config["name"],
-                    query=config["query"],
-                    column=config["column"],
-                    description=config.get("description", ""),
-                    unit=config.get("unit", ""),
-                    data_source=data_source,
-                )
-                case "percentage":                kpi = PercentageKPI(
-                    kpi_id=config["id"],
-                    name=config["name"],
-                    numerator_query=config["numerator_query"],
-                    denominator_query=config["denominator_query"],
-                    description=config.get("description", ""),
-                    unit=config.get("unit", "%"),
-                    data_source=data_source,
-                )
-                case "trend":                kpi = TrendKPI(
-                    kpi_id=config["id"],
-                    name=config["name"],
-                    query=config["query"],
-                    time_column=config["time_column"],
-                    value_column=config["value_column"],
-                    description=config.get("description", ""),
-                    unit=config.get("unit", ""),
-                    data_source=data_source,
-                )
-                case _:                return Failure(f"Unsupported KPI type: {kpi_type}")
+                        kpi_id=config["id"],
+                        name=config["name"],
+                        query=config["query"],
+                        description=config.get("description", ""),
+                        unit=config.get("unit", ""),
+                        data_source=data_source,
+                    )
+                case "average":
+                    kpi = AverageKPI(
+                        kpi_id=config["id"],
+                        name=config["name"],
+                        query=config["query"],
+                        column=config["column"],
+                        description=config.get("description", ""),
+                        unit=config.get("unit", ""),
+                        data_source=data_source,
+                    )
+                case "percentage":
+                    kpi = PercentageKPI(
+                        kpi_id=config["id"],
+                        name=config["name"],
+                        numerator_query=config["numerator_query"],
+                        denominator_query=config["denominator_query"],
+                        description=config.get("description", ""),
+                        unit=config.get("unit", "%"),
+                        data_source=data_source,
+                    )
+                case "trend":
+                    kpi = TrendKPI(
+                        kpi_id=config["id"],
+                        name=config["name"],
+                        query=config["query"],
+                        time_column=config["time_column"],
+                        value_column=config["value_column"],
+                        description=config.get("description", ""),
+                        unit=config.get("unit", ""),
+                        data_source=data_source,
+                    )
+                case _:
+                    return Failure(f"Unsupported KPI type: {kpi_type}")
             for threshold_config in config.get("thresholds", []):
                 threshold = KPIThreshold(
                     threshold_id=threshold_config["id"],

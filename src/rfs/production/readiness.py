@@ -155,12 +155,13 @@ class ProductionReadinessChecker:
                         stage_checks = await check_func(target_level)
                         if stage_checks:
                             self.checks = self.checks + stage_checks
+                        progress.update(task, completed=100)
                     except Exception as e:
                         if console:
                             console.print(
                                 f"⚠️  {stage_name} 검증 실패: {str(e)}", style="yellow"
                             )
-            # TODO: Fix this line - progress.update(task)
+                        progress.update(task, completed=100)
             report = await self._generate_readiness_report(target_level)
             if console:
                 await self._display_readiness_results(report)

@@ -325,9 +325,14 @@ class PersistenceManager:
         match self.persistence_type:
             case PersistenceType.MEMORY:
                 return MemoryStatePersistence()
-            case PersistenceType.FILE:            return FileStatePersistence(**kwargs)
-            case PersistenceType.REDIS:            return RedisStatePersistence(**kwargs)
-            case _:            raise ValueError(f"Unsupported persistence type: {self.persistence_type}")
+            case PersistenceType.FILE:
+                return FileStatePersistence(**kwargs)
+            case PersistenceType.REDIS:
+                return RedisStatePersistence(**kwargs)
+            case _:
+                raise ValueError(
+                    f"Unsupported persistence type: {self.persistence_type}"
+                )
 
     async def create_snapshot(self, state_machine) -> StateMachineSnapshot:
         """상태 머신에서 스냅샷 생성"""

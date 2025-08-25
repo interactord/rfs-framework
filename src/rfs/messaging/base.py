@@ -450,16 +450,18 @@ async def create_message_broker(
         match config.broker_type:
             case BrokerType.REDIS:
                 from .redis_broker import RedisMessageBroker
-
-            broker = RedisMessageBroker(config)
-            case BrokerType.MEMORY:            from .memory_broker import MemoryMessageBroker
-
-            broker = MemoryMessageBroker(config)
-            case BrokerType.RABBITMQ:            # RabbitMQ 구현 (향후 추가)
-            return Failure("RabbitMQ는 아직 구현되지 않았습니다")
-            case BrokerType.GOOGLE_PUBSUB:            # Google Pub/Sub 구현 (향후 추가)
-            return Failure("Google Pub/Sub은 아직 구현되지 않았습니다")
-            case _:            return Failure(f"지원되지 않는 브로커 타입: {config.broker_type}")
+                broker = RedisMessageBroker(config)
+            case BrokerType.MEMORY:
+                from .memory_broker import MemoryMessageBroker
+                broker = MemoryMessageBroker(config)
+            case BrokerType.RABBITMQ:
+                # RabbitMQ 구현 (향후 추가)
+                return Failure("RabbitMQ는 아직 구현되지 않았습니다")
+            case BrokerType.GOOGLE_PUBSUB:
+                # Google Pub/Sub 구현 (향후 추가)
+                return Failure("Google Pub/Sub은 아직 구현되지 않았습니다")
+            case _:
+                return Failure(f"지원되지 않는 브로커 타입: {config.broker_type}")
 
         # 메시지 매니저에 추가
         manager = get_message_manager()

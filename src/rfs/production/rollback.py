@@ -113,7 +113,7 @@ class RollbackManager:
                     checkpoint = DeploymentCheckpoint.from_dict(data)
                     if checkpoint.service_name not in self.checkpoints:
                         self.checkpoints = {**self.checkpoints, checkpoint.service_name: []}
-                    self.checkpoints[checkpoint.service_name] = service_name] + [checkpoint]
+                    self.checkpoints[checkpoint.service_name] = self.checkpoints[checkpoint.service_name] + [checkpoint]
             for service_name in self.checkpoints:
                 self.checkpoints[service_name].sort(key=lambda x: x.timestamp)
         except Exception as e:

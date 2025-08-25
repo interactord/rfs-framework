@@ -91,7 +91,7 @@ class PerformanceMonitor:
     def record(self, metrics: PerformanceMetrics) -> None:
         """메트릭 기록"""
         self.metrics_history = self.metrics_history + [metrics]
-        self.aggregated_metrics[metrics.function_name] = function_name] + [metrics]
+        self.aggregated_metrics[metrics.function_name] = self.aggregated_metrics[metrics.function_name] + [metrics]
         total_calls = total_calls + 1
         total_duration_ms = total_duration_ms + metrics.duration_ms
         if not metrics.success:
@@ -346,4 +346,4 @@ def get_performance_statistics(function_name: Optional[str]=None) -> Dict[str, A
 
 def set_alert_thresholds(thresholds: Dict[str, float]) -> None:
     """알림 임계값 설정"""
-    _performance_monitor.alert_thresholds.update(thresholds)
+    _performance_monitor.alert_thresholds = {**alert_thresholds, **thresholds}

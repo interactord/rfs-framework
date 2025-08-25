@@ -222,35 +222,39 @@ class RouteRegistry(metaclass=SingletonMeta):
                 match route.method:
                     case HTTPMethod.GET:
                         api_router.get(
-                        route.path,
-                        summary=route.summary,
-                        description=route.description,
-                        tags=route.tags,
-                    )(route.handler)
-                    case HTTPMethod.POST:                    api_router.post(
-                        route.path,
-                        summary=route.summary,
-                        description=route.description,
-                        tags=route.tags,
-                    )(route.handler)
-                    case HTTPMethod.PUT:                    api_router.put(
-                        route.path,
-                        summary=route.summary,
-                        description=route.description,
-                        tags=route.tags,
-                    )(route.handler)
-                    case HTTPMethod.DELETE:                    api_router.delete(
-                        route.path,
-                        summary=route.summary,
-                        description=route.description,
-                        tags=route.tags,
-                    )(route.handler)
-                    case HTTPMethod.PATCH:                    api_router.patch(
-                        route.path,
-                        summary=route.summary,
-                        description=route.description,
-                        tags=route.tags,
-                    )(route.handler)
+                            route.path,
+                            summary=route.summary,
+                            description=route.description,
+                            tags=route.tags,
+                        )(route.handler)
+                    case HTTPMethod.POST:
+                        api_router.post(
+                            route.path,
+                            summary=route.summary,
+                            description=route.description,
+                            tags=route.tags,
+                        )(route.handler)
+                    case HTTPMethod.PUT:
+                        api_router.put(
+                            route.path,
+                            summary=route.summary,
+                            description=route.description,
+                            tags=route.tags,
+                        )(route.handler)
+                    case HTTPMethod.DELETE:
+                        api_router.delete(
+                            route.path,
+                            summary=route.summary,
+                            description=route.description,
+                            tags=route.tags,
+                        )(route.handler)
+                    case HTTPMethod.PATCH:
+                        api_router.patch(
+                            route.path,
+                            summary=route.summary,
+                            description=route.description,
+                            tags=route.tags,
+                        )(route.handler)
             app.include_router(api_router)
             logger.info(f"FastAPI에 {len(self.router.routes)}개 라우트 적용")
         except ImportError:

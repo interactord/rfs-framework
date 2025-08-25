@@ -308,7 +308,7 @@ class CloudRunOptimizer:
                         **self.optimizations_applied,
                         "scaling": True,
                     }
-                    resource_savings.update(scaling_result.unwrap())
+                    resource_savings = {**resource_savings, **scaling_result.unwrap()}
                 else:
                     errors = errors + [
                         f"Scaling optimization failed: {scaling_result.error}"
@@ -616,23 +616,25 @@ class CloudRunOptimizer:
         match self.config.strategy:
             case OptimizationStrategy.PERFORMANCE:
                 recommendations = recommendations + [
-                "Consider using larger CPU and memory allocations"
-            ]
-            recommendations = recommendations + [
-                "Enable minimum instances to reduce cold starts"
-            ]
-            case OptimizationStrategy.COST_EFFICIENT:            recommendations = recommendations + [
-                "Set minimum instances to 0 to reduce costs"
-            ]
-            recommendations = recommendations + [
-                "Use higher concurrency values to maximize instance utilization"
-            ]
-            case OptimizationStrategy.LATENCY_OPTIMIZED:            recommendations = recommendations + [
-                "Keep minimum instances > 0 to ensure fast response times"
-            ]
-            recommendations = recommendations + [
-                "Use lower concurrency for better per-request performance"
-            ]
+                    "Consider using larger CPU and memory allocations"
+                ]
+                recommendations = recommendations + [
+                    "Enable minimum instances to reduce cold starts"
+                ]
+            case OptimizationStrategy.COST_EFFICIENT:
+                recommendations = recommendations + [
+                    "Set minimum instances to 0 to reduce costs"
+                ]
+                recommendations = recommendations + [
+                    "Use higher concurrency values to maximize instance utilization"
+                ]
+            case OptimizationStrategy.LATENCY_OPTIMIZED:
+                recommendations = recommendations + [
+                    "Keep minimum instances > 0 to ensure fast response times"
+                ]
+                recommendations = recommendations + [
+                    "Use lower concurrency for better per-request performance"
+                ]
         if self.baseline_metrics and self.current_metrics:
             memory_improvement = self.baseline_metrics.get(
                 "process_memory_mb", 0

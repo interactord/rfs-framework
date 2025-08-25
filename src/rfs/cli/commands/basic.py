@@ -153,78 +153,78 @@ class ConfigCommand(Command):
                     return await self._list_config(ctx)
                 case _:
                     return Failure(f"Unknown config action: {action}")
-                    except Exception as e:
-                    return Failure(f"Config command failed: {str(e)}")
+        except Exception as e:
+            return Failure(f"Config command failed: {str(e)}")
 
-                    async def _show_config(self, ctx: CommandContext) -> Result[str, str]:
-                    """설정 표시"""
-                    try:
-                    if ctx.console:
-                    ctx.console.print("[bold]RFS Configuration[/bold]")
-                    ctx.console.print(f"Environment: [cyan]{ctx.environment}[/cyan]")
-                    ctx.console.print(
+    async def _show_config(self, ctx: CommandContext) -> Result[str, str]:
+        """설정 표시"""
+        try:
+            if ctx.console:
+                ctx.console.print("[bold]RFS Configuration[/bold]")
+                ctx.console.print(f"Environment: [cyan]{ctx.environment}[/cyan]")
+                ctx.console.print(
                     f"Project Root: [yellow]{ctx.project_root or 'None'}[/yellow]"
-                    )
-                    ctx.console.print(f"Verbose: [green]{ctx.verbose}[/green]")
-                    ctx.console.print(f"Dry Run: [yellow]{ctx.dry_run}[/yellow]")
-                    else:
-                    print("RFS Configuration")
-                    print(f"Environment: {ctx.environment}")
-                    print(f"Project Root: {ctx.project_root or 'None'}")
-                    return Success("Configuration displayed")
-                    except Exception as e:
-                    return Failure(f"Failed to show config: {str(e)}")
+                )
+                ctx.console.print(f"Verbose: [green]{ctx.verbose}[/green]")
+                ctx.console.print(f"Dry Run: [yellow]{ctx.dry_run}[/yellow]")
+            else:
+                print("RFS Configuration")
+                print(f"Environment: {ctx.environment}")
+                print(f"Project Root: {ctx.project_root or 'None'}")
+            return Success("Configuration displayed")
+        except Exception as e:
+            return Failure(f"Failed to show config: {str(e)}")
 
-                    async def _set_config(self, ctx: CommandContext) -> Result[str, str]:
-                    """설정 값 설정"""
-                    return Success("Config set not implemented yet")
+    async def _set_config(self, ctx: CommandContext) -> Result[str, str]:
+        """설정 값 설정"""
+        return Success("Config set not implemented yet")
 
-                    async def _get_config(self, ctx: CommandContext) -> Result[str, str]:
-                    """설정 값 조회"""
-                    return Success("Config get not implemented yet")
+    async def _get_config(self, ctx: CommandContext) -> Result[str, str]:
+        """설정 값 조회"""
+        return Success("Config get not implemented yet")
 
-                    async def _list_config(self, ctx: CommandContext) -> Result[str, str]:
-                    """설정 목록 표시"""
-                    return Success("Config list not implemented yet")
+    async def _list_config(self, ctx: CommandContext) -> Result[str, str]:
+        """설정 목록 표시"""
+        return Success("Config list not implemented yet")
 
 
-                    class HelpCommand(Command):
-                    """도움말 표시"""
+class HelpCommand(Command):
+    """도움말 표시"""
 
-                    def __init__(self):
-                    super().__init__("help", "Show help information")
-                    self.add_alias("h")
+    def __init__(self):
+        super().__init__("help", "Show help information")
+        self.add_alias("h")
 
-                    async def execute(self, ctx: CommandContext) -> Result[str, str]:
-                    """도움말 실행"""
-                    try:
-                    if ctx.console:
-                    ctx.console.print("[bold green]RFS Framework CLI v4.3.0[/bold green]")
-                    ctx.console.print(
+    async def execute(self, ctx: CommandContext) -> Result[str, str]:
+        """도움말 실행"""
+        try:
+            if ctx.console:
+                ctx.console.print("[bold green]RFS Framework CLI v4.3.0[/bold green]")
+                ctx.console.print(
                     "Enterprise-Grade Reactive Functional Serverless Framework"
-                    )
-                    ctx.console.print("\n[bold]Available Commands:[/bold]")
-                    ctx.console.print("  [cyan]version[/cyan]  - Show version information")
-                    ctx.console.print("  [cyan]status[/cyan]   - Check system status")
-                    ctx.console.print("  [cyan]config[/cyan]   - Manage configuration")
-                    ctx.console.print("  [cyan]help[/cyan]     - Show this help message")
-                    ctx.console.print("\n[bold]Global Options:[/bold]")
-                    ctx.console.print(
+                )
+                ctx.console.print("\n[bold]Available Commands:[/bold]")
+                ctx.console.print("  [cyan]version[/cyan]  - Show version information")
+                ctx.console.print("  [cyan]status[/cyan]   - Check system status")
+                ctx.console.print("  [cyan]config[/cyan]   - Manage configuration")
+                ctx.console.print("  [cyan]help[/cyan]     - Show this help message")
+                ctx.console.print("\n[bold]Global Options:[/bold]")
+                ctx.console.print(
                     "  [yellow]--verbose, -v[/yellow]     Enable verbose output"
-                    )
-                    ctx.console.print(
+                )
+                ctx.console.print(
                     "  [yellow]--dry-run[/yellow]         Show what would be done"
-                    )
-                    ctx.console.print(
+                )
+                ctx.console.print(
                     "  [yellow]--env ENV[/yellow]         Set environment"
-                    )
-                    else:
-                    print("RFS Framework CLI v4.3.0")
-                    print("Available Commands:")
-                    print("  version  - Show version information")
-                    print("  status   - Check system status")
-                    print("  config   - Manage configuration")
-                    print("  help     - Show this help message")
-                    return Success("Help displayed")
-                    except Exception as e:
-                    return Failure(f"Help display failed: {str(e)}")
+                )
+            else:
+                print("RFS Framework CLI v4.3.0")
+                print("Available Commands:")
+                print("  version  - Show version information")
+                print("  status   - Check system status")
+                print("  config   - Manage configuration")
+                print("  help     - Show this help message")
+            return Success("Help displayed")
+        except Exception as e:
+            return Failure(f"Help display failed: {str(e)}")

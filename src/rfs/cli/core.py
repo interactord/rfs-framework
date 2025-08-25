@@ -197,166 +197,166 @@ class RFSCli:
         ctx.args = self._parse_command_args(command, command_args)
         try:
             self.state = {**self.state, 'last_command': command.name}
-            self.state['command_history'] = state['command_history'] + [{'command': command.name, 'args': ctx.args, 'timestamp': datetime.now(]})
+            self.state['command_history'] = self.state.get('command_history', []) + [{'command': command.name, 'args': ctx.args, 'timestamp': datetime.now()}]
             result = await command.execute(ctx)
             match result:
                 case Success(value):
                     if ctx.verbose and value:
-                    if ctx.console:
-                    ctx.console.print(f'[green]✓ {value}[/green]')
+                        if ctx.console:
+                            ctx.console.print(f'[green]✓ {value}[/green]')
                     return 0
                 case Failure(error):
                     if ctx.console:
-                    ctx.console.print(f'[red]✗ Error: {error}[/red]')
+                        ctx.console.print(f'[red]✗ Error: {error}[/red]')
                     else:
-                    print(f'Error: {error}')
+                        print(f'Error: {error}')
                     return 1
-                    except KeyboardInterrupt:
-                    if ctx.console:
-                    ctx.console.print('\n[yellow]Operation cancelled by user[/yellow]')
-                    else:
-                    print('\nOperation cancelled by user')
-                    return 130
-                    except Exception as e:
-                    if ctx.console:
-                    ctx.console.print(f'[red]✗ Unexpected error: {e}[/red]')
-                    else:
-                    print(f'Unexpected error: {e}')
-                    if ctx.verbose:
-                    import traceback
-                    traceback.print_exc()
-                    return 1
+        except KeyboardInterrupt:
+            if ctx.console:
+                ctx.console.print('\n[yellow]Operation cancelled by user[/yellow]')
+            else:
+                print('\nOperation cancelled by user')
+            return 130
+        except Exception as e:
+            if ctx.console:
+                ctx.console.print(f'[red]✗ Unexpected error: {e}[/red]')
+            else:
+                print(f'Unexpected error: {e}')
+            if ctx.verbose:
+                import traceback
+                traceback.print_exc()
+            return 1
 
-                    def _parse_global_args(self, args: List[str]) -> tuple[Dict[str, Any], List[str]]:
-                    """전역 인자 파싱"""
-                    global_args = {}
-                    command_args = []
-                    i = 0
-                    while i < len(args):
-                    arg = args[i]
-                    match arg:
-                        case '--verbose' | '-v':
+    def _parse_global_args(self, args: List[str]) -> tuple[Dict[str, Any], List[str]]:
+        """전역 인자 파싱"""
+        global_args = {}
+        command_args = []
+        i = 0
+        while i < len(args):
+            arg = args[i]
+            match arg:
+                case '--verbose' | '-v':
                     global_args['verbose'] = {'verbose': True}
                 case '--dry-run':
                     global_args['dry_run'] = {'dry_run': True}
                 case '--env' | '--environment':
                     if i + 1 < len(args):
-                    global_args['environment'] = {'environment': args[i + 1]}
-                    i = i + 1
+                        global_args['environment'] = {'environment': args[i + 1]}
+                        i = i + 1
                     else:
-                    raise ValueError('--environment requires a value')
+                        raise ValueError('--environment requires a value')
                 case _:
                     if arg.startswith('-'):
-                    command_args = command_args + args[i:]
-                    break
+                        command_args = command_args + args[i:]
+                        break
                     else:
-                    command_args = command_args + args[i:]
-                    break
-                    i = i + 1
-                    return (global_args, command_args)
+                        command_args = command_args + args[i:]
+                        break
+            i = i + 1
+        return (global_args, command_args)
 
-                    def _parse_command_args(self, command: Command, args: List[str]) -> Dict[str, Any]:
-                    """명령어 인자 파싱"""
-                    parsed_args = {}
-                    i = 0
-                    while i < len(args):
-                    arg = args[i]
-                    if arg.startswith('--'):
-                    option_name = arg[2:]
-                    if i + 1 < len(args) and (not args[i + 1].startswith('-')):
+    def _parse_command_args(self, command: Command, args: List[str]) -> Dict[str, Any]:
+        """명령어 인자 파싱"""
+        parsed_args = {}
+        i = 0
+        while i < len(args):
+            arg = args[i]
+            if arg.startswith('--'):
+                option_name = arg[2:]
+                if i + 1 < len(args) and (not args[i + 1].startswith('-')):
                     parsed_args[option_name] = {option_name: args[i + 1]}
                     i = i + 1
-                    else:
+                else:
                     parsed_args[option_name] = {option_name: True}
-                    elif arg.startswith('-'):
-                    option_name = arg[1:]
-                    if i + 1 < len(args) and (not args[i + 1].startswith('-')):
+            elif arg.startswith('-'):
+                option_name = arg[1:]
+                if i + 1 < len(args) and (not args[i + 1].startswith('-')):
                     parsed_args[option_name] = {option_name: args[i + 1]}
                     i = i + 1
-                    else:
+                else:
                     parsed_args[option_name] = {option_name: True}
-                    else:
-                    if 'positional' not in parsed_args:
+            else:
+                if 'positional' not in parsed_args:
                     parsed_args['positional'] = {'positional': []}
-                    parsed_args['positional'] = parsed_args.get('positional') + [arg]
-                    i = i + 1
-                    return parsed_args
+                parsed_args['positional'] = parsed_args.get('positional') + [arg]
+            i = i + 1
+        return parsed_args
 
-                    async def _show_main_help(self) -> int:
-                    """메인 도움말 표시"""
-                    if self.console:
-                    self._show_rich_help()
-                    else:
-                    self._show_plain_help()
-                    return 0
+    async def _show_main_help(self) -> int:
+        """메인 도움말 표시"""
+        if self.console:
+            self._show_rich_help()
+        else:
+            self._show_plain_help()
+        return 0
 
-                    def _show_rich_help(self):
-                    """Rich를 사용한 도움말"""
-                    logo = Text('RFS Framework v4.3.0', style='bold blue')
-                    self.console.print(Panel(logo, title='🚀 RFS Framework CLI'))
-                    table = Table(title='Available Commands')
-                    table.add_column('Command', style='cyan', no_wrap=True)
-                    table.add_column('Description', style='white')
-                    table.add_column('Aliases', style='dim')
-                    for cmd_name, cmd in self.commands.items():
-                    if cmd_name == cmd.name:
-                    aliases = ', '.join(cmd.aliases) if cmd.aliases else ''
-                    table.add_row(cmd_name, cmd.description, aliases)
-                    self.console.print(table)
-                    self.console.print('\n[bold]Global Options:[/bold]')
-                    self.console.print('  --verbose, -v     Enable verbose output')
-                    self.console.print('  --dry-run         Show what would be done without executing')
-                    self.console.print('  --env ENV         Set environment (development, test, production)')
-                    if self.project_root:
-                    self.console.print(f'\n[dim]Project root: {self.project_root}[/dim]')
-                    else:
-                    self.console.print(f'\n[yellow]No RFS project detected in current directory[/yellow]')
+    def _show_rich_help(self):
+        """Rich를 사용한 도움말"""
+        logo = Text('RFS Framework v4.3.0', style='bold blue')
+        self.console.print(Panel(logo, title='🚀 RFS Framework CLI'))
+        table = Table(title='Available Commands')
+        table.add_column('Command', style='cyan', no_wrap=True)
+        table.add_column('Description', style='white')
+        table.add_column('Aliases', style='dim')
+        for cmd_name, cmd in self.commands.items():
+            if cmd_name == cmd.name:
+                aliases = ', '.join(cmd.aliases) if cmd.aliases else ''
+                table.add_row(cmd_name, cmd.description, aliases)
+        self.console.print(table)
+        self.console.print('\n[bold]Global Options:[/bold]')
+        self.console.print('  --verbose, -v     Enable verbose output')
+        self.console.print('  --dry-run         Show what would be done without executing')
+        self.console.print('  --env ENV         Set environment (development, test, production)')
+        if self.project_root:
+            self.console.print(f'\n[dim]Project root: {self.project_root}[/dim]')
+        else:
+            self.console.print(f'\n[yellow]No RFS project detected in current directory[/yellow]')
 
-                    def _show_plain_help(self):
-                    """일반 텍스트 도움말"""
-                    print('RFS Framework v4.3.0 CLI')
-                    print('=' * 25)
-                    print('\nAvailable Commands:')
-                    for cmd_name, cmd in self.commands.items():
-                    if cmd_name == cmd.name:
-                    print(f'  {cmd_name:<15} {cmd.description}')
-                    print('\nGlobal Options:')
-                    print('  --verbose, -v     Enable verbose output')
-                    print('  --dry-run         Show what would be done without executing')
-                    print('  --env ENV         Set environment')
-                    if self.project_root:
-                    print(f'\nProject root: {self.project_root}')
+    def _show_plain_help(self):
+        """일반 텍스트 도움말"""
+        print('RFS Framework v4.3.0 CLI')
+        print('=' * 25)
+        print('\nAvailable Commands:')
+        for cmd_name, cmd in self.commands.items():
+            if cmd_name == cmd.name:
+                print(f'  {cmd_name:<15} {cmd.description}')
+        print('\nGlobal Options:')
+        print('  --verbose, -v     Enable verbose output')
+        print('  --dry-run         Show what would be done without executing')
+        print('  --env ENV         Set environment')
+        if self.project_root:
+            print(f'\nProject root: {self.project_root}')
 
-                    async def _show_command_not_found(self, command_name: str, ctx: CommandContext) -> int:
-                    """명령어를 찾을 수 없을 때"""
-                    similar_commands = self._find_similar_commands(command_name)
-                    if ctx.console:
-                    ctx.console.print(f"[red]✗ Command '{command_name}' not found[/red]")
-                    if similar_commands:
-                    ctx.console.print(f'\n[yellow]Did you mean:[/yellow]')
-                    for cmd in similar_commands:
+    async def _show_command_not_found(self, command_name: str, ctx: CommandContext) -> int:
+        """명령어를 찾을 수 없을 때"""
+        similar_commands = self._find_similar_commands(command_name)
+        if ctx.console:
+            ctx.console.print(f"[red]✗ Command '{command_name}' not found[/red]")
+            if similar_commands:
+                ctx.console.print(f'\n[yellow]Did you mean:[/yellow]')
+                for cmd in similar_commands:
                     ctx.console.print(f'  {cmd}')
-                    ctx.console.print(f"\n[dim]Run 'rfs --help' to see all available commands[/dim]")
-                    else:
-                    print(f"Command '{command_name}' not found")
-                    if similar_commands:
-                    print('\nDid you mean:')
-                    for cmd in similar_commands:
+            ctx.console.print(f"\n[dim]Run 'rfs --help' to see all available commands[/dim]")
+        else:
+            print(f"Command '{command_name}' not found")
+            if similar_commands:
+                print('\nDid you mean:')
+                for cmd in similar_commands:
                     print(f'  {cmd}')
-                    return 1
+        return 1
 
-                    def _find_similar_commands(self, command_name: str) -> List[str]:
-                    """유사한 명령어 찾기 (Levenshtein distance 사용)"""
+    def _find_similar_commands(self, command_name: str) -> List[str]:
+        """유사한 명령어 찾기 (Levenshtein distance 사용)"""
 
-                    def levenshtein_distance(s1: str, s2: str) -> int:
-                    if len(s1) < len(s2):
-                    return levenshtein_distance(s2, s1)
-                    if len(s2) == 0:
-                    return len(s1)
-                    previous_row = range(len(s2) + 1)
-                    for i, c1 in enumerate(s1):
-                    current_row = [i + 1]
-                    for j, c2 in enumerate(s2):
+        def levenshtein_distance(s1: str, s2: str) -> int:
+            if len(s1) < len(s2):
+                return levenshtein_distance(s2, s1)
+            if len(s2) == 0:
+                return len(s1)
+            previous_row = range(len(s2) + 1)
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
                     insertions = previous_row[j + 1] + 1
                     deletions = current_row[j] + 1
                     substitutions = previous_row[j] + (c1 != c2)
@@ -365,19 +365,19 @@ class RFSCli:
                     return previous_row[-1]
                     similar = []
                     for cmd_name in self.commands.keys():
-                    if cmd_name != command_name:
-                    distance = levenshtein_distance(command_name.lower(), cmd_name.lower())
-                    if distance <= 2:
-                    similar = similar + [cmd_name]
+                        if cmd_name != command_name:
+                            distance = levenshtein_distance(command_name.lower(), cmd_name.lower())
+                            if distance <= 2:
+                                similar = similar + [cmd_name]
                     return similar[:3]
 
-                    def register_plugin(self, name: str, plugin: Any):
-                    """플러그인 등록"""
-                    self.plugins = {**self.plugins, name: plugin}
-                    if hasattr(plugin, 'register_commands'):
-                    plugin.register_commands(self)
+    def register_plugin(self, name: str, plugin: Any):
+        """플러그인 등록"""
+        self.plugins = {**self.plugins, name: plugin}
+        if hasattr(plugin, 'register_commands'):
+            plugin.register_commands(self)
 
-                    def get_state(self) -> Dict[str, Any]:
+    def get_state(self) -> Dict[str, Any]:
                     """CLI 상태 조회"""
                     return {**self.state, 'project_root': str(self.project_root) if self.project_root else None, 'commands_count': len(self.commands), 'plugins_count': len(self.plugins)}
 

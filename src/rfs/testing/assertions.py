@@ -119,7 +119,7 @@ def assert_length(collection: Collection, expected_length: int, message: Optiona
 
 # 예외 어설션들
 def assert_raises(expected_exception: Type[Exception], callable_obj: Callable, 
-                 *args, message: Optional[str] = None
+                 *args, message: Optional[str] = None):
     """예외가 발생하는지 확인"""
     try:
         callable_obj(*args, **kwargs)
@@ -137,7 +137,7 @@ def assert_raises(expected_exception: Type[Exception], callable_obj: Callable,
 
 
 def assert_not_raises(unexpected_exception: Type[Exception], callable_obj: Callable,
-                     *args, message: Optional[str] = None
+                     *args, message: Optional[str] = None, **kwargs):
     """특정 예외가 발생하지 않는지 확인"""
     try:
         result = callable_obj(*args, **kwargs)

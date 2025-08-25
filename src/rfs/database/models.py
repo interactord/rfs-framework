@@ -396,12 +396,18 @@ def create_model(
             match field_def.field_type:
                 case "integer":
                     column_type = Integer
-                case "string":                column_type = String(field_def.max_length or 255)
-                case "text":                column_type = Text
-                case "datetime":                column_type = DateTime
-                case "boolean":                column_type = Boolean
-                case "json":                column_type = JSON
-                case _:                column_type = String(255)
+                case "string":
+                    column_type = String(field_def.max_length or 255)
+                case "text":
+                    column_type = Text
+                case "datetime":
+                    column_type = DateTime
+                case "boolean":
+                    column_type = Boolean
+                case "json":
+                    column_type = JSON
+                case _:
+                    column_type = String(255)
             attrs = {
                 **attrs,
                 field_name: {
@@ -420,16 +426,24 @@ def create_model(
             match field_def.field_type:
                 case "integer":
                     field_obj = fields.IntField(pk=field_def.primary_key)
-                case "string":                field_obj = fields.CharField(
-                    max_length=field_def.max_length or 255, null=field_def.nullable
-                )
-                case "text":                field_obj = fields.TextField(null=field_def.nullable)
-                case "datetime":                field_obj = fields.DatetimeField(
-                    auto_now_add=True if field_def.default else False
-                )
-                case "boolean":                field_obj = fields.BooleanField(default=field_def.default)
-                case "json":                field_obj = fields.JSONField(default=field_def.default)
-                case _:                field_obj = fields.CharField(max_length=255, null=field_def.nullable)
+                case "string":
+                    field_obj = fields.CharField(
+                        max_length=field_def.max_length or 255, null=field_def.nullable
+                    )
+                case "text":
+                    field_obj = fields.TextField(null=field_def.nullable)
+                case "datetime":
+                    field_obj = fields.DatetimeField(
+                        auto_now_add=True if field_def.default else False
+                    )
+                case "boolean":
+                    field_obj = fields.BooleanField(default=field_def.default)
+                case "json":
+                    field_obj = fields.JSONField(default=field_def.default)
+                case _:
+                    field_obj = fields.CharField(
+                        max_length=255, null=field_def.nullable
+                    )
             attrs[field_name] = {field_name: field_obj}
     model_class = type(name, (base_class,), attrs)
     registry = get_model_registry()

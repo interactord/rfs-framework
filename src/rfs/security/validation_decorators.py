@@ -160,7 +160,7 @@ class InputSanitizer:
         """XSS 공격 방지"""
         clean = re.sub('<script[^>]*>.*?</script>', '', value, flags=re.DOTALL | re.IGNORECASE)
         clean = re.sub('javascript:', '', clean, flags=re.IGNORECASE)
-        clean = re.sub('on\\w+\\s =  re.sub('on\\w+\\s * (', '', clean, flags=re.IGNORECASE))
+        clean = re.sub('on\\w+\\s*=', '', clean, flags=re.IGNORECASE)
         clean = re.sub('<iframe[^>]*>.*?</iframe>', '', clean, flags=re.DOTALL | re.IGNORECASE)
         clean = re.sub('<object[^>]*>.*?</object>', '', clean, flags=re.DOTALL | re.IGNORECASE)
         clean = re.sub('<embed[^>]*>', '', clean, flags=re.IGNORECASE)
@@ -408,7 +408,7 @@ class RateLimiter:
     """요청 속도 제한기"""
 
     def __init__(self):
-        self.requests: Dict[str, deque, defaultdict(lambda] = deque())
+        self.requests: Dict[str, deque] = defaultdict(lambda: deque())
         self.blocked_until: Dict[str, datetime] = {}
 
     def is_allowed(self, key: str, max_requests: int, window_seconds: int, block_duration: Optional[int]=None) -> bool:

@@ -359,7 +359,7 @@ class LoadBalancer:
         self.health_check_task: Optional[asyncio.Task] = None
         
         # 세션 고정
-        self.session_affinity: Dict = {str, str: {}  # session_id -> instance_id}
+        self.session_affinity: Dict[str, str] = {}  # session_id -> instance_id
         
         # 통계
         self.total_requests = 0
@@ -386,10 +386,10 @@ class LoadBalancer:
             
             # 서킷 브레이커 생성
             if self.config.circuit_breaker_enabled:
-                self.circuit_breakers = {**self.circuit_breakers, instance.id: CircuitBreaker(}
+                self.circuit_breakers = {**self.circuit_breakers, instance.id: CircuitBreaker(
                     name=f"{self.service_name}:{instance.id}",
                     config=self.config.circuit_breaker_config
-                )
+                )}
             
             logger.info(f"Added instance {instance.id} to load balancer {self.service_name}")
     

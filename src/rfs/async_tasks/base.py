@@ -81,13 +81,15 @@ class RetryPolicy:
         match self.backoff_strategy:
             case BackoffStrategy.FIXED:
                 delay = self.delay
-            case BackoffStrategy.LINEAR:            delay = self.delay * attempt
-            case BackoffStrategy.EXPONENTIAL:            delay = self.delay * self.backoff_multiplier ** (attempt - 1)
-            case _:            import random
-
-            base_delay = self.delay * self.backoff_multiplier ** (attempt - 1)
-            jitter = random.uniform(0, base_delay.total_seconds() * 0.1)
-            delay = base_delay + timedelta(seconds=jitter)
+            case BackoffStrategy.LINEAR:
+                delay = self.delay * attempt
+            case BackoffStrategy.EXPONENTIAL:
+                delay = self.delay * self.backoff_multiplier ** (attempt - 1)
+            case _:
+                import random
+                base_delay = self.delay * self.backoff_multiplier ** (attempt - 1)
+                jitter = random.uniform(0, base_delay.total_seconds() * 0.1)
+                delay = base_delay + timedelta(seconds=jitter)
         if delay > self.max_delay:
             delay = self.max_delay
         return delay
@@ -300,7 +302,7 @@ class TaskChain:
             result = await task.execute(chain_context)
             results = results + [result]
             if type(result).__name__ == "dict":
-                chain_context.update(result)
+                chain_context = {**chain_context, **result}
         return results
 
 

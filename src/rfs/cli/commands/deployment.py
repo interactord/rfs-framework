@@ -88,50 +88,50 @@ class DeployCommand(Command):
                         case _:
                             match i:
                                 case 2:
-                            result = await self._push_to_registry(config)
-                        case 3:
-                            result = await self._deploy_to_cloud_run(config)
-                        case 4:
-                            result = await self._verify_deployment(config)
-                            if result.is_failure():
-                            return result
-                            progress.update(task)
-                            service_url = (
-                            f"https://{config['service_name']}-{config['project_id']}.a.run.app"
-                            )
-                            if console:
-                            console.print(
-                            Panel(
+                                    result = await self._push_to_registry(config)
+                                case 3:
+                                    result = await self._deploy_to_cloud_run(config)
+                                case 4:
+                                    result = await self._verify_deployment(config)
+                    if result.is_failure():
+                        return result
+                    progress = {**progress, **task}
+                service_url = (
+                    f"https://{config['service_name']}-{config['project_id']}.a.run.app"
+                )
+                if console:
+                    console.print(
+                        Panel(
                             f"✅ 배포 완료!\n\n🌐 서비스 URL: {service_url}\n📊 모니터링: rfs monitor\n📋 로그: rfs logs\n⚙️  설정 업데이트: rfs deploy --update-config\n\n🎉 RFS v4 애플리케이션이 성공적으로 배포되었습니다!",
                             title="배포 성공",
                             border_style="green",
-                            )
-                            )
-                            return Success(f"Cloud Run 배포 완료: {service_url}")
-                            except Exception as e:
-                            return Failure(f"배포 실패: {str(e)}")
+                        )
+                    )
+                return Success(f"Cloud Run 배포 완료: {service_url}")
+        except Exception as e:
+            return Failure(f"배포 실패: {str(e)}")
 
-                            async def _collect_deploy_config(
-                            self, args: List[str]
-                            ) -> Result[Dict[str, Any], str]:
-                            """배포 설정 수집"""
-                            try:
-                            config = {}
-                            rfs_config = get_config()
-                            for i, arg in enumerate(args):
-                            match arg:
-                                case "--project":
-                                    config["project_id"] = args[i + 1]
-                                case "--region":
-                                    config["region"] = args[i + 1]
-                                case "--service":
-                                    config["service_name"] = args[i + 1]
-                                case "--tag":
-                                    config["tag"] = args[i + 1]
-                                case "--min-instances":
-                                    config["min_instances"] = int(args[i + 1])
-                                case "--max-instances":
-                                    config["max_instances"] = int(args[i + 1])
+    async def _collect_deploy_config(
+        self, args: List[str]
+    ) -> Result[Dict[str, Any], str]:
+        """배포 설정 수집"""
+        try:
+            config = {}
+            rfs_config = get_config()
+            for i, arg in enumerate(args):
+                match arg:
+                    case "--project":
+                        config["project_id"] = args[i + 1]
+                    case "--region":
+                        config["region"] = args[i + 1]
+                    case "--service":
+                        config["service_name"] = args[i + 1]
+                    case "--tag":
+                        config["tag"] = args[i + 1]
+                    case "--min-instances":
+                        config["min_instances"] = int(args[i + 1])
+                    case "--max-instances":
+                        config["max_instances"] = int(args[i + 1])
             if "project_id" not in config:
                 config = {
                     **config,
@@ -333,13 +333,17 @@ class LogsCommand(Command):
             match arg:
                 case "--service":
                     options["service_name"] = args[i + 1]
-                case "--since":                options["since"] = args[i + 1]
-                case "--lines":                options["lines"] = int(args[i + 1])
-                case "--filter":                options["filter"] = args[i + 1]
-            elif arg in ["-f", "--follow"]:
-                options["follow"] = True
-            elif arg == "--level" and i + 1 < len(args):
-                options["level"] = args[i + 1]
+                case "--since":
+                    options["since"] = args[i + 1]
+                case "--lines":
+                    options["lines"] = int(args[i + 1])
+                case "--filter":
+                    options["filter"] = args[i + 1]
+                case "-f" | "--follow":
+                    options["follow"] = True
+                case "--level":
+                    if i + 1 < len(args):
+                        options["level"] = args[i + 1]
         if not options.get("service_name"):
             options = {
                 **options,

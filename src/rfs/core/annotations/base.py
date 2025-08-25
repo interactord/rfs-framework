@@ -100,7 +100,9 @@ class ComponentMetadata:
         self.dependencies = self.dependencies + [dependency]
         match dependency.injection_type:
             case InjectionType.CONSTRUCTOR:
-                self.constructor_dependencies = self.constructor_dependencies + [dependency]
+                self.constructor_dependencies = self.constructor_dependencies + [
+                    dependency
+                ]
             case InjectionType.FIELD:
                 self.field_dependencies = {
                     **self.field_dependencies,

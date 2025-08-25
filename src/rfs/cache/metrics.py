@@ -109,7 +109,7 @@ class MetricsCollector(metaclass=SingletonMeta):
             for cache_name, cache_backend in cache_manager.caches.items():
                 metrics = await self.collect_cache_metrics(cache_name, cache_backend)
                 time_key = current_time.strftime('%Y-%m-%d %H:%M')
-                self.metrics_history[cache_name] = metrics_history[cache_name] + [{'timestamp': time_key, 'metrics': metrics.to_dict(]})
+                self.metrics_history[cache_name] = self.metrics_history[cache_name] + [{'timestamp': time_key, 'metrics': metrics.to_dict()}]
                 await self._check_alerts(cache_name, metrics)
         except Exception as e:
             logger.error(f'전체 메트릭스 수집 실패: {e}')
@@ -152,7 +152,7 @@ class MetricsCollector(metaclass=SingletonMeta):
     def record_operation(self, cache_name: str, operation: str, key: str, duration: float):
         """작업 기록"""
         self.key_access_count[f'{cache_name}:{key}']  =         self.key_access_count[f'{cache_name}:{key}']  + (1)
-        self.operation_times[cache_name] = operation_times[cache_name] + [{'operation': operation, 'key': key, 'duration': duration, 'timestamp': time.time(]})
+        self.operation_times[cache_name] = self.operation_times[cache_name] + [{'operation': operation, 'key': key, 'duration': duration, 'timestamp': time.time()}]
 
     def _get_hot_keys(self, cache_name: str, limit: int=10) -> List[str]:
         """Hot keys 추출"""

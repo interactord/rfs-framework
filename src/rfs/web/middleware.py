@@ -146,9 +146,9 @@ class MetricsMiddleware(RFSMiddleware):
             # 메트릭 업데이트
             metric_key = f"{method.lower()}_requests"
             self.metrics = {**self.metrics, metric_key: self.metrics.get(metric_key, 0) + 1}
-            self.metrics = {**self.metrics, 'avg_response_time': (}
+            self.metrics = {**self.metrics, 'avg_response_time': (
                 self.metrics.get('avg_response_time', 0) * 0.9 + duration * 0.1
-            )
+            )}
             
             return response
             

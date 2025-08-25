@@ -412,7 +412,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
 
     def configure(self, **kwargs):
         """설정 업데이트"""
-        self._config.update(kwargs)
+        self._config = {**_config, **kwargs}
 
     def analyze_metrics(self) -> Dict[str, Any]:
         """메트릭 분석"""

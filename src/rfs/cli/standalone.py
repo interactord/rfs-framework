@@ -209,22 +209,22 @@ def main(args: Optional[List[str]] = None) -> int:
             show_config()
         case _:
             if console:
-            console.print(f"[red]❌ Unknown command: {command}[/red]")
-            console.print("Run '[cyan]rfs help[/cyan]' to see available commands")
+                console.print(f"[red]❌ Unknown command: {command}[/red]")
+                console.print("Run '[cyan]rfs help[/cyan]' to see available commands")
             else:
-            print(f"❌ Unknown command: {command}")
-            print("Run 'rfs help' to see available commands")
+                print(f"❌ Unknown command: {command}")
+                print("Run 'rfs help' to see available commands")
             return 1
 
-            return 0
+    return 0
 
 
-            if __name__ == "__main__":
-            try:
-            sys.exit(main())
-            except KeyboardInterrupt:
-            if console:
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        if console:
             console.print("\n[yellow]🛑 Operation cancelled by user[/yellow]")
-            else:
+        else:
             print("\n🛑 Operation cancelled by user")
-            sys.exit(130)
+        sys.exit(130)

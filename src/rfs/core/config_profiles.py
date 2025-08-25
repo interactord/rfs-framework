@@ -223,41 +223,42 @@ class ProfileManager:
                 return Environment.TEST
             case "dev" | "develop" | "development":
                 return Environment.DEVELOPMENT
+            case _:
                 if os.environ.get("K_SERVICE"):
-                return Environment.PRODUCTION
+                    return Environment.PRODUCTION
                 if any(
-                (
-                test_indicator in os.environ.get("_", "")
-                for test_indicator in ["pytest", "unittest", "test"]
-                )
+                    (
+                        test_indicator in os.environ.get("_", "")
+                        for test_indicator in ["pytest", "unittest", "test"]
+                    )
                 ):
-                return Environment.TEST
+                    return Environment.TEST
                 return Environment.DEVELOPMENT
 
-                def create_config_with_profile(
-                self, environment: Environment | None = None
-                ) -> RFSConfig:
-                """프로파일 기반 설정 생성 (v4 신규)"""
-                if environment is None:
-                environment = self.detect_environment()
-                profile_config = self.get_profile_config(environment)
-                if PYDANTIC_AVAILABLE:
-                return RFSConfig(**profile_config)
-                else:
-                from .config import RFSConfig
+    def create_config_with_profile(
+        self, environment: Environment | None = None
+    ) -> RFSConfig:
+        """프로파일 기반 설정 생성 (v4 신규)"""
+        if environment is None:
+            environment = self.detect_environment()
+        profile_config = self.get_profile_config(environment)
+        if PYDANTIC_AVAILABLE:
+            return RFSConfig(**profile_config)
+        else:
+            from .config import RFSConfig
 
-                return RFSConfig(**profile_config)
+            return RFSConfig(**profile_config)
 
-                def switch_profile(
-                self, from_env: Environment, to_env: Environment
-                ) -> tuple[bool, list[str]]:
-                """프로파일 안전 전환 (v4 신규)"""
-                messages = []
-                valid, errors = self.validate_profile(to_env)
-                if not valid:
-                return (False, errors)
-                match (from_env, to_env):
-                    case [Environment.PRODUCTION, Environment.DEVELOPMENT]:
+    def switch_profile(
+        self, from_env: Environment, to_env: Environment
+    ) -> tuple[bool, list[str]]:
+        """프로파일 안전 전환 (v4 신규)"""
+        messages = []
+        valid, errors = self.validate_profile(to_env)
+        if not valid:
+            return (False, errors)
+        match (from_env, to_env):
+            case [Environment.PRODUCTION, Environment.DEVELOPMENT]:
                 messages = messages + ["운영→개발 전환: 데이터 손실 위험 확인 필요"]
             case [Environment.PRODUCTION, Environment.TEST]:
                 messages = messages + ["운영→테스트 전환: 운영 데이터 접근 주의"]
@@ -267,17 +268,17 @@ class ProfileManager:
                 messages = messages + ["테스트→운영 전환: 테스트 통과 확인 완료"]
                 return (True, messages)
 
-                def export_profile_summary(self, environment: Environment) -> Dict[str, Any]:
-                """프로파일 요약 정보 내보내기 (v4 신규)"""
-                profile = self.get_profile(environment)
-                config_overrides = profile.get_config_overrides()
-                required_vars = profile.get_required_env_vars()
-                return {
-                "environment": environment.value,
-                "profile_type": profile.__class__.__name__,
-                "config_count": len(config_overrides),
-                "required_env_vars": required_vars,
-                "key_settings": {
+    def export_profile_summary(self, environment: Environment) -> Dict[str, Any]:
+        """프로파일 요약 정보 내보내기 (v4 신규)"""
+        profile = self.get_profile(environment)
+        config_overrides = profile.get_config_overrides()
+        required_vars = profile.get_required_env_vars()
+        return {
+            "environment": environment.value,
+            "profile_type": profile.__class__.__name__,
+            "config_count": len(config_overrides),
+            "required_env_vars": required_vars,
+            "key_settings": {
                 "log_level": config_overrides.get("log_level"),
                 "max_concurrency": config_overrides.get("max_concurrency"),
                 "cold_start_optimization": config_overrides.get(
@@ -291,31 +292,31 @@ class ProfileManager:
                 }
 
 
-                profile_manager = ProfileManager()
+profile_manager = ProfileManager()
 
 
-                def get_profile_manager() -> ProfileManager:
-                """프로파일 관리자 조회"""
-                return profile_manager
+def get_profile_manager() -> ProfileManager:
+    """프로파일 관리자 조회"""
+    return profile_manager
 
 
-                def detect_current_environment() -> Environment:
-                """현재 환경 자동 감지"""
-                return profile_manager.detect_environment()
+def detect_current_environment() -> Environment:
+    """현재 환경 자동 감지"""
+    return profile_manager.detect_environment()
 
 
-                def create_profile_config(environment: Environment | None = None) -> RFSConfig:
-                """프로파일 기반 설정 생성"""
-                return profile_manager.create_config_with_profile(environment)
+def create_profile_config(environment: Environment | None = None) -> RFSConfig:
+    """프로파일 기반 설정 생성"""
+    return profile_manager.create_config_with_profile(environment)
 
 
-                def validate_current_environment() -> tuple[bool, list[str]]:
-                """현재 환경 유효성 검증"""
-                current_env = detect_current_environment()
-                return profile_manager.validate_profile(current_env)
+def validate_current_environment() -> tuple[bool, list[str]]:
+    """현재 환경 유효성 검증"""
+    current_env = detect_current_environment()
+    return profile_manager.validate_profile(current_env)
 
 
-                def get_environment_summary() -> Dict[str, Any]:
-                """현재 환경 요약"""
-                current_env = detect_current_environment()
-                return profile_manager.export_profile_summary(current_env)
+def get_environment_summary() -> Dict[str, Any]:
+    """현재 환경 요약"""
+    current_env = detect_current_environment()
+    return profile_manager.export_profile_summary(current_env)

@@ -154,7 +154,7 @@ class StateMachine:
                 total_transitions = total_transitions + 1
                 if transition.transition_type.value == "external":
                     await self._change_state(transition.to_state)
-                self.context.update(result.context)
+                self.context = {**context, **result.context}
                 return
             else:
                 failed_transitions = failed_transitions + 1

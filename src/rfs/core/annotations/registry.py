@@ -111,7 +111,10 @@ class AnnotationRegistry(StatelessRegistry):
                 if port_name:
                     # 함수형 패턴: 조건부 업데이트를 한 번의 스프레드 연산으로 처리
                     existing_adapters = self.adapters.get(port_name, [])
-                    self.adapters = {**self.adapters, port_name: existing_adapters + [cls]}
+                    self.adapters = {
+                        **self.adapters,
+                        port_name: existing_adapters + [cls],
+                    }
             case "use_case":
                 self.use_cases = {**self.use_cases, component_id: cls}
             case "controller":

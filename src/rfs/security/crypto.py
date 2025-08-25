@@ -109,7 +109,7 @@ class CryptoManager:
             cipher = Cipher(algorithms.AES(key), modes.GCM(nonce), backend=self.backend)
 
             encryptor = cipher.encryptor()
-            ciphertext = encryptor.update(data) + encryptor.finalize()
+            ciphertext = encryptor = {**encryptor, **data} + encryptor.finalize()
 
             return Success(
                 EncryptionResult(
@@ -165,7 +165,7 @@ class CryptoManager:
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=self.backend)
 
             encryptor = cipher.encryptor()
-            ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+            ciphertext = encryptor = {**encryptor, **padded_data} + encryptor.finalize()
 
             return Success(EncryptionResult(encrypted_data=ciphertext, nonce=iv))
 
@@ -349,35 +349,38 @@ class CryptoManager:
             match algorithm:
                 case HashAlgorithm.SHA256:
                     if salt:
-                    hasher = hashlib.sha256(salt)
-                else:
-                    hasher = hashlib.sha256()
-                hasher.update(data)
-                return Success(hasher.digest())
-
-                case HashAlgorithm.SHA512:                if salt:
-                    hasher = hashlib.sha512(salt)
+                        hasher = hashlib.sha256(salt)
                     else:
-                    hasher = hashlib.sha512()
+                        hasher = hashlib.sha256()
                     hasher.update(data)
                     return Success(hasher.digest())
 
-                case HashAlgorithm.BLAKE2B:                if salt:
-                    hasher = hashlib.blake2b(
-                    salt=salt[:16]
-                    )  # blake2b는 최대 16바이트 솔트
+                case HashAlgorithm.SHA512:
+                    if salt:
+                        hasher = hashlib.sha512(salt)
                     else:
-                    hasher = hashlib.blake2b()
+                        hasher = hashlib.sha512()
                     hasher.update(data)
                     return Success(hasher.digest())
 
-                case HashAlgorithm.PBKDF2:                if salt is None:
-                    salt = self.generate_salt()
+                case HashAlgorithm.BLAKE2B:
+                    if salt:
+                        hasher = hashlib.blake2b(
+                            salt=salt[:16]
+                        )  # blake2b는 최대 16바이트 솔트
+                    else:
+                        hasher = hashlib.blake2b()
+                    hasher.update(data)
+                    return Success(hasher.digest())
 
+                case HashAlgorithm.PBKDF2:
+                    if salt is None:
+                        salt = self.generate_salt()
                     hashed = hashlib.pbkdf2_hmac("sha256", data, salt, 100000)
                     return Success(salt + hashed)  # 솔트와 해시를 함께 반환
 
-                case _:                return Failure(f"지원하지 않는 해시 알고리즘: {algorithm}")
+                case _:
+                    return Failure(f"지원하지 않는 해시 알고리즘: {algorithm}")
 
         except Exception as e:
             return Failure(f"해싱 실패: {str(e)}")

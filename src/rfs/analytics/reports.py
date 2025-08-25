@@ -274,49 +274,51 @@ class PDFReport(Report):
                         story = story + [
                         Paragraph(str(section.content), styles.get("Normal"))
                     ]
-                    case "table":                    if (
-                        hasattr(section.content, "__class__")
-                        and section.content.__class__.__name__ == "list"
-                    ) and section.content:
+                    case "table":
                         if (
-                            hasattr(section.content[0], "__class__")
-                            and section.content[0].__class__.__name__ == "dict"
-                        ):
-                            headers = list(section.content[0].keys())
-                            table_data = [headers]
-                            for row in section.content:
-                                table_data = table_data + [
-                                    [str(row.get(h, "")) for h in headers]
-                                ]
-                        else:
-                            table_data = section.content
-                        table = Table(table_data)
-                        table.setStyle(
-                            TableStyle(
-                                [
-                                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                                    ("FONTSIZE", (0, 0), (-1, 0), 14),
-                                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                                    ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-                                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
-                                ]
+                            hasattr(section.content, "__class__")
+                            and section.content.__class__.__name__ == "list"
+                        ) and section.content:
+                            if (
+                                hasattr(section.content[0], "__class__")
+                                and section.content[0].__class__.__name__ == "dict"
+                            ):
+                                headers = list(section.content[0].keys())
+                                table_data = [headers]
+                                for row in section.content:
+                                    table_data = table_data + [
+                                        [str(row.get(h, "")) for h in headers]
+                                    ]
+                            else:
+                                table_data = section.content
+                            table = Table(table_data)
+                            table.setStyle(
+                                TableStyle(
+                                    [
+                                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                                        ("FONTSIZE", (0, 0), (-1, 0), 14),
+                                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                                        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                                    ]
+                                )
                             )
-                        )
-                        story = story + [table]
-                    case "chart":                    if (
-                        hasattr(section.content, "__class__")
-                        and section.content.__class__.__name__ == "dict"
-                    ) and "image_base64" in section.content:
-                        image_data = base64.b64decode(section.content["image_base64"])
-                        img_buffer = io.BytesIO(image_data)
-                        from reportlab.lib.utils import ImageReader
-                        from reportlab.platypus import Image
+                            story = story + [table]
+                    case "chart":
+                        if (
+                            hasattr(section.content, "__class__")
+                            and section.content.__class__.__name__ == "dict"
+                        ) and "image_base64" in section.content:
+                            image_data = base64.b64decode(section.content["image_base64"])
+                            img_buffer = io.BytesIO(image_data)
+                            from reportlab.lib.utils import ImageReader
+                            from reportlab.platypus import Image
 
-                        img = Image(ImageReader(img_buffer), width=400, height=300)
-                        story = story + [img]
+                            img = Image(ImageReader(img_buffer), width=400, height=300)
+                            story = story + [img]
                 story = story + [Spacer(1, 20)]
             doc.build(story)
             self.generated_at = datetime.now()
@@ -386,44 +388,46 @@ class HTMLReport(Report):
         match section.content_type:
             case "text":
                 parts = parts + [f"<p>{section.content}</p>"]
-            case "table":            if (
-                hasattr(section.content, "__class__")
-                and section.content.__class__.__name__ == "list"
-            ) and section.content:
-                parts = parts + ['<div class="table-container">']
-                parts = parts + ["<table>"]
+            case "table":
                 if (
-                    hasattr(section.content[0], "__class__")
-                    and section.content[0].__class__.__name__ == "dict"
-                ):
-                    headers = list(section.content[0].keys())
-                    parts = parts + ["<thead><tr>"]
-                    for header in headers:
-                        parts = parts + [f"<th>{header}</th>"]
-                    parts = parts + ["</tr></thead>"]
-                    parts = parts + ["<tbody>"]
-                    for row in section.content:
-                        parts = parts + ["<tr>"]
+                    hasattr(section.content, "__class__")
+                    and section.content.__class__.__name__ == "list"
+                ) and section.content:
+                    parts = parts + ['<div class="table-container">']
+                    parts = parts + ["<table>"]
+                    if (
+                        hasattr(section.content[0], "__class__")
+                        and section.content[0].__class__.__name__ == "dict"
+                    ):
+                        headers = list(section.content[0].keys())
+                        parts = parts + ["<thead><tr>"]
                         for header in headers:
-                            parts = parts + [f"<td>{row.get(header, '')}</td>"]
-                        parts = parts + ["</tr>"]
-                    parts = parts + ["</tbody>"]
-                parts = parts + ["</table>"]
-                parts = parts + ["</div>"]
-            case "chart":            if (
-                hasattr(section.content, "__class__")
-                and section.content.__class__.__name__ == "dict"
-            ):
-                if "html" in section.content:
-                    parts = parts + ['<div class="chart-container">']
-                    parts = parts + [section.content["html"]]
+                            parts = parts + [f"<th>{header}</th>"]
+                        parts = parts + ["</tr></thead>"]
+                        parts = parts + ["<tbody>"]
+                        for row in section.content:
+                            parts = parts + ["<tr>"]
+                            for header in headers:
+                                parts = parts + [f"<td>{row.get(header, '')}</td>"]
+                            parts = parts + ["</tr>"]
+                        parts = parts + ["</tbody>"]
+                    parts = parts + ["</table>"]
                     parts = parts + ["</div>"]
-                elif "image_base64" in section.content:
-                    parts = parts + ['<div class="chart-container">']
-                    parts = parts + [
-                        f'<img src="data:image/png;base64,{section.content['image_base64']}" alt="Chart" style="max-width: 100%; height: auto;">'
-                    ]
-                    parts = parts + ["</div>"]
+            case "chart":
+                if (
+                    hasattr(section.content, "__class__")
+                    and section.content.__class__.__name__ == "dict"
+                ):
+                    if "html" in section.content:
+                        parts = parts + ['<div class="chart-container">']
+                        parts = parts + [section.content["html"]]
+                        parts = parts + ["</div>"]
+                    elif "image_base64" in section.content:
+                        parts = parts + ['<div class="chart-container">']
+                        parts = parts + [
+                            f'<img src="data:image/png;base64,{section.content["image_base64"]}" alt="Chart" style="max-width: 100%; height: auto;">'
+                        ]
+                        parts = parts + ["</div>"]
         parts = parts + ["</div>"]
         return "\n".join(parts)
 
@@ -636,14 +640,19 @@ def _calculate_next_run(schedule: ReportSchedule) -> datetime:
     match schedule:
         case ReportSchedule.ONCE:
             return now
-        case ReportSchedule.DAILY:        return now + timedelta(days=1)
-        case ReportSchedule.WEEKLY:        return now + timedelta(weeks=1)
-        case ReportSchedule.MONTHLY:        if now.month == 12:
-            return now.replace(year=now.year + 1, month=1)
-        else:
-            return now.replace(month=now.month + 1)
-        case ReportSchedule.QUARTERLY:        return now + timedelta(days=90)
-        case ReportSchedule.YEARLY:        return now.replace(year=now.year + 1)
+        case ReportSchedule.DAILY:
+            return now + timedelta(days=1)
+        case ReportSchedule.WEEKLY:
+            return now + timedelta(weeks=1)
+        case ReportSchedule.MONTHLY:
+            if now.month == 12:
+                return now.replace(year=now.year + 1, month=1)
+            else:
+                return now.replace(month=now.month + 1)
+        case ReportSchedule.QUARTERLY:
+            return now + timedelta(days=90)
+        case ReportSchedule.YEARLY:
+            return now.replace(year=now.year + 1)
     return now
 
 

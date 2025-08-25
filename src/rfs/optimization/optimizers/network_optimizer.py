@@ -153,11 +153,13 @@ class CircuitBreaker:
             match self.state:
                 case "closed":
                     return True
-                case "open":                if self.last_failure_time and time.time() - self.last_failure_time > self.recovery_timeout:
-                    self.state = 'half-open'
+                case "open":
+                    if self.last_failure_time and time.time() - self.last_failure_time > self.recovery_timeout:
+                        self.state = 'half-open'
+                        return True
+                    return False
+                case _:
                     return True
-                return False
-                case _:                return True
 
     def record_success(self) -> None:
         """성공 기록"""
@@ -262,7 +264,7 @@ class ResponseCache:
             while self.current_size + data_size > self.max_size and self.cache:
                 self._evict_lru()
             expires_at = datetime.now() + timedelta(seconds=ttl_seconds) if ttl_seconds > 0 else None
-            self.cache = {**self.cache, key: {'data': data, 'created_at': datetime.now(), 'expires_at': expires_at}
+            self.cache = {**self.cache, key: {'data': data, 'created_at': datetime.now(), 'expires_at': expires_at}}
             self.sizes = {**self.sizes, key: data_size}
             self.access_times = {**self.access_times, key: datetime.now()}
             current_size = current_size + data_size
@@ -425,7 +427,7 @@ class RequestOptimizer:
         stats['last_request'] = {'last_request': datetime.now()}
         content_length = response.headers.get('Content-Length')
         if content_length:
-            stats['sizes'] = stats.get('sizes') + [int(content_length])
+            stats['sizes'] = stats.get('sizes', []) + [int(content_length)]
 
     def _record_request_failure(self, host: str, duration: float, error: str) -> None:
         """요청 실패 기록"""
@@ -666,7 +668,7 @@ class NetworkOptimizer:
             cache_stats = self.caching_optimizer.get_cache_stats()
             recommendations = self._generate_recommendations(current_stats, connection_stats, request_stats, cache_stats)
             performance_score = self._calculate_performance_score(current_stats)
-            results = {'performance_score': performance_score, 'current_stats': current_stats, 'connection_stats': connection_stats, 'request_stats': request_stats, 'cache_stats': cache_stats, 'recommendations': recommendations, 'optimization_summary': {'active_circuit_breakers': current_stats.circuit_breaker_opens, 'cache_efficiency': cache_stats.get('hit_rate'), 'connection_success_rate': connection_stats.get('success_rate'), 'request_success_rate': request_stats.get('success_rate')}
+            results = {'performance_score': performance_score, 'current_stats': current_stats, 'connection_stats': connection_stats, 'request_stats': request_stats, 'cache_stats': cache_stats, 'recommendations': recommendations, 'optimization_summary': {'active_circuit_breakers': current_stats.circuit_breaker_opens, 'cache_efficiency': cache_stats.get('hit_rate'), 'connection_success_rate': connection_stats.get('success_rate'), 'request_success_rate': request_stats.get('success_rate')}}
             return Success(results)
         except Exception as e:
             return Failure(f'Network optimization failed: {e}')

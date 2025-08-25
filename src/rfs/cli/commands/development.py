@@ -94,10 +94,14 @@ class DevCommand(Command):
             match arg:
                 case "--port":
                     options["port"] = {"port": int(args[i + 1])}
-                case "--host":                options["host"] = {"host": args[i + 1]}
-                case "--no-reload":                options["reload"] = {"reload": False}
-                case "--no-debug":                options["debug"] = {"debug": False}
-                case "--workers":                options["workers"] = {"workers": int(args[i + 1])}
+                case "--host":
+                    options["host"] = {"host": args[i + 1]}
+                case "--no-reload":
+                    options["reload"] = {"reload": False}
+                case "--no-debug":
+                    options["debug"] = {"debug": False}
+                case "--workers":
+                    options["workers"] = {"workers": int(args[i + 1])}
         return options
 
     def _check_dev_environment(self) -> bool:
@@ -180,25 +184,25 @@ class BuildCommand(Command):
             ) as progress:
                 task1 = progress.add_task("의존성 확인 중...", total=100)
                 await self._check_dependencies()
-                progress.update(task1)
+                progress = {**progress, **task1}
                 task2 = progress.add_task("코드 검증 중...", total=100)
                 validation_result = await self._validate_code()
                 if validation_result.is_failure():
                     return validation_result
-                progress.update(task2)
+                progress = {**progress, **task2}
                 if build_config.include_tests:
                     task3 = progress.add_task("테스트 실행 중...", total=100)
                     test_result = await self._run_tests()
                     if test_result.is_failure():
                         return test_result
-                    progress.update(task3)
+                    progress = {**progress, **task3}
                 task4 = progress.add_task("빌드 아티팩트 생성 중...", total=100)
                 await self._create_build_artifacts(build_config)
-                progress.update(task4)
+                progress = {**progress, **task4}
                 if build_config.optimize:
                     task5 = progress.add_task("빌드 최적화 중...", total=100)
                     await self._optimize_build(build_config)
-                    progress.update(task5)
+                    progress = {**progress, **task5}
             if console:
                 console.print(
                     Panel(
@@ -220,9 +224,12 @@ class BuildCommand(Command):
             match arg:
                 case "--target":
                     config.target = args[i + 1]
-                case "--output":                config.output_dir = args[i + 1]
-                case "--no-optimize":                config.optimize = False
-                case "--include-tests":                config.include_tests = True
+                case "--output":
+                    config.output_dir = args[i + 1]
+                case "--no-optimize":
+                    config.optimize = False
+                case "--include-tests":
+                    config.include_tests = True
         return config
 
     async def _check_dependencies(self) -> None:

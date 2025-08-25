@@ -184,14 +184,12 @@ class ProductionDeployer:
 
             # Update result with strategy metrics
             deployment_metrics = deployment_result.value
-            result.metrics.update(
-                {
-                    "success_rate": deployment_metrics.success_rate,
-                    "error_rate": deployment_metrics.error_rate,
-                    "deployment_duration": str(deployment_metrics.deployment_duration),
-                    "rollback_triggered": deployment_metrics.rollback_triggered,
-                }
-            )
+            result.metrics = {**metrics, **{
+                "success_rate": deployment_metrics.success_rate,
+                "error_rate": deployment_metrics.error_rate,
+                "deployment_duration": str(deployment_metrics.deployment_duration),
+                "rollback_triggered": deployment_metrics.rollback_triggered,
+            }}
 
             if deployment_metrics.rollback_triggered:
                 result.status = DeploymentStatus.ROLLED_BACK
@@ -279,9 +277,7 @@ class ProductionDeployer:
                 "rollback_id": rollback_result.value.rollback_id,
             }
         else:
-            result.errors = result.errors + [
-                f"Rollback failed: {rollback_result.error}"
-            ]
+            result.errors = result.errors + [f"Rollback failed: {rollback_result.error}"]
 
     async def _run_hooks(self, hooks: List[Callable], result: DeploymentResult):
         """훅 실행"""

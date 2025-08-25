@@ -148,9 +148,12 @@ class GarbageCollectionTuner:
             match self.strategy:
                 case GCStrategy.CONSERVATIVE:
                     gc.set_threshold(*self.original_thresholds)
-                case GCStrategy.FREQUENT:                gc.set_threshold(500, 8, 8)
-                case GCStrategy.BATCH:                gc.set_threshold(2000, 20, 20)
-                case GCStrategy.ADAPTIVE:                self._adaptive_tuning()
+                case GCStrategy.FREQUENT:
+                    gc.set_threshold(500, 8, 8)
+                case GCStrategy.BATCH:
+                    gc.set_threshold(2000, 20, 20)
+                case GCStrategy.ADAPTIVE:
+                    self._adaptive_tuning()
             return Success(True)
         except Exception as e:
             return Failure(f"GC strategy application failed: {e}")

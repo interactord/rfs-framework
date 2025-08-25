@@ -5,6 +5,7 @@ Annotation Registry
 기존 StatelessRegistry와 ServiceRegistry를 확장하여
 헥사고날 아키텍처 패턴과 어노테이션 기반 구성을 지원
 """
+
 import inspect
 import logging
 from dataclasses import dataclass, field
@@ -25,27 +26,32 @@ from .singleton import StatelessRegistry
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class RegistrationResult:
     """등록 결과 정보"""
+
     success: bool
     service_name: str
     annotation_type: AnnotationType
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
 
+
 @dataclass
 class DependencyGraph:
     """의존성 그래프 정보"""
+
     nodes: Dict[str, AnnotationMetadata] = field(default_factory=dict)
     edges: Dict[str, List[str]] = field(default_factory=dict)
     reverse_edges: Dict[str, List[str]] = field(default_factory=dict)
     circular_dependencies: List[List[str]] = field(default_factory=list)
 
+
 class AnnotationRegistry(ServiceRegistry):
     """
     어노테이션 기반 의존성 주입 레지스트리
-    
+
     기존 ServiceRegistry를 확장하여 어노테이션 처리 기능 추가:
     - 헥사고날 아키텍처 패턴 지원
     - 자동 의존성 해결
@@ -53,32 +59,48 @@ class AnnotationRegistry(ServiceRegistry):
     - 프로파일 기반 구성
     """
 
-    def __init__(self, current_profile: str='default'):
+    def __init__(self, current_profile: str = "default"):
         super().__init__()
         self.current_profile = current_profile
         self._annotation_metadata: Dict[str, AnnotationMetadata] = {}
         self._ports: Dict[str, Type] = {}
         self._adapters_by_port: Dict[str, List[str]] = {}
         self._registration_order: List[str] = []
-        self._registration_stats = {'total_registered': 0, 'by_type': {}, 'by_scope': {}, 'errors': []}
+        self._registration_stats = {
+            "total_registered": 0,
+            "by_type": {},
+            "by_scope": {},
+            "errors": [],
+        }
 
     def register_class(self, cls: Type) -> RegistrationResult:
         """
         어노테이션이 있는 클래스를 자동 등록
-        
+
         Args:
             cls: 등록할 클래스
-            
+
         Returns:
             RegistrationResult: 등록 결과
         """
         if not has_annotation(cls):
-            return RegistrationResult(success=False, service_name=cls.__name__, annotation_type=AnnotationType.COMPONENT, errors=[f'Class {cls.__name__} has no RFS annotations'])
+            return RegistrationResult(
+                success=False,
+                service_name=cls.__name__,
+                annotation_type=AnnotationType.COMPONENT,
+                errors=[f"Class {cls.__name__} has no RFS annotations"],
+            )
         metadata = get_annotation_metadata(cls)
-        result = RegistrationResult(success=False, service_name=metadata.name, annotation_type=metadata.annotation_type)
+        result = RegistrationResult(
+            success=False,
+            service_name=metadata.name,
+            annotation_type=metadata.annotation_type,
+        )
         try:
             if metadata.profile and metadata.profile != self.current_profile:
-                result.warnings = result.warnings + [f'Skipping {metadata.name} - profile {metadata.profile} != {self.current_profile}']
+                result.warnings = result.warnings + [
+                    f"Skipping {metadata.name} - profile {metadata.profile} != {self.current_profile}"
+                ]
                 return result
             match metadata.annotation_type:
                 case AnnotationType.PORT:
@@ -88,54 +110,79 @@ class AnnotationRegistry(ServiceRegistry):
                 case _:
                     self._register_component(cls, metadata, result)
             if result.success:
-                self._annotation_metadata = {**self._annotation_metadata, metadata.name: metadata}
+                self._annotation_metadata = {
+                    **self._annotation_metadata,
+                    metadata.name: metadata,
+                }
                 self._registration_order = self._registration_order + [metadata.name]
                 self._update_stats(metadata)
-                logger.debug(f'Successfully registered {metadata.annotation_type.value}: {metadata.name}')
+                logger.debug(
+                    f"Successfully registered {metadata.annotation_type.value}: {metadata.name}"
+                )
         except Exception as e:
-            result.errors = result.errors + [f'Registration failed: {str(e)}']
-            logger.error(f'Failed to register {cls.__name__}: {e}')
+            result.errors = result.errors + [f"Registration failed: {str(e)}"]
+            logger.error(f"Failed to register {cls.__name__}: {e}")
         return result
 
-    def _register_port(self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult):
+    def _register_port(
+        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+    ):
         """Port 등록"""
         self._ports = {**self._ports, metadata.name: cls}
         result.success = True
         if metadata.name not in self._adapters_by_port:
             self._adapters_by_port = {**self._adapters_by_port, metadata.name: []}
 
-    def _register_adapter(self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult):
+    def _register_adapter(
+        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+    ):
         """Adapter 등록 - 함수형 패턴 적용"""
         if not metadata.port_name:
-            result.errors = result.errors + ['Adapter must specify a port_name']
+            result.errors = result.errors + ["Adapter must specify a port_name"]
             return
         if metadata.port_name not in self._ports:
-            result.warnings = result.warnings + [f'Port {metadata.port_name} not found - will be validated later']
+            result.warnings = result.warnings + [
+                f"Port {metadata.port_name} not found - will be validated later"
+            ]
         service_scope = metadata.scope.to_service_scope()
-        super().register(name=metadata.name, service_class=cls, scope=service_scope, dependencies=metadata.dependencies, lazy=metadata.lazy)
-        
+        super().register(
+            name=metadata.name,
+            service_class=cls,
+            scope=service_scope,
+            dependencies=metadata.dependencies,
+            lazy=metadata.lazy,
+        )
+
         # 함수형 패턴: 조건부 업데이트를 삼항 연산자와 스프레드로 처리
         existing_adapters = self._adapters_by_port.get(metadata.port_name, [])
         self._adapters_by_port = {
-            **self._adapters_by_port, 
-            metadata.port_name: existing_adapters + [metadata.name]
+            **self._adapters_by_port,
+            metadata.port_name: existing_adapters + [metadata.name],
         }
         result.success = True
 
-    def _register_component(self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult):
+    def _register_component(
+        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+    ):
         """일반 Component, UseCase, Controller 등록"""
         service_scope = metadata.scope.to_service_scope()
-        super().register(name=metadata.name, service_class=cls, scope=service_scope, dependencies=metadata.dependencies, lazy=metadata.lazy)
+        super().register(
+            name=metadata.name,
+            service_class=cls,
+            scope=service_scope,
+            dependencies=metadata.dependencies,
+            lazy=metadata.lazy,
+        )
         result.success = True
 
-    def get_by_port(self, port_name: str, profile: str=None) -> Any:
+    def get_by_port(self, port_name: str, profile: str = None) -> Any:
         """
         Port 이름으로 Adapter 인스턴스 조회
-        
+
         Args:
             port_name: Port 이름
             profile: 프로파일 필터 (선택사항)
-            
+
         Returns:
             Adapter 인스턴스
         """
@@ -144,33 +191,36 @@ class AnnotationRegistry(ServiceRegistry):
             raise ValueError(f"No adapters found for port '{port_name}'")
         if profile:
             # 함수형 패턴: filter를 사용한 어댑터 필터링
-            filtered_adapters = list(filter(
-                lambda adapter_name: (
-                    (metadata := self._annotation_metadata.get(adapter_name)) and 
-                    metadata.profile == profile
-                ),
-                adapters
-            ))
+            filtered_adapters = list(
+                filter(
+                    lambda adapter_name: (
+                        (metadata := self._annotation_metadata.get(adapter_name))
+                        and metadata.profile == profile
+                    ),
+                    adapters,
+                )
+            )
             adapters = filtered_adapters
         if not adapters:
-            raise ValueError(f"No adapters found for port '{port_name}' with profile '{profile}'")
+            raise ValueError(
+                f"No adapters found for port '{port_name}' with profile '{profile}'"
+            )
         return super().get(adapters[0])
 
     def auto_register_module(self, module: Any) -> List[RegistrationResult]:
         """
         모듈의 모든 어노테이션 클래스 자동 등록
-        
+
         Args:
             module: 스캔할 모듈
-            
+
         Returns:
             List[RegistrationResult]: 등록 결과들
         """
         # 함수형 패턴: map과 filter 조합
         module_objects = map(lambda name: getattr(module, name), dir(module))
         annotated_classes = filter(
-            lambda obj: inspect.isclass(obj) and has_annotation(obj),
-            module_objects
+            lambda obj: inspect.isclass(obj) and has_annotation(obj), module_objects
         )
         results = list(map(self.register_class, annotated_classes))
         return results
@@ -178,52 +228,54 @@ class AnnotationRegistry(ServiceRegistry):
     def validate_registrations(self) -> List[str]:
         """
         등록된 모든 서비스의 유효성 검증
-        
+
         Returns:
             List[str]: 검증 오류 메시지들
         """
         # 함수형 패턴: map을 사용한 클래스 추출
-        registered_classes = list(map(
-            lambda metadata: metadata.target_class,
-            self._annotation_metadata.values()
-        ))
-        
+        registered_classes = list(
+            map(
+                lambda metadata: metadata.target_class,
+                self._annotation_metadata.values(),
+            )
+        )
+
         # 각 검증 함수의 결과를 함수형으로 결합
         validation_functions = [
             lambda: validate_hexagonal_architecture(registered_classes),
             self._validate_dependencies,
-            self._validate_port_adapter_matching
+            self._validate_port_adapter_matching,
         ]
-        
+
         # reduce를 사용한 에러 메시지 결합
         from functools import reduce
-        errors = reduce(
-            lambda acc, fn: acc + fn(),
-            validation_functions,
-            []
-        )
+
+        errors = reduce(lambda acc, fn: acc + fn(), validation_functions, [])
         return errors
 
     def _validate_dependencies(self) -> List[str]:
         """의존성 유효성 검증"""
+
         # 함수형 패턴: 중첩된 리스트 컴프리헨션을 filter와 map으로 변환
         def validate_dependency(service_name: str, dep_name: str) -> Optional[str]:
             if dep_name not in self._definitions and dep_name not in self._ports:
                 return f"Service '{service_name}' has unknown dependency '{dep_name}'"
             return None
-        
+
         # 모든 서비스와 의존성 조합 생성
         dependency_pairs = [
             (service_name, dep_name)
             for service_name, definition in self._definitions.items()
             for dep_name in definition.dependencies
         ]
-        
+
         # 에러 메시지 필터링
-        errors = list(filter(
-            lambda x: x is not None,
-            map(lambda pair: validate_dependency(*pair), dependency_pairs)
-        ))
+        errors = list(
+            filter(
+                lambda x: x is not None,
+                map(lambda pair: validate_dependency(*pair), dependency_pairs),
+            )
+        )
         return errors
 
     def _validate_port_adapter_matching(self) -> List[str]:
@@ -231,53 +283,59 @@ class AnnotationRegistry(ServiceRegistry):
         # 함수형 패턴: filter와 map 조합
         adapter_items = filter(
             lambda item: item[1].annotation_type == AnnotationType.ADAPTER,
-            self._annotation_metadata.items()
+            self._annotation_metadata.items(),
         )
-        
-        errors = list(filter(
-            lambda x: x is not None,
-            map(
-                lambda item: (
-                    f"Adapter '{item[0]}' references unknown port '{item[1].port_name}'"
-                    if item[1].port_name not in self._ports
-                    else None
+
+        errors = list(
+            filter(
+                lambda x: x is not None,
+                map(
+                    lambda item: (
+                        f"Adapter '{item[0]}' references unknown port '{item[1].port_name}'"
+                        if item[1].port_name not in self._ports
+                        else None
+                    ),
+                    adapter_items,
                 ),
-                adapter_items
             )
-        ))
+        )
         return errors
 
     def build_dependency_graph(self) -> DependencyGraph:
         """의존성 그래프 구성"""
         graph = DependencyGraph()
-        
+
         # 함수형 패턴: reduce를 사용한 그래프 노드 구성
         from functools import reduce
-        
+
         def add_node(acc, item):
             name, metadata = item
-            acc['nodes'][name] = metadata
-            acc['edges'][name] = metadata.dependencies.copy()
-            acc['reverse_edges'][name] = []
+            acc["nodes"][name] = metadata
+            acc["edges"][name] = metadata.dependencies.copy()
+            acc["reverse_edges"][name] = []
             return acc
-        
-        initial_graph = {'nodes': {}, 'edges': {}, 'reverse_edges': {}}
+
+        initial_graph = {"nodes": {}, "edges": {}, "reverse_edges": {}}
         graph_data = reduce(add_node, self._annotation_metadata.items(), initial_graph)
-        
-        graph.nodes = graph_data['nodes']
-        graph.edges = graph_data['edges']
-        graph.reverse_edges = graph_data['reverse_edges']
-        
+
+        graph.nodes = graph_data["nodes"]
+        graph.edges = graph_data["edges"]
+        graph.reverse_edges = graph_data["reverse_edges"]
+
         # reverse_edges 구성을 함수형으로
         for service_name, dependencies in graph.edges.items():
             for dep_name in dependencies:
                 if dep_name in graph.reverse_edges:
-                    graph.reverse_edges[dep_name] = graph.reverse_edges[dep_name] + [service_name]
-        
+                    graph.reverse_edges[dep_name] = graph.reverse_edges[dep_name] + [
+                        service_name
+                    ]
+
         graph.circular_dependencies = self._detect_circular_dependencies(graph.edges)
         return graph
 
-    def _detect_circular_dependencies(self, edges: Dict[str, List[str]]) -> List[List[str]]:
+    def _detect_circular_dependencies(
+        self, edges: Dict[str, List[str]]
+    ) -> List[List[str]]:
         """순환 의존성 검출"""
         visited = set()
         rec_stack = set()
@@ -296,7 +354,7 @@ class AnnotationRegistry(ServiceRegistry):
             for neighbor in edges.get(node, []):
                 dfs(neighbor, path + [node])
             rec_stack.remove(node)  # set의 remove 메서드 사용
-        
+
         for node in edges:
             if node not in visited:
                 dfs(node, [])
@@ -307,52 +365,65 @@ class AnnotationRegistry(ServiceRegistry):
         # 함수형 패턴: 불변성을 유지하면서 업데이트
         type_name = metadata.annotation_type.value
         scope_name = metadata.scope.value
-        
+
         # 함수형 업데이트 헬퍼
         def update_counter(counter_dict: dict, key: str) -> dict:
             return {**counter_dict, key: counter_dict.get(key, 0) + 1}
-        
+
         self._registration_stats = {
             **self._registration_stats,
-            'total_registered': self._registration_stats['total_registered'] + 1,
-            'by_type': update_counter(self._registration_stats['by_type'], type_name),
-            'by_scope': update_counter(self._registration_stats['by_scope'], scope_name)
+            "total_registered": self._registration_stats["total_registered"] + 1,
+            "by_type": update_counter(self._registration_stats["by_type"], type_name),
+            "by_scope": update_counter(
+                self._registration_stats["by_scope"], scope_name
+            ),
         }
 
     def get_registration_stats(self) -> Dict[str, Any]:
         """등록 통계 조회"""
-        return {**self._registration_stats, 'current_profile': self.current_profile, 'ports': len(self._ports), 'adapters': sum((len(adapters) for adapters in self._adapters_by_port.values())), 'registration_order': self._registration_order.copy()}
+        return {
+            **self._registration_stats,
+            "current_profile": self.current_profile,
+            "ports": len(self._ports),
+            "adapters": sum(
+                (len(adapters) for adapters in self._adapters_by_port.values())
+            ),
+            "registration_order": self._registration_order.copy(),
+        }
 
     def get_port_info(self) -> Dict[str, Any]:
         """Port 정보 조회"""
+
         # 함수형 패턴: map과 filter를 사용한 포트 정보 구성
         def build_adapter_detail(adapter_name: str) -> Optional[dict]:
             metadata = self._annotation_metadata.get(adapter_name)
             if metadata:
                 return {
-                    'name': adapter_name,
-                    'class': metadata.target_class.__name__,
-                    'scope': metadata.scope.value,
-                    'profile': metadata.profile
+                    "name": adapter_name,
+                    "class": metadata.target_class.__name__,
+                    "scope": metadata.scope.value,
+                    "profile": metadata.profile,
                 }
             return None
-        
+
         def build_port_entry(port_item: tuple) -> tuple:
             port_name, port_class = port_item
             adapters = self._adapters_by_port.get(port_name, [])
-            
+
             # adapter_details를 함수형으로 구성
-            adapter_details = list(filter(
-                lambda x: x is not None,
-                map(build_adapter_detail, adapters)
-            ))
-            
-            return (port_name, {
-                'class': port_class.__name__,
-                'adapters': adapter_details,
-                'adapter_count': len(adapters)
-            })
-        
+            adapter_details = list(
+                filter(lambda x: x is not None, map(build_adapter_detail, adapters))
+            )
+
+            return (
+                port_name,
+                {
+                    "class": port_class.__name__,
+                    "adapters": adapter_details,
+                    "adapter_count": len(adapters),
+                },
+            )
+
         # 전체 port_info를 함수형으로 구성
         port_info = dict(map(build_port_entry, self._ports.items()))
         return port_info
@@ -360,33 +431,38 @@ class AnnotationRegistry(ServiceRegistry):
     def export_configuration(self) -> Dict[str, Any]:
         """현재 구성을 dict로 export"""
         # 함수형 패턴: map을 사용한 의존성 카운트
-        edge_count = sum(map(
-            lambda metadata: len(metadata.dependencies),
-            self._annotation_metadata.values()
-        ))
-        
+        edge_count = sum(
+            map(
+                lambda metadata: len(metadata.dependencies),
+                self._annotation_metadata.values(),
+            )
+        )
+
         return {
-            'profile': self.current_profile,
-            'registration_stats': self.get_registration_stats(),
-            'port_info': self.get_port_info(),
-            'dependency_graph': {
-                'nodes': len(self._annotation_metadata),
-                'edges': edge_count
+            "profile": self.current_profile,
+            "registration_stats": self.get_registration_stats(),
+            "port_info": self.get_port_info(),
+            "dependency_graph": {
+                "nodes": len(self._annotation_metadata),
+                "edges": edge_count,
             },
-            'timestamp': datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
+
+
 # 싱글톤 패턴을 클래스 속성으로 구현
 class RegistryManager:
     """레지스트리 관리자 - 함수형 싱글톤 패턴"""
+
     _instances: Dict[str, AnnotationRegistry] = {}
-    
+
     @classmethod
-    def get_registry(cls, profile: str = 'default') -> AnnotationRegistry:
+    def get_registry(cls, profile: str = "default") -> AnnotationRegistry:
         """프로파일별 레지스트리 조회 또는 생성"""
         if profile not in cls._instances:
             cls._instances[profile] = AnnotationRegistry(current_profile=profile)
         return cls._instances[profile]
-    
+
     @classmethod
     def clear_registry(cls, profile: str = None):
         """레지스트리 초기화"""
@@ -395,9 +471,11 @@ class RegistryManager:
         else:
             cls._instances.clear()
 
-def get_annotation_registry(profile: str='default') -> AnnotationRegistry:
+
+def get_annotation_registry(profile: str = "default") -> AnnotationRegistry:
     """전역 어노테이션 레지스트리 조회"""
     return RegistryManager.get_registry(profile)
+
 
 def register_classes(*classes: Type) -> List[RegistrationResult]:
     """편의 함수: 여러 클래스를 한 번에 등록"""
@@ -405,6 +483,7 @@ def register_classes(*classes: Type) -> List[RegistrationResult]:
     # 함수형 패턴: map을 사용한 등록
     results = list(map(registry.register_class, classes))
     return results
+
 
 class StatelessRegistryAdapter:
     """기존 StatelessRegistry API와의 호환성 제공"""
@@ -419,7 +498,10 @@ class StatelessRegistryAdapter:
     def list_services(self) -> List[str]:
         """기존 StatelessRegistry.list_services와 호환"""
         return self.annotation_registry.list_services()
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     from .annotations import *
-    registry = AnnotationRegistry(current_profile='production')
-    print('✅ AnnotationRegistry implementation complete!')
+
+    registry = AnnotationRegistry(current_profile="production")
+    print("✅ AnnotationRegistry implementation complete!")

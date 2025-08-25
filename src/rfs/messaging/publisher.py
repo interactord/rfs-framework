@@ -134,7 +134,7 @@ class BatchPublisher(Publisher):
             for message in self._message_batch:
                 if message.topic not in topic_groups:
                     topic_groups[message.topic] = {message.topic: []}
-                topic_groups[message.topic] = topic] + [message]
+                topic_groups[message.topic] = topic_groups[message.topic] + [message]
             total_published = 0
             for topic, messages in topic_groups.items():
                 result = await broker.publish_batch(topic, messages)

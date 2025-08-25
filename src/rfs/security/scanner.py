@@ -94,8 +94,8 @@ class SecurityScanner:
     def _load_security_patterns(self):
         """보안 패턴 로드"""
         self.dangerous_functions = {'eval', 'exec', 'compile', '__import__', 'input', 'raw_input', 'file', 'open', 'subprocess.call', 'subprocess.run', 'os.system', 'pickle.load', 'pickle.loads', 'yaml.load'}
-        self.secret_patterns = [('password\\s =  [('password\\s * (\\s*["\\\'][^"\\\']{3,}["\\\']', 'hardcoded_password'), ('secret\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_secret'), ('token\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_token'), ('key\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_key'), ('api_key\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_api_key'), ('-----BEGIN [A-Z ]+-----', 'embedded_certificate'), ('sk-[a-zA-Z0-9]{48}', 'openai_api_key'), ('ghp_[a-zA-Z0-9]{36}', 'github_token'), ('xoxb-[0-9]{13}-[0-9]{13}-[a-zA-Z0-9]{24}', 'slack_token')])
-        self.sqli_patterns = ['["\\\'].*\\+.*["\\\'].*WHERE', 'cursor\\.execute\\s*\\(\\s*["\\\'][^"\\\']*%[sf][^"\\\']*["\\\']', 'query\\s =  ['["\\\'].*\\+.*["\\\'].*WHERE', 'cursor\\.execute\\s*\\(\\s*["\\\'][^"\\\']*%[sf][^"\\\']*["\\\']', 'query\\s * (\\s*["\\\'][^"\\\']*\\+[^"\\\']*["\\\']', 'SELECT.*FROM.*WHERE.*["\\\'].*\\+.*["\\\']'])
+        self.secret_patterns = [('password\\s*=\\s*["\\\'][^"\\\']{3,}["\\\']', 'hardcoded_password'), ('secret\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_secret'), ('token\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_token'), ('key\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_key'), ('api_key\\s*=\\s*["\\\'][^"\\\']{10,}["\\\']', 'hardcoded_api_key'), ('-----BEGIN [A-Z ]+-----', 'embedded_certificate'), ('sk-[a-zA-Z0-9]{48}', 'openai_api_key'), ('ghp_[a-zA-Z0-9]{36}', 'github_token'), ('xoxb-[0-9]{13}-[0-9]{13}-[a-zA-Z0-9]{24}', 'slack_token')]
+        self.sqli_patterns = ['["\\\'].*\\+.*["\\\'].*WHERE', 'cursor\\.execute\\s*\\(\\s*["\\\'][^"\\\']*%[sf][^"\\\']*["\\\']', 'query\\s*=\\s*["\\\'].*\\+.*["\\\']', 'SELECT.*FROM.*WHERE.*["\\\'].*\\+.*["\\\']']
         self.path_traversal_patterns = ['\\.\\./', '\\.\\.\\\\', 'path.*\\+.*request', 'filename.*request\\.', 'os\\.path\\.join.*request\\.']
 
     async def run_security_scan(self, scan_types: Optional[List[str]]=None) -> Result[List[VulnerabilityReport], str]:
@@ -125,7 +125,7 @@ class SecurityScanner:
                     except Exception as e:
                         if console:
                             console.print(f'⚠️  {scan_name} 실패: {str(e)}', style='yellow')
-                    progress.update(task)
+                    progress = {**progress, **task}
             self.vulnerabilities.sort(key=lambda v: v.risk_score, reverse=True)
             if console:
                 await self._display_scan_results()

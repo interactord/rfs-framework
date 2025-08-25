@@ -220,132 +220,132 @@ class TrafficPatternAnalyzer:
                 return TrafficPattern.BURST
             case _:
                 if self._detect_periodicity(request_counts):
-                return TrafficPattern.PERIODIC
+                    return TrafficPattern.PERIODIC
                 else:
-                return TrafficPattern.STEADY
+                    return TrafficPattern.STEADY
 
-                def _detect_periodicity(self, values: List[int]) -> bool:
-                """주기성 감지 (간단한 구현)"""
-                if len(values) < 120:
-                return False
-                hourly_averages = []
-                for i in range(0, len(values) - 60, 60):
-                hour_data = values[i : i + 60]
-                if hour_data:
+    def _detect_periodicity(self, values: List[int]) -> bool:
+        """주기성 감지 (간단한 구현)"""
+        if len(values) < 120:
+            return False
+        hourly_averages = []
+        for i in range(0, len(values) - 60, 60):
+            hour_data = values[i : i + 60]
+            if hour_data:
                 hourly_averages = hourly_averages + [statistics.mean(hour_data)]
-                if len(hourly_averages) < 24:
-                return False
-                daily_patterns = []
-                for i in range(0, len(hourly_averages) - 24, 24):
-                daily_patterns = daily_patterns + [hourly_averages[i : i + 24]]
-                if len(daily_patterns) < 2:
-                return False
-                try:
-                correlation = statistics.correlation(daily_patterns[0], daily_patterns[-1])
-                return correlation > 0.7
-                except statistics.StatisticsError:
-                return False
+        if len(hourly_averages) < 24:
+            return False
+        daily_patterns = []
+        for i in range(0, len(hourly_averages) - 24, 24):
+            daily_patterns = daily_patterns + [hourly_averages[i : i + 24]]
+        if len(daily_patterns) < 2:
+            return False
+        try:
+            correlation = statistics.correlation(daily_patterns[0], daily_patterns[-1])
+            return correlation > 0.7
+        except statistics.StatisticsError:
+            return False
 
-                def predict_next_hour_traffic(self) -> Optional[float]:
-                """다음 시간 트래픽 예측"""
-                if len(self.metric_history) < 168:
-                return None
-                current_hour = datetime.now().hour
-                same_hour_data = []
-                for i in range(len(self.metric_history) - 24, 0, -24):
-                if i >= 0 and self.metric_history[i].timestamp.hour == current_hour:
+    def predict_next_hour_traffic(self) -> Optional[float]:
+        """다음 시간 트래픽 예측"""
+        if len(self.metric_history) < 168:
+            return None
+        current_hour = datetime.now().hour
+        same_hour_data = []
+        for i in range(len(self.metric_history) - 24, 0, -24):
+            if i >= 0 and self.metric_history[i].timestamp.hour == current_hour:
                 same_hour_data = same_hour_data + [self.metric_history[i].request_count]
-                if len(same_hour_data) >= 7:
+            if len(same_hour_data) >= 7:
                 break
-                if len(same_hour_data) < 3:
-                return None
-                weights = (
-                [0.4, 0.3, 0.2, 0.1]
-                if len(same_hour_data) >= 4
-                else [1.0 / len(same_hour_data)] * len(same_hour_data)
-                )
-                weighted_sum = sum(
-                (w * v for w, v in zip(weights, same_hour_data[: len(weights)]))
-                )
-                return weighted_sum
+        if len(same_hour_data) < 3:
+            return None
+        weights = (
+            [0.4, 0.3, 0.2, 0.1]
+            if len(same_hour_data) >= 4
+            else [1.0 / len(same_hour_data)] * len(same_hour_data)
+        )
+        weighted_sum = sum(
+            (w * v for w, v in zip(weights, same_hour_data[: len(weights)]))
+        )
+        return weighted_sum
 
 
-                class AutoScalingOptimizer:
-                """자동 스케일링 최적화기"""
+class AutoScalingOptimizer:
+    """자동 스케일링 최적화기"""
 
-                def __init__(self, project_id: str, service_name: str, region: str = "us-central1"):
-                self.project_id = project_id
-                self.service_name = service_name
-                self.region = region
-                self.client = None
-                if GOOGLE_CLOUD_AVAILABLE:
-                try:
+    def __init__(self, project_id: str, service_name: str, region: str = "us-central1"):
+        self.project_id = project_id
+        self.service_name = service_name
+        self.region = region
+        self.client = None
+        if GOOGLE_CLOUD_AVAILABLE:
+            try:
                 self.client = run_v2.ServicesClient()
-                except Exception as e:
+            except Exception as e:
                 logger.warning(f"Cloud Run 클라이언트 초기화 실패: {e}")
-                self.config = ScalingConfiguration()
-                self.pattern_analyzer = TrafficPatternAnalyzer()
-                self.scaling_history: List[Dict[str, Any]] = []
-                self.last_scale_action: Optional[datetime] = None
-                self.last_scale_direction: Optional[ScalingDirection] = None
-                self.monitoring_task: Optional[asyncio.Task] = None
-                self._running = False
+        self.config = ScalingConfiguration()
+        self.pattern_analyzer = TrafficPatternAnalyzer()
+        self.scaling_history: List[Dict[str, Any]] = []
+        self.last_scale_action: Optional[datetime] = None
+        self.last_scale_direction: Optional[ScalingDirection] = None
+        self.monitoring_task: Optional[asyncio.Task] = None
+        self._running = False
 
-                async def initialize(self, config: ScalingConfiguration = None):
-                """최적화기 초기화"""
-                if config:
-                self.config = config
-                await self._sync_current_config()
-                self._running = True
-                self.monitoring_task = asyncio.create_task(self._monitoring_loop())
-                logger.info(f"자동 스케일링 최적화기 초기화 완료: {self.service_name}")
+    async def initialize(self, config: ScalingConfiguration = None):
+        """최적화기 초기화"""
+        if config:
+            self.config = config
+            await self._sync_current_config()
+            self._running = True
+            self.monitoring_task = asyncio.create_task(self._monitoring_loop())
+            logger.info(f"자동 스케일링 최적화기 초기화 완료: {self.service_name}")
 
-                async def _sync_current_config(self):
-                """현재 Cloud Run 서비스 설정 동기화"""
-                if not GOOGLE_CLOUD_AVAILABLE or not self.client:
-                return
-                try:
-                service_path = f"projects/{self.project_id}/locations/{self.region}/services/{self.service_name}"
-                service = self.client.get_service(name=service_path)
-                if hasattr(service.spec, "template") and hasattr(
+    async def _sync_current_config(self):
+        """현재 Cloud Run 서비스 설정 동기화"""
+        if not GOOGLE_CLOUD_AVAILABLE or not self.client:
+            return
+        try:
+            service_path = f"projects/{self.project_id}/locations/{self.region}/services/{self.service_name}"
+            service = self.client.get_service(name=service_path)
+            if hasattr(service.spec, "template") and hasattr(
                 service.spec.template, "scaling"
-                ):
+            ):
                 scaling_spec = service.spec.template.scaling
                 if hasattr(scaling_spec, "min_instance_count"):
-                self.config.min_instances = scaling_spec.min_instance_count or 0
+                    self.config.min_instances = scaling_spec.min_instance_count or 0
                 if hasattr(scaling_spec, "max_instance_count"):
-                self.config.max_instances = scaling_spec.max_instance_count or 100
-                logger.info(
+                    self.config.max_instances = scaling_spec.max_instance_count or 100
+            logger.info(
                 f"현재 스케일링 설정 동기화 완료: {self.config.min_instances}-{self.config.max_instances}"
-                )
-                except Exception as e:
-                logger.warning(f"서비스 설정 동기화 실패: {e}")
+            )
+        except Exception as e:
+            logger.warning(f"서비스 설정 동기화 실패: {e}")
 
-                async def _monitoring_loop(self):
-                """모니터링 루프"""
-                while self._running:
-                try:
+    async def _monitoring_loop(self):
+        """모니터링 루프"""
+        while self._running:
+            try:
                 snapshot = await self._collect_metrics()
                 if snapshot:
-                self.pattern_analyzer.add_snapshot(snapshot)
-                detected_pattern = self.pattern_analyzer.detect_pattern()
-                if detected_pattern != self.config.detected_pattern:
-                self.config.detected_pattern = detected_pattern
-                logger.info(f"트래픽 패턴 감지: {detected_pattern.value}")
-                scaling_decision = await self._make_scaling_decision(snapshot)
-                if scaling_decision:
-                await self._execute_scaling(scaling_decision)
+                    self.pattern_analyzer.add_snapshot(snapshot)
+                    detected_pattern = self.pattern_analyzer.detect_pattern()
+                    if detected_pattern != self.config.detected_pattern:
+                        self.config.detected_pattern = detected_pattern
+                        logger.info(f"트래픽 패턴 감지: {detected_pattern.value}")
+                    scaling_decision = await self._make_scaling_decision(snapshot)
+                    if scaling_decision:
+                        await self._execute_scaling(scaling_decision)
                 await asyncio.sleep(30)
-                except Exception as e:
+            except Exception as e:
                 logger.error(f"모니터링 루프 오류: {e}")
                 await asyncio.sleep(30)
 
-                async def _collect_metrics(self) -> Optional[MetricSnapshot]:
-                """현재 메트릭 수집"""
-                try:
-                import random
+    async def _collect_metrics(self) -> Optional[MetricSnapshot]:
+        """현재 메트릭 수집"""
+        try:
+            import random
 
-                return MetricSnapshot(
+            return MetricSnapshot(
                 timestamp=datetime.now(),
                 cpu_utilization=random.uniform(0.2, 0.9),
                 memory_utilization=random.uniform(0.3, 0.8),
@@ -354,28 +354,28 @@ class TrafficPatternAnalyzer:
                 avg_response_time=random.uniform(100, 500),
                 error_rate=random.uniform(0.0, 0.05),
                 queue_depth=random.randint(0, 20),
-                )
-                except Exception as e:
-                logger.error(f"메트릭 수집 실패: {e}")
-                return None
+            )
+        except Exception as e:
+            logger.error(f"메트릭 수집 실패: {e}")
+            return None
 
-                async def _make_scaling_decision(
-                self, snapshot: MetricSnapshot
-                ) -> Optional[Dict[str, Any]]:
-                """스케일링 결정 수행"""
-                current_instances = snapshot.active_instances
-                if self.last_scale_action:
-                cooldown_time = (
+    async def _make_scaling_decision(
+        self, snapshot: MetricSnapshot
+    ) -> Optional[Dict[str, Any]]:
+        """스케일링 결정 수행"""
+        current_instances = snapshot.active_instances
+        if self.last_scale_action:
+            cooldown_time = (
                 self.config.scale_up_cooldown
                 if self.last_scale_direction == ScalingDirection.UP
                 else self.config.scale_down_cooldown
-                )
-                if (
+            )
+            if (
                 datetime.now() - self.last_scale_action
-                ).total_seconds() < cooldown_time:
+            ).total_seconds() < cooldown_time:
                 return None
-                match self.config.policy:
-                    case ScalingPolicy.CONSERVATIVE:
+        match self.config.policy:
+            case ScalingPolicy.CONSERVATIVE:
                 return await self._conservative_scaling_decision(snapshot)
             case ScalingPolicy.BALANCED:
                 return await self._balanced_scaling_decision(snapshot)

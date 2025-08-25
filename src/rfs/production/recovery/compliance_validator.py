@@ -558,79 +558,81 @@ class ComplianceValidator:
             match control.category:
                 case ControlCategory.ACCESS_CONTROL:
                     if "access_control" not in context:
-                    findings = [
-                        *findings,
-                        f"Missing access control implementation for: {requirement}",
-                    ]
-                    recommendations = recommendations + control.remediation_steps
-                    score = score - 20
-                case ControlCategory.DATA_PROTECTION:                if "encryption" not in context or not context["encryption"]:
-                    findings = [
-                    *findings,
-                    f"Data protection not implemented: {requirement}",
-                    ]
-                    recommendations = [
-                    *recommendations,
-                    "Enable encryption for sensitive data",
-                    ]
-                    score = score - 25
-                case ControlCategory.NETWORK_SECURITY:                if "firewall" not in context:
-                    findings = [
-                    *findings,
-                    f"Network security control missing: {requirement}",
-                    ]
-                    recommendations = [*recommendations, "Configure firewall rules"]
-                    score = score - 15
-                    if score >= 90:
-                    status = ComplianceStatus.COMPLIANT
-                    elif score >= 70:
-                    status = ComplianceStatus.PARTIALLY_COMPLIANT
-                    else:
-                    status = ComplianceStatus.NON_COMPLIANT
-                    return {
-                    "status": status,
-                    "score": max(0, score),
-                    "findings": findings,
-                    "recommendations": recommendations,
-                    "evidence": {
-                    "validation_time": datetime.now().isoformat(),
-                    "control_category": control.category.value,
-                    },
-                    }
+                        findings = [
+                            *findings,
+                            f"Missing access control implementation for: {requirement}",
+                        ]
+                        recommendations = recommendations + control.remediation_steps
+                        score = score - 20
+                case ControlCategory.DATA_PROTECTION:
+                    if "encryption" not in context or not context["encryption"]:
+                        findings = [
+                            *findings,
+                            f"Data protection not implemented: {requirement}",
+                        ]
+                        recommendations = [
+                            *recommendations,
+                            "Enable encryption for sensitive data",
+                        ]
+                        score = score - 25
+                case ControlCategory.NETWORK_SECURITY:
+                    if "firewall" not in context:
+                        findings = [
+                            *findings,
+                            f"Network security control missing: {requirement}",
+                        ]
+                        recommendations = [*recommendations, "Configure firewall rules"]
+                        score = score - 15
+        if score >= 90:
+            status = ComplianceStatus.COMPLIANT
+        elif score >= 70:
+            status = ComplianceStatus.PARTIALLY_COMPLIANT
+        else:
+            status = ComplianceStatus.NON_COMPLIANT
+        return {
+            "status": status,
+            "score": max(0, score),
+            "findings": findings,
+            "recommendations": recommendations,
+            "evidence": {
+                "validation_time": datetime.now().isoformat(),
+                "control_category": control.category.value,
+            },
+        }
 
-                    async def _execute_validation_script(
-                    self, script_path: str, context: Dict[str, Any]
-                    ) -> Dict[str, Any]:
-                    """검증 스크립트 실행"""
-                    try:
-                    return {
-                    "status": ComplianceStatus.COMPLIANT,
-                    "score": 95.0,
-                    "findings": [],
-                    "recommendations": [],
-                    }
-                    except Exception:
-                    return {
-                    "status": ComplianceStatus.NON_COMPLIANT,
-                    "score": 0.0,
-                    "findings": ["Script execution failed"],
-                    "recommendations": ["Fix validation script"],
-                    }
+    async def _execute_validation_script(
+        self, script_path: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """검증 스크립트 실행"""
+        try:
+            return {
+                "status": ComplianceStatus.COMPLIANT,
+                "score": 95.0,
+                "findings": [],
+                "recommendations": [],
+            }
+        except Exception:
+            return {
+                "status": ComplianceStatus.NON_COMPLIANT,
+                "score": 0.0,
+                "findings": ["Script execution failed"],
+                "recommendations": ["Fix validation script"],
+            }
 
-                    def _determine_overall_status(
-                    self, results: List[ValidationResult]
-                    ) -> ComplianceStatus:
-                    """전체 컴플라이언스 상태 결정"""
-                    if not results:
-                    return ComplianceStatus.NOT_APPLICABLE
-                    statuses = [r.status for r in results]
-                    if ComplianceStatus.NON_COMPLIANT in statuses:
-                    return ComplianceStatus.NON_COMPLIANT
-                    if all((s == ComplianceStatus.COMPLIANT for s in statuses)):
-                    return ComplianceStatus.COMPLIANT
-                    return ComplianceStatus.PARTIALLY_COMPLIANT
+    def _determine_overall_status(
+        self, results: List[ValidationResult]
+    ) -> ComplianceStatus:
+        """전체 컴플라이언스 상태 결정"""
+        if not results:
+            return ComplianceStatus.NOT_APPLICABLE
+        statuses = [r.status for r in results]
+        if ComplianceStatus.NON_COMPLIANT in statuses:
+            return ComplianceStatus.NON_COMPLIANT
+        if all((s == ComplianceStatus.COMPLIANT for s in statuses)):
+            return ComplianceStatus.COMPLIANT
+        return ComplianceStatus.PARTIALLY_COMPLIANT
 
-                    def _generate_summary(self, results: List[ValidationResult]) -> Dict[str, Any]:
+    def _generate_summary(self, results: List[ValidationResult]) -> Dict[str, Any]:
                     """요약 생성"""
                     return {
                     "total_controls": len(results),
@@ -648,179 +650,180 @@ class ComplianceValidator:
                     ),
                     }
 
-                    def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
-                    """권장사항 생성"""
-                    all_recommendations = []
-                    for result in results:
-                    if result.status != ComplianceStatus.COMPLIANT:
-                    all_recommendations = all_recommendations + result.recommendations
-                    unique_recommendations = list(set(all_recommendations))
-                    return unique_recommendations[:10]
+    def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
+        """권장사항 생성"""
+        all_recommendations = []
+        for result in results:
+            if result.status != ComplianceStatus.COMPLIANT:
+                all_recommendations = all_recommendations + result.recommendations
+        unique_recommendations = list(set(all_recommendations))
+        return unique_recommendations[:10]
 
-                    def _generate_privacy_recommendations(self, checks: Dict[str, bool]) -> List[str]:
-                    """프라이버시 권장사항 생성"""
-                    recommendations = []
-                    if not checks["data_classification"]:
-                    recommendations = [*recommendations, "Implement data classification system"]
-                    if not checks["encryption_at_rest"]:
-                    recommendations = [*recommendations, "Enable encryption for data at rest"]
-                    if not checks["encryption_in_transit"]:
-                    recommendations = [*recommendations, "Enable TLS/SSL for data in transit"]
-                    if not checks["access_controls"]:
-                    recommendations = [*recommendations, "Implement role-based access controls"]
-                    if not checks["data_retention"]:
-                    recommendations = [
-                    *recommendations,
-                    "Define and implement data retention policies",
-                    ]
-                    return recommendations
+    def _generate_privacy_recommendations(self, checks: Dict[str, bool]) -> List[str]:
+        """프라이버시 권장사항 생성"""
+        recommendations = []
+        if not checks["data_classification"]:
+            recommendations = [*recommendations, "Implement data classification system"]
+        if not checks["encryption_at_rest"]:
+            recommendations = [*recommendations, "Enable encryption for data at rest"]
+        if not checks["encryption_in_transit"]:
+            recommendations = [*recommendations, "Enable TLS/SSL for data in transit"]
+        if not checks["access_controls"]:
+            recommendations = [*recommendations, "Implement role-based access controls"]
+        if not checks["data_retention"]:
+            recommendations = [
+                *recommendations,
+                "Define and implement data retention policies",
+            ]
+        return recommendations
 
-                    def _generate_security_recommendations(self, checks: Dict[str, bool]) -> List[str]:
-                    """보안 권장사항 생성"""
-                    recommendations = []
-                    if not checks["mfa_enabled"]:
-                    recommendations = [*recommendations, "Enable multi-factor authentication"]
-                    if not checks["password_policy"]:
-                    recommendations = [
-                    *recommendations,
-                    "Strengthen password policy requirements",
-                    ]
-                    if not checks["session_timeout"]:
-                    recommendations = [*recommendations, "Implement session timeout controls"]
-                    if not checks["audit_logging"]:
-                    recommendations = [*recommendations, "Enable comprehensive audit logging"]
-                    if not checks["vulnerability_scanning"]:
-                    recommendations = [
-                    *recommendations,
-                    "Implement regular vulnerability scanning",
-                    ]
-                    return recommendations
+    def _generate_security_recommendations(self, checks: Dict[str, bool]) -> List[str]:
+        """보안 권장사항 생성"""
+        recommendations = []
+        if not checks["mfa_enabled"]:
+            recommendations = [*recommendations, "Enable multi-factor authentication"]
+        if not checks["password_policy"]:
+            recommendations = [
+                *recommendations,
+                "Strengthen password policy requirements",
+            ]
+        if not checks["session_timeout"]:
+            recommendations = [*recommendations, "Implement session timeout controls"]
+        if not checks["audit_logging"]:
+            recommendations = [*recommendations, "Enable comprehensive audit logging"]
+        if not checks["vulnerability_scanning"]:
+            recommendations = [
+                *recommendations,
+                "Implement regular vulnerability scanning",
+            ]
+        return recommendations
 
-                    def _calculate_risk_level(self, compliance_score: float) -> str:
-                    """위험 수준 계산"""
-                    if compliance_score >= 90:
-                    return "LOW"
-                    elif compliance_score >= 70:
-                    return "MEDIUM"
-                    elif compliance_score >= 50:
-                    return "HIGH"
-                    else:
-                    return "CRITICAL"
+    def _calculate_risk_level(self, compliance_score: float) -> str:
+        """위험 수준 계산"""
+        if compliance_score >= 90:
+            return "LOW"
+        elif compliance_score >= 70:
+            return "MEDIUM"
+        elif compliance_score >= 50:
+            return "HIGH"
+        else:
+            return "CRITICAL"
 
-                    def _get_latest_report(
-                    self, standard: ComplianceStandard, start_date: datetime, end_date: datetime
-                    ) -> Optional[ComplianceReport]:
-                    """최신 보고서 조회"""
-                    filtered_reports = [
-                    r
-                    for r in self.reports
-                    if r.standard == standard and start_date <= r.generated_at <= end_date
-                    ]
-                    if not filtered_reports:
-                    return None
-                    return max(filtered_reports, key=lambda x: x.generated_at)
+    def _get_latest_report(
+        self, standard: ComplianceStandard, start_date: datetime, end_date: datetime
+    ) -> Optional[ComplianceReport]:
+        """최신 보고서 조회"""
+        filtered_reports = [
+            r
+            for r in self.reports
+            if r.standard == standard and start_date <= r.generated_at <= end_date
+        ]
+        if not filtered_reports:
+            return None
+        return max(filtered_reports, key=lambda x: x.generated_at)
 
-                    def _calculate_compliance_trends(self) -> Dict[str, Any]:
-                    """컴플라이언스 추세 계산"""
-                    trends = {}
-                    for month in range(6):
-                    month_start = datetime.now() - timedelta(days=30 * (month + 1))
-                    month_end = datetime.now() - timedelta(days=30 * month)
-                    month_reports = [
-                    r for r in self.reports if month_start <= r.generated_at <= month_end
-                    ]
-                    if month_reports:
-                    avg_score = sum((r.overall_score for r in month_reports)) / len(
+    def _calculate_compliance_trends(self) -> Dict[str, Any]:
+        """컴플라이언스 추세 계산"""
+        trends = {}
+        for month in range(6):
+            month_start = datetime.now() - timedelta(days=30 * (month + 1))
+            month_end = datetime.now() - timedelta(days=30 * month)
+            month_reports = [
+                r for r in self.reports if month_start <= r.generated_at <= month_end
+            ]
+            if month_reports:
+                avg_score = sum((r.overall_score for r in month_reports)) / len(
                     month_reports
-                    )
-                    trends[f"month_{month + 1}"] = avg_score
-                    return trends
+                )
+                trends[f"month_{month + 1}"] = avg_score
+        return trends
 
-                    def _identify_risk_areas(
-                    self, standard_reports: Dict[str, ComplianceReport]
-                    ) -> List[Dict[str, Any]]:
-                    """위험 영역 식별"""
-                    risk_areas = []
-                    for standard, report in standard_reports.items():
-                    for result in report.control_results:
-                    if result.status == ComplianceStatus.NON_COMPLIANT:
+    def _identify_risk_areas(
+        self, standard_reports: Dict[str, ComplianceReport]
+    ) -> List[Dict[str, Any]]:
+        """위험 영역 식별"""
+        risk_areas = []
+        for standard, report in standard_reports.items():
+            for result in report.control_results:
+                if result.status == ComplianceStatus.NON_COMPLIANT:
                     control = self.controls.get(result.control_id)
                     if control and control.severity in [
-                    Severity.CRITICAL,
-                    Severity.HIGH,
+                        Severity.CRITICAL,
+                        Severity.HIGH,
                     ]:
-                    risk_areas = risk_areas + [
-                    {
-                    "control_id": result.control_id,
-                    "control_name": control.name,
-                    "category": control.category.value,
-                    "severity": control.severity.value,
-                    "findings": result.findings,
-                    }
-                    ]
-                    risk_areas.sort(key=lambda x: 0 if x["severity"] == "critical" else 1)
-                    return risk_areas[:10]
+                        risk_areas = risk_areas + [
+                            {
+                                "control_id": result.control_id,
+                                "control_name": control.name,
+                                "category": control.category.value,
+                                "severity": control.severity.value,
+                                "findings": result.findings,
+                            }
+                        ]
+        risk_areas.sort(key=lambda x: 0 if x["severity"] == "critical" else 1)
+        return risk_areas[:10]
 
-                    async def _validation_scheduler(self):
-                    """검증 스케줄러"""
-                    while self._running:
-                    try:
-                    for policy in self.policies.values():
+    async def _validation_scheduler(self):
+        """검증 스케줄러"""
+        while self._running:
+            try:
+                for policy in self.policies.values():
                     if self._should_run_validation(policy.validation_frequency):
-                    await self.validate_policy(policy.id)
-                    await asyncio.sleep(3600)
-                    except Exception as e:
-                    print(f"Validation scheduler error: {e}")
-                    await asyncio.sleep(3600)
+                        await self.validate_policy(policy.id)
+                await asyncio.sleep(3600)
+            except Exception as e:
+                print(f"Validation scheduler error: {e}")
+                await asyncio.sleep(3600)
 
-                    async def _audit_log_collector(self):
-                    """감사 로그 수집기"""
-                    while self._running:
-                    try:
-                    cutoff_date = datetime.now() - timedelta(days=90)
-                    self.audit_logs = [
+    async def _audit_log_collector(self):
+        """감사 로그 수집기"""
+        while self._running:
+            try:
+                cutoff_date = datetime.now() - timedelta(days=90)
+                self.audit_logs = [
                     log for log in self.audit_logs if log.timestamp > cutoff_date
-                    ]
-                    await asyncio.sleep(3600)
-                    except Exception as e:
-                    print(f"Audit log collector error: {e}")
-                    await asyncio.sleep(3600)
+                ]
+                await asyncio.sleep(3600)
+            except Exception as e:
+                print(f"Audit log collector error: {e}")
+                await asyncio.sleep(3600)
 
-                    async def _log_audit_event(
-                    self,
-                    event_type: str,
-                    user: str,
-                    action: str,
-                    resource: str,
-                    result: str,
-                    metadata: Dict[str, Any] = None,
-                    ):
-                    """감사 이벤트 로깅"""
-                    audit_log = AuditLog(
-                    id=f"audit_{int(time.time() * 1000)}",
-                    timestamp=datetime.now(),
-                    event_type=event_type,
-                    user=user,
-                    action=action,
-                    resource=resource,
-                    result=result,
-                    metadata=metadata or {},
-                    )
-                    self.audit_logs = self.audit_logs + [audit_log]
+    async def _log_audit_event(
+        self,
+        event_type: str,
+        user: str,
+        action: str,
+        resource: str,
+        result: str,
+        metadata: Dict[str, Any] = None,
+    ):
+        """감사 이벤트 로깅"""
+        audit_log = AuditLog(
+            id=f"audit_{int(time.time() * 1000)}",
+            timestamp=datetime.now(),
+            event_type=event_type,
+            user=user,
+            action=action,
+            resource=resource,
+            result=result,
+            metadata=metadata or {},
+        )
+        self.audit_logs = self.audit_logs + [audit_log]
 
-                    def _should_run_validation(self, schedule: str) -> bool:
-                    """검증 실행 여부 확인"""
-                    current_time = datetime.now()
-                match schedule:
-                    case "hourly":
-                        return current_time.minute == 0
-                    case "daily":
-                        return current_time.hour == 0 and current_time.minute == 0
-                    case "weekly":
-                        return current_time.weekday() == 0 and current_time.hour == 0
-                    case "monthly":
-                        return current_time.day == 1 and current_time.hour == 0
-        return False
+    def _should_run_validation(self, schedule: str) -> bool:
+        """검증 실행 여부 확인"""
+        current_time = datetime.now()
+        match schedule:
+            case "hourly":
+                return current_time.minute == 0
+            case "daily":
+                return current_time.hour == 0 and current_time.minute == 0
+            case "weekly":
+                return current_time.weekday() == 0 and current_time.hour == 0
+            case "monthly":
+                return current_time.day == 1 and current_time.hour == 0
+            case _:
+                return False
 
 
 _compliance_validator: Optional[ComplianceValidator] = None

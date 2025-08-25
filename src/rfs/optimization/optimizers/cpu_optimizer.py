@@ -522,7 +522,7 @@ class CPUOptimizer:
             analysis = self.concurrency_tuner.analyze_performance(thread_stats, process_stats, async_stats)
             recommendations = self.concurrency_tuner.recommend_tuning()
             profile_analysis = self._analyze_task_profiles()
-            results = {'current_stats': current_stats, 'performance_analysis': analysis, 'tuning_recommendations': recommendations, 'task_profile_analysis': profile_analysis, 'pool_stats': {'thread_pool': thread_stats, 'process_pool': process_stats, 'async_optimizer': async_stats}
+            results = {'current_stats': current_stats, 'performance_analysis': analysis, 'tuning_recommendations': recommendations, 'task_profile_analysis': profile_analysis, 'pool_stats': {'thread_pool': thread_stats, 'process_pool': process_stats, 'async_optimizer': async_stats}}
             return Success(results)
         except Exception as e:
             return Failure(f'CPU optimization failed: {e}')
@@ -534,12 +534,12 @@ class CPUOptimizer:
         analysis = {'total_profiles': len(self.task_profiles), 'task_types': defaultdict(int), 'performance_summary': {}, 'recommendations': []}
         for name, profile in self.task_profiles.items():
             stats = profile.get_stats()
-            analysis.get('task_types')[stats.get('task_type')]  =             analysis.get('task_types')[stats.get('task_type')]  + (1)
-            analysis.get('performance_summary') = {**analysis.get('performance_summary'), name: stats}
+            analysis.get('task_types')[stats.get('task_type')] = analysis.get('task_types')[stats.get('task_type')] + 1
+            analysis['performance_summary'] = {**analysis.get('performance_summary'), name: stats}
             if stats.get('success_rate') < 0.9:
-                analysis['recommendations'] = analysis.get('recommendations') + [f"Task '{name}' has low success rate: {stats.get('success_rate'):.2f}")
+                analysis['recommendations'] = analysis.get('recommendations') + [f"Task '{name}' has low success rate: {stats.get('success_rate'):.2f}"]
             if stats.get('avg_duration') > 60:
-                analysis['recommendations'] = analysis.get('recommendations') + [f"Task '{name}' has high duration: {stats.get('avg_duration'):.2f}s")
+                analysis['recommendations'] = analysis.get('recommendations') + [f"Task '{name}' has high duration: {stats.get('avg_duration'):.2f}s"]
         return analysis
 
     def get_task_profile(self, task_name: str) -> Result[TaskProfile, str]:

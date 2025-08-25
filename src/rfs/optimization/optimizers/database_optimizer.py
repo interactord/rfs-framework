@@ -113,7 +113,21 @@ class QueryAnalyzer:
 
     def _initialize_patterns(self) -> Dict[str, re.Pattern]:
         """쿼리 패턴 초기화"""
-        patterns = {'select': re.compile('^\\s*SELECT\\s+', re.IGNORECASE), 'insert': re.compile('^\\s*INSERT\\s+', re.IGNORECASE), 'update': re.compile('^\\s*UPDATE\\s+', re.IGNORECASE), 'delete': re.compile('^\\s*DELETE\\s+', re.IGNORECASE), 'create': re.compile('^\\s*CREATE\\s+', re.IGNORECASE), 'alter': re.compile('^\\s*ALTER\\s+', re.IGNORECASE), 'index': re.compile('^\\s*CREATE\\s+.*INDEX\\s+', re.IGNORECASE), 'select_star': re.compile('SELECT\\s+\\*\\s+FROM', re.IGNORECASE), 'no_where': re.compile('(UPDATE|DELETE)(?!.*WHERE)', re.IGNORECASE), 'cartesian_join': re.compile('FROM\\s+\\w+\\s*,\\s*\\w+(?!.*WHERE. =  {'select': re.compile('^\\s*SELECT\\s+', re.IGNORECASE), 'insert': re.compile('^\\s*INSERT\\s+', re.IGNORECASE), 'update': re.compile('^\\s*UPDATE\\s+', re.IGNORECASE), 'delete': re.compile('^\\s*DELETE\\s+', re.IGNORECASE), 'create': re.compile('^\\s*CREATE\\s+', re.IGNORECASE), 'alter': re.compile('^\\s*ALTER\\s+', re.IGNORECASE), 'index': re.compile('^\\s*CREATE\\s+.*INDEX\\s+', re.IGNORECASE), 'select_star': re.compile('SELECT\\s+\\*\\s+FROM', re.IGNORECASE), 'no_where': re.compile('(UPDATE|DELETE)(?!.*WHERE)', re.IGNORECASE), 'cartesian_join': re.compile('FROM\\s+\\w+\\s*,\\s*\\w+(?!.*WHERE. * ()', re.IGNORECASE), 'function_in_where': re.compile('WHERE\\s+\\w*\\([^)]*\\)\\s*[=<>]', re.IGNORECASE), 'like_leading_wildcard': re.compile('LIKE\\s+[\\\'"]%', re.IGNORECASE), 'or_condition': re.compile('WHERE.*OR', re.IGNORECASE)})
+        patterns = {
+            'select': re.compile('^\\s*SELECT\\s+', re.IGNORECASE),
+            'insert': re.compile('^\\s*INSERT\\s+', re.IGNORECASE),
+            'update': re.compile('^\\s*UPDATE\\s+', re.IGNORECASE),
+            'delete': re.compile('^\\s*DELETE\\s+', re.IGNORECASE),
+            'create': re.compile('^\\s*CREATE\\s+', re.IGNORECASE),
+            'alter': re.compile('^\\s*ALTER\\s+', re.IGNORECASE),
+            'index': re.compile('^\\s*CREATE\\s+.*INDEX\\s+', re.IGNORECASE),
+            'select_star': re.compile('SELECT\\s+\\*\\s+FROM', re.IGNORECASE),
+            'no_where': re.compile('(UPDATE|DELETE)(?!.*WHERE)', re.IGNORECASE),
+            'cartesian_join': re.compile('FROM\\s+\\w+\\s*,\\s*\\w+(?!.*WHERE)', re.IGNORECASE),
+            'function_in_where': re.compile('WHERE\\s+\\w*\\([^)]*\\)\\s*[=<>]', re.IGNORECASE),
+            'like_leading_wildcard': re.compile('LIKE\\s+[\\\'"]%', re.IGNORECASE),
+            'or_condition': re.compile('WHERE.*OR', re.IGNORECASE)
+        }
         return patterns
 
     def _initialize_performance_rules(self) -> List[Dict[str, Any]]:
@@ -126,7 +140,7 @@ class QueryAnalyzer:
         try:
             analysis = {'query_type': self._detect_query_type(query), 'complexity_score': self._calculate_complexity(query), 'performance_issues': self._detect_performance_issues(query), 'index_recommendations': self._recommend_indexes(query), 'optimization_suggestions': []}
             for issue in analysis.get('performance_issues'):
-                analysis['optimization_suggestions'] = analysis.get('optimization_suggestions') + [issue.get('suggestion'))
+                analysis['optimization_suggestions'] = analysis.get('optimization_suggestions', []) + [issue.get('suggestion')]
             return Success(analysis)
         except Exception as e:
             return Failure(f'Query analysis failed: {e}')
@@ -186,7 +200,7 @@ class QueryAnalyzer:
         where_match = re.search('WHERE\\s+(.*?)(?:\\s+GROUP\\s+BY|\\s+ORDER\\s+BY|\\s+HAVING|$)', query_upper)
         if where_match:
             where_clause = where_match.group(1)
-            equality_columns = re.findall('(\\w+)\\s =  re.findall('(\\w+)\\s * (', where_clause))
+            equality_columns = re.findall(r'(\w+)\s*=', where_clause)
             for col in equality_columns:
                 recommendations = recommendations + [f'Consider index on column: {col.lower()}']
         order_match = re.search('ORDER\\s+BY\\s+(.*?)(?:\\s+LIMIT|\\s+OFFSET|$)', query_upper)
@@ -302,14 +316,14 @@ class IndexOptimizer:
 
     def analyze_index_performance(self) -> Dict[str, Any]:
         """인덱스 성능 분석"""
-        analysis = {'total_indexes': len(self.index_usage_stats), 'unused_indexes': [], 'inefficient_indexes': [], 'recommended_indexes': [], 'optimization_summary': {}
+        analysis = {'total_indexes': len(self.index_usage_stats), 'unused_indexes': [], 'inefficient_indexes': [], 'recommended_indexes': [], 'optimization_summary': {}}
         current_time = datetime.now()
         for index_name, stats in self.index_usage_stats.items():
             total_usage = stats['scan_count'] + stats['lookup_count']
             if total_usage == 0 or (stats['last_used'] and (current_time - stats.get('last_used')).days > 30):
                 analysis['unused_indexes'] = analysis.get('unused_indexes') + [{'name': index_name, 'reason': 'Not used in last 30 days', 'recommendation': 'Consider dropping this index'}]
             elif stats.get('efficiency_score') < 30:
-                analysis['inefficient_indexes'] = analysis.get('inefficient_indexes') + [{'name': index_name, 'efficiency_score': stats.get('efficiency_score'), 'scan_count': stats.get('scan_count'), 'lookup_count': stats.get('lookup_count'), 'recommendation': 'Index causes more scans than lookups'})
+                analysis['inefficient_indexes'] = analysis.get('inefficient_indexes') + [{'name': index_name, 'efficiency_score': stats.get('efficiency_score'), 'scan_count': stats.get('scan_count'), 'lookup_count': stats.get('lookup_count'), 'recommendation': 'Index causes more scans than lookups'}]
         analysis['optimization_summary'] = {'optimization_summary': {'indexes_to_drop': len(analysis.get('unused_indexes')), 'indexes_to_review': len(analysis.get('inefficient_indexes')), 'potential_space_savings': self._calculate_space_savings(analysis.get('unused_indexes'))}}
         return analysis
 
@@ -373,7 +387,7 @@ class QueryOptimizer:
         if len(self.query_cache) > 1000:
             oldest_key = next(iter(self.query_cache))
             del self.query_cache[oldest_key]
-        self.query_cache = {**self.query_cache, query_hash: {'result': result, 'cached_at': datetime.now()}
+        self.query_cache = {**self.query_cache, query_hash: {'result': result, 'cached_at': datetime.now()}}
 
     def analyze_slow_queries(self, threshold_seconds: float=1.0) -> List[Dict[str, Any]]:
         """느린 쿼리 분석"""
@@ -522,7 +536,7 @@ class DatabaseOptimizer:
             cache_stats = self.query_optimizer.get_cache_stats()
             recommendations = self._generate_optimization_recommendations(slow_queries, connection_analysis, index_analysis, cache_stats)
             performance_score = self._calculate_overall_performance_score(slow_queries, connection_analysis, index_analysis, cache_stats)
-            results = {'performance_score': performance_score, 'slow_queries': slow_queries, 'connection_analysis': connection_analysis, 'index_analysis': index_analysis, 'cache_stats': cache_stats, 'recommendations': recommendations, 'optimization_summary': {'critical_issues': len([q for q in slow_queries if q.get('priority') == OptimizationPriority.CRITICAL]), 'high_priority_issues': len([q for q in slow_queries if q.get('priority') == OptimizationPriority.HIGH]), 'total_recommendations': len(recommendations)}
+            results = {'performance_score': performance_score, 'slow_queries': slow_queries, 'connection_analysis': connection_analysis, 'index_analysis': index_analysis, 'cache_stats': cache_stats, 'recommendations': recommendations, 'optimization_summary': {'critical_issues': len([q for q in slow_queries if q.get('priority') == OptimizationPriority.CRITICAL]), 'high_priority_issues': len([q for q in slow_queries if q.get('priority') == OptimizationPriority.HIGH]), 'total_recommendations': len(recommendations)}}
             return Success(results)
         except Exception as e:
             return Failure(f'Database optimization failed: {e}')

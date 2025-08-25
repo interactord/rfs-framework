@@ -132,7 +132,7 @@ class CacheBackend(ABC):
                 if get_result.is_success():
                     value = get_result.unwrap()
                     if value is not None:
-                        result[key] = {key: value}
+                        result[key] = value
             return Success(result)
         except Exception as e:
             self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
@@ -180,16 +180,20 @@ class CacheBackend(ABC):
             match self.config.serialization:
                 case SerializationType.JSON:
                     return json.dumps(value, ensure_ascii=False).encode()
-                case SerializationType.PICKLE:                return pickle.dumps(value)
-                case SerializationType.STRING:                return str(value).encode()
-                case SerializationType.MSGPACK:                try:
-                    import msgpack
+                case SerializationType.PICKLE:
+                    return pickle.dumps(value)
+                case SerializationType.STRING:
+                    return str(value).encode()
+                case SerializationType.MSGPACK:
+                    try:
+                        import msgpack
 
-                    return msgpack.packb(value)
-                except ImportError:
-                    logger.warning("msgpack을 사용할 수 없어 JSON으로 대체합니다")
+                        return msgpack.packb(value)
+                    except ImportError:
+                        logger.warning("msgpack을 사용할 수 없어 JSON으로 대체합니다")
+                        return json.dumps(value, ensure_ascii=False).encode()
+                case _:
                     return json.dumps(value, ensure_ascii=False).encode()
-                case _:                return json.dumps(value, ensure_ascii=False).encode()
         except Exception as e:
             logger.error(f"직렬화 실패: {e}")
             return b""
@@ -202,15 +206,19 @@ class CacheBackend(ABC):
             match self.config.serialization:
                 case SerializationType.JSON:
                     return json.loads(data.decode())
-                case SerializationType.PICKLE:                return pickle.loads(data)
-                case SerializationType.STRING:                return data.decode()
-                case SerializationType.MSGPACK:                try:
-                    import msgpack
+                case SerializationType.PICKLE:
+                    return pickle.loads(data)
+                case SerializationType.STRING:
+                    return data.decode()
+                case SerializationType.MSGPACK:
+                    try:
+                        import msgpack
 
-                    return msgpack.unpackb(data, raw=False)
-                except ImportError:
+                        return msgpack.unpackb(data, raw=False)
+                    except ImportError:
+                        return json.loads(data.decode())
+                case _:
                     return json.loads(data.decode())
-                case _:                return json.loads(data.decode())
         except Exception as e:
             logger.error(f"역직렬화 실패: {e}")
             return None
@@ -326,14 +334,17 @@ async def create_cache(
             case CacheType.REDIS:
                 from .redis_cache import RedisCache
 
-            cache = RedisCache(config)
-            case CacheType.MEMORY:            from .memory_cache import MemoryCache
+                cache = RedisCache(config)
+            case CacheType.MEMORY:
+                from .memory_cache import MemoryCache
 
-            cache = MemoryCache(config)
-            case CacheType.DISTRIBUTED:            from .distributed import DistributedCache
+                cache = MemoryCache(config)
+            case CacheType.DISTRIBUTED:
+                from .distributed import DistributedCache
 
-            cache = DistributedCache(config)
-            case _:            return Failure(f"지원되지 않는 캐시 타입: {config.cache_type}")
+                cache = DistributedCache(config)
+            case _:
+                return Failure(f"지원되지 않는 캐시 타입: {config.cache_type}")
         manager = get_cache_manager()
         add_result = await manager.add_cache(name, cache)
         if not add_result.is_success():

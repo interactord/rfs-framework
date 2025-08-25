@@ -31,7 +31,7 @@ class SubscriptionConfig:
     
     # 필터링
     message_filter: Optional[Callable] = None
-    header_filters: Dict = {str, Any: None}
+    header_filters: Dict[str, Any] = None
     
     # 배치 처리
     batch_processing: bool = False
@@ -101,7 +101,7 @@ class Subscriber:
         self.config = config or SubscriptionConfig()
         
         self._subscriptions: Dict[str, Dict[str, Any]] = {}  # topic -> subscription_info
-        self._handlers: Dict = {str, MessageHandler: {}  # topic -> handler}
+        self._handlers: Dict[str, MessageHandler] = {}  # topic -> handler
         self._processing_tasks: Dict[str, Set[asyncio.Task]] = {}  # topic -> tasks
         
         self._stats = {
@@ -148,11 +148,11 @@ class Subscriber:
                 return result
             
             # 구독 정보 저장
-            self._subscriptions = {**self._subscriptions, topic: {}
+            self._subscriptions = {**self._subscriptions, topic: {
                 "handler": handler,
                 "config": subscription_config,
                 "subscribed_at": datetime.now()
-            }
+            }}
             
             self._processing_tasks = {**self._processing_tasks, topic: set()}
             
@@ -407,9 +407,9 @@ class BatchSubscriber(Subscriber):
         else:
             # 타이머 시작 (없으면)
             if topic not in self._batch_timers or self._batch_timers[topic] is None:
-                self._batch_timers = {**self._batch_timers, topic: asyncio.create_task(}
+                self._batch_timers = {**self._batch_timers, topic: asyncio.create_task(
                     self._batch_timer(topic, config)
-                )
+                )}
     
     async def _batch_timer(self, topic: str, config: SubscriptionConfig):
         """배치 타이머"""

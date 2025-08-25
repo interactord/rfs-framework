@@ -314,7 +314,7 @@ def log_with_context(
     """
     log_level = getattr(LogLevel, level.upper(), LogLevel.INFO)
     context_data = context_data or {}
-    context_data.update(kwargs)
+    context_data = {**context_data, **kwargs}
     context = LogContext(extra_data=context_data, timestamp=datetime.now())
     _enhanced_logger.log(log_level, message, context=context)
 

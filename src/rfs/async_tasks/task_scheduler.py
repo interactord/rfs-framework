@@ -75,50 +75,53 @@ class ScheduleConfig:
         match self.schedule_type:
             case ScheduleType.ONCE:
                 if self.run_count > 0:
-                return None
-            return self.start_time or from_time
-            case ScheduleType.DELAYED:            if self.run_count > 0:
-                return None
+                    return None
+                return self.start_time or from_time
+            case ScheduleType.DELAYED:
+                if self.run_count > 0:
+                    return None
                 return from_time + (self.delay or timedelta(seconds=0))
-            case ScheduleType.INTERVAL:            if not self.interval:
-                return None
+            case ScheduleType.INTERVAL:
+                if not self.interval:
+                    return None
                 next_time = from_time + self.interval
                 if self.end_time and next_time > self.end_time:
-                return None
+                    return None
                 return next_time
-            case ScheduleType.CRON:            return self._parse_cron_next_time(from_time)
-            case ScheduleType.RECURRING:            if not self.interval:
-                return None
+            case ScheduleType.CRON:
+                return self._parse_cron_next_time(from_time)
+            case ScheduleType.RECURRING:
+                if not self.interval:
+                    return None
                 return from_time + self.interval
-                return None
 
-                def _parse_cron_next_time(self, from_time: datetime) -> Optional[datetime]:
-                """크론 표현식에서 다음 실행 시간 계산"""
-                if not self.cron_expression:
+    def _parse_cron_next_time(self, from_time: datetime) -> Optional[datetime]:
+        """크론 표현식에서 다음 실행 시간 계산"""
+        if not self.cron_expression:
+            return None
+        try:
+            parts = self.cron_expression.split()
+            if len(parts) != 5:
                 return None
-                try:
-                parts = self.cron_expression.split()
-                if len(parts) != 5:
-                return None
-                minute, hour, day, month, weekday = parts
-                if minute == "0" and hour == "*":
+            minute, hour, day, month, weekday = parts
+            if minute == "0" and hour == "*":
                 next_hour = from_time.replace(
-                minute=0, second=0, microsecond=0
+                    minute=0, second=0, microsecond=0
                 ) + timedelta(hours=1)
                 return next_hour
-                if minute == "0" and hour.isdigit():
+            if minute == "0" and hour.isdigit():
                 target_hour = int(hour)
                 next_run = from_time.replace(
                 hour=target_hour, minute=0, second=0, microsecond=0
                 )
                 if next_run <= from_time:
-                next_run = next_run + timedelta(days=1)
+                    next_run = next_run + timedelta(days=1)
                 return next_run
-                except Exception:
-                pass
-                return None
+        except Exception:
+            pass
+        return None
 
-                def increment_run_count(self) -> None:
+    def increment_run_count(self) -> None:
                 """실행 횟수 증가"""
                 run_count = run_count + 1
 

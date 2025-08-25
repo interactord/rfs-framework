@@ -58,7 +58,6 @@ jobs:
       - name: Install documentation dependencies
         run: |
           pip install --upgrade pip
-          pip install -e ".[docs]"
           pip install -r requirements-docs.txt
       
       - name: Setup Pages
@@ -67,7 +66,7 @@ jobs:
       
       - name: Build with MkDocs
         run: |
-          mkdocs build --clean
+          mkdocs build --clean --verbose
         env:
           MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
       
@@ -106,12 +105,11 @@ jobs:
       - name: Install documentation dependencies
         run: |
           pip install --upgrade pip
-          pip install -e ".[docs]"
           pip install -r requirements-docs.txt
       
       - name: Build documentation (check only)
         run: |
-          mkdocs build --clean
+          mkdocs build --clean --verbose
       
       - name: Check for broken links
         run: |

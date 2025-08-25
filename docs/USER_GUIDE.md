@@ -294,7 +294,7 @@ async def use_distributed_cache():
     # 세션 데이터 저장
     await cache.set(
         "session:abc123",
-        {"user_id": "123", "login_time": "2024-01-01T10:00:00"},
+        {"user_id": "123", "login_time": "2025-01-01T10:00:00"},
         partition_id="session_cache"
     )
 
@@ -494,9 +494,9 @@ await cache.add_warmup_task(
 
 ## 추가 리소스
 
-- [API 레퍼런스](./API_REFERENCE.md)
+- [API 레퍼런스](API_REFERENCE.md)
 - [마이그레이션 가이드](./MIGRATION_GUIDE.md)
-- [변경 로그](./CHANGELOG.md)
+- [변경 로그](changelog.md)
 - [GitHub 저장소](https://github.com/your-org/rfs-framework)
 
 ## 지원

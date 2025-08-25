@@ -1,0 +1,960 @@
+"""
+RFS Framework Cache 시스템 포괄적 단위 테스트
+
+이 모듈은 RFS Cache 시스템의 모든 기능에 대한 포괄적인 테스트를 제공합니다.
+- Memory Cache 구현 테스트
+- Redis Cache 인터페이스 테스트  
+- Cache 설정 및 구성 테스트
+- TTL 및 만료 처리 테스트
+- 동시성 및 성능 테스트
+- 에러 케이스 및 엣지 케이스 테스트
+"""
+
+import asyncio
+import pytest
+import time
+import threading
+from typing import Dict, List, Any
+from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from dataclasses import asdict
+
+from rfs.cache.base import CacheBackend, CacheConfig, CacheType, SerializationType
+from rfs.cache.memory_cache import MemoryCache, MemoryCacheConfig, CacheItem
+from rfs.core.result import Success, Failure
+
+
+# Module level fixtures for common use
+@pytest.fixture
+def memory_cache_config():
+    """메모리 캐시 설정 fixture"""
+    return MemoryCacheConfig(
+        max_size=100,
+        eviction_policy="lru",
+        cleanup_interval=1,
+        lazy_expiration=True
+    )
+
+
+@pytest.fixture(scope="function")
+async def memory_cache(memory_cache_config):
+    """공통 메모리 캐시 fixture"""
+    cache = MemoryCache(memory_cache_config)
+    result = await cache.connect()
+    assert result.is_success()
+    yield cache
+    await cache.disconnect()
+
+
+@pytest.fixture
+def sample_data():
+    """샘플 데이터 fixture"""
+    return {
+        "user:1": {"id": 1, "name": "Alice", "email": "alice@example.com"},
+        "user:2": {"id": 2, "name": "Bob", "email": "bob@example.com"},
+        "product:1": {"id": 1, "name": "Laptop", "price": 1200},
+        "product:2": {"id": 2, "name": "Mouse", "price": 25}
+    }
+
+
+class TestCacheConfig:
+    """캐시 설정 테스트"""
+
+    def test_default_cache_config(self):
+        """기본 캐시 설정 테스트"""
+        config = CacheConfig()
+        
+        assert config.host == "localhost"
+        assert config.port == 6379
+        assert config.cache_type == CacheType.REDIS
+        assert config.serialization == SerializationType.JSON
+        assert config.default_ttl == 3600
+        assert config.max_connections == 50
+        assert config.namespace == "rfs"
+
+    def test_custom_cache_config(self):
+        """사용자 정의 캐시 설정 테스트"""
+        config = CacheConfig(
+            host="custom-redis",
+            port=6380,
+            cache_type=CacheType.MEMORY,
+            default_ttl=7200,
+            namespace="test"
+        )
+        
+        assert config.host == "custom-redis"
+        assert config.port == 6380
+        assert config.cache_type == CacheType.MEMORY
+        assert config.default_ttl == 7200
+        assert config.namespace == "test"
+
+    def test_memory_cache_config(self):
+        """메모리 캐시 설정 테스트"""
+        config = MemoryCacheConfig(
+            max_size=2000,
+            eviction_policy="lfu",
+            cleanup_interval=600
+        )
+        
+        assert config.max_size == 2000
+        assert config.eviction_policy == "lfu"
+        assert config.cleanup_interval == 600
+        assert config.lazy_expiration is True
+
+    def test_cache_config_validation_ranges(self):
+        """캐시 설정 범위 검증"""
+        config = CacheConfig()
+        
+        # TTL 범위 확인
+        assert config.min_ttl <= config.default_ttl <= config.max_ttl
+        assert config.min_ttl == 60
+        assert config.max_ttl == 86400
+        
+        # 연결 설정 확인
+        assert config.pool_size > 0
+        assert config.max_connections > 0
+        assert config.connection_timeout > 0
+
+
+class TestCacheItem:
+    """캐시 아이템 테스트"""
+
+    def test_cache_item_creation(self):
+        """캐시 아이템 생성 테스트"""
+        item = CacheItem("test_key", "test_value", ttl=3600)
+        
+        assert item.key == "test_key"
+        assert item.value == "test_value"
+        assert item.access_count == 1
+        assert item.expires_at is not None
+        assert item.size > 0
+
+    def test_cache_item_without_ttl(self):
+        """TTL 없는 캐시 아이템"""
+        item = CacheItem("test_key", "test_value")
+        
+        assert item.expires_at is None
+        assert not item.is_expired()
+
+    def test_cache_item_expiration(self):
+        """캐시 아이템 만료 테스트"""
+        # 즉시 만료되는 아이템
+        item = CacheItem("test_key", "test_value", ttl=0.001)
+        time.sleep(0.002)
+        
+        assert item.is_expired()
+
+    def test_cache_item_touch(self):
+        """캐시 아이템 접근 업데이트"""
+        item = CacheItem("test_key", "test_value")
+        initial_access_count = item.access_count
+        initial_accessed_at = item.accessed_at
+        
+        time.sleep(0.001)  # 시간 차이를 위해
+        item.touch()
+        
+        assert item.access_count == initial_access_count + 1
+        assert item.accessed_at > initial_accessed_at
+
+    def test_cache_item_size_estimation(self):
+        """캐시 아이템 크기 추정 테스트"""
+        small_item = CacheItem("key", "small")
+        large_item = CacheItem("key", "x" * 10000)
+        
+        assert large_item.size > small_item.size
+
+    def test_cache_item_comparison(self):
+        """캐시 아이템 비교 테스트 (TTL 기반 정렬)"""
+        item1 = CacheItem("key1", "value1", ttl=100)
+        time.sleep(0.001)
+        item2 = CacheItem("key2", "value2", ttl=200)
+        
+        assert item1 < item2  # item1이 먼저 만료됨
+
+    def test_cache_item_comparison_no_ttl(self):
+        """TTL 없는 캐시 아이템 비교"""
+        item1 = CacheItem("key1", "value1")
+        time.sleep(0.001)
+        item2 = CacheItem("key2", "value2")
+        
+        assert item1 < item2  # 생성 시간 기반
+
+
+class TestMemoryCache:
+    """메모리 캐시 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_connect_disconnect(self, memory_cache_config):
+        """메모리 캐시 연결/해제 테스트"""
+        cache = MemoryCache(memory_cache_config)
+        
+        # 연결 테스트
+        result = await cache.connect()
+        assert result.is_success()
+        assert cache._connected is True
+        
+        # 중복 연결 시도
+        result = await cache.connect()
+        assert result.is_success()  # 이미 연결된 경우도 성공
+        
+        # 연결 해제 테스트
+        result = await cache.disconnect()
+        assert result.is_success()
+        assert cache._connected is False
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_basic_operations(memory_cache):
+        """메모리 캐시 기본 연산 테스트"""
+        # SET 연산
+        result = await memory_cache.set("key1", "value1")
+        assert result.is_success()
+        
+        # GET 연산
+        result = await memory_cache.get("key1")
+        assert result.is_success()
+        assert result.unwrap() == "value1"
+        
+        # EXISTS 연산
+        result = await memory_cache.exists("key1")
+        assert result.is_success()
+        assert result.unwrap() is True
+        
+        result = await memory_cache.exists("nonexistent")
+        assert result.is_success()
+        assert result.unwrap() is False
+        
+        # DELETE 연산
+        result = await memory_cache.delete("key1")
+        assert result.is_success()
+        
+        result = await memory_cache.get("key1")
+        assert result.is_success()
+        assert result.unwrap() is None
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_ttl_operations(self, memory_cache):
+        """메모리 캐시 TTL 연산 테스트"""
+        # TTL과 함께 저장
+        result = await memory_cache.set("key_ttl", "value_ttl", ttl=1)
+        assert result.is_success()
+        
+        # TTL 확인
+        result = await memory_cache.ttl("key_ttl")
+        assert result.is_success()
+        ttl_value = result.unwrap()
+        assert 0 < ttl_value <= 1
+        
+        # 만료 전 조회
+        result = await memory_cache.get("key_ttl")
+        assert result.is_success()
+        assert result.unwrap() == "value_ttl"
+        
+        # 만료 후 조회
+        await asyncio.sleep(1.1)
+        result = await memory_cache.get("key_ttl")
+        assert result.is_success()
+        assert result.unwrap() is None
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_expire_operation(self, memory_cache):
+        """메모리 캐시 만료 설정 테스트"""
+        # TTL 없이 저장
+        result = await memory_cache.set("key_expire", "value_expire")
+        assert result.is_success()
+        
+        # TTL 설정
+        result = await memory_cache.expire("key_expire", 1)
+        assert result.is_success()
+        
+        # TTL 확인
+        result = await memory_cache.ttl("key_expire")
+        assert result.is_success()
+        ttl_value = result.unwrap()
+        assert 0 < ttl_value <= 1
+        
+        # 만료 후 조회
+        await asyncio.sleep(1.1)
+        result = await memory_cache.get("key_expire")
+        assert result.is_success()
+        assert result.unwrap() is None
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_batch_operations(self, memory_cache):
+        """메모리 캐시 배치 연산 테스트"""
+        # 배치 저장
+        data = {
+            "batch1": "value1",
+            "batch2": "value2",
+            "batch3": "value3"
+        }
+        
+        result = await memory_cache.set_many(data, ttl=3600)
+        assert result.is_success()
+        
+        # 배치 조회
+        result = await memory_cache.get_many(["batch1", "batch2", "batch3", "nonexistent"])
+        assert result.is_success()
+        retrieved_data = result.unwrap()
+        
+        assert len(retrieved_data) == 3
+        assert retrieved_data["batch1"] == "value1"
+        assert retrieved_data["batch2"] == "value2"
+        assert retrieved_data["batch3"] == "value3"
+        assert "nonexistent" not in retrieved_data
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_clear_operation(self, memory_cache):
+        """메모리 캐시 전체 삭제 테스트"""
+        # 데이터 저장
+        await memory_cache.set("key1", "value1")
+        await memory_cache.set("key2", "value2")
+        
+        # 데이터 존재 확인
+        result = await memory_cache.get("key1")
+        assert result.unwrap() == "value1"
+        
+        # 전체 삭제
+        result = await memory_cache.clear()
+        assert result.is_success()
+        
+        # 데이터 삭제 확인
+        result = await memory_cache.get("key1")
+        assert result.unwrap() is None
+        
+        result = await memory_cache.get("key2")
+        assert result.unwrap() is None
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_complex_data_types(self, memory_cache, sample_data):
+        """복잡한 데이터 타입 저장/조회 테스트"""
+        complex_data = {
+            "users": sample_data["users"],
+            "products": sample_data["products"],
+            "metadata": {
+                "version": "1.0",
+                "timestamp": "2025-01-01T00:00:00Z"
+            }
+        }
+        
+        # 복잡한 데이터 저장
+        result = await memory_cache.set("complex_key", complex_data)
+        assert result.is_success()
+        
+        # 복잡한 데이터 조회
+        result = await memory_cache.get("complex_key")
+        assert result.is_success()
+        retrieved_data = result.unwrap()
+        
+        assert len(retrieved_data["users"]) == 3
+        assert len(retrieved_data["products"]) == 3
+        assert retrieved_data["metadata"]["version"] == "1.0"
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_unicode_keys_values(self, memory_cache, edge_case_data):
+        """유니코드 키/값 테스트"""
+        unicode_values = edge_case_data["unicode_values"]
+        
+        for i, value in enumerate(unicode_values):
+            key = f"unicode_key_{i}_{value}"
+            
+            # 유니코드 키/값 저장
+            result = await memory_cache.set(key, value)
+            assert result.is_success()
+            
+            # 유니코드 키/값 조회
+            result = await memory_cache.get(key)
+            assert result.is_success()
+            assert result.unwrap() == value
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_large_values(self, memory_cache, edge_case_data):
+        """대용량 값 저장/조회 테스트"""
+        large_string = edge_case_data["large_values"]["string"]
+        large_list = edge_case_data["large_values"]["list"]
+        
+        # 대용량 문자열 저장
+        result = await memory_cache.set("large_string", large_string)
+        assert result.is_success()
+        
+        result = await memory_cache.get("large_string")
+        assert result.is_success()
+        assert result.unwrap() == large_string
+        
+        # 대용량 리스트 저장
+        result = await memory_cache.set("large_list", large_list)
+        assert result.is_success()
+        
+        result = await memory_cache.get("large_list")
+        assert result.is_success()
+        assert result.unwrap() == large_list
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_eviction_lru(self):
+        """LRU 제거 정책 테스트"""
+        config = MemoryCacheConfig(
+            max_size=3,
+            eviction_policy="lru"
+        )
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            # 캐시 크기 초과할 정도로 데이터 저장
+            await cache.set("key1", "value1")
+            await cache.set("key2", "value2")
+            await cache.set("key3", "value3")
+            
+            # key1 접근 (최근 사용)
+            await cache.get("key1")
+            
+            # 새 데이터 추가 (key2가 제거되어야 함)
+            await cache.set("key4", "value4")
+            
+            # 확인
+            result = await cache.get("key1")
+            assert result.unwrap() == "value1"  # 최근 사용되어 유지
+            
+            result = await cache.get("key2")
+            assert result.unwrap() is None  # LRU로 제거됨
+            
+            result = await cache.get("key3")
+            assert result.unwrap() == "value3"  # 유지
+            
+            result = await cache.get("key4")
+            assert result.unwrap() == "value4"  # 새로 추가됨
+            
+        finally:
+            await cache.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_stats_tracking(self, memory_cache):
+        """캐시 통계 추적 테스트"""
+        initial_stats = memory_cache._stats.copy()
+        
+        # 여러 연산 수행
+        await memory_cache.set("stats_key", "stats_value")
+        await memory_cache.get("stats_key")  # hit
+        await memory_cache.get("nonexistent")  # miss
+        await memory_cache.delete("stats_key")
+        
+        # 통계 확인 (구체적인 값은 구현에 따라 달라질 수 있음)
+        assert memory_cache._stats["sets"] >= initial_stats["sets"]
+        assert memory_cache._stats["deletes"] >= initial_stats["deletes"]
+
+    @pytest.mark.asyncio 
+    async def test_memory_cache_concurrent_access(self, memory_cache):
+        """동시 접근 테스트"""
+        async def worker(worker_id: int):
+            for i in range(10):
+                key = f"concurrent_{worker_id}_{i}"
+                value = f"value_{worker_id}_{i}"
+                
+                await memory_cache.set(key, value)
+                result = await memory_cache.get(key)
+                assert result.unwrap() == value
+        
+        # 5개 워커 동시 실행
+        tasks = [worker(i) for i in range(5)]
+        await asyncio.gather(*tasks)
+        
+        # 모든 데이터가 올바르게 저장되었는지 확인
+        for worker_id in range(5):
+            for i in range(10):
+                key = f"concurrent_{worker_id}_{i}"
+                expected_value = f"value_{worker_id}_{i}"
+                
+                result = await memory_cache.get(key)
+                assert result.unwrap() == expected_value
+
+
+class TestMemoryCacheAdvanced:
+    """메모리 캐시 고급 기능 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_lazy_expiration(self):
+        """지연 만료 테스트"""
+        config = MemoryCacheConfig(
+            max_size=100,
+            lazy_expiration=True,
+            cleanup_interval=1000  # 매우 긴 간격으로 설정
+        )
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            # 짧은 TTL로 데이터 저장
+            await cache.set("lazy_key", "lazy_value", ttl=0.1)
+            
+            # 만료 시간 대기
+            await asyncio.sleep(0.2)
+            
+            # 접근시 지연 만료가 동작해야 함
+            result = await cache.get("lazy_key")
+            assert result.unwrap() is None
+            
+            # 내부적으로도 제거되었는지 확인
+            assert "lazy_key" not in cache._data
+            
+        finally:
+            await cache.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_memory_limit(self):
+        """메모리 제한 테스트"""
+        config = MemoryCacheConfig(
+            max_size=1000,
+            memory_limit=1024,  # 1KB 제한
+            eviction_policy="lru"
+        )
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            # 메모리 제한 초과할 정도로 큰 데이터 저장 시도
+            large_data = "x" * 2048  # 2KB 데이터
+            
+            result = await cache.set("large_key", large_data)
+            # 구현에 따라 성공하거나 실패할 수 있음
+            # 최소한 예외는 발생하지 않아야 함
+            assert result.is_success() or result.is_failure()
+            
+        finally:
+            await cache.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_cleanup_task(self):
+        """정리 작업 테스트"""
+        config = MemoryCacheConfig(
+            max_size=100,
+            cleanup_interval=0.1  # 100ms마다 정리
+        )
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            # 짧은 TTL로 여러 데이터 저장
+            for i in range(5):
+                await cache.set(f"cleanup_key_{i}", f"value_{i}", ttl=0.05)
+            
+            # 정리 작업이 실행될 시간 대기
+            await asyncio.sleep(0.2)
+            
+            # 만료된 데이터가 정리되었는지 확인
+            expired_count = 0
+            for i in range(5):
+                result = await cache.get(f"cleanup_key_{i}")
+                if result.unwrap() is None:
+                    expired_count += 1
+            
+            assert expired_count > 0  # 일부 또는 전부 만료되어야 함
+            
+        finally:
+            await cache.disconnect()
+
+
+class TestCacheBackendInterface:
+    """캐시 백엔드 인터페이스 테스트"""
+
+    def test_cache_backend_abstract_methods(self):
+        """캐시 백엔드 추상 메서드 확인"""
+        # CacheBackend는 추상 클래스이므로 인스턴스화 불가
+        with pytest.raises(TypeError):
+            CacheBackend(CacheConfig())
+
+    @pytest.mark.asyncio
+    async def test_cache_backend_default_implementations(self, memory_cache):
+        """캐시 백엔드 기본 구현 테스트"""
+        # get_many, set_many는 기본 구현이 있어야 함
+        data = {"test1": "value1", "test2": "value2"}
+        
+        result = await memory_cache.set_many(data)
+        assert result.is_success()
+        
+        result = await memory_cache.get_many(["test1", "test2"])
+        assert result.is_success()
+        retrieved_data = result.unwrap()
+        assert retrieved_data["test1"] == "value1"
+        assert retrieved_data["test2"] == "value2"
+
+
+class TestCacheErrorHandling:
+    """캐시 에러 처리 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_disconnected_operations(self):
+        """연결되지 않은 상태에서 연산 시도"""
+        config = MemoryCacheConfig()
+        cache = MemoryCache(config)
+        
+        # 연결하지 않고 연산 시도
+        result = await cache.get("test_key")
+        assert result.is_failure()
+        
+        result = await cache.set("test_key", "test_value")
+        assert result.is_failure()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_invalid_operations(self, memory_cache):
+        """유효하지 않은 연산 테스트"""
+        # None 키로 연산 시도
+        result = await memory_cache.set(None, "value")
+        assert result.is_failure()
+        
+        result = await memory_cache.get(None)
+        assert result.is_failure()
+        
+        # 빈 키로 연산 시도
+        result = await memory_cache.set("", "value")
+        assert result.is_failure()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_invalid_ttl(self, memory_cache):
+        """유효하지 않은 TTL 테스트"""
+        # 음수 TTL
+        result = await memory_cache.set("test_key", "test_value", ttl=-1)
+        assert result.is_failure()
+        
+        # 0 TTL (즉시 만료)는 허용될 수 있음
+        result = await memory_cache.set("test_key", "test_value", ttl=0)
+        # 구현에 따라 성공하거나 실패할 수 있음
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_serialization_errors(self, memory_cache):
+        """직렬화 불가능한 객체 처리 테스트"""
+        # 일반적으로 메모리 캐시는 직렬화하지 않으므로 모든 객체 허용
+        class UnserializableClass:
+            def __init__(self):
+                self.data = "test"
+        
+        obj = UnserializableClass()
+        
+        result = await memory_cache.set("unserializable", obj)
+        assert result.is_success()
+        
+        result = await memory_cache.get("unserializable")
+        assert result.is_success()
+        assert isinstance(result.unwrap(), UnserializableClass)
+
+
+class TestCachePerformance:
+    """캐시 성능 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_performance_basic_operations(self, performance_timer):
+        """기본 연산 성능 테스트"""
+        config = MemoryCacheConfig(max_size=10000)
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            performance_timer.start()
+            
+            # 1000개 데이터 저장
+            for i in range(1000):
+                await cache.set(f"perf_key_{i}", f"value_{i}")
+            
+            performance_timer.stop()
+            
+            # 1000번 저장이 1초 미만이어야 함
+            assert performance_timer.elapsed < 1.0
+            
+            performance_timer.start()
+            
+            # 1000개 데이터 조회
+            for i in range(1000):
+                result = await cache.get(f"perf_key_{i}")
+                assert result.unwrap() == f"value_{i}"
+            
+            performance_timer.stop()
+            
+            # 1000번 조회가 0.5초 미만이어야 함
+            assert performance_timer.elapsed < 0.5
+            
+        finally:
+            await cache.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_memory_cache_concurrent_performance(self, performance_timer):
+        """동시 연산 성능 테스트"""
+        config = MemoryCacheConfig(max_size=5000)
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            async def worker(worker_id: int, operations: int):
+                for i in range(operations):
+                    key = f"worker_{worker_id}_key_{i}"
+                    value = f"worker_{worker_id}_value_{i}"
+                    await cache.set(key, value)
+                    result = await cache.get(key)
+                    assert result.unwrap() == value
+            
+            performance_timer.start()
+            
+            # 10개 워커가 각각 100번 연산 (총 2000번)
+            tasks = [worker(i, 100) for i in range(10)]
+            await asyncio.gather(*tasks)
+            
+            performance_timer.stop()
+            
+            # 2000번 연산이 2초 미만이어야 함
+            assert performance_timer.elapsed < 2.0
+            
+        finally:
+            await cache.disconnect()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("cache_size", [100, 1000, 10000])
+    async def test_memory_cache_scaling_performance(self, cache_size, performance_timer):
+        """캐시 크기별 성능 테스트"""
+        config = MemoryCacheConfig(max_size=cache_size * 2)
+        cache = MemoryCache(config)
+        await cache.connect()
+        
+        try:
+            performance_timer.start()
+            
+            # 지정된 크기만큼 데이터 저장
+            for i in range(cache_size):
+                await cache.set(f"scale_key_{i}", f"value_{i}")
+            
+            # 전체 데이터 조회
+            for i in range(cache_size):
+                result = await cache.get(f"scale_key_{i}")
+                assert result.unwrap() == f"value_{i}"
+            
+            performance_timer.stop()
+            
+            # 크기별 성능 기준 (선형적이지 않을 수 있음)
+            expected_time = cache_size / 1000.0  # 1000개당 1초 기준
+            assert performance_timer.elapsed < max(expected_time, 0.1)
+            
+        finally:
+            await cache.disconnect()
+
+
+class TestCacheIntegration:
+    """캐시 통합 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_cache_with_real_world_scenario(self, memory_cache, sample_data):
+        """실제 사용 시나리오 테스트"""
+        # 사용자 세션 캐시 시뮬레이션
+        user_sessions = {}
+        for user in sample_data["users"]:
+            session_key = f"session:{user['id']}"
+            session_data = {
+                "user_id": user["id"],
+                "user_name": user["name"],
+                "login_time": time.time(),
+                "permissions": ["read", "write"] if user["id"] == 1 else ["read"]
+            }
+            user_sessions[session_key] = session_data
+        
+        # 세션 데이터 저장 (1시간 TTL)
+        result = await memory_cache.set_many(user_sessions, ttl=3600)
+        assert result.is_success()
+        
+        # 사용자별 권한 확인
+        for user in sample_data["users"]:
+            session_key = f"session:{user['id']}"
+            result = await memory_cache.get(session_key)
+            assert result.is_success()
+            
+            session_data = result.unwrap()
+            assert session_data["user_id"] == user["id"]
+            assert session_data["user_name"] == user["name"]
+            assert "permissions" in session_data
+        
+        # 로그아웃 시뮬레이션 (세션 삭제)
+        await memory_cache.delete(f"session:{sample_data['users'][0]['id']}")
+        
+        result = await memory_cache.get(f"session:{sample_data['users'][0]['id']}")
+        assert result.unwrap() is None
+
+    @pytest.mark.asyncio
+    async def test_cache_namespace_simulation(self):
+        """네임스페이스 시뮬레이션 테스트"""
+        config1 = MemoryCacheConfig(namespace="app1", max_size=100)
+        config2 = MemoryCacheConfig(namespace="app2", max_size=100)
+        
+        cache1 = MemoryCache(config1)
+        cache2 = MemoryCache(config2)
+        
+        await cache1.connect()
+        await cache2.connect()
+        
+        try:
+            # 동일한 키로 다른 값 저장
+            await cache1.set("shared_key", "app1_value")
+            await cache2.set("shared_key", "app2_value")
+            
+            # 네임스페이스별로 다른 값이 조회되어야 함
+            result1 = await cache1.get("shared_key")
+            result2 = await cache2.get("shared_key")
+            
+            # 실제 구현에서는 네임스페이스가 키에 prefix로 추가되어야 함
+            # 현재 테스트에서는 서로 다른 인스턴스이므로 독립적으로 동작
+            assert result1.unwrap() == "app1_value"
+            assert result2.unwrap() == "app2_value"
+            
+        finally:
+            await cache1.disconnect()
+            await cache2.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_cache_configuration_scenarios(self):
+        """다양한 설정 시나리오 테스트"""
+        scenarios = [
+            {
+                "name": "small_fast_cache",
+                "config": MemoryCacheConfig(
+                    max_size=50,
+                    eviction_policy="lru",
+                    cleanup_interval=1
+                )
+            },
+            {
+                "name": "large_infrequent_cleanup",
+                "config": MemoryCacheConfig(
+                    max_size=5000,
+                    eviction_policy="lru",
+                    cleanup_interval=300,
+                    lazy_expiration=True
+                )
+            },
+            {
+                "name": "memory_conscious",
+                "config": MemoryCacheConfig(
+                    max_size=1000,
+                    memory_limit=10 * 1024 * 1024,  # 10MB
+                    estimate_size=True
+                )
+            }
+        ]
+        
+        for scenario in scenarios:
+            cache = MemoryCache(scenario["config"])
+            await cache.connect()
+            
+            try:
+                # 기본 동작 확인
+                await cache.set("test", "value")
+                result = await cache.get("test")
+                assert result.unwrap() == "value"
+                
+            finally:
+                await cache.disconnect()
+
+
+class TestRedisInterfaceCompatibility:
+    """Redis 인터페이스 호환성 테스트 (Mock)"""
+
+    @pytest.fixture
+    def mock_redis_backend(self):
+        """Mock Redis 백엔드"""
+        class MockRedisBackend(CacheBackend):
+            def __init__(self, config: CacheConfig):
+                super().__init__(config)
+                self._data = {}
+                self._ttl = {}
+            
+            async def connect(self):
+                self._connected = True
+                return Success(None)
+            
+            async def disconnect(self):
+                self._connected = False
+                return Success(None)
+            
+            async def get(self, key: str):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                # TTL 확인
+                if key in self._ttl and time.time() > self._ttl[key]:
+                    del self._data[key]
+                    del self._ttl[key]
+                    return Success(None)
+                
+                return Success(self._data.get(key))
+            
+            async def set(self, key: str, value: Any, ttl: int = None):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                self._data[key] = value
+                if ttl:
+                    self._ttl[key] = time.time() + ttl
+                return Success(None)
+            
+            async def delete(self, key: str):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                self._data.pop(key, None)
+                self._ttl.pop(key, None)
+                return Success(None)
+            
+            async def exists(self, key: str):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                return Success(key in self._data)
+            
+            async def expire(self, key: str, ttl: int):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                if key in self._data:
+                    self._ttl[key] = time.time() + ttl
+                return Success(None)
+            
+            async def ttl(self, key: str):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                if key in self._ttl:
+                    remaining = self._ttl[key] - time.time()
+                    return Success(max(0, int(remaining)))
+                return Success(-1)
+            
+            async def clear(self):
+                if not self._connected:
+                    return Failure("Not connected")
+                
+                self._data.clear()
+                self._ttl.clear()
+                return Success(None)
+        
+        return MockRedisBackend(CacheConfig())
+
+    @pytest.mark.asyncio
+    async def test_redis_interface_basic_operations(self, mock_redis_backend):
+        """Redis 인터페이스 기본 연산 테스트"""
+        await mock_redis_backend.connect()
+        
+        try:
+            # Redis와 동일한 인터페이스 동작 확인
+            await mock_redis_backend.set("redis_key", "redis_value")
+            
+            result = await mock_redis_backend.get("redis_key")
+            assert result.unwrap() == "redis_value"
+            
+            result = await mock_redis_backend.exists("redis_key")
+            assert result.unwrap() is True
+            
+        finally:
+            await mock_redis_backend.disconnect()
+
+    @pytest.mark.asyncio
+    async def test_redis_interface_error_handling(self, mock_redis_backend):
+        """Redis 인터페이스 에러 처리 테스트"""
+        # 연결하지 않은 상태에서 연산 시도
+        result = await mock_redis_backend.get("test_key")
+        assert result.is_failure()
+        assert "Not connected" in result.unwrap_error()
+
+
+# 테스트 실행 도우미
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

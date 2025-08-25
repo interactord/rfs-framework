@@ -14,7 +14,7 @@ import pytest
 
 from rfs import Success
 from rfs.production.monitoring.production_monitor import (
-    MonitoringConfiguration,
+    MonitoringConfig,
     ProductionMonitor,
     ServiceHealth,
     SystemStatus,
@@ -27,7 +27,7 @@ class TestProductionMonitor:
     @pytest.fixture
     def config(self):
         """테스트용 모니터링 설정"""
-        return MonitoringConfiguration(
+        return MonitoringConfig(
             enable_system_monitoring=True,
             enable_application_monitoring=True,
             enable_network_monitoring=True,
@@ -58,15 +58,15 @@ class TestProductionMonitor:
             "network_out_mbps": 8.3,
         }
 
-        monitor._collect_system_metrics = AsyncMock(return_value=system_metrics)
-        monitor._collect_application_metrics = AsyncMock(return_value=app_metrics)
-        monitor._collect_network_metrics = AsyncMock(return_value=network_metrics)
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(return_value=system_metrics)
+        monitor.metrics_collector._collect_application_metrics = AsyncMock(return_value=app_metrics)
+        monitor.metrics_collector._collect_network_metrics = AsyncMock(return_value=network_metrics)
 
         # When: 메트릭 수집 실행
         result = await monitor.collect_metrics()
 
         # Then: 모든 메트릭이 올바르게 병합되었는지 확인
-        assert result.is_success
+        assert result.is_success()
         metrics = result.unwrap()
 
         # 시스템 메트릭 확인
@@ -84,9 +84,9 @@ class TestProductionMonitor:
         assert metrics.network_out_mbps == 8.3
 
         # 메트릭 수집 함수들이 호출되었는지 확인
-        monitor._collect_system_metrics.assert_called_once()
-        monitor._collect_application_metrics.assert_called_once()
-        monitor._collect_network_metrics.assert_called_once()
+        monitor.metrics_collector._collect_system_metrics.assert_called_once()
+        monitor.metrics_collector._collect_application_metrics.assert_called_once()
+        monitor.metrics_collector._collect_network_metrics.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_partial_metrics_collection(self, monitor):
@@ -102,15 +102,15 @@ class TestProductionMonitor:
             "disk_usage_percent": 50.0,
         }
 
-        monitor._collect_system_metrics = AsyncMock(return_value=system_metrics)
-        monitor._collect_application_metrics = AsyncMock()
-        monitor._collect_network_metrics = AsyncMock()
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(return_value=system_metrics)
+        monitor.metrics_collector._collect_application_metrics = AsyncMock()
+        monitor.metrics_collector._collect_network_metrics = AsyncMock()
 
         # When: 메트릭 수집
         result = await monitor.collect_metrics()
 
         # Then: 시스템 메트릭만 수집되었는지 확인
-        assert result.is_success
+        assert result.is_success()
         metrics = result.unwrap()
 
         assert metrics.cpu_usage_percent == 30.0
@@ -118,22 +118,22 @@ class TestProductionMonitor:
         assert metrics.disk_usage_percent == 50.0
 
         # 다른 수집 함수들은 호출되지 않았는지 확인
-        monitor._collect_system_metrics.assert_called_once()
-        monitor._collect_application_metrics.assert_not_called()
-        monitor._collect_network_metrics.assert_not_called()
+        monitor.metrics_collector._collect_system_metrics.assert_called_once()
+        monitor.metrics_collector._collect_application_metrics.assert_not_called()
+        monitor.metrics_collector._collect_network_metrics.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_system_status_determination(self, monitor):
         """시스템 상태 결정 로직 테스트"""
         # Given: 높은 CPU 사용률
-        monitor._collect_system_metrics = AsyncMock(
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(
             return_value={
                 "cpu_usage_percent": 95.0,  # Critical threshold
                 "memory_usage_percent": 50.0,
                 "disk_usage_percent": 40.0,
             }
         )
-        monitor._collect_application_metrics = AsyncMock(
+        monitor.metrics_collector._collect_application_metrics = AsyncMock(
             return_value={
                 "request_count": 100,
                 "error_count": 2,
@@ -146,7 +146,7 @@ class TestProductionMonitor:
         result = await monitor.collect_metrics()
 
         # Then: 시스템 상태가 CRITICAL인지 확인
-        assert result.is_success
+        assert result.is_success()
         metrics = result.unwrap()
         assert metrics.system_status == SystemStatus.CRITICAL
 
@@ -154,14 +154,14 @@ class TestProductionMonitor:
     async def test_service_health_determination(self, monitor):
         """서비스 헬스 결정 로직 테스트"""
         # Given: 높은 에러율
-        monitor._collect_system_metrics = AsyncMock(
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(
             return_value={
                 "cpu_usage_percent": 40.0,
                 "memory_usage_percent": 50.0,
                 "disk_usage_percent": 60.0,
             }
         )
-        monitor._collect_application_metrics = AsyncMock(
+        monitor.metrics_collector._collect_application_metrics = AsyncMock(
             return_value={
                 "request_count": 100,
                 "error_count": 25,  # 25% error rate - unhealthy
@@ -173,16 +173,16 @@ class TestProductionMonitor:
         # When: 메트릭 수집
         result = await monitor.collect_metrics()
 
-        # Then: 서비스 헬스가 UNHEALTHY인지 확인
-        assert result.is_success
+        # Then: 서비스 헬스가 DOWN인지 확인
+        assert result.is_success()
         metrics = result.unwrap()
-        assert metrics.service_health == ServiceHealth.UNHEALTHY
+        assert metrics.service_health == ServiceHealth.DOWN
 
     @pytest.mark.asyncio
     async def test_metrics_collection_error_handling(self, monitor):
         """메트릭 수집 중 오류 처리 테스트"""
         # Given: 시스템 메트릭 수집 중 오류 발생
-        monitor._collect_system_metrics = AsyncMock(
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(
             side_effect=Exception("Simulated error")
         )
 
@@ -190,8 +190,8 @@ class TestProductionMonitor:
         result = await monitor.collect_metrics()
 
         # Then: 실패 결과 반환
-        assert result.is_failure
-        assert "메트릭 수집 실패" in result.unwrap_err()
+        assert result.is_failure()
+        assert "메트릭 수집 실패" in result.unwrap_error()
 
 
 if __name__ == "__main__":

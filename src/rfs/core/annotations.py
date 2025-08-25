@@ -55,7 +55,7 @@ class AnnotationMetadata:
     annotation_type: AnnotationType
     name: str
     target_class: Type[Any]
-    dependencies: List[str] = []
+    dependencies: List[str] = field(default_factory=list)
     scope: ComponentScope = ComponentScope.SINGLETON
     lazy: bool = False
     profile: Optional[str] = None

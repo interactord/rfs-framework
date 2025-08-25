@@ -36,7 +36,7 @@ import psutil
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 T = TypeVar('T')

@@ -29,7 +29,7 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from ..optimization import OptimizationSuite, PerformanceOptimizer
 from ..security import SecurityScanner
 from ..validation import (
@@ -76,8 +76,8 @@ class ReadinessCheck:
     required_level: ReadinessLevel
     passed: bool = False
     score: float = 0.0
-    details: Dict[str, Any] = {}
-    recommendations: List[str] = []
+    details: Dict[str, Any] = field(default_factory=dict)
+    recommendations: List[str] = field(default_factory=list)
 
     @property
     def is_critical(self) -> bool:

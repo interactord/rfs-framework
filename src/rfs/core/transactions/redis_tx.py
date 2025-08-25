@@ -12,10 +12,14 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import redis
-from redis.client import Pipeline
+try:
+    import redis
+    from redis.client import Pipeline
+except ImportError:
+    redis = None
+    Pipeline = None
 
-from ..core import Failure, Result, Success
+from ..result import Failure, Result, Success
 from .base import (
     TransactionError,
     TransactionMetadata,
@@ -36,7 +40,7 @@ class RedisLock:
 
     def __init__(
         self,
-        redis_client: redis.Redis,
+        redis_client: Any,  # redis.Redis when available
         key: str,
         timeout: int = 10,
         retry_times: int = 3,
@@ -98,7 +102,7 @@ class RedisLock:
 class RedisTransactionResource(TransactionResource):
     """Redis 트랜잭션 리소스"""
 
-    def __init__(self, redis_client: redis.Redis):
+    def __init__(self, redis_client: Any):
         self.redis = redis_client
         self.pipelines = {}
         self.savepoints: Dict[str, Dict[str, Any]] = {}
@@ -169,7 +173,7 @@ class RedisTransactionManager:
 
     def __init__(
         self,
-        redis_client: Optional[redis.Redis] = None,
+        redis_client: Optional[Any] = None,
         host: str = "localhost",
         port: int = 6379,
         db: int = 0,
@@ -178,7 +182,7 @@ class RedisTransactionManager:
     ):
         if redis_client:
             self.redis = redis_client
-        else:
+        elif redis:
             self.redis = redis.Redis(
                 host=host,
                 port=port,
@@ -187,12 +191,14 @@ class RedisTransactionManager:
                 decode_responses=True,
                 **kwargs,
             )
+        else:
+            self.redis = None
         self.resource = RedisTransactionResource(self.redis)
         self.current_pipeline = None
         manager = get_transaction_manager()
         manager.register_resource("redis", self.resource)
 
-    def pipeline(self, transaction: bool = True) -> Pipeline:
+    def pipeline(self, transaction: bool = True) -> Any:  # Pipeline when redis is available
         """파이프라인 생성"""
         pipeline = self.redis.pipeline(transaction=transaction)
         self.current_pipeline = pipeline
@@ -246,7 +252,7 @@ class RedisTransactionManager:
 
     def multi_exec(
         self,
-        operations: List[Callable[[Pipeline], None]],
+        operations: List[Callable[[Any], None]],  # Pipeline when available
         watch_keys: Optional[List[str]] = None,
     ) -> Result[List[Any], str]:
         """

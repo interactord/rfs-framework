@@ -81,7 +81,7 @@ class CloudRunServiceDiscovery(metaclass=SingletonMeta):
         self._services = {**self._services, name: endpoint}
         logger.info(f"Service registered: {name}")
 
-    def get_service(self, name: str) -> Optional.get("ServiceEndpoint"):
+    def get_service(self, name: str) -> Optional["ServiceEndpoint"]:
         """서비스 조회"""
         return self._services.get(name)
 

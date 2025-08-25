@@ -25,7 +25,7 @@ import psutil
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 
@@ -97,7 +97,7 @@ class ProductionMetrics:
     system_status: SystemStatus
     service_health: ServiceHealth
     uptime_seconds: float
-    custom_metrics: Dict[str, float] = {}
+    custom_metrics: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -176,16 +176,41 @@ class MetricsCollector:
                     "uptime_seconds": time.time() - self.process_start_time,
                 },
             }
+            # 기본값 설정
+            default_values = {
+                "timestamp": datetime.now(),
+                "cpu_usage_percent": 0.0,
+                "memory_usage_percent": 0.0,
+                "memory_available_mb": 0.0,
+                "disk_usage_percent": 0.0,
+                "disk_available_gb": 0.0,
+                "network_in_mbps": 0.0,
+                "network_out_mbps": 0.0,
+                "request_count": 0,
+                "error_count": 0,
+                "avg_response_time_ms": 0.0,
+                "active_connections": 0,
+                "queue_size": 0,
+                "system_status": SystemStatus.UNKNOWN,
+                "service_health": ServiceHealth.UNKNOWN,
+                "uptime_seconds": 0.0,
+                "custom_metrics": {},
+            }
+            
+            # 기본값과 수집된 메트릭 병합
+            merged_metrics = {**default_values, **metrics_data}
+            
+            # ProductionMetrics 생성
             metrics = ProductionMetrics(
                 **{
                     k: v
-                    for k, v in metrics_data.items()
+                    for k, v in merged_metrics.items()
                     if k in ProductionMetrics.__dataclass_fields__
                 }
             )
             return Success(metrics)
         except Exception as e:
-            return Failure(f"Failed to collect metrics: {e}")
+            return Failure(f"메트릭 수집 실패: {e}")
 
     async def _collect_system_metrics(self) -> Dict[str, Any]:
         """시스템 메트릭 수집"""
@@ -241,13 +266,10 @@ class MetricsCollector:
             else:
                 network_in_mbps = 0.0
                 network_out_mbps = 0.0
-            network_baseline = {
-                **network_baseline,
-                **{
-                    "bytes_sent": net_io.bytes_sent,
-                    "bytes_recv": net_io.bytes_recv,
-                    "last_update": current_time,
-                },
+            self.network_baseline = {
+                "bytes_sent": net_io.bytes_sent,
+                "bytes_recv": net_io.bytes_recv,
+                "last_update": current_time,
             }
             return {
                 "network_in_mbps": max(0.0, network_in_mbps),
@@ -642,6 +664,10 @@ class ProductionMonitor:
         except Exception as e:
             return Failure(f"Production monitor initialization failed: {e}")
 
+    async def collect_metrics(self) -> Result[ProductionMetrics, str]:
+        """메트릭 수집 - MetricsCollector에 위임"""
+        return await self.metrics_collector.collect_metrics()
+    
     async def start_monitoring(self) -> Result[bool, str]:
         """모니터링 시작"""
         if self.is_running:

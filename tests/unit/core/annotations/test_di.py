@@ -14,7 +14,7 @@ from rfs.core.annotations.di import (
 from rfs.core.annotations.base import (
     get_annotation_metadata, 
     AnnotationType,
-    ComponentScope
+    ServiceScope
 )
 
 
@@ -31,16 +31,16 @@ class TestComponentDecorator:
         assert metadata is not None
         assert metadata.name == "test_component"
         assert metadata.annotation_type == AnnotationType.COMPONENT
-        assert metadata.scope == ComponentScope.SINGLETON  # 기본값
+        assert metadata.scope == ServiceScope.SINGLETON  # 기본값
     
     def test_component_with_scope(self):
         """스코프 지정된 Component 테스트"""
-        @Component(name="scoped_component", scope=ComponentScope.PROTOTYPE)
+        @Component(name="scoped_component", scope=ServiceScope.PROTOTYPE)
         class ScopedComponent:
             pass
         
         metadata = get_annotation_metadata(ScopedComponent)
-        assert metadata.scope == ComponentScope.PROTOTYPE
+        assert metadata.scope == ServiceScope.PROTOTYPE
     
     def test_component_with_dependencies(self):
         """의존성이 있는 Component 테스트"""
@@ -142,7 +142,7 @@ class TestUseCaseDecorator:
         assert metadata is not None
         assert metadata.name == "create_user"
         assert metadata.annotation_type == AnnotationType.USE_CASE
-        assert metadata.scope == ComponentScope.PROTOTYPE  # UseCase 기본 스코프
+        assert metadata.scope == ServiceScope.PROTOTYPE  # UseCase 기본 스코프
     
     def test_use_case_with_dependencies(self):
         """포트 의존성이 있는 UseCase 테스트"""
@@ -167,7 +167,7 @@ class TestControllerDecorator:
         assert metadata is not None
         assert metadata.name == "user_controller"
         assert metadata.annotation_type == AnnotationType.CONTROLLER
-        assert metadata.scope == ComponentScope.REQUEST  # Controller 기본 스코프
+        assert metadata.scope == ServiceScope.REQUEST  # Controller 기본 스코프
     
     def test_controller_with_use_cases(self):
         """UseCase 의존성이 있는 Controller 테스트"""
@@ -193,16 +193,16 @@ class TestServiceDecorator:
         assert metadata is not None
         assert metadata.name == "email_service"
         assert metadata.annotation_type == AnnotationType.SERVICE
-        assert metadata.scope == ComponentScope.SINGLETON
+        assert metadata.scope == ServiceScope.SINGLETON
     
     def test_service_with_scope(self):
         """스코프 지정 Service 테스트"""
-        @Service(name="session_service", scope=ComponentScope.REQUEST)
+        @Service(name="session_service", scope=ServiceScope.REQUEST)
         class SessionService:
             pass
         
         metadata = get_annotation_metadata(SessionService)
-        assert metadata.scope == ComponentScope.REQUEST
+        assert metadata.scope == ServiceScope.REQUEST
 
 
 class TestRepositoryDecorator:
@@ -219,7 +219,7 @@ class TestRepositoryDecorator:
         assert metadata is not None
         assert metadata.name == "user_repository"
         assert metadata.annotation_type == AnnotationType.REPOSITORY
-        assert metadata.scope == ComponentScope.SINGLETON
+        assert metadata.scope == ServiceScope.SINGLETON
     
     def test_repository_with_dependencies(self):
         """데이터베이스 의존성이 있는 Repository 테스트"""
@@ -314,13 +314,13 @@ class TestScopeDecorator:
     def test_scope_override(self):
         """Scope 오버라이드 테스트"""
         @Component(name="test")
-        @Scope(ComponentScope.PROTOTYPE)
+        @Scope(ServiceScope.PROTOTYPE)
         class PrototypeComponent:
             pass
         
         metadata = get_annotation_metadata(PrototypeComponent)
         # @Scope가 @Component의 기본 스코프를 오버라이드
-        assert metadata.scope == ComponentScope.PROTOTYPE
+        assert metadata.scope == ServiceScope.PROTOTYPE
 
 
 class TestPrimaryDecorator:
@@ -405,7 +405,7 @@ class TestDecoratorCombinations:
     def test_multiple_decorators(self):
         """여러 데코레이터 조합 테스트"""
         @Service(name="complex_service")
-        @Scope(ComponentScope.REQUEST)
+        @Scope(ServiceScope.REQUEST)
         @Primary
         @Lazy
         class ComplexService:
@@ -421,7 +421,7 @@ class TestDecoratorCombinations:
         metadata = get_annotation_metadata(ComplexService)
         assert metadata.name == "complex_service"
         assert metadata.annotation_type == AnnotationType.SERVICE
-        assert metadata.scope == ComponentScope.REQUEST
+        assert metadata.scope == ServiceScope.REQUEST
         assert metadata.lazy is True
     
     def test_port_adapter_combination(self):

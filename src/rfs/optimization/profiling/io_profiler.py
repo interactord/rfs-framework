@@ -18,9 +18,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 
-from ...core.types import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -181,8 +186,8 @@ class IOBottleneck:
 class IOMetrics:
     """I/O 메트릭"""
 
-    snapshots: List[IOSnapshot] = []
-    detected_bottlenecks: List[IOBottleneck] = []
+    snapshots: List[str] = field(default_factory=list)
+    detected_bottlenecks: List[str] = field(default_factory=list)
 
     def add_snapshot(self, snapshot: IOSnapshot):
         """스냅샷 추가"""

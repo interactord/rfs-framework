@@ -35,7 +35,8 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ..core import Failure, Result, Success, get_config
+from ..core.result import Failure, Result, Success
+from ..core.config import get_config
 
 if RICH_AVAILABLE:
     console = Console()
@@ -82,9 +83,9 @@ class ValidationResult:
     name: str
     status: ValidationStatus
     message: str
-    details: Dict[str, Any] = {}
+    details: Dict[str, Any] = field(default_factory=dict)
     execution_time: float = 0.0
-    recommendations: List[str] = []
+    recommendations: List[str] = field(default_factory=list)
     severity: str = "info"
 
     @property
@@ -105,7 +106,7 @@ class ValidationSuite:
     name: str
     description: str
     level: ValidationLevel = ValidationLevel.STANDARD
-    categories: List[ValidationCategory] = []
+    categories: List[str] = field(default_factory=list)
     timeout: int = 300
     parallel: bool = True
     continue_on_failure: bool = True
@@ -275,7 +276,7 @@ class SystemValidator:
                         )
                     ]
             try:
-                from ..core import Failure, Result, Success
+                from ..core.result import Failure, Result, Success
 
                 success_result = Success("test")
                 failure_result = Failure("error")

@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import croniter
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import CallableTask, Task, TaskPriority
 from .manager import AsyncTaskManager, get_task_manager
 

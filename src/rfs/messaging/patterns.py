@@ -341,9 +341,9 @@ class SagaContext:
     saga_id: str
     status: SagaStatus = SagaStatus.PENDING
     current_step: int = 0
-    completed_steps: List[str] = []
+    completed_steps: List[str] = field(default_factory=list)
     failed_step: Optional[str] = None
-    data: Dict[str, Any] = {}
+    data: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 

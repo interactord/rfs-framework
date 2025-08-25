@@ -7,7 +7,7 @@ Inspired by Spring Reactor Mono
 import asyncio
 from typing import Any, Callable, Generic, Optional, TypeVar
 
-from rfs.core.result import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -173,8 +173,10 @@ class Mono(Generic[T]):
 
         def with_timeout():
             async def async_with_timeout():
-                return await asyncio.wait_for(self.source(), timeout=duration)
-                return Failure(str(e))
+                try:
+                    return await asyncio.wait_for(self.source(), timeout=duration)
+                except asyncio.TimeoutError as e:
+                    raise TimeoutError(f"Operation timed out after {duration} seconds")
 
             return async_with_timeout()
 
@@ -187,7 +189,12 @@ class Mono(Generic[T]):
             async def async_with_retry():
                 last_exception = None
                 for attempt in range(max_attempts):
-                    return await self.source()
+                    try:
+                        return await self.source()
+                    except Exception as e:
+                        last_exception = e
+                        if attempt == max_attempts - 1:
+                            raise
                 raise last_exception or Exception("Max retry attempts exceeded")
 
             return async_with_retry()
@@ -199,8 +206,10 @@ class Mono(Generic[T]):
 
         def with_error_fallback():
             async def async_with_error_fallback():
-                return await self.source()
-                return fallback_value
+                try:
+                    return await self.source()
+                except Exception:
+                    return fallback_value
 
             return async_with_error_fallback()
 
@@ -211,8 +220,10 @@ class Mono(Generic[T]):
 
         def with_error_resume():
             async def async_with_error_resume():
-                return await self.source()
-                return await fallback_mono.source()
+                try:
+                    return await self.source()
+                except Exception:
+                    return await fallback_mono.source()
 
             return async_with_error_resume()
 

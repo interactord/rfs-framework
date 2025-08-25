@@ -225,6 +225,8 @@ ignore_missing_imports = true
 # Pytest 설정
 [tool.pytest.ini_options]
 minversion = "7.0"
+asyncio_mode = "auto"  # strict 대신 auto 사용하여 async fixture 문제 완화
+asyncio_default_fixture_loop_scope = "function"  # 함수 레벨 이벤트 루프
 addopts = [
     "-ra",  # 모든 테스트 결과 요약 표시
     "-q",   # 간단한 출력
@@ -238,6 +240,9 @@ addopts = [
 testpaths = [
     "tests",
 ]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 filterwarnings = [
     "error",
     "ignore::UserWarning",
@@ -249,6 +254,7 @@ markers = [
     "unit: marks tests as unit tests",
     "security: marks tests as security tests",
     "performance: marks tests as performance tests",
+    "asyncio: marks tests as async tests",
 ]
 
 # 커버리지 설정

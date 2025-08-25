@@ -23,8 +23,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
-from rfs.core.result import Failure, Result, Success
-
 from .result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
@@ -71,8 +69,8 @@ class OperationContext:
     trace_id: Optional[str] = None
     span_id: Optional[str] = None
     parent_span_id: Optional[str] = None
-    tags: Dict[str, Any] = {}
-    metadata: Dict[str, Any] = {}
+    tags: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -99,7 +97,7 @@ class AuditLogEntry:
     user_agent: Optional[str] = None
     session_id: Optional[str] = None
     changes: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
     error_message: Optional[str] = None
 
     def to_json(self) -> str:
@@ -438,29 +436,33 @@ def ErrorLogged(
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)
-            error_id = str(uuid.uuid4())
-            log_func = getattr(logger, severity.value.lower(), logger.error)
-            error_message = f"Error ID: {error_id} | Function: {func.__module__}.{func.__name__} | Error: {str(e)}"
-            log_func(error_message)
-            if include_stack_trace:
-                logger.debug(f"[{error_id}] Stack trace:\n{traceback.format_exc()}")
-            if notify:
-                logger.critical(f"NOTIFICATION REQUIRED: {error_message}")
-            return Failure(str(e))
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                error_id = str(uuid.uuid4())
+                log_func = getattr(logger, severity.value.lower(), logger.error)
+                error_message = f"Error ID: {error_id} | Function: {func.__module__}.{func.__name__} | Error: {str(e)}"
+                log_func(error_message)
+                if include_stack_trace:
+                    logger.debug(f"[{error_id}] Stack trace:\n{traceback.format_exc()}")
+                if notify:
+                    logger.critical(f"NOTIFICATION REQUIRED: {error_message}")
+                return Failure(str(e))
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-            error_id = str(uuid.uuid4())
-            log_func = getattr(logger, severity.value.lower(), logger.error)
-            error_message = f"Error ID: {error_id} | Function: {func.__module__}.{func.__name__} | Error: {str(e)}"
-            log_func(error_message)
-            if include_stack_trace:
-                logger.debug(f"[{error_id}] Stack trace:\n{traceback.format_exc()}")
-            if notify:
-                logger.critical(f"NOTIFICATION REQUIRED: {error_message}")
-            return Failure(str(e))
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                error_id = str(uuid.uuid4())
+                log_func = getattr(logger, severity.value.lower(), logger.error)
+                error_message = f"Error ID: {error_id} | Function: {func.__module__}.{func.__name__} | Error: {str(e)}"
+                log_func(error_message)
+                if include_stack_trace:
+                    logger.debug(f"[{error_id}] Stack trace:\n{traceback.format_exc()}")
+                if notify:
+                    logger.critical(f"NOTIFICATION REQUIRED: {error_message}")
+                return Failure(str(e))
 
         if asyncio.iscoroutinefunction(func):
             return async_wrapper

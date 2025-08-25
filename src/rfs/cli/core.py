@@ -378,63 +378,68 @@ class RFSCli:
             plugin.register_commands(self)
 
     def get_state(self) -> Dict[str, Any]:
-                    """CLI 상태 조회"""
-                    return {**self.state, 'project_root': str(self.project_root) if self.project_root else None, 'commands_count': len(self.commands), 'plugins_count': len(self.plugins)}
+        """CLI 상태 조회"""
+        return {**self.state, 'project_root': str(self.project_root) if self.project_root else None, 'commands_count': len(self.commands), 'plugins_count': len(self.plugins)}
 
-                    def create_progress_bar() -> Optional[Progress]:
-                    """진행률 표시줄 생성"""
-                    if RICH_AVAILABLE:
-                    return Progress()
-                    return None
 
-                    def prompt_user(message: str, default: str=None) -> str:
-                    """사용자 입력 받기"""
-                    if RICH_AVAILABLE:
-                    return Prompt.ask(message, default=default)
-                    else:
-                    prompt_text = f'{message}'
-                    if default:
-                    prompt_text = prompt_text + f' [{default}]'
-                    prompt_text = prompt_text + ': '
-                    response = input(prompt_text).strip()
-                    return response or default or ''
+def create_progress_bar() -> Optional[Progress]:
+    """진행률 표시줄 생성"""
+    if RICH_AVAILABLE:
+        return Progress()
+    return None
 
-                    def confirm_user(message: str, default: bool=False) -> bool:
-                    """사용자 확인 받기"""
-                    if RICH_AVAILABLE:
-                    return Confirm.ask(message, default=default)
-                    else:
-                    prompt_text = f'{message} ({('Y/n' if default else 'y/N')}): '
-                    response = input(prompt_text).strip().lower()
-                    if not response:
-                    return default
-                    return response in ['y', 'yes', 'true', '1']
 
-                    def print_success(message: str, console: Console=None):
-                    """성공 메시지 출력"""
-                    if console and RICH_AVAILABLE:
-                    console.print(f'[green]✓ {message}[/green]')
-                    else:
-                    print(f'✓ {message}')
+def prompt_user(message: str, default: str=None) -> str:
+    """사용자 입력 받기"""
+    if RICH_AVAILABLE:
+        return Prompt.ask(message, default=default)
+    else:
+        prompt_text = f'{message}'
+        if default:
+            prompt_text = prompt_text + f' [{default}]'
+        prompt_text = prompt_text + ': '
+        response = input(prompt_text).strip()
+        return response or default or ''
 
-                    def print_error(message: str, console: Console=None):
-                    """에러 메시지 출력"""
-                    if console and RICH_AVAILABLE:
-                    console.print(f'[red]✗ {message}[/red]')
-                    else:
-                    print(f'✗ {message}')
 
-                    def print_warning(message: str, console: Console=None):
-                    """경고 메시지 출력"""
-                    if console and RICH_AVAILABLE:
-                    console.print(f'[yellow]⚠ {message}[/yellow]')
-                    else:
-                    print(f'⚠ {message}')
+def confirm_user(message: str, default: bool=False) -> bool:
+    """사용자 확인 받기"""
+    if RICH_AVAILABLE:
+        return Confirm.ask(message, default=default)
+    else:
+        prompt_text = f'{message} ({"Y/n" if default else "y/N"}): '
+        response = input(prompt_text).strip().lower()
+        if not response:
+            return default
+        return response in ['y', 'yes', 'true', '1']
 
-                    def print_info(message: str, console: Console=None):
-                    """정보 메시지 출력"""
-                    if console and RICH_AVAILABLE:
-                    console.print(f'[blue]ℹ {message}[/blue]')
-                    else:
-                    print(f'ℹ {message}')
-                    cli_app = RFSCli()
+
+def print_success(message: str, console: Console=None):
+    """성공 메시지 출력"""
+    if console and RICH_AVAILABLE:
+        console.print(f'[green]✓ {message}[/green]')
+    else:
+        print(f'✓ {message}')
+
+def print_error(message: str, console: Console=None):
+    """에러 메시지 출력"""
+    if console and RICH_AVAILABLE:
+        console.print(f'[red]✗ {message}[/red]')
+    else:
+        print(f'✗ {message}')
+
+def print_warning(message: str, console: Console=None):
+    """경고 메시지 출력"""
+    if console and RICH_AVAILABLE:
+        console.print(f'[yellow]⚠ {message}[/yellow]')
+    else:
+        print(f'⚠ {message}')
+
+def print_info(message: str, console: Console=None):
+    """정보 메시지 출력"""
+    if console and RICH_AVAILABLE:
+        console.print(f'[blue]ℹ {message}[/blue]')
+    else:
+        print(f'ℹ {message}')
+
+cli_app = RFSCli()

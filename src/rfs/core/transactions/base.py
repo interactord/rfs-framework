@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 
-from ..core import Failure, Result, Success
+from ..result import Failure, Result, Success
 
 T = TypeVar("T")
 E = TypeVar("E")
@@ -80,9 +80,9 @@ class TransactionMetadata:
     ended_at: Optional[datetime] = None
     status: TransactionStatus = TransactionStatus.ACTIVE
     options: TransactionOptions = field(default_factory=TransactionOptions)
-    savepoints: List[str] = []
-    resources: Dict[str, Any] = {}
-    context: Dict[str, Any] = {}
+    savepoints: List[str] = field(default_factory=list)
+    resources: Dict[str, Any] = field(default_factory=dict)
+    context: Dict[str, Any] = field(default_factory=dict)
 
     def duration(self) -> Optional[timedelta]:
         """트랜잭션 실행 시간"""
@@ -261,6 +261,36 @@ class TransactionRollback(TransactionError):
     """트랜잭션 롤백 요청"""
 
     pass
+
+
+@dataclass
+class TransactionConfig:
+    """트랜잭션 설정"""
+    
+    isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
+    timeout_seconds: int = 30
+    retry_count: int = 3
+    retry_delay_seconds: float = 1.0
+    rollback_for: List[type] = field(default_factory=lambda: [Exception])
+    no_rollback_for: List[type] = field(default_factory=list)
+    readonly: bool = False
+
+
+@dataclass
+class RedisTransactionConfig(TransactionConfig):
+    """Redis 트랜잭션 설정"""
+    
+    ttl_seconds: int = 3600
+    prefix: str = "tx"
+
+
+@dataclass
+class DistributedTransactionConfig(TransactionConfig):
+    """분산 트랜잭션 설정"""
+    
+    participant_timeout: int = 60
+    coordinator_timeout: int = 120
+    max_participants: int = 10
 
 
 class TransactionSynchronization:

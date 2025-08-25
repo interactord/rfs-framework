@@ -37,6 +37,7 @@ class MessagePriority(int, Enum):
     LOW = 1
     NORMAL = 5
     HIGH = 8
+    URGENT = 9
     CRITICAL = 10
 
 
@@ -47,7 +48,7 @@ class Message:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     topic: str = ""
     data: Any = None
-    headers: Dict[str, Any] = {}
+    headers: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     priority: MessagePriority = MessagePriority.NORMAL
     ttl: Optional[int] = None
@@ -83,7 +84,7 @@ class Message:
 
     def increment_retry(self):
         """재시도 횟수 증가"""
-        retry_count = retry_count + 1
+        self.retry_count = self.retry_count + 1
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -139,7 +140,7 @@ class Message:
             return b""
 
     @classmethod
-    def deserialize(cls, data: bytes) -> Optional.get("Message"):
+    def deserialize(cls, data: bytes) -> Optional["Message"]:
         """역직렬화"""
         try:
             message_dict = json.loads(data.decode())
@@ -156,6 +157,8 @@ class MessageConfig:
     # 브로커 설정
     broker_type: BrokerType = BrokerType.REDIS
     broker_url: str = "redis://localhost:6379"
+    host: str = "localhost"
+    port: int = 6379
 
     # 연결 설정
     connection_pool_size: int = 10
@@ -166,6 +169,7 @@ class MessageConfig:
     default_ttl: int = 3600  # 1시간
     max_message_size: int = 1024 * 1024  # 1MB
     default_max_retries: int = 3
+    max_retries: int = 3  # Alias for compatibility
 
     # 배치 처리
     batch_size: int = 100
@@ -479,8 +483,9 @@ async def create_message_broker(
 # 고수준 메시징 인터페이스
 @dataclass
 class Messaging:
-    broker_name: Any @ property
+    broker_name: str = "default"
 
+    @property
     def broker(self) -> Optional[MessageBroker]:
         """메시지 브로커"""
         return get_message_broker(self.broker_name)

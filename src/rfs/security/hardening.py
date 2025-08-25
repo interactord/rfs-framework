@@ -63,8 +63,8 @@ class SecurityPolicy:
     # Access control
     max_login_attempts: int = 5
     lockout_duration_minutes: int = 30
-    ip_whitelist: List[str] = []
-    ip_blacklist: List[str] = []
+    ip_whitelist: List[str] = field(default_factory=list)
+    ip_blacklist: List[str] = field(default_factory=list)
 
     # Encryption
     encryption_algorithm: str = "AES-256"
@@ -81,7 +81,7 @@ class SecurityPolicy:
     require_data_encryption_in_transit: bool = True
 
     # Compliance
-    compliance_standards: List[ComplianceStandard] = []
+    compliance_standards: List[str] = field(default_factory=list)
 
     # Audit
     enable_audit_logging: bool = True
@@ -98,11 +98,11 @@ class HardeningResult:
     total_checks: int = 0
     passed_checks: int = 0
     failed_checks: int = 0
-    critical_issues: List[str] = []
-    warnings: List[str] = []
-    recommendations: List[str] = []
-    compliance_status: Dict[str, bool] = {}
-    remediation_actions: List[str] = []
+    critical_issues: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    compliance_status: Dict[str, Any] = field(default_factory=dict)
+    remediation_actions: List[str] = field(default_factory=list)
 
     @property
     def success_rate(self) -> float:
@@ -664,7 +664,7 @@ def create_security_policy(
 
 
 def apply_security_hardening(
-    policy: SecurityPolicy = None, target: Dict[str, Any] = {}
+    policy: SecurityPolicy = None, target: Dict[str, Any] = field(default_factory=dict)
 ) -> Result[HardeningResult, str]:
     """
     보안 강화 적용 헬퍼

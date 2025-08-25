@@ -12,7 +12,7 @@ import threading
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import Task, TaskMetadata
 
 logger = logging.getLogger(__name__)

@@ -7,11 +7,9 @@ RFS Message Subscriber (RFS v4.1)
 import asyncio
 import inspect
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Set, Union
-
-from rfs.core.result import Failure, Result, Success
 
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
@@ -96,8 +94,9 @@ class FunctionMessageHandler(MessageHandler):
 class Subscriber:
     """메시지 구독자"""
     
-    def __init__(self, broker_name: str = None, config: SubscriptionConfig = None):
+    def __init__(self, broker_name: str = None, broker: MessageBroker = None, config: SubscriptionConfig = None):
         self.broker_name = broker_name
+        self._broker = broker
         self.config = config or SubscriptionConfig()
         
         self._subscriptions: Dict[str, Dict[str, Any]] = {}  # topic -> subscription_info
@@ -116,6 +115,8 @@ class Subscriber:
     @property
     def broker(self) -> Optional[MessageBroker]:
         """메시지 브로커"""
+        if self._broker:
+            return self._broker
         return get_message_broker(self.broker_name)
     
     async def subscribe(

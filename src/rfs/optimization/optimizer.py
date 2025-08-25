@@ -11,6 +11,7 @@ RFS v4 성능 최적화 메인 엔진
 import asyncio
 import gc
 import json
+import os
 import sys
 import threading
 import time
@@ -20,7 +21,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 try:
     from rich.console import Console
@@ -32,7 +36,7 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
     console = Console()
@@ -81,9 +85,9 @@ class OptimizationResult:
     impact_score: float
     implementation_difficulty: int
     estimated_improvement: str
-    before_metrics: Dict[str, Any] = {}
-    after_metrics: Dict[str, Any] = {}
-    recommendations: List[str] = []
+    before_metrics: Dict[str, Any] = field(default_factory=dict)
+    after_metrics: Dict[str, Any] = field(default_factory=dict)
+    recommendations: List[str] = field(default_factory=list)
     code_changes: List[Dict[str, str]] = field(default_factory=list)
     applied: bool = False
 
@@ -100,7 +104,7 @@ class OptimizationSuite:
     """최적화 스위트"""
 
     name: str
-    target_types: List[OptimizationType] = []
+    target_types: List[str] = field(default_factory=list)
     auto_apply: bool = False
     max_impact_threshold: float = 50.0
     include_experimental: bool = False
@@ -190,9 +194,18 @@ class PerformanceOptimizer:
 
             import psutil
 
-            process = psutil.Process(os.getpid())
-            memory_info = process.memory_info()
-            cpu_percent = process.cpu_percent(interval=1)
+            if psutil:
+                process = psutil.Process(os.getpid())
+                memory_info = process.memory_info()
+                cpu_percent = process.cpu_percent(interval=1)
+                num_threads = process.num_threads()
+            else:
+                process = None
+                # Provide default values when psutil is not available
+                memory_info = type('MemoryInfo', (), {'rss': 0, 'vms': 0})()
+                cpu_percent = 0
+                num_threads = threading.active_count()
+            
             start_time = time.time()
             try:
                 from .. import core
@@ -212,7 +225,7 @@ class PerformanceOptimizer:
                     "rss_mb": memory_info.rss / 1024 / 1024,
                     "vms_mb": memory_info.vms / 1024 / 1024,
                 },
-                "cpu": {"percent": cpu_percent, "num_threads": process.num_threads()},
+                "cpu": {"percent": cpu_percent, "num_threads": num_threads},
                 "startup": {"import_time": import_time},
                 "gc": gc_stats,
                 "system": {"python_version": sys.version, "platform": sys.platform},
@@ -636,15 +649,27 @@ class PerformanceOptimizer:
 
             import psutil
 
-            process = psutil.Process(os.getpid())
+            if psutil:
+                process = psutil.Process(os.getpid())
+                memory_info = process.memory_info()
+                memory_percent = process.memory_percent()
+                cpu_percent = process.cpu_percent()
+                num_threads = process.num_threads()
+            else:
+                process = None
+                memory_info = type('MemoryInfo', (), {'rss': 0})()
+                memory_percent = 0
+                cpu_percent = 0
+                num_threads = threading.active_count()
+            
             metrics = {
                 "timestamp": datetime.now().isoformat(),
                 "memory": {
-                    "rss_mb": process.memory_info().rss / 1024 / 1024,
-                    "percent": process.memory_percent(),
+                    "rss_mb": memory_info.rss / 1024 / 1024,
+                    "percent": memory_percent,
                 },
-                "cpu": {"percent": process.cpu_percent()},
-                "threads": process.num_threads(),
+                "cpu": {"percent": cpu_percent},
+                "threads": num_threads,
                 "gc": {
                     "collections": [
                         (

@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 
-from ...core.types import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class OptimizationResult:
     performance_improvement: Dict[str, float]
     resource_savings: Dict[str, float]
     recommendations: List[str]
-    errors: List[str] = []
+    errors: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

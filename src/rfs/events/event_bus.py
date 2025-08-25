@@ -37,8 +37,8 @@ class Event:
     """이벤트 베이스 클래스"""
 
     event_type: str
-    data: Dict[str, Any] = {}
-    metadata: Dict[str, Any] = {}
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
     event_id: str = field(
         default_factory=lambda: f"event_{int(datetime.now().timestamp())}"
     )

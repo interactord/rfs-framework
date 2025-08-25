@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 
 class ServiceStatus(Enum):
@@ -91,7 +91,7 @@ class ServiceHealth:
     error_count: int = 0
     success_count: int = 0
     consecutive_failures: int = 0
-    details: Dict[str, Any] = {}
+    details: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_healthy(self) -> bool:
@@ -133,9 +133,9 @@ class ServiceMetadata:
     environment: str = "production"
     region: str = "default"
     zone: str = "default"
-    tags: List[str] = []
-    labels: Dict[str, str] = {}
-    annotations: Dict[str, Any] = {}
+    tags: List[str] = field(default_factory=list)
+    labels: Dict[str, Any] = field(default_factory=dict)
+    annotations: Dict[str, Any] = field(default_factory=dict)
     weight: int = 100  # 로드 밸런싱 가중치
     priority: int = 0  # 우선순위
 
@@ -170,7 +170,7 @@ class ServiceInfo:
     ttl: Optional[timedelta] = None
 
     # 의존성
-    dependencies: List[str] = []
+    dependencies: List[str] = field(default_factory=list)
 
     @property
     def is_available(self) -> bool:
@@ -283,9 +283,9 @@ class HealthCheck:
     check_type: str = "http"  # http, tcp, grpc, exec
     check_path: str = "/health"
     check_method: str = "GET"
-    check_headers: Dict[str, str] = {}
+    check_headers: Dict[str, Any] = field(default_factory=dict)
     check_body: Optional[str] = None
-    expected_status: List[int] = []
+    expected_status: List[str] = field(default_factory=list)
 
     def should_check(self, last_check: Optional[datetime]) -> bool:
         """체크 필요 여부"""

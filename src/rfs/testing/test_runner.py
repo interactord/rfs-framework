@@ -43,7 +43,7 @@ class TestResult:
     message: Optional[str] = None
     error: Optional[Exception] = None
     traceback: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def is_passed(self) -> bool:
         return self.status == TestStatus.PASSED

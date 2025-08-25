@@ -12,8 +12,6 @@ RFS Performance Profiling Suite (RFS v4.2)
 from .cpu_profiler import CPUMetrics, CPUProfiler, CPUSnapshot
 from .io_profiler import IOMetrics, IOProfiler, IOSnapshot
 from .memory_profiler import MemoryMetrics, MemoryProfiler, MemorySnapshot
-from .performance_analyzer import PerformanceAnalyzer, PerformanceInsights
-from .profiling_dashboard import PerformanceReport, ProfilingDashboard
 from .system_profiler import ResourceUsage, SystemMetrics, SystemProfiler
 
 # 전역 프로파일러 인스턴스
@@ -57,20 +55,6 @@ def get_io_profiler() -> IOProfiler:
     return _io_profiler
 
 
-def get_profiling_dashboard() -> ProfilingDashboard:
-    """전역 프로파일링 대시보드 인스턴스 반환"""
-    # global _profiling_dashboard - removed for functional programming
-    if _profiling_dashboard is None:
-        _profiling_dashboard = ProfilingDashboard()
-    return _profiling_dashboard
-
-
-def get_performance_analyzer() -> PerformanceAnalyzer:
-    """전역 성능 분석기 인스턴스 반환"""
-    # global _performance_analyzer - removed for functional programming
-    if _performance_analyzer is None:
-        _performance_analyzer = PerformanceAnalyzer()
-    return _performance_analyzer
 
 
 # 편의 함수들
@@ -90,10 +74,6 @@ async def stop_profiling():
     await get_io_profiler().stop()
 
 
-async def get_performance_snapshot():
-    """현재 성능 스냅샷 생성"""
-    analyzer = get_performance_analyzer()
-    return await analyzer.create_snapshot()
 
 
 __all__ = [
@@ -110,20 +90,12 @@ __all__ = [
     "IOProfiler",
     "IOMetrics",
     "IOSnapshot",
-    # Dashboard & Analysis
-    "ProfilingDashboard",
-    "PerformanceReport",
-    "PerformanceAnalyzer",
-    "PerformanceInsights",
     # Factory Functions
     "get_system_profiler",
     "get_memory_profiler",
     "get_cpu_profiler",
     "get_io_profiler",
-    "get_profiling_dashboard",
-    "get_performance_analyzer",
     # Convenience Functions
     "start_profiling",
     "stop_profiling",
-    "get_performance_snapshot",
 ]

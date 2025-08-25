@@ -15,11 +15,12 @@ from ..core.result import Failure, Result, Success
 from ..core.singleton import SingletonMeta
 from .rollback import (
     DeploymentCheckpoint,
-)
-from .rollback import RollbackManager as RollbackManagerImpl
-from .rollback import (
+    RollbackManager,
     RollbackTrigger,
 )
+
+# Alias for internal use
+RollbackManagerImpl = RollbackManager
 from .strategies import DeploymentConfig as StrategyConfig
 from .strategies import (
     DeploymentMetrics,
@@ -67,9 +68,9 @@ class DeploymentConfig:
     validation_duration: int = 300  # seconds
     max_rollback_attempts: int = 3
     deployment_timeout: int = 1800  # seconds
-    pre_deployment_hooks: List[Callable] = []
-    post_deployment_hooks: List[Callable] = []
-    rollback_hooks: List[Callable] = []
+    pre_deployment_hooks: List[str] = field(default_factory=list)
+    post_deployment_hooks: List[str] = field(default_factory=list)
+    rollback_hooks: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -83,8 +84,8 @@ class DeploymentResult:
     end_time: Optional[datetime] = None
     version: Optional[str] = None
     environment: Optional[str] = None
-    metrics: Dict[str, Any] = {}
-    errors: List[str] = []
+    metrics: Dict[str, Any] = field(default_factory=dict)
+    errors: List[str] = field(default_factory=list)
     rollback_performed: bool = False
 
 
@@ -379,12 +380,42 @@ async def rollback_deployment(
     return await manager.rollback(deployment_id, strategy)
 
 
+async def rollback_deployment(deployment_id: str, reason: str = "Manual rollback") -> Result[bool, str]:
+    """
+    배포 롤백 실행
+
+    Args:
+        deployment_id: 배포 ID
+        reason: 롤백 사유
+
+    Returns:
+        Result[성공 여부, 에러 메시지]
+    """
+    manager = get_rollback_manager()
+    try:
+        # Trigger rollback with reason
+        result = await manager.trigger_rollback(
+            RollbackTrigger.MANUAL,
+            reason=reason
+        )
+        
+        if result:
+            logger.info(f"Deployment {deployment_id} rolled back successfully: {reason}")
+            return Success(True)
+        else:
+            return Failure(f"Failed to rollback deployment {deployment_id}")
+    except Exception as e:
+        logger.error(f"Rollback failed for {deployment_id}: {e}")
+        return Failure(str(e))
+
+
 __all__ = [
     "ProductionDeployer",
     "DeploymentStrategy",
     "DeploymentStatus",
     "DeploymentConfig",
     "DeploymentResult",
+    "RollbackManager",
     "get_production_deployer",
     "get_rollback_manager",
     "deploy_to_production",

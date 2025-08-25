@@ -69,9 +69,9 @@ if PYDANTIC_AVAILABLE:
             ..., min_length=1, max_length=100, description="작업 고유 ID"
         )
         handler_path: str = Field(
-            ..., regex="^/[a-zA-Z0-9\\-_/]*$", description="작업 처리 핸들러 경로"
+            ..., pattern="^/[a-zA-Z0-9\\-_/]*$", description="작업 처리 핸들러 경로"
         )
-        payload: Dict[str, Any] = {}
+        payload: Dict[str, Any] = field(default_factory=dict)
         priority: TaskPriority = Field(
             default=TaskPriority.NORMAL, description="작업 우선순위"
         )
@@ -92,14 +92,14 @@ if PYDANTIC_AVAILABLE:
         )
         http_method: str = Field(
             default="POST",
-            regex="^(GET|POST|PUT|DELETE|PATCH)$",
+            pattern="^(GET|POST|PUT|DELETE|PATCH)$",
             description="HTTP 메서드",
         )
-        headers: Dict[str, str] = {}
+        headers: Dict[str, Any] = field(default_factory=dict)
         queue_name: str = Field(
             default="default", min_length=1, max_length=100, description="큐 이름"
         )
-        tags: List[str] = []
+        tags: List[str] = field(default_factory=list)
         created_at: datetime = Field(
             default_factory=datetime.now, description="생성 시간"
         )
@@ -169,7 +169,7 @@ else:
 
         task_id: str
         handler_path: str
-        payload: Dict[str, Any] = {}
+        payload: Dict[str, Any] = field(default_factory=dict)
         priority: TaskPriority = TaskPriority.NORMAL
         schedule_time: Optional[datetime] = None
         delay_seconds: int = 0
@@ -177,9 +177,9 @@ else:
         retry_min_backoff: int = 1
         retry_max_backoff: int = 300
         http_method: str = "POST"
-        headers: Dict[str, str] = {}
+        headers: Dict[str, Any] = field(default_factory=dict)
         queue_name: str = "default"
-        tags: List[str] = []
+        tags: List[str] = field(default_factory=list)
         created_at: datetime = field(default_factory=datetime.now)
 
         def calculate_schedule_time(self) -> datetime:

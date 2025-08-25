@@ -16,7 +16,7 @@ import os
 import pkgutil
 import sys
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Type, Union
 
@@ -24,10 +24,10 @@ from .annotation_registry import AnnotationRegistry, RegistrationResult
 from .annotations import (
     AnnotationMetadata,
     AnnotationType,
-    get_annotation_metadata,
     has_annotation,
     validate_hexagonal_architecture,
 )
+from .annotations.base import get_component_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ class ProcessingContext:
     """처리 컨텍스트"""
 
     profile: str = "default"
-    base_packages: List[str] = []
-    exclude_patterns: List[str] = []
+    base_packages: List[str] = field(default_factory=list)
+    exclude_patterns: List[str] = field(default_factory=list)
     auto_register: bool = True
     validate_architecture: bool = True
     resolve_dependencies: bool = True
@@ -50,21 +50,11 @@ class ProcessingResult:
 
     total_scanned: int = 0
     total_registered: int = 0
-    successful_registrations: List[str] = []
-    failed_registrations: List[str] = []
-    validation_errors: List[str] = []
-    warnings: List[str] = []
+    successful_registrations: List[str] = field(default_factory=list)
+    failed_registrations: List[str] = field(default_factory=list)
+    validation_errors: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
     processing_time_ms: float = 0.0
-
-    def __post_init__(self):
-        if self.successful_registrations is None:
-            self.successful_registrations = []
-        if self.failed_registrations is None:
-            self.failed_registrations = []
-        if self.validation_errors is None:
-            self.validation_errors = []
-        if self.warnings is None:
-            self.warnings = []
 
 
 class AnnotationProcessor:
@@ -244,8 +234,8 @@ class AnnotationProcessor:
         else:
             ordered_classes = list(self._discovered_classes.values())
         for cls in ordered_classes:
-            metadata = get_annotation_metadata(cls)
-            if metadata and metadata.profile and (metadata.profile != context.profile):
+            component_metadata = get_component_metadata(cls)
+            if component_metadata and component_metadata.profile and (component_metadata.profile != context.profile):
                 continue
             result = self.registry.register_class(cls)
             results = results + [result]
@@ -259,19 +249,19 @@ class AnnotationProcessor:
         in_degree = defaultdict(int)
         class_by_name = {}
         for cls in self._discovered_classes.values():
-            metadata = get_annotation_metadata(cls)
-            if not metadata:
+            component_metadata = get_component_metadata(cls)
+            if not component_metadata:
                 continue
-            class_by_name[metadata.name] = {metadata.name: cls}
-            if metadata.annotation_type == AnnotationType.PORT:
-                in_degree[metadata.name] = {metadata.name: 0}
+            name = component_metadata.component_id
+            class_by_name[name] = cls
+            # Check if it's a port by looking at metadata
+            if component_metadata.metadata.get('type') == 'port':
+                in_degree[name] = 0
             else:
-                in_degree = {
-                    **in_degree,
-                    metadata.name: {metadata.name: len(metadata.dependencies)},
-                }
-                for dep in metadata.dependencies:
-                    dependency_graph[dep] = dependency_graph[dep] + [metadata.name]
+                deps = [dep.name for dep in component_metadata.dependencies]
+                in_degree[name] = len(deps)
+                for dep in deps:
+                    dependency_graph[dep] = dependency_graph[dep] + [name]
         queue = deque([name for name, degree in in_degree.items() if degree == 0])
         ordered_names = []
         while queue:

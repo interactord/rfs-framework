@@ -28,7 +28,7 @@ class MachineEvent:
     """머신 이벤트"""
 
     name: str
-    data: Dict[str, Any] = {}
+    data: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 

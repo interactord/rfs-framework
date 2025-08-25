@@ -14,7 +14,7 @@ from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
 from ..core.singleton import SingletonMeta
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, field)
 
 
 class HTTPMethod(str, Enum):
@@ -37,10 +37,10 @@ class Route:
     method: HTTPMethod
     handler: Callable
     name: Optional[str] = None
-    tags: List[str] = []
+    tags: List[str] = field(default_factory=list)
     summary: Optional[str] = None
     description: Optional[str] = None
-    middleware: List[str] = []
+    middleware: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.tags is None:

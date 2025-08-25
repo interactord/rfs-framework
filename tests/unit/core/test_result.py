@@ -7,11 +7,10 @@ from typing import Any
 
 from rfs.core.result import (
     Success, Failure, Result,
-    success, failure,
     sequence, combine, first_success,
     partition, traverse, traverse_either, traverse_maybe,
-    result_to_either, result_to_maybe,
-    Either, Maybe
+    result_to_either, result_to_maybe, either_to_result,
+    Either, Maybe, some, none
 )
 
 
@@ -31,20 +30,20 @@ class TestResultBasics:
         result = Failure("error")
         assert result.is_success() is False
         assert result.is_failure() is True
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_error() == "error"
         assert result.unwrap_or(0) == 0
         
     def test_success_helper(self):
-        """Test success helper function"""
-        result = success(100)
+        """Test Success helper function"""
+        result = Success(100)
         assert isinstance(result, Success)
         assert result.unwrap() == 100
         
     def test_failure_helper(self):
-        """Test failure helper function"""
-        result = failure("failed")
+        """Test Failure helper function"""
+        result = Failure("failed")
         assert isinstance(result, Failure)
-        assert result.unwrap_err() == "failed"
+        assert result.unwrap_error() == "failed"
 
 
 class TestResultTransformations:
@@ -61,7 +60,7 @@ class TestResultTransformations:
         result = Failure("error")
         mapped = result.map(lambda x: x * 2)
         assert mapped.is_failure()
-        assert mapped.unwrap_err() == "error"
+        assert mapped.unwrap_error() == "error"
         
     def test_flat_map_on_success(self):
         """Test flat_map (bind) on Success"""
@@ -74,21 +73,21 @@ class TestResultTransformations:
         result = Failure("error")
         mapped = result.flat_map(lambda x: Success(x * 2))
         assert mapped.is_failure()
-        assert mapped.unwrap_err() == "error"
+        assert mapped.unwrap_error() == "error"
         
     def test_map_err_on_success(self):
         """Test map_err on Success"""
         result = Success(10)
-        mapped = result.map_err(lambda e: f"Error: {e}")
+        mapped = result.map_error(lambda e: f"Error: {e}")
         assert mapped.is_success()
         assert mapped.unwrap() == 10
         
     def test_map_err_on_failure(self):
         """Test map_err on Failure"""
         result = Failure("error")
-        mapped = result.map_err(lambda e: f"Error: {e}")
+        mapped = result.map_error(lambda e: f"Error: {e}")
         assert mapped.is_failure()
-        assert mapped.unwrap_err() == "Error: error"
+        assert mapped.unwrap_error() == "Error: error"
 
 
 class TestResultCombinators:
@@ -106,28 +105,26 @@ class TestResultCombinators:
         results = [Success(1), Failure("error"), Success(3)]
         combined = sequence(results)
         assert combined.is_failure()
-        assert combined.unwrap_err() == "error"
+        assert combined.unwrap_error() == "error"
         
     def test_combine_all_success(self):
         """Test combine with all Success values"""
         results = [Success(1), Success(2), Success(3)]
-        combined = combine(results)
+        combined = combine(*results)
         assert combined.is_success()
-        assert combined.unwrap() == [1, 2, 3]
+        assert combined.unwrap() == (1, 2, 3)
         
     def test_first_success(self):
         """Test first_success returns first Success"""
-        results = [Failure("error1"), Success(42), Success(100)]
-        result = first_success(results)
+        result = first_success(Failure("error1"), Success(42), Success(100))
         assert result.is_success()
         assert result.unwrap() == 42
         
     def test_first_success_all_failures(self):
         """Test first_success with all Failures"""
-        results = [Failure("error1"), Failure("error2")]
-        result = first_success(results)
+        result = first_success(Failure("error1"), Failure("error2"))
         assert result.is_failure()
-        assert result.unwrap_err() == ["error1", "error2"]
+        assert result.unwrap_error() == ["error1", "error2"]
         
     def test_partition(self):
         """Test partition separates Success and Failure"""
@@ -148,7 +145,7 @@ class TestResultFunctionalPatterns:
         assert result.unwrap() == [2, 4, 6]
         
     def test_traverse_with_failure(self):
-        """Test traverse with failure"""
+        """Test traverse with Failure"""
         items = [1, 2, 3]
         def process(x):
             if x == 2:
@@ -157,7 +154,7 @@ class TestResultFunctionalPatterns:
         
         result = traverse(items, process)
         assert result.is_failure()
-        assert result.unwrap_err() == "error at 2"
+        assert result.unwrap_error() == "error at 2"
         
     def test_or_else(self):
         """Test or_else fallback"""
@@ -174,7 +171,7 @@ class TestResultFunctionalPatterns:
         
         filtered2 = result.filter(lambda x: x > 20, "too small")
         assert filtered2.is_failure()
-        assert filtered2.unwrap_err() == "too small"
+        assert filtered2.unwrap_error() == "too small"
 
 
 class TestResultConversions:
@@ -217,7 +214,7 @@ class TestResultErrorHandling:
         
         result2 = safe_divide(10, 0)
         assert result2.is_failure()
-        assert result2.unwrap_err() == "Division by zero"
+        assert result2.unwrap_error() == "Division by zero"
         
     def test_recover(self):
         """Test recovery from errors"""
@@ -242,7 +239,7 @@ class TestResultChaining:
         assert result.unwrap() == 25
         
     def test_chain_with_failure(self):
-        """Test chaining stops on failure"""
+        """Test chaining stops on Failure"""
         result = (
             Success(5)
             .map(lambda x: x * 2)
@@ -250,7 +247,7 @@ class TestResultChaining:
             .map(lambda x: x + 5)
         )
         assert result.is_failure()
-        assert result.unwrap_err() == "too small"
+        assert result.unwrap_error() == "too small"
 
 
 if __name__ == "__main__":

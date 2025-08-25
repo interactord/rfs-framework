@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Set
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import (
     HealthStatus,
     RegistrationError,

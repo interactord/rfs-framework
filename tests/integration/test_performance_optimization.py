@@ -7,12 +7,11 @@ import pytest
 import time
 from typing import Any, Dict
 
-from rfs.performance.profiling import (
+from rfs.optimization.profiling import (
     get_system_profiler,
-    ProfileLevel,
-    ProfileResult
+    SystemProfiler
 )
-from rfs.performance.optimization import (
+from rfs.optimization import (
     get_cloud_run_optimizer,
     get_memory_optimizer,
     get_cpu_optimizer,

@@ -39,7 +39,7 @@ class RedisCacheConfig(CacheConfig):
     startup_nodes: List[Dict[str, Any]] = field(default_factory=list)
     decode_responses: bool = True
     socket_keepalive: bool = True
-    socket_keepalive_options: Dict[str, int] = {}
+    socket_keepalive_options: Dict[str, Any] = field(default_factory=dict)
     health_check_interval: int = 30
 
 
@@ -389,7 +389,7 @@ class RedisClusterCache(RedisCache):
             return Failure(error_msg)
 
     @property
-    def redis(self) -> Optional[aioredis.RedisCluster]:
+    def redis(self) -> Optional[Any]:
         """Redis 클러스터 인스턴스"""
         return self.cluster
 

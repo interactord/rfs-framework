@@ -197,7 +197,7 @@ class ServiceRegistry:
             },
             "service_states": {},
         }
-        scope_counts: Dict[str, int] = {}
+        scope_counts: Dict[str, Any] = field(default_factory=dict)
         for definition in self._definitions.values():
             scope_name = definition.scope.value
             scope_counts = {

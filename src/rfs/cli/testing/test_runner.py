@@ -34,7 +34,7 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ...core import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
     console = Console()
@@ -66,8 +66,8 @@ class TestConfig:
     """테스트 설정"""
 
     framework: TestFramework = TestFramework.PYTEST
-    test_paths: List[str] = []
-    patterns: List[str] = []
+    test_paths: List[str] = field(default_factory=list)
+    patterns: List[str] = field(default_factory=list)
     parallel: bool = True
     max_workers: int = 4
     coverage: bool = True
@@ -75,7 +75,7 @@ class TestConfig:
     verbose: bool = True
     fail_fast: bool = False
     timeout: int = 300
-    environment_vars: Dict[str, str] = {}
+    environment_vars: Dict[str, Any] = field(default_factory=dict)
     fixtures_path: Optional[str] = None
     mock_config: Optional[Dict[str, Any]] = None
 
@@ -94,7 +94,7 @@ class TestResult:
     coverage_percentage: Optional[float] = None
     failed_test_details: List[Dict[str, Any]] = field(default_factory=list)
     coverage_report: Optional[Dict[str, Any]] = None
-    performance_metrics: Dict[str, Any] = {}
+    performance_metrics: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:

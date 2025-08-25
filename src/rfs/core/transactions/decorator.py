@@ -10,7 +10,7 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any, Callable, List, Optional, Type, Union
 
-from ..core import Failure, Result, Success
+from ..result import Failure, Result, Success
 from .base import (
     IsolationLevel,
     PropagationLevel,

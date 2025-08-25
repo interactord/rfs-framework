@@ -10,7 +10,7 @@ import random
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Set
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import (
     LoadBalancerType,
     ServiceEndpoint,
@@ -236,7 +236,7 @@ class ServiceWatcher:
     
     async def _watch_loop(self, service_name: str, interval: timedelta):
         """감시 루프"""
-        previous_services: Dict[str, ServiceInfo] = {}
+        previous_services: Dict[str, Any] = {}
         
         while self._running:
             try:

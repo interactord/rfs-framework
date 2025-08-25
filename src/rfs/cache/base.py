@@ -59,7 +59,7 @@ class CacheConfig:
     socket_timeout: int = 5
     max_memory: int = 100 * 1024 * 1024
     eviction_policy: str = "lru"
-    cluster_nodes: List[str] = []
+    cluster_nodes: List[str] = field(default_factory=list)
     consistent_hashing: bool = True
     enable_metrics: bool = True
     metrics_interval: int = 60

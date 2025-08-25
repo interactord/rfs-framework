@@ -75,8 +75,8 @@ class Table:
 
     name: str
     fields: Dict[str, Field]
-    indexes: List[str] = []
-    constraints: List[str] = []
+    indexes: List[str] = field(default_factory=list)
+    constraints: List[str] = field(default_factory=list)
 
 
 class BaseModel(ABC):

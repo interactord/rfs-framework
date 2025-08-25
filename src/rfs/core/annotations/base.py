@@ -139,10 +139,8 @@ def get_component_metadata(component_type: Type) -> Optional[ComponentMetadata]:
 
 def set_component_metadata(component_type: Type, metadata: ComponentMetadata):
     """컴포넌트 메타데이터 저장"""
-    _component_metadata = {
-        **_component_metadata,
-        component_type: {component_type: metadata},
-    }
+    global _component_metadata
+    _component_metadata[component_type] = metadata
 
 
 def get_annotation_metadata(target: Any) -> List[AnnotationMetadata]:
@@ -150,11 +148,27 @@ def get_annotation_metadata(target: Any) -> List[AnnotationMetadata]:
     return _annotation_metadata.get(target, [])
 
 
+def has_annotation(target: Any) -> bool:
+    """애노테이션 존재 여부 확인"""
+    return target in _annotation_metadata and len(_annotation_metadata[target]) > 0
+
+
+def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
+    """헥사고날 아키텍처 검증
+    
+    Returns:
+        List[str]: 검증 오류 메시지들
+    """
+    # 간단한 구현 - 실제로는 더 복잡한 검증이 필요함
+    return []
+
+
 def set_annotation_metadata(target: Any, metadata: AnnotationMetadata):
     """애노테이션 메타데이터 저장"""
+    global _annotation_metadata
     if target not in _annotation_metadata:
-        _annotation_metadata[target] = {target: []}
-    _annotation_metadata[target] = _annotation_metadata[target] + [metadata]
+        _annotation_metadata[target] = []
+    _annotation_metadata[target].append(metadata)
 
 
 def create_annotation_decorator(

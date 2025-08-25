@@ -23,6 +23,7 @@ from .event_bus import (
     EventHandler,
     EventSubscription,
     event_handler,
+    get_event_bus,
 )
 from .event_handler import EventHandler as EnhancedEventHandler
 from .event_handler import (
@@ -48,6 +49,7 @@ __all__ = [
     "event_handler",
     "EventHandler",
     "EventFilter",
+    "get_event_bus",
     "EventSubscription",
     # Event Store
     "EventStore",

@@ -179,7 +179,7 @@ class RFSLogger:
     def reset_metrics(self):
         """메트릭 리셋"""
         self.log_counts = {level: 0 for level in LogLevel}
-_logger_cache: Dict[str, RFSLogger] = {}
+_logger_cache: Dict[str, Any] = field(default_factory=dict)
 
 def get_logger(name: Optional[str]=None) -> RFSLogger:
     """로거 획득"""

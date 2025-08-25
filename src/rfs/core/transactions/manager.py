@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-from ..core import Failure, Result, Success
+from ..result import Failure, Result, Success
 from .base import (
     IsolationLevel,
     PropagationLevel,

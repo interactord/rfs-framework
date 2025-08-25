@@ -9,14 +9,13 @@ import csv
 import io
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Union
 
-from ..core.async_result import ResultAsync
-from ..core.types import Failure, Result, Success
+from ..core.result import Failure, Result, ResultAsync, Success
 
 
 class DataSourceType(Enum):
@@ -44,7 +43,7 @@ class DataSchema:
 
     columns: Dict[str, str]
     primary_key: Optional[str] = None
-    indexes: List[str] = []
+    indexes: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.indexes is None:

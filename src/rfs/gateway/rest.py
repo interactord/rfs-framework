@@ -51,11 +51,11 @@ class RestRequest:
 
     method: HttpMethod
     path: str
-    headers: Dict[str, str] = {}
+    headers: Dict[str, Any] = field(default_factory=dict)
     query_params: Dict[str, List[str]] = field(default_factory=dict)
     body: Optional[bytes] = None
     json_body: Optional[Dict[str, Any]] = None
-    path_params: Dict[str, str] = {}
+    path_params: Dict[str, Any] = field(default_factory=dict)
     remote_addr: Optional[str] = None
     user_agent: Optional[str] = None
 
@@ -95,7 +95,7 @@ class RestResponse:
     """REST 응답"""
 
     status_code: int = 200
-    headers: Dict[str, str] = {}
+    headers: Dict[str, Any] = field(default_factory=dict)
     body: Optional[bytes] = None
     json_body: Optional[Dict[str, Any]] = None
 
@@ -174,7 +174,7 @@ class RoutePattern:
             )
         regex_pattern = f"^{regex_pattern}$"
         return cls(
-            pattern=pattern, regex=re.compile(regex_pattern), param_names=param_names
+            pattern=pattern, pattern=re.compile(regex_pattern), param_names=param_names
         )
 
     def match(self, path: str) -> Optional[Dict[str, str]]:
@@ -301,7 +301,7 @@ class RouterConfig:
     """라우터 설정"""
 
     base_path: str = ""
-    middleware: List[RestMiddleware] = []
+    middleware: List[str] = field(default_factory=list)
     error_handler: Optional[Callable] = None
 
 

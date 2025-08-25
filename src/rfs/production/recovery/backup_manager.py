@@ -24,7 +24,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Set, Union
 import aiofiles
 import psutil
 
-from ...core import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 
 class BackupType(Enum):

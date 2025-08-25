@@ -11,8 +11,8 @@ from rfs.production.monitoring import (
     get_production_monitor,
     get_alert_manager,
     get_health_checker,
-    AlertLevel,
-    HealthCheckType
+    AlertSeverity,
+    HealthStatus
 )
 from rfs.production.recovery import (
     get_disaster_recovery_manager,
@@ -62,7 +62,7 @@ class TestProductionMonitoring:
             rule_id="high_cpu",
             name="High CPU Usage",
             condition="cpu_percent > 80",
-            level=AlertLevel.WARNING,
+            level=AlertSeverity.WARNING,
             channels=["email", "slack"]
         )
         assert isinstance(rule_result, Success)
@@ -72,13 +72,13 @@ class TestProductionMonitoring:
             rule_id="high_cpu",
             title="High CPU Usage Detected",
             message="CPU usage is above 80%",
-            level=AlertLevel.WARNING
+            level=AlertSeverity.WARNING
         )
         assert isinstance(alert_result, Success)
         
         alert = alert_result.value
         assert alert.title == "High CPU Usage Detected"
-        assert alert.level == AlertLevel.WARNING
+        assert alert.level == AlertSeverity.WARNING
         
         # 알림 확인
         ack_result = await alert_manager.acknowledge_alert(
@@ -102,7 +102,7 @@ class TestProductionMonitoring:
         health_checker.add_check(
             check_id="api_health",
             name="API Health Check",
-            check_type=HealthCheckType.HTTP,
+            check_type=HealthStatus.HTTP,
             config={
                 "url": "http://localhost:8000/health",
                 "method": "GET",
@@ -261,7 +261,7 @@ class TestIntegratedProductionFlow:
             rule_id="cpu_threshold",
             name="CPU Threshold",
             condition="cpu_percent > 50",  # 낮은 임계값
-            level=AlertLevel.WARNING,
+            level=AlertSeverity.WARNING,
             channels=["email"]
         )
         
@@ -285,7 +285,7 @@ class TestIntegratedProductionFlow:
         health_checker.add_check(
             check_id="critical_service",
             name="Critical Service",
-            check_type=HealthCheckType.CUSTOM,
+            check_type=HealthStatus.CUSTOM,
             config={
                 "checker": lambda: False  # 항상 실패
             }

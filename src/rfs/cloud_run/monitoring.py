@@ -79,14 +79,14 @@ if PYDANTIC_AVAILABLE:
         )
         name: str = Field(
             ...,
-            regex="^[a-zA-Z][a-zA-Z0-9_]*$",
+            pattern="^[a-zA-Z][a-zA-Z0-9_]*$",
             max_length=100,
             description="메트릭 이름",
         )
         type: MetricType = Field(..., description="메트릭 유형")
         description: str = Field(..., max_length=500, description="메트릭 설명")
         unit: str = Field(default="1", max_length=50, description="측정 단위")
-        labels: Dict[str, str] = {}
+        labels: Dict[str, Any] = field(default_factory=dict)
 
         @field_validator("name")
         @classmethod
@@ -115,8 +115,8 @@ if PYDANTIC_AVAILABLE:
         version: str = Field(default="1.0.0", description="서비스 버전")
         trace_id: str | None = Field(default=None, description="트레이스 ID")
         span_id: str | None = Field(default=None, description="스팬 ID")
-        labels: Dict[str, str] = {}
-        extra_data: Dict[str, Any] = {}
+        labels: Dict[str, Any] = field(default_factory=dict)
+        extra_data: Dict[str, Any] = field(default_factory=dict)
 
         def to_cloud_logging_entry(self) -> Dict[str, Any]:
             """Cloud Logging 형식으로 변환"""
@@ -161,7 +161,7 @@ else:
         type: MetricType
         description: str
         unit: str = "1"
-        labels: Dict[str, str] = {}
+        labels: Dict[str, Any] = field(default_factory=dict)
 
         def get_full_name(self, project_id: str) -> str:
             return f"custom.googleapis.com/rfs/{self.name}"
@@ -177,8 +177,8 @@ else:
         version: str = "1.0.0"
         trace_id: Optional[str] = None
         span_id: Optional[str] = None
-        labels: Dict[str, str] = {}
-        extra_data: Dict[str, Any] = {}
+        labels: Dict[str, Any] = field(default_factory=dict)
+        extra_data: Dict[str, Any] = field(default_factory=dict)
 
 
 class CloudMonitoringClient:
@@ -304,8 +304,10 @@ class CloudMonitoringClient:
 
     def _get_metric_kind(
         self, metric_type: MetricType
-    ) -> monitoring_v3.MetricDescriptor.MetricKind:
+    ) -> Any:  # monitoring_v3.MetricDescriptor.MetricKind when available
         """메트릭 유형을 Cloud Monitoring 형식으로 변환"""
+        if not monitoring_v3:
+            return None
         match metric_type:
             case MetricType.COUNTER:
                 return monitoring_v3.MetricDescriptor.MetricKind.CUMULATIVE

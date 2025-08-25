@@ -121,11 +121,11 @@ class MemoryCache(CacheBackend):
                 except asyncio.CancelledError:
                     pass
             with self._lock:
-                _data = {}
-                _access_order = {}
-                _frequency = {}
-                _insertion_order = {}
-                _ttl_heap = {}
+                self._data = {}
+                self._access_order = OrderedDict()
+                self._frequency = {}
+                self._insertion_order = []
+                self._ttl_heap = []
                 self._current_size = 0
                 self._current_memory = 0
             self._connected = False
@@ -169,7 +169,7 @@ class MemoryCache(CacheBackend):
                     self._remove_item(cache_key)
                 item = CacheItem(cache_key, value, ttl)
                 self._ensure_space(item.size)
-                self._data = {**self._data, cache_key: item}
+                self._data[cache_key] = item
                 self._current_size = self._current_size + 1
                 self._current_memory = self._current_memory + item.size
                 self._update_insertion_tracking(cache_key)
@@ -250,6 +250,61 @@ class MemoryCache(CacheBackend):
             logger.error(error_msg)
             return Failure(error_msg)
 
+    async def refresh_ttl(self, key: str, ttl: int = None) -> Result[None, str]:
+        """TTL 갱신 - 지정된 TTL로 갱신하거나 원래 TTL로 재설정"""
+        try:
+            cache_key = self._make_key(key)
+            # TTL=0일 때는 validate하지 않음 (즉시 만료용)
+            validated_ttl = self._validate_ttl(ttl) if ttl is not None and ttl != 0 else ttl
+            with self._lock:
+                item = self._data.get(cache_key)
+                if item is None:
+                    return Failure("키가 존재하지 않음")
+                
+                # TTL이 지정되지 않은 경우, 원래 TTL을 사용
+                if validated_ttl is None:
+                    if item.expires_at is None:
+                        return Success(None)  # 원래 TTL이 없으면 변경 없음
+                    # 원래 TTL 계산
+                    original_ttl = int(item.expires_at - item.created_at)
+                    validated_ttl = original_ttl
+                
+                # TTL 갱신
+                if validated_ttl is not None and validated_ttl >= 0:
+                    if validated_ttl == 0:
+                        # TTL=0: 즉시 만료
+                        item.expires_at = time.time() - 1  # 과거 시간으로 설정하여 즉시 만료
+                    else:
+                        # TTL>0: 지정된 시간 후 만료
+                        item.expires_at = time.time() + validated_ttl
+                    heapq.heappush(self._ttl_heap, (item.expires_at, cache_key))
+                else:
+                    item.expires_at = None  # TTL 제거
+                
+                return Success(None)
+        except Exception as e:
+            self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
+            error_msg = f"메모리 캐시 TTL 갱신 실패: {str(e)}"
+            logger.error(error_msg)
+            return Failure(error_msg)
+
+    async def persist(self, key: str) -> Result[None, str]:
+        """TTL 제거 - 키를 영구적으로 만듦"""
+        try:
+            cache_key = self._make_key(key)
+            with self._lock:
+                item = self._data.get(cache_key)
+                if item is None:
+                    return Failure("키가 존재하지 않음")
+                
+                item.expires_at = None  # TTL 제거
+                return Success(None)
+        except Exception as e:
+            self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
+            error_msg = f"메모리 캐시 PERSIST 실패: {str(e)}"
+            logger.error(error_msg)
+            return Failure(error_msg)
+
     async def clear(self) -> Result[None, str]:
         """모든 키 삭제"""
         try:
@@ -263,11 +318,11 @@ class MemoryCache(CacheBackend):
                     for key in keys_to_delete:
                         self._remove_item(key)
                 else:
-                    _data = {}
-                    _access_order = {}
-                    _frequency = {}
-                    _insertion_order = {}
-                    _ttl_heap = {}
+                    self._data = {}
+                    self._access_order = OrderedDict()
+                    self._frequency = {}
+                    self._insertion_order = []
+                    self._ttl_heap = []
                     self._current_size = 0
                     self._current_memory = 0
                 return Success(None)
@@ -367,7 +422,7 @@ class MemoryCache(CacheBackend):
         if key in self._access_order:
             self._access_order.move_to_end(key)
         else:
-            self._access_order = {**self._access_order, key: True}
+            self._access_order[key] = True
         self._frequency = {**self._frequency, key: self._frequency.get(key, 0) + 1}
 
     def _update_insertion_tracking(self, key: str):

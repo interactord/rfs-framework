@@ -28,7 +28,8 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ...core import Failure, Result, Success, get_config
+from ...core.config import get_config
+from ...core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
     console = Console()

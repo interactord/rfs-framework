@@ -24,9 +24,48 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 logger = logging.getLogger(__name__)
+
+
+class OptimizationPhase(Enum):
+    """최적화 단계"""
+    
+    IMPORT = "import"
+    WARMUP = "warmup"
+    MEMORY = "memory"
+    FINALIZE = "finalize"
+
+
+class PreloadingStrategy(Enum):
+    """모듈 프리로딩 전략"""
+    
+    LAZY = "lazy"
+    EAGER = "eager"
+    SELECTIVE = "selective"
+    ADAPTIVE = "adaptive"
+
+
+class CacheWarmupStrategy(Enum):
+    """캐시 워밍업 전략"""
+    
+    NONE = "none"
+    BASIC = "basic"
+    AGGRESSIVE = "aggressive"
+    CUSTOM = "custom"
+
+
+class MemoryOptimizationStrategy(Enum):
+    """메모리 최적화 전략"""
+    
+    NONE = "none"
+    BASIC = "basic"
+    AGGRESSIVE = "aggressive"
+    ADAPTIVE = "adaptive"
 
 
 class OptimizationLevel(Enum):
@@ -629,3 +668,54 @@ if __name__ == "__main__":
         )
 
     asyncio.run(example_usage())
+
+
+@dataclass
+class ColdStartConfig:
+    """Cold Start 최적화 설정"""
+    
+    preloading_strategy: PreloadingStrategy = PreloadingStrategy.EAGER
+    cache_warmup_strategy: CacheWarmupStrategy = CacheWarmupStrategy.BASIC
+    memory_strategy: MemoryOptimizationStrategy = MemoryOptimizationStrategy.BASIC
+    optimization_phase: OptimizationPhase = OptimizationPhase.IMPORT
+    max_startup_time: float = 3.0
+    max_memory_mb: float = 256.0
+    enable_profiling: bool = True
+    enable_caching: bool = True
+
+
+def get_default_cold_start_optimizer() -> ColdStartOptimizer:
+    """기본 Cold Start 최적화기 반환"""
+    return ColdStartOptimizer()
+
+
+async def measure_cold_start_time() -> float:
+    """Cold Start 시간 측정"""
+    import time
+    start = time.time()
+    optimizer = get_default_cold_start_optimizer()
+    await optimizer.warm_up()
+    return time.time() - start
+
+
+async def optimize_cold_start(config: Optional[ColdStartConfig] = None) -> Dict[str, Any]:
+    """Cold Start 최적화 실행"""
+    if config is None:
+        config = ColdStartConfig()
+    
+    optimizer = ColdStartOptimizer()
+    
+    # 프리로딩 전략 적용
+    if config.preloading_strategy == PreloadingStrategy.EAGER:
+        common_modules = ["json", "datetime", "uuid", "logging", "os", "sys"]
+        optimizer.preload_modules(common_modules)
+    
+    # 캐시 워밍업
+    if config.cache_warmup_strategy != CacheWarmupStrategy.NONE:
+        await optimizer.warm_up()
+    
+    # 메모리 최적화
+    if config.memory_strategy != MemoryOptimizationStrategy.NONE:
+        optimizer.optimize_memory()
+    
+    return optimizer.get_metrics()

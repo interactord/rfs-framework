@@ -17,9 +17,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 
-from ...core.types import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +89,7 @@ class SystemMetrics:
     """시스템 메트릭"""
 
     system_info: SystemInfo
-    resource_history: List[ResourceUsage] = []
+    resource_history: List[str] = field(default_factory=list)
     uptime: timedelta = field(default_factory=lambda: timedelta(0))
 
     def add_usage(self, usage: ResourceUsage):

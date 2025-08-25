@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import aiofiles
 
-from ...core import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 
 class ComplianceStandard(Enum):

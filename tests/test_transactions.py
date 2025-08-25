@@ -19,15 +19,12 @@ from datetime import datetime
 
 # RFS 코어 imports
 from rfs.core.transactions import (
-    TransactionConfig, RedisTransactionConfig, DistributedTransactionConfig,
-    TransactionContext, TransactionType, TransactionStatus, IsolationLevel,
-    DatabaseTransactionManager, RedisTransactionManager, DistributedTransactionManager,
-    TransactionRegistry, get_transaction_registry, execute_with_retry
+    TransactionContext, TransactionStatus, IsolationLevel,
+    TransactionManager, get_transaction_manager,
+    RedisTransactionManager, DistributedTransaction
 )
-from rfs.core.transaction_decorators import (
-    Transactional, RedisTransaction, DistributedTransaction,
-    TransactionalMethod, transactional_context, TransactionalContextManager,
-    database_transaction, redis_transaction, saga_transaction
+from rfs.core.transactions import (
+    Transactional, transactional
 )
 from rfs.core.result import Result, Success, Failure
 
@@ -500,7 +497,7 @@ class TestRetryLogic:
     async def test_execute_with_retry_success_on_first_attempt(self):
         """첫 번째 시도에서 성공하는 경우 테스트"""
         async def success_func():
-            return "success"
+            return "Success"
         
         config = TransactionConfig(retry_count=3)
         context = TransactionContext(config=config)
@@ -508,7 +505,7 @@ class TestRetryLogic:
         result = await execute_with_retry(success_func, context)
         
         assert result.is_success()
-        assert result.value == "success"
+        assert result.value == "Success"
         assert context.attempts == 1
     
     @pytest.mark.asyncio

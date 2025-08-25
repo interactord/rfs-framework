@@ -49,7 +49,7 @@ def show_version():
     if console:
         version_info = Panel(
             "🏷️  버전: 4.3.0\n"
-            "📅 릴리스: 2024년\n"
+            "📅 릴리스: 2025년\n"
             "🎯 단계: Production Ready\n"
             "🐍 Python: 3.10+\n"
             "☁️  플랫폼: Google Cloud Run\n"

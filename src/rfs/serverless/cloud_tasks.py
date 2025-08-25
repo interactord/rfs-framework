@@ -18,6 +18,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from rfs.core.result import Failure, Result, Success
+from rfs.hof.core import pipe
 
 from ..core.singleton import StatelessRegistry
 from ..reactive import Flux, Mono
@@ -60,7 +61,7 @@ class Task:
 
     id: str
     handler: str
-    payload: Dict[str, Any] = {}
+    payload: Dict[str, Any] = field(default_factory=dict)
     priority: TaskPriority = TaskPriority.NORMAL
     schedule_time: Optional[datetime] = None
     retry_config: RetryConfig = field(default_factory=RetryConfig)
@@ -354,14 +355,7 @@ def with_retry(
 
 def task_pipeline(*processors: Callable[[Task], Task]) -> Callable[[Task], Task]:
     """작업 파이프라인 생성"""
-
-    def pipeline(task: Task) -> Task:
-        result = task
-        for processor in processors:
-            result = processor(result)
-        return result
-
-    return pipeline
+    return pipe(*processors)
 
 
 def priority_filter(priority: TaskPriority) -> Callable[[Task], bool]:

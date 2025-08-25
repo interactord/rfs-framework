@@ -31,7 +31,7 @@ from .annotations import (
     AnnotationMetadata,
     AnnotationType,
     Component,
-    ComponentScope,
+    ServiceScope,
     Controller,
     Port,
     Repository,
@@ -39,10 +39,6 @@ from .annotations import (
     UseCase,
     get_annotation_metadata,
     has_annotation,
-    is_adapter,
-    is_controller,
-    is_port,
-    is_use_case,
     validate_hexagonal_architecture,
 )
 
@@ -152,14 +148,10 @@ from .transaction_decorators import (
 
 # Transaction Management System (NEW v4.1)
 from .transactions import (
-    DatabaseTransactionManager,
-    DistributedTransactionConfig,
-    DistributedTransactionManager,
-    RedisTransactionConfig,
-    RedisTransactionManager,
-    TransactionConfig,
     TransactionManager,
-    get_default_transaction_manager,
+    get_transaction_manager,
+    RedisTransactionManager,
+    DistributedTransaction,
 )
 
 # v4 핵심 exports
@@ -247,17 +239,12 @@ __all__ = [
     "log_execution",
     "with_log_context",
     # Transaction Management System (NEW v4.1)
-    "DatabaseTransactionManager",
-    "RedisTransactionManager",
-    "DistributedTransactionManager",
-    "TransactionConfig",
-    "RedisTransactionConfig",
-    "DistributedTransactionConfig",
     "TransactionManager",
-    "get_default_transaction_manager",
+    "get_transaction_manager",
+    "RedisTransactionManager",
+    "DistributedTransaction",
     "Transactional",
     "RedisTransaction",
-    "DistributedTransaction",
     "TransactionalContextManager",
     "transactional_context",
     "with_transaction",

@@ -23,11 +23,12 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ...core import ConfigManager, Failure, Result, RFSConfig, Success
+from ...core.config import ConfigManager, RFSConfig
+from ...core.result import Failure, Result, Success
 from ..core import Command
 
 if RICH_AVAILABLE:
-    console = Console()
+    console = Console(, field)
 else:
     console = None
 

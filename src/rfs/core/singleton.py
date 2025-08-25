@@ -37,8 +37,8 @@ class StatelessRegistry:
     """
 
     _instances: Dict[str, Any] = {}
-    _factories: Dict[str, Callable] = {}
-    _dependencies: Dict[str, list] = {}
+    _factories: Dict[str, Any] = {}
+    _dependencies: Dict[str, Any] = {}
 
     @classmethod
     def register(cls, name: str | None = None, dependencies: list[str] | None = None):

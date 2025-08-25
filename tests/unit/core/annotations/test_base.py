@@ -15,7 +15,7 @@ from rfs.core.annotations.base import (
     ServiceScope,
     get_annotation_metadata,
     set_annotation_metadata,
-    ComponentScope,
+    ServiceScope,
     has_annotation,
     validate_hexagonal_architecture,
 )
@@ -39,19 +39,19 @@ class TestServiceScope:
 
 
 class TestComponentScope:
-    """ComponentScope 열거형 테스트"""
+    """ServiceScope 열거형 테스트"""
     
     def test_component_scope_values(self):
-        """ComponentScope 값 확인"""
-        assert ComponentScope.SINGLETON.value == "singleton"
-        assert ComponentScope.PROTOTYPE.value == "prototype"
-        assert ComponentScope.REQUEST.value == "request"
+        """ServiceScope 값 확인"""
+        assert ServiceScope.SINGLETON.value == "singleton"
+        assert ServiceScope.PROTOTYPE.value == "prototype"
+        assert ServiceScope.REQUEST.value == "request"
     
     def test_to_service_scope(self):
-        """ComponentScope -> ServiceScope 변환 테스트"""
-        assert ComponentScope.SINGLETON.to_service_scope() == ServiceScope.SINGLETON
-        assert ComponentScope.PROTOTYPE.to_service_scope() == ServiceScope.PROTOTYPE
-        assert ComponentScope.REQUEST.to_service_scope() == ServiceScope.REQUEST
+        """ServiceScope -> ServiceScope 변환 테스트"""
+        assert ServiceScope.SINGLETON.to_service_scope() == ServiceScope.SINGLETON
+        assert ServiceScope.PROTOTYPE.to_service_scope() == ServiceScope.PROTOTYPE
+        assert ServiceScope.REQUEST.to_service_scope() == ServiceScope.REQUEST
 
 
 class TestAnnotationType:
@@ -87,7 +87,7 @@ class TestAnnotationMetadata:
         metadata = AnnotationMetadata(
             name="test_component",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestServiceScope,
             dependencies=["dep1", "dep2"],
             lazy=False,
@@ -98,7 +98,7 @@ class TestAnnotationMetadata:
         
         assert metadata.name == "test_component"
         assert metadata.annotation_type == AnnotationType.COMPONENT
-        assert metadata.scope == ComponentScope.SINGLETON
+        assert metadata.scope == ServiceScope.SINGLETON
         assert metadata.target_class == TestServiceScope
         assert metadata.dependencies == ["dep1", "dep2"]
         assert metadata.lazy is False
@@ -111,7 +111,7 @@ class TestAnnotationMetadata:
         metadata = AnnotationMetadata(
             name="test",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestServiceScope
         )
         
@@ -167,7 +167,7 @@ class TestMetadataFunctions:
         metadata = AnnotationMetadata(
             name="test_class",
             annotation_type=AnnotationType.SERVICE,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestClass
         )
         
@@ -179,7 +179,7 @@ class TestMetadataFunctions:
         assert retrieved is not None
         assert retrieved.name == "test_class"
         assert retrieved.annotation_type == AnnotationType.SERVICE
-        assert retrieved.scope == ComponentScope.SINGLETON
+        assert retrieved.scope == ServiceScope.SINGLETON
         assert retrieved.target_class == TestClass
     
     def test_get_annotation_metadata_not_exists(self):
@@ -202,7 +202,7 @@ class TestMetadataFunctions:
         metadata = AnnotationMetadata(
             name="annotated",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=AnnotatedClass
         )
         set_annotation_metadata(AnnotatedClass, metadata)
@@ -238,14 +238,14 @@ class TestHexagonalArchitectureValidation:
         set_annotation_metadata(UserPort, AnnotationMetadata(
             name="user_port",
             annotation_type=AnnotationType.PORT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=UserPort
         ))
         
         set_annotation_metadata(UserAdapter, AnnotationMetadata(
             name="user_adapter",
             annotation_type=AnnotationType.ADAPTER,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=UserAdapter,
             port_name="user_port"
         ))
@@ -253,7 +253,7 @@ class TestHexagonalArchitectureValidation:
         set_annotation_metadata(CreateUserUseCase, AnnotationMetadata(
             name="create_user",
             annotation_type=AnnotationType.USE_CASE,
-            scope=ComponentScope.PROTOTYPE,
+            scope=ServiceScope.PROTOTYPE,
             target_class=CreateUserUseCase,
             dependencies=["user_port"]
         ))
@@ -270,7 +270,7 @@ class TestHexagonalArchitectureValidation:
         set_annotation_metadata(InvalidAdapter, AnnotationMetadata(
             name="invalid_adapter",
             annotation_type=AnnotationType.ADAPTER,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=InvalidAdapter,
             port_name=None  # 포트 이름 없음
         ))
@@ -288,7 +288,7 @@ class TestHexagonalArchitectureValidation:
         set_annotation_metadata(TestUseCase, AnnotationMetadata(
             name="test_use_case",
             annotation_type=AnnotationType.USE_CASE,
-            scope=ComponentScope.PROTOTYPE,
+            scope=ServiceScope.PROTOTYPE,
             target_class=TestUseCase,
             dependencies=["user_adapter"]  # 포트가 아닌 어댑터에 의존
         ))
@@ -306,21 +306,21 @@ class TestMetadataEquality:
         metadata1 = AnnotationMetadata(
             name="test",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestServiceScope
         )
         
         metadata2 = AnnotationMetadata(
             name="test",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestServiceScope
         )
         
         metadata3 = AnnotationMetadata(
             name="different",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=TestServiceScope
         )
         
@@ -356,7 +356,7 @@ class TestEdgeCases:
         metadata = AnnotationMetadata(
             name="test",
             annotation_type=AnnotationType.COMPONENT,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=None
         )
         
@@ -386,7 +386,7 @@ class TestEdgeCases:
         set_annotation_metadata(ServiceA, AnnotationMetadata(
             name="service_a",
             annotation_type=AnnotationType.SERVICE,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=ServiceA,
             dependencies=["service_b"]
         ))
@@ -394,7 +394,7 @@ class TestEdgeCases:
         set_annotation_metadata(ServiceB, AnnotationMetadata(
             name="service_b",
             annotation_type=AnnotationType.SERVICE,
-            scope=ComponentScope.SINGLETON,
+            scope=ServiceScope.SINGLETON,
             target_class=ServiceB,
             dependencies=["service_a"]
         ))

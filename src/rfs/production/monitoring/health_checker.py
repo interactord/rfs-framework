@@ -26,7 +26,7 @@ import psutil
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 
@@ -73,7 +73,7 @@ class HealthCheckResult:
     response_time_ms: float
     timestamp: datetime
     message: str
-    details: Dict[str, Any] = {}
+    details: Dict[str, Any] = field(default_factory=dict)
     error: Optional[str] = None
 
 
@@ -86,7 +86,7 @@ class HealthCheck:
     config: Dict[str, Any]
     enabled: bool = True
     critical: bool = True
-    tags: Dict[str, str] = {}
+    tags: Dict[str, Any] = field(default_factory=dict)
     description: str = ""
     expected_response_time_ms: float = 1000.0
 

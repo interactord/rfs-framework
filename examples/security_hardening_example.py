@@ -166,7 +166,7 @@ async def password_security_example():
     test_passwords = [
         "weak123",                    # 너무 약함
         "StrongPassword123",          # 특수문자 없음
-        "Strong@P4ssw0rd!2024",      # 강력한 비밀번호
+        "Strong@P4ssw0rd!2025",      # 강력한 비밀번호
         "MyVerySecure&Complex#Pass1", # 매우 강력
         "abc"                        # 매우 약함
     ]

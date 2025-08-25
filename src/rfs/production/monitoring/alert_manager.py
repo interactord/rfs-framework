@@ -17,16 +17,19 @@ import threading
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from email.mime.multipart import MimeMultipart
-from email.mime.text import MimeText
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
-import aiohttp
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 
@@ -92,7 +95,7 @@ class AlertRule:
     conditions: List[AlertCondition]
     severity: AlertSeverity
     enabled: bool = True
-    tags: Dict[str, str] = {}
+    tags: Dict[str, Any] = field(default_factory=dict)
     runbook_url: Optional[str] = None
     silence_duration_minutes: float = 60.0
 
@@ -106,8 +109,8 @@ class NotificationChannel:
     channel_type: ChannelType
     config: Dict[str, Any]
     enabled: bool = True
-    severity_filter: List[AlertSeverity] = []
-    tags_filter: Dict[str, str] = {}
+    severity_filter: List[str] = field(default_factory=list)
+    tags_filter: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -119,7 +122,7 @@ class AlertPolicy:
     rules: List[str]
     channels: List[str]
     escalation_rules: List[Dict[str, Any]] = field(default_factory=list)
-    group_by: List[str] = []
+    group_by: List[str] = field(default_factory=list)
     group_wait_minutes: float = 5.0
     group_interval_minutes: float = 30.0
     repeat_interval_minutes: float = 240.0
@@ -138,8 +141,8 @@ class Alert:
     created_at: datetime
     updated_at: datetime
     source: str
-    labels: Dict[str, str] = {}
-    annotations: Dict[str, str] = {}
+    labels: Dict[str, Any] = field(default_factory=dict)
+    annotations: Dict[str, Any] = field(default_factory=dict)
     resolved_at: Optional[datetime] = None
     acknowledged_at: Optional[datetime] = None
     acknowledged_by: Optional[str] = None
@@ -178,11 +181,11 @@ class EmailChannel(AlertChannel):
                 return Failure("No recipient email addresses configured")
             subject = f"[{alert.severity.value.upper()}] {alert.title}"
             body = self._format_email_body(alert, context)
-            msg = MimeMultipart()
+            msg = MIMEMultipart()
             msg["From"] = {"From": from_email}
             msg["To"] = {"To": ", ".join(to_emails)}
             msg["Subject"] = {"Subject": subject}
-            msg.attach(MimeText(body, "html"))
+            msg.attach(MIMEText(body, "html"))
             with smtplib.SMTP(smtp_server, smtp_port) as server:
                 server.starttls()
                 if username and password:

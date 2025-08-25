@@ -5,9 +5,12 @@ Transaction Management System for RFS Framework
 """
 
 from .base import (
+    DistributedTransactionConfig,
     IsolationLevel,
     PropagationLevel,
+    RedisTransactionConfig,
     TransactionCallback,
+    TransactionConfig,
     TransactionContext,
     TransactionError,
     TransactionMetadata,
@@ -54,6 +57,9 @@ from .redis_tx import (
 
 __all__ = [
     # Base
+    "TransactionConfig",
+    "RedisTransactionConfig",
+    "DistributedTransactionConfig",
     "TransactionContext",
     "TransactionStatus",
     "IsolationLevel",

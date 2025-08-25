@@ -64,9 +64,9 @@ class WebServerConfig:
 
     # CORS 설정
     enable_cors: bool = True
-    cors_origins: List[str] = []
-    cors_methods: List[str] = []
-    cors_headers: List[str] = []
+    cors_origins: List[str] = field(default_factory=list)
+    cors_methods: List[str] = field(default_factory=list)
+    cors_headers: List[str] = field(default_factory=list)
 
     # 미들웨어 설정
     enable_logging: bool = True
@@ -79,7 +79,7 @@ class WebServerConfig:
     max_request_size: int = 32 * 1024 * 1024  # 32MB
 
     # 추가 설정
-    extra_config: Dict[str, Any] = {}
+    extra_config: Dict[str, Any] = field(default_factory=dict)
 
 
 class RFSWebServer:

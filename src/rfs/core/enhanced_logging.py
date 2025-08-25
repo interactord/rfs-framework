@@ -52,7 +52,7 @@ class LogContext:
     tenant_id: Optional[str] = None
     service_name: Optional[str] = None
     operation: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -72,8 +72,8 @@ class LogEntry:
     function: Optional[str] = None
     line_number: Optional[int] = None
     context: Optional[LogContext] = None
-    data: Dict[str, Any] = {}
-    tags: List[str] = []
+    data: Dict[str, Any] = field(default_factory=dict)
+    tags: List[str] = field(default_factory=list)
     error_type: Optional[str] = None
     error_traceback: Optional[str] = None
     execution_time_ms: Optional[float] = None
@@ -442,13 +442,13 @@ def get_logger(
     if name is None:
         name = "rfs"
     if name not in _loggers:
-        _loggers[name] = {name: EnhancedLogger(name, level, **kwargs)}
+        _loggers[name] = EnhancedLogger(name, level, **kwargs)
     return _loggers[name]
 
 
 def get_default_logger() -> EnhancedLogger:
     """기본 로거 조회"""
-    # global _default_logger - removed for functional programming
+    global _default_logger
     if _default_logger is None:
         config = get_config()
         log_level = getattr(config, "log_level", "INFO")

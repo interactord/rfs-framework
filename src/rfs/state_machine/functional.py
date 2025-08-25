@@ -9,8 +9,11 @@ import copy
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from functools import partial, reduce
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+
+# Import from HOF library
+from ..hof.core import compose, partial
+from ..hof.collections import fold_left
 
 from rfs.core.result import Failure, Result, Success
 
@@ -474,12 +477,7 @@ def fold_events(
     machine: StateMachineState, folder: Callable[[Any, MachineEvent], Any], initial: Any
 ) -> Any:
     """고차 함수: 이벤트 히스토리 폴드"""
-    return reduce(folder, machine.event_history, initial)
-
-
-def compose(*functions):
-    """함수 합성"""
-    return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+    return fold_left(folder, initial, machine.event_history)
 
 
 def build_state_machine(name: str) -> Callable:

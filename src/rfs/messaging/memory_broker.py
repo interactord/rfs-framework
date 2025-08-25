@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
-from .base import Message, MessageBroker, MessageConfig, MessagePriority
+from .base import Message, MessageBroker, MessageConfig, MessagePriority, BrokerType
 
 logger = get_logger(__name__)
 
@@ -26,9 +26,11 @@ class MemoryMessageConfig(MessageConfig):
     message_history_size: int = 1000  # 메시지 히스토리 크기
     
     def __post_init__(self):
-        super().__post_init__()
-        if hasattr(self, 'broker_type') and self.broker_type.value != "memory":
-            self.broker_type = "memory"
+        # MessageConfig가 dataclass이고 __post_init__이 없을 수 있음
+        if hasattr(super(), '__post_init__'):
+            super().__post_init__()
+        if hasattr(self, 'broker_type'):
+            self.broker_type = BrokerType.MEMORY
 
 
 class MemoryTopic:
@@ -455,6 +457,9 @@ class MemoryMessageBroker(MessageBroker):
     async def consume_message(self, topic: str) -> Result[Optional[Message], str]:
         """메시지 소비 (Pull 방식)"""
         try:
+            if not self._connected:
+                return Failure("브로커가 연결되지 않았습니다")
+                
             if topic not in self.topics:
                 return Success(None)
             

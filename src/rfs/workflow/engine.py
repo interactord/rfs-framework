@@ -46,9 +46,9 @@ class WorkflowContext:
 
     workflow_id: str
     instance_id: str
-    variables: Dict[str, Any] = {}
-    step_outputs: Dict[str, Any] = {}
-    metadata: Dict[str, Any] = {}
+    variables: Dict[str, Any] = field(default_factory=dict)
+    step_outputs: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """변수 조회"""
@@ -101,7 +101,7 @@ class WorkflowInstance:
     current_step: Optional[str] = None
     start_time: Optional[float] = None
     end_time: Optional[float] = None
-    step_executions: List[StepExecution] = []
+    step_executions: List[str] = field(default_factory=list)
 
     @property
     def duration(self) -> Optional[float]:

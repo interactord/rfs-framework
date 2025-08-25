@@ -69,9 +69,9 @@ class SagaContext:
 
     saga_id: str
     correlation_id: str
-    data: Dict[str, Any] = {}
+    data: Dict[str, Any] = field(default_factory=dict)
     current_step: int = 0
-    completed_steps: List[str] = []
+    completed_steps: List[str] = field(default_factory=list)
     failed_step: Optional[str] = None
 
     def with_data(self, **data) -> "SagaContext":

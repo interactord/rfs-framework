@@ -13,15 +13,18 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Set, Type
 from functools import reduce
 
+from .annotations.base import (
+    AnnotationType,
+    ServiceScope,
+)
 from .annotations import (
     AnnotationMetadata,
-    AnnotationType,
-    ComponentScope,
-    get_annotation_metadata,
-    has_annotation,
-    validate_hexagonal_architecture,
 )
-from .registry import ServiceDefinition, ServiceRegistry, ServiceScope
+from .annotations.base import (
+    get_component_metadata,
+    has_annotation,
+)
+from .registry import ServiceDefinition, ServiceRegistry
 from .singleton import StatelessRegistry
 
 logger = logging.getLogger(__name__)
@@ -90,34 +93,55 @@ class AnnotationRegistry(ServiceRegistry):
                 annotation_type=AnnotationType.COMPONENT,
                 errors=[f"Class {cls.__name__} has no RFS annotations"],
             )
-        metadata = get_annotation_metadata(cls)
+        component_metadata = get_component_metadata(cls)
+        if not component_metadata:
+            return RegistrationResult(
+                success=False,
+                service_name=cls.__name__,
+                annotation_type=AnnotationType.COMPONENT,
+                errors=[f"Class {cls.__name__} has no component metadata"],
+            )
+        
+        # Extract the annotation type from metadata
+        annotation_type = AnnotationType.COMPONENT
+        if component_metadata.metadata.get('type') == 'port':
+            annotation_type = AnnotationType.PORT
+        elif component_metadata.metadata.get('type') == 'adapter':
+            annotation_type = AnnotationType.ADAPTER
+        elif component_metadata.metadata.get('type') == 'use_case':
+            annotation_type = AnnotationType.USE_CASE
+        elif component_metadata.metadata.get('type') == 'controller':
+            annotation_type = AnnotationType.CONTROLLER
+        elif component_metadata.metadata.get('type') == 'service':
+            annotation_type = AnnotationType.SERVICE
+        elif component_metadata.metadata.get('type') == 'repository':
+            annotation_type = AnnotationType.REPOSITORY
+        
         result = RegistrationResult(
             success=False,
-            service_name=metadata.name,
-            annotation_type=metadata.annotation_type,
+            service_name=component_metadata.component_id,
+            annotation_type=annotation_type,
         )
         try:
-            if metadata.profile and metadata.profile != self.current_profile:
+            if component_metadata.profile and component_metadata.profile != self.current_profile:
                 result.warnings = result.warnings + [
-                    f"Skipping {metadata.name} - profile {metadata.profile} != {self.current_profile}"
+                    f"Skipping {component_metadata.component_id} - profile {component_metadata.profile} != {self.current_profile}"
                 ]
                 return result
-            match metadata.annotation_type:
+            match annotation_type:
                 case AnnotationType.PORT:
-                    self._register_port(cls, metadata, result)
+                    self._register_port(cls, component_metadata, result)
                 case AnnotationType.ADAPTER:
-                    self._register_adapter(cls, metadata, result)
+                    self._register_adapter(cls, component_metadata, result)
                 case _:
-                    self._register_component(cls, metadata, result)
+                    self._register_component(cls, component_metadata, result)
             if result.success:
-                self._annotation_metadata = {
-                    **self._annotation_metadata,
-                    metadata.name: metadata,
-                }
-                self._registration_order = self._registration_order + [metadata.name]
-                self._update_stats(metadata)
+                # Store component metadata for future reference
+                self._annotation_metadata[component_metadata.component_id] = component_metadata
+                self._registration_order = self._registration_order + [component_metadata.component_id]
+                self._update_stats(component_metadata, annotation_type)
                 logger.debug(
-                    f"Successfully registered {metadata.annotation_type.value}: {metadata.name}"
+                    f"Successfully registered {annotation_type.value}: {component_metadata.component_id}"
                 )
         except Exception as e:
             result.errors = result.errors + [f"Registration failed: {str(e)}"]
@@ -125,53 +149,56 @@ class AnnotationRegistry(ServiceRegistry):
         return result
 
     def _register_port(
-        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+        self, cls: Type, component_metadata, result: RegistrationResult
     ):
         """Port 등록"""
-        self._ports = {**self._ports, metadata.name: cls}
+        port_name = component_metadata.component_id
+        self._ports = {**self._ports, port_name: cls}
         result.success = True
-        if metadata.name not in self._adapters_by_port:
-            self._adapters_by_port = {**self._adapters_by_port, metadata.name: []}
+        if port_name not in self._adapters_by_port:
+            self._adapters_by_port = {**self._adapters_by_port, port_name: []}
 
     def _register_adapter(
-        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+        self, cls: Type, component_metadata, result: RegistrationResult
     ):
         """Adapter 등록 - 함수형 패턴 적용"""
-        if not metadata.port_name:
+        port_name = component_metadata.metadata.get('port_name')
+        if not port_name:
             result.errors = result.errors + ["Adapter must specify a port_name"]
             return
-        if metadata.port_name not in self._ports:
+        if port_name not in self._ports:
             result.warnings = result.warnings + [
-                f"Port {metadata.port_name} not found - will be validated later"
+                f"Port {port_name} not found - will be validated later"
             ]
-        service_scope = metadata.scope.to_service_scope()
+        
+        dependencies = [dep.name for dep in component_metadata.dependencies]
         super().register(
-            name=metadata.name,
+            name=component_metadata.component_id,
             service_class=cls,
-            scope=service_scope,
-            dependencies=metadata.dependencies,
-            lazy=metadata.lazy,
+            scope=component_metadata.scope,
+            dependencies=dependencies,
+            lazy=component_metadata.lazy_init,
         )
 
         # 함수형 패턴: 조건부 업데이트를 삼항 연산자와 스프레드로 처리
-        existing_adapters = self._adapters_by_port.get(metadata.port_name, [])
+        existing_adapters = self._adapters_by_port.get(port_name, [])
         self._adapters_by_port = {
             **self._adapters_by_port,
-            metadata.port_name: existing_adapters + [metadata.name],
+            port_name: existing_adapters + [component_metadata.component_id],
         }
         result.success = True
 
     def _register_component(
-        self, cls: Type, metadata: AnnotationMetadata, result: RegistrationResult
+        self, cls: Type, component_metadata, result: RegistrationResult
     ):
         """일반 Component, UseCase, Controller 등록"""
-        service_scope = metadata.scope.to_service_scope()
+        dependencies = [dep.name for dep in component_metadata.dependencies]
         super().register(
-            name=metadata.name,
+            name=component_metadata.component_id,
             service_class=cls,
-            scope=service_scope,
-            dependencies=metadata.dependencies,
-            lazy=metadata.lazy,
+            scope=component_metadata.scope,
+            dependencies=dependencies,
+            lazy=component_metadata.lazy_init,
         )
         result.success = True
 
@@ -360,11 +387,11 @@ class AnnotationRegistry(ServiceRegistry):
                 dfs(node, [])
         return cycles
 
-    def _update_stats(self, metadata: AnnotationMetadata):
+    def _update_stats(self, component_metadata, annotation_type: AnnotationType):
         """통계 정보 업데이트"""
         # 함수형 패턴: 불변성을 유지하면서 업데이트
-        type_name = metadata.annotation_type.value
-        scope_name = metadata.scope.value
+        type_name = annotation_type.value
+        scope_name = component_metadata.scope.value
 
         # 함수형 업데이트 헬퍼
         def update_counter(counter_dict: dict, key: str) -> dict:

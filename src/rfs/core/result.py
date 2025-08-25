@@ -85,6 +85,14 @@ class Success(Result[T, E]):
 
     def unwrap_or(self, default: T) -> T:
         return self.value
+    
+    def get(self) -> T:
+        """값 추출 (unwrap의 별칭)"""
+        return self.value
+    
+    def get_error(self) -> None:
+        """에러 값 추출 - Success는 None 반환"""
+        return None
 
     def map(self, func: Callable[[T], U]) -> Result[U, E]:
         try:
@@ -132,9 +140,17 @@ class Failure(Result[T, E]):
     def unwrap_error(self) -> E:
         """에러 값 추출"""
         return self.error
+    
+    def get_error(self) -> E:
+        """에러 값 추출 (unwrap_error의 별칭)"""
+        return self.error
 
     def unwrap_or(self, default: T) -> T:
         return default
+    
+    def get(self) -> None:
+        """값 추출 - Failure는 None 반환"""
+        return None
 
     def map(self, func: Callable[[T], U]) -> Result[U, E]:
         return Failure(self.error)
@@ -163,7 +179,7 @@ class ResultM(Result[T, E]):
     @classmethod
     def pure(cls, value: T) -> "Result[T, Any]":
         """Monad의 return/pure - 값을 Result 컨텍스트로 리프트"""
-        return Success(value)
+        return Success(s.value)
 
     @classmethod
     def wrap(cls, result: Result[T, E]) -> "ResultM[T, E]":
@@ -231,9 +247,9 @@ def failure(error: E) -> "Result[Any, E]":
 def try_except(func: Callable[[], T]) -> Result[T, Exception]:
     """함수 실행을 Result로 래핑"""
     try:
-        return success(func())
+        return Success(func())
     except Exception as e:
-        return failure(e)
+        return Failure(e)
 
 
 async def async_try_except(
@@ -245,10 +261,10 @@ async def async_try_except(
             result = func()
             if hasattr(result, "__await__"):
                 result = await result
-            return success(result)
-        return success(await func)
+            return Success(result)
+        return Success(await func)
     except Exception as e:
-        return failure(e)
+        return Failure(e)
 
 
 def pipe_results(
@@ -301,9 +317,9 @@ def from_optional(value: Optional[T], error: E | None = None) -> "Result[T, E]":
     """Optional에서 Result로 변환"""
     match value:
         case None:
-            return failure(error or ValueError("None value"))
+            return Failure(error or ValueError("None value"))
         case _:
-            return success(value)
+            return Success(value)
 
 
 def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
@@ -311,25 +327,25 @@ def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     values: List[T] = []
     for result in results:
         match result:
-            case Success(value):
+            case Success() as s:
                 # 함수형 패턴: append 대신 리스트 연결
-                values = values + [value]
-            case Failure(_):
-                return result
-    return success(values)
+                values = values + [s.value]
+            case Failure() as f:
+                return f
+    return Success(values)
 
 
 async def sequence_async(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """비동기 Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values: List[T] = []
+    values: List[str] = field(default_factory=list)
     for result in results:
         match result:
-            case Success(value):
+            case Success() as s:
                 # 함수형 패턴: append 대신 리스트 연결
-                values = values + [value]
-            case Failure(_):
-                return result
-    return success(values)
+                values = values + [s.value]
+            case Failure() as f:
+                return f
+    return Success(values)
 
 
 def traverse(items: List[T], func: Callable[[T], Result[U, E]]) -> Result[List[U], E]:
@@ -382,11 +398,13 @@ def lift2(
 
     def lifted(result1: "Result[T, E]", result2: "Result[U, E]") -> "Result[V, E]":
         match (result1, result2):
-            case (Success(val1), Success(val2)):
-                return success(func(val1, val2))
-            case (Failure(_), _):
-                return result1
-            case (_, Failure(_)):
+            case (Success() as s1, Success() as s2):
+                return Success(func(s1.value, s2.value))
+            case (Failure() as f, _):
+                return f
+            case (_, Failure() as f):
+                return f
+            case _:
                 return result2
 
     return lifted
@@ -398,9 +416,9 @@ def result_decorator(func: Callable[..., T]) -> Callable[..., "Result[T, Excepti
 
     def wrapper(*args: Any, **kwargs: Any) -> "Result[T, Exception]":
         try:
-            return success(func(*args, **kwargs))
+            return Success(func(*args, **kwargs))
         except Exception as e:
-            return failure(e)
+            return Failure(e)
 
     return wrapper
 
@@ -415,25 +433,25 @@ def async_result_decorator(
             result = func(*args, **kwargs)
             if hasattr(result, "__await__"):
                 result = await result
-            return success(result)
+            return Success(result)
         except Exception as e:
-            return failure(e)
+            return Failure(e)
 
     return wrapper
 
 
 # 함수형 조합자들
-def combine_results(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
+def combine(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
     """여러 Result를 하나의 Result로 결합 - 함수형 패턴 적용"""
     # 함수형 패턴: 리스트 연결 사용 (early return 유지)
     values = []
     for result in results:
         match result:
-            case Success(value):
-                values = values + [value]  # 함수형 패턴: 리스트 연결
-            case Failure(_):
+            case Success() as s:
+                values = values + [s.value]  # 함수형 패턴: 리스트 연결
+            case Failure() as f:
                 return result
-    return success(tuple(values))
+    return Success(tuple(values))
 
 
 def first_success(*results: "Result[T, E]") -> "Result[T, List[E]]":
@@ -445,10 +463,10 @@ def first_success(*results: "Result[T, E]") -> "Result[T, List[E]]":
 
     # 함수형 패턴: list comprehension으로 에러 수집
     errors = [r.error for r in results if r.is_failure()]
-    return failure(errors)
+    return Failure(errors)
 
 
-def partition_results(results: List["Result[T, E]"]) -> tuple[List[T], List[E]]:
+def partition(results: List["Result[T, E]"]) -> tuple[List[T], List[E]]:
     """Result 리스트를 성공과 실패로 분할 - 함수형 패턴 적용"""
     # 함수형 패턴: filter와 list comprehension 사용
     successes = [r.value for r in results if r.is_success()]
@@ -472,10 +490,10 @@ def take_until_failure(
             return acc
 
         match result:
-            case Success(value):
+            case Success() as s:
                 # acc가 Success인 경우만 여기 도달
                 return Success(func(acc.value, value))
-            case Failure(_):
+            case Failure() as f:
                 return result
 
     return reduce(folder, results, Success([]))
@@ -510,18 +528,18 @@ def traverse_m(
 def get_value(result: "Result[T, Any]", default: T | None = None) -> T | None:
     """값 추출 (실패시 기본값) - 기존 V2 API 유지"""
     match result:
-        case Success(value):
-            return value
-        case Failure(_):
+        case Success() as s:
+            return s.value
+        case Failure() as f:
             return default
 
 
 def get_error(result: "Result[Any, E]") -> E | None:
     """에러 추출 - 기존 V2 API 유지"""
     match result:
-        case Failure(error):
-            return error
-        case Success(_):
+        case Failure() as f:
+            return f.error
+        case Success() as s:
             return None
 
 
@@ -599,16 +617,16 @@ class ResultAsync(Generic[T, E]):
         async def mapped() -> "Result[U, E]":
             result = await self._result
             match result:
-                case Success(value):
+                case Success() as s:
                     try:
-                        mapped_value = func(value)
+                        mapped_value = func(s.value)
                         if hasattr(mapped_value, "__await__"):
                             mapped_value = await mapped_value
                         return Success(mapped_value)
                     except Exception as e:
                         return Failure(e)
-                case Failure(error):
-                    return Failure(error)
+                case Failure() as f:
+                    return Failure(f.error)
 
         return ResultAsync(mapped())
 
@@ -620,9 +638,9 @@ class ResultAsync(Generic[T, E]):
         async def bound() -> "Result[U, E]":
             result = await self._result
             match result:
-                case Success(value):
+                case Success() as s:
                     try:
-                        next_result = func(value)
+                        next_result = func(s.value)
                         # 함수형 패턴: isinstance 대신 type 비교
                         if type(next_result).__name__ == "ResultAsync":
                             return await next_result._result
@@ -632,8 +650,8 @@ class ResultAsync(Generic[T, E]):
                             return next_result
                     except Exception as e:
                         return Failure(e)
-                case Failure(error):
-                    return Failure(error)
+                case Failure() as f:
+                    return Failure(f.error)
 
         return ResultAsync(bound())
 
@@ -646,7 +664,7 @@ def async_success(value: T) -> "ResultAsync[T, Any]":
     """비동기 Success 생성"""
 
     async def create() -> "Result[T, Any]":
-        return Success(value)
+        return Success(s.value)
 
     return ResultAsync(create())
 
@@ -655,7 +673,7 @@ def async_failure(error: E) -> "ResultAsync[Any, E]":
     """비동기 Failure 생성"""
 
     async def create() -> "Result[Any, E]":
-        return Failure(error)
+        return Failure(f.error)
 
     return ResultAsync(create())
 
@@ -679,7 +697,7 @@ async def sequence_async_v4(
     """비동기 시퀀스 (성능 최적화)"""
 
     async def sequence() -> "Result[List[T], E]":
-        values: List[T] = []
+        values: List[str] = field(default_factory=list)
 
         # 병렬 처리를 위한 모든 결과 수집
         result_awaitables = [r._result for r in results]
@@ -689,9 +707,9 @@ async def sequence_async_v4(
 
         for result in resolved_results:
             match result:
-                case Success(value):
-                    values.append(value)
-                case Failure(_):
+                case Success() as s:
+                    values.append(s.value)
+                case Failure() as f:
                     return result
 
         return Success(values)
@@ -880,17 +898,17 @@ class Maybe(Generic[T]):
         """Result로 변환"""
         match self._value:
             case None:
-                return Failure(error)
+                return Failure(f.error)
             case value:
-                return Success(value)
+                return Success(s.value)
 
     def to_either(self, error: E) -> "Either[T, E]":
         """Either로 변환"""
         match self._value:
             case None:
-                return Either.left(error)
+                return Either.left(f.error)
             case value:
-                return Either.right(value)
+                return Either.right(s.value)
 
     def __repr__(self) -> str:
         return f"Maybe.Some({self._value})" if self.is_some() else "Maybe.None"
@@ -899,12 +917,12 @@ class Maybe(Generic[T]):
 # Either/Maybe 편의 함수들
 def left(error: E) -> Either[Any, E]:
     """Either.Left 생성"""
-    return Either.left(error)
+    return Either.left(f.error)
 
 
 def right(value: T) -> Either[T, Any]:
     """Either.Right 생성"""
-    return Either.right(value)
+    return Either.right(s.value)
 
 
 def some(value: T) -> Maybe[T]:
@@ -925,7 +943,7 @@ def maybe_of(value: T | None) -> Maybe[T]:
 # 고급 함수형 조합자들 (Day 3-4)
 def sequence_either(eithers: List[Either[T, E]]) -> Either[List[T], E]:
     """Either 리스트를 리스트 Either로 변환"""
-    values: List[T] = []
+    values: List[str] = field(default_factory=list)
 
     for either in eithers:
         match either:
@@ -939,7 +957,7 @@ def sequence_either(eithers: List[Either[T, E]]) -> Either[List[T], E]:
 
 def sequence_maybe(maybes: List[Maybe[T]]) -> Maybe[List[T]]:
     """Maybe 리스트를 리스트 Maybe로 변환"""
-    values: List[T] = []
+    values: List[str] = field(default_factory=list)
 
     for maybe in maybes:
         match maybe.is_some():
@@ -969,10 +987,10 @@ def traverse_maybe(items: List[T], func: Callable[[T], Maybe[U]]) -> Maybe[List[
 def result_to_either(result: Result[T, E]) -> Either[T, E]:
     """Result를 Either로 변환"""
     match result:
-        case Success(value):
-            return Either.right(value)
-        case Failure(error):
-            return Either.left(error)
+        case Success() as s:
+            return Either.right(s.value)
+        case Failure() as f:
+            return Either.left(f.error)
 
 
 def either_to_result(either: Either[T, E]) -> Result[T, E]:
@@ -983,6 +1001,15 @@ def either_to_result(either: Either[T, E]) -> Result[T, E]:
 def maybe_to_result(maybe: Maybe[T], error: E) -> Result[T, E]:
     """Maybe를 Result로 변환"""
     return maybe.to_result(error)
+
+
+def result_to_maybe(result: Result[T, E]) -> Maybe[T]:
+    """Result를 Maybe로 변환"""
+    match result:
+        case Success() as s:
+            return some(s.value)
+        case Failure():
+            return none()
 
 
 # 헬퍼 함수들
@@ -1001,4 +1028,4 @@ def maybe_of(value: Optional[T]) -> Maybe[T]:
 
 def either_of(value: T, error: Optional[E] = None) -> Either[T, E]:
     """값 또는 에러로 Either 생성"""
-    return Either.left(error) if error is not None else Either.right(value)
+    return Either.left(f.error) if error is not None else Either.right(value)

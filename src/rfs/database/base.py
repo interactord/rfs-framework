@@ -94,7 +94,7 @@ class DatabaseConfig:
     echo: bool = False
     echo_pool: bool = False
     future: bool = True
-    extra_options: Dict[str, Any] = {}
+    extra_options: Dict[str, Any] = field(default_factory=dict)
 
     def get_sqlalchemy_url(self) -> str:
         """SQLAlchemy URL 생성"""

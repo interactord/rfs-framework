@@ -20,9 +20,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 
-from ...core.types import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 

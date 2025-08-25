@@ -23,10 +23,17 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Union
 
-import jwt
-import yaml
+try:
+    import jwt
+except ImportError:
+    jwt = None
 
-from ..core import Failure, Result, Success
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+from ..core.result import Failure, Result, Success
 
 
 class LoadBalanceStrategy(Enum):

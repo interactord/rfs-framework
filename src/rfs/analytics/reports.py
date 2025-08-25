@@ -17,7 +17,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Union
 
-from ..core.types import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .charts import Chart
 from .dashboard import Dashboard
 from .data_source import DataQuery, DataSource
@@ -48,7 +48,7 @@ class ReportSection:
     title: str
     content_type: str
     content: Any
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
     width: Optional[str] = None
     height: Optional[str] = None
     padding: str = "10px"
@@ -65,8 +65,8 @@ class ReportTemplate:
     name: str
     description: str
     sections: List[ReportSection]
-    variables: Dict[str, Any] = {}
-    styles: Dict[str, Any] = {}
+    variables: Dict[str, Any] = field(default_factory=dict)
+    styles: Dict[str, Any] = field(default_factory=dict)
     header_template: Optional[str] = None
     footer_template: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)

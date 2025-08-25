@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import TaskMetadata, TaskResult, TaskStatus
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class TaskMetric:
     type: MetricType
     value: float
     timestamp: datetime = field(default_factory=datetime.now)
-    labels: Dict[str, str] = {}
+    labels: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -71,8 +71,8 @@ class TaskMetrics:
     tasks_per_minute: float = 0.0
     error_rate: float = 0.0
     timeout_rate: float = 0.0
-    priority_stats: Dict[str, int] = {}
-    tag_stats: Dict[str, int] = {}
+    priority_stats: Dict[str, Any] = field(default_factory=dict)
+    tag_stats: Dict[str, Any] = field(default_factory=dict)
 
     def update_from_metadata(self, metadata: TaskMetadata):
         """메타데이터로부터 업데이트"""

@@ -70,8 +70,8 @@ class TaskInfo:
     timeout_seconds: Optional[float] = None
     retry_count: int = 0
     max_retries: int = 0
-    metadata: Dict[str, Any] = {}
-    tags: List[str] = []
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: List[str] = field(default_factory=list)
 
     @property
     def execution_time(self) -> Optional[float]:

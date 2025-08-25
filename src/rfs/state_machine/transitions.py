@@ -26,7 +26,7 @@ class TransitionResult:
     from_state: str
     to_state: Optional[str]
     event: str
-    context: Dict[str, Any] = {}
+    context: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Exception] = None
     duration_ms: float = 0.0
 

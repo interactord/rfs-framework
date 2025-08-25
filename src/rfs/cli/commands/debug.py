@@ -26,7 +26,8 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ...core import Failure, Result, Success, get_config
+from ...core.config import get_config
+from ...core.result import Failure, Result, Success
 from ..core import Command
 
 if RICH_AVAILABLE:
@@ -76,14 +77,14 @@ class DebugCommand(Command):
                         return await self._debug_profile(args[1:])
                     case "memory":
                         return await self._debug_memory(args[1:])
+                    case "config":
+                        return await self._debug_config(args[1:])
+                    case "dependencies":
+                        return await self._debug_dependencies(args[1:])
+                    case "logs":
+                        return await self._debug_logs(args[1:])
                     case _:
-                        match tool:
-                            case "config":
-                                return await self._debug_config(args[1:])
-                            case "dependencies":
-                                return await self._debug_dependencies(args[1:])
-                            case "logs":
-                                return await self._debug_logs(args[1:])
+                        return Failure(f"지원하지 않는 디버깅 도구: {tool}")
         except Exception as e:
             return Failure(f"디버깅 실패: {str(e)}")
 
@@ -247,300 +248,264 @@ class StatusCommand(Command):
                     **status,
                     "rfs_config": {"error": "RFS 설정 로드 실패"}
                 }
-                        status = {
-                        **status,
-                        "project": {
-                        "project": {
-                        "name": Path.cwd().name,
-                        "main_py_exists": Path("main.py").exists(),
-                        "requirements_exists": Path("requirements.txt").exists(),
-                        "docker_exists": Path("Dockerfile").exists(),
-                        "rfs_config_exists": Path("rfs.yaml").exists(),
-                        }
-                        },
-                        }
-                        status = {
-                        **status,
-                        "dependencies": {"dependencies": await self._check_dependencies()},
-                        }
-                        except Exception as e:
-                        status["error"] = {"error": str(e)}
-                        return status
+            status = {
+                **status,
+                "project": {
+                    "name": Path.cwd().name,
+                    "main_py_exists": Path("main.py").exists(),
+                    "requirements_exists": Path("requirements.txt").exists(),
+                    "docker_exists": Path("Dockerfile").exists(),
+                    "rfs_config_exists": Path("rfs.yaml").exists(),
+                }
+            }
+            status = {
+                **status,
+                "dependencies": await self._check_dependencies(),
+            }
+        except Exception as e:
+            status["error"] = str(e)
+        return status
 
-                        async def _check_dependencies(self) -> Dict[str, Any]:
-                        """의존성 확인"""
-                        deps = {}
-                        try:
-                        import pkg_resources
+    async def _check_dependencies(self) -> Dict[str, Any]:
+        """의존성 확인"""
+        deps = {}
+        try:
+            import pkg_resources
 
-                        required_packages = ["rfs-framework", "pydantic", "rich"]
-                        for package in required_packages:
-                        try:
-                        version = pkg_resources.get_distribution(package).version
-                        deps = {
-                        **deps,
-                        package: {package: {"version": version, "status": "installed"},
-                        }
-                        except pkg_resources.DistributionNotFound:
-                        deps = {
-                        **deps,
-                        package: {package: {"version": None, "status": "missing"},
-                        }
-                        try:
-                        process = await asyncio.create_subprocess_exec(
-                        "docker",
-                        "--version",
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                        )
-                        stdout, _ = await process.communicate()
-                        if process.returncode == 0:
-                        version_info = stdout.decode().strip()
-                        deps = {
-                        **deps,
-                        "docker": {
-                        "docker": {"version": version_info, "status": "available"}
-                        },
-                        }
-                        else:
-                        deps = {
-                        **deps,
-                        "docker": {
-                        "docker": {"version": None, "status": "unavailable"}
-                        },
-                        }
-                        except:
-                        deps = {
-                        **deps,
-                        "docker": {"docker": {"version": None, "status": "unavailable"},
-                        }
-                        try:
-                        process = await asyncio.create_subprocess_exec(
-                        "gcloud",
-                        "--version",
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE,
-                        )
-                        await process.communicate()
-                        deps = {
-                        **deps,
-                        "gcloud": {
-                        "gcloud": {
-                        "version": "installed" if process.returncode == 0 else None,
-                        "status": (
-                        "available"
-                        if process.returncode == 0
-                        else "unavailable"
-                        ),
-                        }
-                        },
-                        }
-                        except:
-                        deps = {
-                        **deps,
-                        "gcloud": {"gcloud": {"version": None, "status": "unavailable"},
-                        }
-                        except Exception as e:
-                        deps["error"] = {"error": str(e)}
-                        return deps
+            required_packages = ["rfs-framework", "pydantic", "rich"]
+            for package in required_packages:
+                try:
+                    version = pkg_resources.get_distribution(package).version
+                    deps[package] = {"version": version, "status": "installed"}
+                except pkg_resources.DistributionNotFound:
+                    deps[package] = {"version": None, "status": "missing"}
+            
+            # Docker 체크
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    "docker",
+                    "--version",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, _ = await process.communicate()
+                if process.returncode == 0:
+                    version_info = stdout.decode().strip()
+                    deps["docker"] = {"version": version_info, "status": "available"}
+                else:
+                    deps["docker"] = {"version": None, "status": "unavailable"}
+            except:
+                deps["docker"] = {"version": None, "status": "unavailable"}
+            
+            # GCloud 체크
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    "gcloud",
+                    "--version",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await process.communicate()
+                deps["gcloud"] = {
+                    "version": "installed" if process.returncode == 0 else None,
+                    "status": "available" if process.returncode == 0 else "unavailable"
+                }
+            except:
+                deps["gcloud"] = {"version": None, "status": "unavailable"}
+        except Exception as e:
+            deps["error"] = str(e)
+        return deps
 
-                        async def _display_status_info(self, status: Dict[str, Any]) -> None:
-                        """상태 정보 표시"""
-                        if not console:
-                        for section, data in status.items():
-                        print(f"\n{section.upper()}:")
-                        if type(data).__name__ == "dict":
-                        for key, value in data.items():
+    async def _display_status_info(self, status: Dict[str, Any]) -> None:
+        """상태 정보 표시"""
+        if not console:
+            for section, data in status.items():
+                print(f"\n{section.upper()}:")
+                if isinstance(data, dict):
+                    for key, value in data.items():
                         print(f"  {key}: {value}")
-                        else:
-                        print(f"  {data}")
-                        return
-                        if "system" in status:
-                        system_table = Table(title="시스템 정보", show_header=False)
-                        system_table.add_column("항목", style="cyan")
-                        system_table.add_column("값", style="white")
-                        for key, value in status.get("system").items():
-                        system_table.add_row(key.replace("_", " ").title(), str(value))
-                        console.print(system_table)
-                        if "resources" in status:
-                        resource_table = Table(title="시스템 리소스", show_header=False)
-                        resource_table.add_column("리소스", style="cyan")
-                        resource_table.add_column("사용량", style="white")
-                        for key, value in status.get("resources").items():
-                        resource_table.add_row(key.replace("_", " ").title(), str(value))
-                        console.print(resource_table)
-                        if "dependencies" in status and (
-                        hasattr(status.get("dependencies"), "__class__")
-                        and status.get("dependencies").__class__.__name__ == "dict"
-                        ):
-                        deps_table = Table(
-                        title="의존성 상태", show_header=True, header_style="bold magenta"
-                        )
-                        deps_table.add_column("패키지", style="cyan")
-                        deps_table.add_column("버전", style="green")
-                        deps_table.add_column("상태", style="yellow")
-                        for package, info in status.get("dependencies").items():
-                        if type(info).__name__ == "dict" and "status" in info:
-                        version = info.get("version", "N/A")
-                        status_text = info.get("status", "unknown")
-                        if status_text in ["installed", "available"]:
+                else:
+                    print(f"  {data}")
+            return
+        
+        if "system" in status:
+            system_table = Table(title="시스템 정보", show_header=False)
+            system_table.add_column("항목", style="cyan")
+            system_table.add_column("값", style="white")
+            for key, value in status.get("system", {}).items():
+                system_table.add_row(key.replace("_", " ").title(), str(value))
+            console.print(system_table)
+        
+        if "resources" in status:
+            resource_table = Table(title="시스템 리소스", show_header=False)
+            resource_table.add_column("리소스", style="cyan")
+            resource_table.add_column("사용량", style="white")
+            for key, value in status.get("resources", {}).items():
+                resource_table.add_row(key.replace("_", " ").title(), str(value))
+            console.print(resource_table)
+        
+        if "dependencies" in status and isinstance(status.get("dependencies"), dict):
+            deps_table = Table(
+                title="의존성 상태", show_header=True, header_style="bold magenta"
+            )
+            deps_table.add_column("패키지", style="cyan")
+            deps_table.add_column("버전", style="green")
+            deps_table.add_column("상태", style="yellow")
+            for package, info in status.get("dependencies", {}).items():
+                if isinstance(info, dict) and "status" in info:
+                    version = info.get("version", "N/A")
+                    status_text = info.get("status", "unknown")
+                    if status_text in ["installed", "available"]:
                         status_style = "green"
-                        elif status_text in ["missing", "unavailable"]:
+                    elif status_text in ["missing", "unavailable"]:
                         status_style = "red"
-                        else:
+                    else:
                         status_style = "yellow"
-                        deps_table.add_row(
+                    deps_table.add_row(
                         package,
                         str(version),
                         f"[{status_style}]{status_text}[/{status_style}]",
-                        )
-                        console.print(deps_table)
+                    )
+            console.print(deps_table)
 
 
-                        class HealthCommand(Command):
-                        """헬스체크 명령어"""
 
-                        name = "health"
-                        description = "RFS 애플리케이션 헬스체크"
+class HealthCommand(Command):
+    """헬스체크 명령어"""
 
-                        async def execute(self, args: List[str]) -> Result[str, str]:
-                        """헬스체크 실행"""
-                        try:
-                        options = self._parse_health_options(args)
-                        if console:
-                        console.print(
-                        Panel(
+    name = "health"
+    description = "RFS 애플리케이션 헬스체크"
+
+    async def execute(self, args: List[str]) -> Result[str, str]:
+        """헬스체크 실행"""
+        try:
+            options = self._parse_health_options(args)
+            if console:
+                console.print(
+                    Panel(
                         f"🏥 RFS v4 헬스체크 실행\n\n🎯 대상: {options.get('target', 'local')}\n🔍 체크 항목: {len(self._get_health_checks())}개\n⚡ 타임아웃: {options.get('timeout', 30)}초",
                         title="헬스체크",
                         border_style="green",
-                        )
-                        )
-                        health_results = await self._run_health_checks(options)
-                        await self._display_health_results(health_results)
-                        all_passed = all(
-                        (result["status"] == "pass" for result in health_results.values())
-                        )
-                        if all_passed:
-                        return Success("모든 헬스체크 통과")
-                        else:
-                        failed_checks = [
-                        name
-                        for name, result in health_results.items()
-                        if result.get("status") != "pass"
-                        ]
-                        return Failure(f"헬스체크 실패: {', '.join(failed_checks)}")
-                        except Exception as e:
-                        return Failure(f"헬스체크 실패: {str(e)}")
+                    )
+                )
+            health_results = await self._run_health_checks(options)
+            await self._display_health_results(health_results)
+            all_passed = all(
+                result["status"] == "pass" for result in health_results.values()
+            )
+            if all_passed:
+                return Success("모든 헬스체크 통과")
+            else:
+                failed_checks = [
+                    name
+                    for name, result in health_results.items()
+                    if result.get("status") != "pass"
+                ]
+                return Failure(f"헬스체크 실패: {', '.join(failed_checks)}")
+        except Exception as e:
+            return Failure(f"헬스체크 실패: {str(e)}")
 
-                        def _parse_health_options(self, args: List[str]) -> Dict[str, Any]:
-                        """헬스체크 옵션 파싱"""
-                        options = {"target": "local", "timeout": 30, "detailed": False}
-                        for i, arg in enumerate(args):
-                        if arg == "--target" and i + 1 < len(args):
-                        options["target"] = {"target": args[i + 1]}
-                        elif arg == "--timeout" and i + 1 < len(args):
-                        options["timeout"] = {"timeout": int(args[i + 1])}
-                        elif arg in ["--detailed", "-v"]:
-                        options["detailed"] = {"detailed": True}
-                        return options
+    def _parse_health_options(self, args: List[str]) -> Dict[str, Any]:
+        """헬스체크 옵션 파싱"""
+        options = {"target": "local", "timeout": 30, "detailed": False}
+        for i, arg in enumerate(args):
+            if arg == "--target" and i + 1 < len(args):
+                options["target"] = args[i + 1]
+            elif arg == "--timeout" and i + 1 < len(args):
+                options["timeout"] = int(args[i + 1])
+            elif arg in ["--detailed", "-v"]:
+                options["detailed"] = True
+        return options
 
-                        def _get_health_checks(self) -> List[str]:
-                        """헬스체크 항목 목록"""
-                        return [
-                        "python_environment",
-                        "rfs_configuration",
-                        "file_system",
-                        "memory_usage",
-                        "dependencies",
-                        "network_connectivity",
-                        ]
+    def _get_health_checks(self) -> List[str]:
+        """헬스체크 항목 목록"""
+        return [
+            "python_environment",
+            "rfs_configuration",
+            "file_system",
+            "memory_usage",
+            "dependencies",
+            "network_connectivity",
+        ]
 
-                        async def _run_health_checks(
-                        self, options: Dict[str, Any]
-                        ) -> Dict[str, Dict[str, Any]]:
-                        """헬스체크 실행"""
-                        results = {}
-                        checks = self._get_health_checks()
-                        for check in checks:
-                        try:
-                        match check:
-                            case "python_environment":
+    async def _run_health_checks(
+        self, options: Dict[str, Any]
+    ) -> Dict[str, Dict[str, Any]]:
+        """헬스체크 실행"""
+        results = {}
+        checks = self._get_health_checks()
+        for check in checks:
+            try:
+                match check:
+                    case "python_environment":
                         result = await self._check_python_environment()
                     case "rfs_configuration":
                         result = await self._check_rfs_configuration()
-                    case _:
-                        match check:
-                            case "file_system":
+                    case "file_system":
                         result = await self._check_file_system()
                     case "memory_usage":
                         result = await self._check_memory_usage()
-                    case _:
-                        match check:
-                            case "dependencies":
+                    case "dependencies":
                         result = await self._check_dependencies_health()
                     case "network_connectivity":
-                        result = (
-                        await self._check_network_connectivity()
-                        )
+                        result = await self._check_network_connectivity()
                     case _:
                         result = {
-                        "status": "skip",
-                        "message": "Unknown check",
+                            "status": "skip",
+                            "message": "Unknown check",
                         }
-                        results[check] = {check: result}
-                        except Exception as e:
-                        results = {
-                        **results,
-                        check: {
-                        check: {"status": "fail", "message": f"Check failed: {str(e)}"}
-                        },
-                        }
-                        return results
+                results[check] = result
+            except Exception as e:
+                results[check] = {
+                    "status": "fail", 
+                    "message": f"Check failed: {str(e)}"
+                }
+        return results
 
-                        async def _check_python_environment(self) -> Dict[str, Any]:
-                        """Python 환경 체크"""
-                        import sys
+    async def _check_python_environment(self) -> Dict[str, Any]:
+        """Python 환경 체크"""
+        import sys
 
-                        version = sys.version_info
-                        if version.major >= 3 and version.minor >= 10:
-                        return {
-                        "status": "pass",
-                        "message": f"Python {version.major}.{version.minor}.{version.micro}",
-                        }
-                        else:
-                        return {
-                        "status": "fail",
-                        "message": f"Python 3.10+ 필요 (현재: {version.major}.{version.minor}.{version.micro})",
-                        }
+        version = sys.version_info
+        if version.major >= 3 and version.minor >= 10:
+            return {
+                "status": "pass",
+                "message": f"Python {version.major}.{version.minor}.{version.micro}",
+            }
+        else:
+            return {
+                "status": "fail",
+                "message": f"Python 3.10+ 필요 (현재: {version.major}.{version.minor}.{version.micro})",
+            }
 
-                        async def _display_health_results(self, results: Dict[str, Dict[str, Any]]) -> None:
-                        """헬스체크 결과 표시"""
-                        if not console:
-                        for check, result in results.items():
-                        status = result["status"].upper()
-                        message = result["message"]
-                        print(f"{check}: {status} - {message}")
-                        return
-                        health_table = Table(
-                        title="헬스체크 결과", show_header=True, header_style="bold magenta"
-                        )
-                        health_table.add_column("체크 항목", style="cyan", width=20)
-                        health_table.add_column("상태", style="white", width=10, justify="center")
-                        health_table.add_column("메시지", style="white")
-                        for check, result in results.items():
-                        status = result["status"]
-                        message = result["message"]
-                        if status == "pass":
-                        status_display = "[green]✅ PASS[/green]"
-                        else:
-                        match status:
-                            case "fail":
+    async def _display_health_results(self, results: Dict[str, Dict[str, Any]]) -> None:
+        """헬스체크 결과 표시"""
+        if not console:
+            for check, result in results.items():
+                status = result["status"].upper()
+                message = result["message"]
+                print(f"{check}: {status} - {message}")
+            return
+        health_table = Table(
+            title="헬스체크 결과", show_header=True, header_style="bold magenta"
+        )
+        health_table.add_column("체크 항목", style="cyan", width=20)
+        health_table.add_column("상태", style="white", width=10, justify="center")
+        health_table.add_column("메시지", style="white")
+        for check, result in results.items():
+            status = result["status"]
+            message = result["message"]
+            if status == "pass":
+                status_display = "[green]✅ PASS[/green]"
+            else:
+                match status:
+                    case "fail":
                         status_display = "[red]❌ FAIL[/red]"
                     case "warn":
                         status_display = "[yellow]⚠️ WARN[/yellow]"
                     case _:
                         status_display = "[dim]➖ SKIP[/dim]"
-                        health_table.add_row(
-                        check.replace("_", " ").title(), status_display, message
-                        )
-                        console.print(health_table)
+            health_table.add_row(
+                check.replace("_", " ").title(), status_display, message
+            )
+        console.print(health_table)

@@ -10,7 +10,9 @@ from .base import (
     ComponentMetadata,
     ServiceScope,
     get_annotation_metadata,
+    has_annotation,
     set_annotation_metadata,
+    validate_hexagonal_architecture,
 )
 from .di import (
     Adapter,
@@ -29,6 +31,11 @@ from .di import (
     UseCase,
     Value,
 )
+
+
+def is_port(cls):
+    """포트 인터페이스 확인"""
+    return getattr(cls, '_is_port', False)
 from .processor import (
     AnnotationProcessor,
     process_annotations,
@@ -47,10 +54,14 @@ from .registry import (
 __all__ = [
     # Base
     "ServiceScope",
+    "AnnotationType",
     "AnnotationMetadata",
     "ComponentMetadata",
     "get_annotation_metadata",
+    "has_annotation",
     "set_annotation_metadata",
+    "validate_hexagonal_architecture",
+    "is_port",
     # DI Annotations
     "Component",
     "Port",

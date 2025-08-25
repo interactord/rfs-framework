@@ -23,7 +23,7 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-from ...core import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
     console = Console()
@@ -57,11 +57,11 @@ class PipelineConfig:
     """파이프라인 설정"""
 
     name: str
-    trigger_branches: List[str] = []
-    stages: List[PipelineStage] = []
+    trigger_branches: List[str] = field(default_factory=list)
+    stages: List[str] = field(default_factory=list)
     deployment_strategy: DeploymentStrategy = DeploymentStrategy.ROLLING
-    environment_configs: Dict[str, Any] = {}
-    notifications: Dict[str, Any] = {}
+    environment_configs: Dict[str, Any] = field(default_factory=dict)
+    notifications: Dict[str, Any] = field(default_factory=dict)
 
 
 class CICDManager:

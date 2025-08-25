@@ -21,9 +21,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
 
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 
-from ...core.types import Failure, Result, Success
+from ...core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +121,8 @@ class ProfileResult:
 class CPUMetrics:
     """CPU 메트릭"""
 
-    snapshots: List[CPUSnapshot] = []
-    profile_results: List[ProfileResult] = []
+    snapshots: List[str] = field(default_factory=list)
+    profile_results: List[str] = field(default_factory=list)
     cpu_bound_detections: List[Dict[str, Any]] = field(default_factory=list)
 
     def add_snapshot(self, snapshot: CPUSnapshot):
@@ -157,14 +162,15 @@ class CPUProfiler:
         self.current_profiler: Optional[cProfile.Profile] = None
         self.profiling_results: List[ProfileResult] = []
         self.alert_callbacks: List[callable] = []
-        self.cpu_count = psutil.cpu_count()
+        self.cpu_count = psutil.cpu_count() if PSUTIL_AVAILABLE else 1
         self.cpu_freq_base = None
-        try:
-            freq = psutil.cpu_freq()
-            if freq:
-                self.cpu_freq_base = freq.current
-        except:
-            pass
+        if PSUTIL_AVAILABLE:
+            try:
+                freq = psutil.cpu_freq()
+                if freq:
+                    self.cpu_freq_base = freq.current
+            except:
+                pass
 
     async def start(self) -> Result[bool, str]:
         """CPU 프로파일링 시작"""
@@ -216,6 +222,18 @@ class CPUProfiler:
 
     async def _collect_cpu_snapshot(self) -> Optional[CPUSnapshot]:
         """CPU 스냅샷 수집"""
+        if not PSUTIL_AVAILABLE:
+            # Return a minimal snapshot when psutil is not available
+            return CPUSnapshot(
+                timestamp=datetime.now(),
+                overall_cpu_percent=0.0,
+                loadavg=None,
+                core_usage=[],
+                top_processes=[],
+                context_switches=None,
+                interrupts=None,
+            )
+        
         try:
             overall_cpu = psutil.cpu_percent(interval=0.1)
             loadavg = None

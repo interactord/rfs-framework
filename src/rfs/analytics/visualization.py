@@ -14,7 +14,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from ..core.types import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 
 class PlotType(Enum):
@@ -80,7 +80,7 @@ class PlotData:
     labels: Optional[List[str]] = None
     colors: Optional[List[str]] = None
     sizes: Optional[List[float]] = None
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class Theme(ABC):

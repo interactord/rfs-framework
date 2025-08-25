@@ -12,6 +12,7 @@ import asyncio
 import logging
 import math
 import statistics
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -386,294 +387,296 @@ class AutoScalingOptimizer:
             case _:
                 return await self._balanced_scaling_decision(snapshot)
 
-                async def _balanced_scaling_decision(
-                self, snapshot: MetricSnapshot
-                ) -> Optional[Dict[str, Any]]:
-                """균형 스케일링 결정"""
-                current_instances = snapshot.active_instances
-                scale_up_score = 0
-                if snapshot.cpu_utilization > self.config.scale_up_threshold:
-                scale_up_score = scale_up_score + 1
-                if snapshot.memory_utilization > self.config.scale_up_threshold:
-                scale_up_score = scale_up_score + 1
-                if snapshot.queue_depth > self.config.target_concurrency * 0.8:
-                scale_up_score = scale_up_score + 1
-                if snapshot.avg_response_time > 1000:
-                scale_up_score = scale_up_score + 1
-                scale_down_score = 0
-                if snapshot.cpu_utilization < self.config.scale_down_threshold:
-                scale_down_score = scale_down_score + 1
-                if snapshot.memory_utilization < self.config.scale_down_threshold:
-                scale_down_score = scale_down_score + 1
-                if snapshot.queue_depth < self.config.target_concurrency * 0.2:
-                scale_down_score = scale_down_score + 1
-                if snapshot.avg_response_time < 200:
-                scale_down_score = scale_down_score + 1
-                if scale_up_score >= 2:
-                can_scale, reason = self.config.can_scale_up(current_instances)
-                if can_scale:
+    async def _balanced_scaling_decision(
+        self, snapshot: MetricSnapshot
+    ) -> Optional[Dict[str, Any]]:
+        """균형 스케일링 결정"""
+        current_instances = snapshot.active_instances
+        scale_up_score = 0
+        if snapshot.cpu_utilization > self.config.scale_up_threshold:
+            scale_up_score += 1
+        if snapshot.memory_utilization > self.config.scale_up_threshold:
+            scale_up_score += 1
+        if snapshot.queue_depth > self.config.target_concurrency * 0.8:
+            scale_up_score += 1
+        if snapshot.avg_response_time > 1000:
+            scale_up_score += 1
+        
+        scale_down_score = 0
+        if snapshot.cpu_utilization < self.config.scale_down_threshold:
+            scale_down_score += 1
+        if snapshot.memory_utilization < self.config.scale_down_threshold:
+            scale_down_score += 1
+        if snapshot.queue_depth < self.config.target_concurrency * 0.2:
+            scale_down_score += 1
+        if snapshot.avg_response_time < 200:
+            scale_down_score += 1
+        
+        if scale_up_score >= 2:
+            can_scale, reason = self.config.can_scale_up(current_instances)
+            if can_scale:
                 target_instances = min(current_instances + 1, self.config.max_instances)
                 return {
-                "direction": ScalingDirection.UP,
-                "current_instances": current_instances,
-                "target_instances": target_instances,
-                "reason": f"Scale up (score: {scale_up_score})",
-                "confidence": min(0.9, scale_up_score * 0.25),
+                    "direction": ScalingDirection.UP,
+                    "current_instances": current_instances,
+                    "target_instances": target_instances,
+                    "reason": f"Scale up (score: {scale_up_score})",
+                    "confidence": min(0.9, scale_up_score * 0.25),
                 }
-                else:
-                logger.warning(f"스케일 업 불가: {reason}")
-                elif scale_down_score >= 3 and current_instances > self.config.min_instances:
-                target_instances = max(current_instances - 1, self.config.min_instances)
-                return {
+            else:
+                self.logger.warning(f"스케일 업 불가: {reason}")
+        elif scale_down_score >= 3 and current_instances > self.config.min_instances:
+            target_instances = max(current_instances - 1, self.config.min_instances)
+            return {
                 "direction": ScalingDirection.DOWN,
                 "current_instances": current_instances,
                 "target_instances": target_instances,
                 "reason": f"Scale down (score: {scale_down_score})",
                 "confidence": min(0.8, scale_down_score * 0.2),
-                }
-                return None
+            }
+        return None
 
-                async def _conservative_scaling_decision(
-                self, snapshot: MetricSnapshot
-                ) -> Optional[Dict[str, Any]]:
-                """보수적 스케일링 결정 (높은 임계값)"""
-                current_instances = snapshot.active_instances
-                high_threshold = min(0.9, self.config.scale_up_threshold + 0.1)
-                low_threshold = max(0.1, self.config.scale_down_threshold - 0.1)
-                if (
-                snapshot.cpu_utilization > high_threshold
-                and snapshot.memory_utilization > high_threshold
-                ):
-                can_scale, reason = self.config.can_scale_up(current_instances)
-                if can_scale:
+    async def _conservative_scaling_decision(
+        self, snapshot: MetricSnapshot
+    ) -> Optional[Dict[str, Any]]:
+        """보수적 스케일링 결정 (높은 임계값)"""
+        current_instances = snapshot.active_instances
+        high_threshold = min(0.9, self.config.scale_up_threshold + 0.1)
+        low_threshold = max(0.1, self.config.scale_down_threshold - 0.1)
+        if (
+            snapshot.cpu_utilization > high_threshold
+            and snapshot.memory_utilization > high_threshold
+        ):
+            can_scale, reason = self.config.can_scale_up(current_instances)
+            if can_scale:
                 target_instances = min(current_instances + 1, self.config.max_instances)
                 return {
-                "direction": ScalingDirection.UP,
-                "current_instances": current_instances,
-                "target_instances": target_instances,
-                "reason": "Conservative scale up",
-                "confidence": 0.95,
+                    "direction": ScalingDirection.UP,
+                    "current_instances": current_instances,
+                    "target_instances": target_instances,
+                    "reason": "Conservative scale up",
+                    "confidence": 0.95,
                 }
-                elif (
-                snapshot.cpu_utilization < low_threshold
-                and snapshot.memory_utilization < low_threshold
-                and (current_instances > self.config.min_instances)
-                ):
-                target_instances = max(current_instances - 1, self.config.min_instances)
-                return {
+        elif (
+            snapshot.cpu_utilization < low_threshold
+            and snapshot.memory_utilization < low_threshold
+            and (current_instances > self.config.min_instances)
+        ):
+            target_instances = max(current_instances - 1, self.config.min_instances)
+            return {
                 "direction": ScalingDirection.DOWN,
                 "current_instances": current_instances,
                 "target_instances": target_instances,
                 "reason": "Conservative scale down",
                 "confidence": 0.9,
-                }
-                return None
+            }
+        return None
 
-                async def _aggressive_scaling_decision(
-                self, snapshot: MetricSnapshot
-                ) -> Optional[Dict[str, Any]]:
-                """적극적 스케일링 결정 (낮은 임계값)"""
-                current_instances = snapshot.active_instances
-                low_threshold = max(0.5, self.config.scale_up_threshold - 0.2)
-                high_threshold = min(0.6, self.config.scale_down_threshold + 0.2)
-                if (
-                snapshot.cpu_utilization > low_threshold
-                or snapshot.memory_utilization > low_threshold
-                ):
-                can_scale, reason = self.config.can_scale_up(current_instances)
-                if can_scale:
+    async def _aggressive_scaling_decision(
+        self, snapshot: MetricSnapshot
+    ) -> Optional[Dict[str, Any]]:
+        """적극적 스케일링 결정 (낮은 임계값)"""
+        current_instances = snapshot.active_instances
+        low_threshold = max(0.5, self.config.scale_up_threshold - 0.2)
+        high_threshold = min(0.6, self.config.scale_down_threshold + 0.2)
+        if (
+            snapshot.cpu_utilization > low_threshold
+            or snapshot.memory_utilization > low_threshold
+        ):
+            can_scale, reason = self.config.can_scale_up(current_instances)
+            if can_scale:
                 scale_factor = 2 if snapshot.cpu_utilization > 0.8 else 1
                 target_instances = min(
-                current_instances + scale_factor, self.config.max_instances
+                    current_instances + scale_factor, self.config.max_instances
                 )
                 return {
-                "direction": ScalingDirection.UP,
-                "current_instances": current_instances,
-                "target_instances": target_instances,
-                "reason": f"Aggressive scale up (factor: {scale_factor})",
-                "confidence": 0.8,
+                    "direction": ScalingDirection.UP,
+                    "current_instances": current_instances,
+                    "target_instances": target_instances,
+                    "reason": f"Aggressive scale up (factor: {scale_factor})",
+                    "confidence": 0.8,
                 }
-                elif (
-                snapshot.cpu_utilization < high_threshold
-                and current_instances > self.config.min_instances
-                ):
-                target_instances = max(current_instances - 1, self.config.min_instances)
-                return {
+        elif (
+            snapshot.cpu_utilization < high_threshold
+            and current_instances > self.config.min_instances
+        ):
+            target_instances = max(current_instances - 1, self.config.min_instances)
+            return {
                 "direction": ScalingDirection.DOWN,
                 "current_instances": current_instances,
                 "target_instances": target_instances,
                 "reason": "Aggressive scale down",
                 "confidence": 0.7,
-                }
-                return None
+            }
+        return None
 
-                async def _predictive_scaling_decision(
-                self, snapshot: MetricSnapshot
-                ) -> Optional[Dict[str, Any]]:
-                """예측적 스케일링 결정"""
-                if not self.config.predictive_scaling_enabled:
-                return await self._balanced_scaling_decision(snapshot)
-                predicted_traffic = self.pattern_analyzer.predict_next_hour_traffic()
-                if predicted_traffic is None:
-                return await self._balanced_scaling_decision(snapshot)
-                current_instances = snapshot.active_instances
-                current_traffic = snapshot.request_count
-                if current_traffic > 0:
-                traffic_ratio = predicted_traffic / current_traffic
-                predicted_instances = math.ceil(current_instances * traffic_ratio)
-                predicted_instances = max(
+    async def _predictive_scaling_decision(
+        self, snapshot: MetricSnapshot
+    ) -> Optional[Dict[str, Any]]:
+        """예측적 스케일링 결정"""
+        if not self.config.predictive_scaling_enabled:
+            return await self._balanced_scaling_decision(snapshot)
+        predicted_traffic = self.pattern_analyzer.predict_next_hour_traffic()
+        if predicted_traffic is None:
+            return await self._balanced_scaling_decision(snapshot)
+        current_instances = snapshot.active_instances
+        current_traffic = snapshot.request_count
+        if current_traffic > 0:
+            traffic_ratio = predicted_traffic / current_traffic
+            predicted_instances = math.ceil(current_instances * traffic_ratio)
+            predicted_instances = max(
                 self.config.min_instances,
                 min(predicted_instances, self.config.max_instances),
-                )
-                else:
-                predicted_instances = self.config.min_instances
-                if predicted_instances > current_instances:
-                can_scale, reason = self.config.can_scale_up(current_instances)
-                if can_scale:
+            )
+        else:
+            predicted_instances = self.config.min_instances
+        if predicted_instances > current_instances:
+            can_scale, reason = self.config.can_scale_up(current_instances)
+            if can_scale:
                 target_instances = min(predicted_instances, current_instances + 2)
                 return {
-                "direction": ScalingDirection.UP,
-                "current_instances": current_instances,
-                "target_instances": target_instances,
-                "reason": f"Predictive scale up (predicted: {predicted_instances})",
-                "confidence": 0.75,
-                "predicted_traffic": predicted_traffic,
+                    "direction": ScalingDirection.UP,
+                    "current_instances": current_instances,
+                    "target_instances": target_instances,
+                    "reason": f"Predictive scale up (predicted: {predicted_instances})",
+                    "confidence": 0.75,
+                    "predicted_traffic": predicted_traffic,
                 }
-                elif (
-                predicted_instances < current_instances
-                and current_instances > self.config.min_instances
-                ):
-                target_instances = max(predicted_instances, current_instances - 1)
-                return {
+        elif (
+            predicted_instances < current_instances
+            and current_instances > self.config.min_instances
+        ):
+            target_instances = max(predicted_instances, current_instances - 1)
+            return {
                 "direction": ScalingDirection.DOWN,
                 "current_instances": current_instances,
                 "target_instances": target_instances,
                 "reason": f"Predictive scale down (predicted: {predicted_instances})",
                 "confidence": 0.7,
                 "predicted_traffic": predicted_traffic,
-                }
-                return None
+            }
+        return None
 
-                async def _execute_scaling(self, decision: Dict[str, Any]):
-                """스케일링 실행"""
-                try:
-                direction = decision["direction"]
-                current = decision["current_instances"]
-                target = decision["target_instances"]
-                reason = decision["reason"]
-                if current == target:
+    async def _execute_scaling(self, decision: Dict[str, Any]):
+        """스케일링 실행"""
+        try:
+            direction = decision["direction"]
+            current = decision["current_instances"]
+            target = decision["target_instances"]
+            reason = decision["reason"]
+            if current == target:
                 return
-                success = await self._update_cloud_run_scaling(target)
-                if success:
+            success = await self._update_cloud_run_scaling(target)
+            if success:
                 self.scaling_history = self.scaling_history + [
-                {
-                "timestamp": datetime.now(),
-                "direction": direction.value,
-                "from_instances": current,
-                "to_instances": target,
-                "reason": reason,
-                "confidence": decision.get("confidence", 0.5),
-                }
+                    {
+                        "timestamp": datetime.now(),
+                        "direction": direction.value,
+                        "from_instances": current,
+                        "to_instances": target,
+                        "reason": reason,
+                        "confidence": decision.get("confidence", 0.5),
+                    }
                 ]
                 self.last_scale_action = datetime.now()
                 self.last_scale_direction = direction
                 await record_metric(
-                "scaling_action",
-                1.0,
-                {
-                "direction": direction.value,
-                "from_instances": str(current),
-                "to_instances": str(target),
-                "policy": self.config.policy.value,
-                },
+                    "scaling_action",
+                    1.0,
+                    {
+                        "direction": direction.value,
+                        "from_instances": str(current),
+                        "to_instances": str(target),
+                        "policy": self.config.policy.value,
+                    },
                 )
                 logger.info(f"스케일링 실행: {current} -> {target} ({reason})")
-                else:
+            else:
                 logger.error(f"스케일링 실행 실패: {current} -> {target}")
-                except Exception as e:
-                logger.error(f"스케일링 실행 오류: {e}")
+        except Exception as e:
+            logger.error(f"스케일링 실행 오류: {e}")
 
-                async def _update_cloud_run_scaling(self, target_instances: int) -> bool:
-                """Cloud Run 스케일링 설정 업데이트"""
-                if not GOOGLE_CLOUD_AVAILABLE or not self.client:
-                logger.info(f"Cloud Run 스케일링 시뮬레이션: {target_instances}개 인스턴스")
-                return True
-                try:
-                service_path = f"projects/{self.project_id}/locations/{self.region}/services/{self.service_name}"
-                logger.info(f"Cloud Run 서비스 스케일링 업데이트: {target_instances}")
-                return True
-                except Exception as e:
-                logger.error(f"Cloud Run 업데이트 실패: {e}")
-                return False
+    async def _update_cloud_run_scaling(self, target_instances: int) -> bool:
+        """Cloud Run 스케일링 설정 업데이트"""
+        if not GOOGLE_CLOUD_AVAILABLE or not self.client:
+            logger.info(f"Cloud Run 스케일링 시뮬레이션: {target_instances}개 인스턴스")
+            return True
+        try:
+            service_path = f"projects/{self.project_id}/locations/{self.region}/services/{self.service_name}"
+            logger.info(f"Cloud Run 서비스 스케일링 업데이트: {target_instances}")
+            return True
+        except Exception as e:
+            logger.error(f"Cloud Run 업데이트 실패: {e}")
+            return False
 
-                async def shutdown(self):
-                """최적화기 종료"""
-                self._running = False
-                if self.monitoring_task:
-                self.monitoring_task.cancel()
-                try:
+    async def shutdown(self):
+        """최적화기 종료"""
+        self._running = False
+        if self.monitoring_task:
+            self.monitoring_task.cancel()
+            try:
                 await self.monitoring_task
-                except asyncio.CancelledError:
+            except asyncio.CancelledError:
                 pass
-                logger.info("자동 스케일링 최적화기가 종료되었습니다")
+        logger.info("자동 스케일링 최적화기가 종료되었습니다")
 
-                def get_scaling_stats(self) -> Dict[str, Any]:
-                """스케일링 통계 조회"""
-                if not self.scaling_history:
-                return {"total_actions": 0}
-                total_actions = len(self.scaling_history)
-                scale_ups = len([h for h in self.scaling_history if h["direction"] == "up"])
-                scale_downs = len([h for h in self.scaling_history if h["direction"] == "down"])
-                avg_confidence = statistics.mean(
-                [h["confidence"] for h in self.scaling_history]
-                )
-                return {
-                "total_actions": total_actions,
-                "scale_ups": scale_ups,
-                "scale_downs": scale_downs,
-                "avg_confidence": avg_confidence,
-                "current_policy": self.config.policy.value,
-                "detected_pattern": self.config.detected_pattern.value,
-                "recent_actions": self.scaling_history[-10:],
-                }
-
-
-                _autoscaling_optimizer: Optional[AutoScalingOptimizer] = None
+    def get_scaling_stats(self) -> Dict[str, Any]:
+        """스케일링 통계 조회"""
+        if not self.scaling_history:
+            return {"total_actions": 0}
+        total_actions = len(self.scaling_history)
+        scale_ups = len([h for h in self.scaling_history if h["direction"] == "up"])
+        scale_downs = len([h for h in self.scaling_history if h["direction"] == "down"])
+        avg_confidence = statistics.mean(
+            [h["confidence"] for h in self.scaling_history]
+        )
+        return {
+            "total_actions": total_actions,
+            "scale_ups": scale_ups,
+            "scale_downs": scale_downs,
+            "avg_confidence": avg_confidence,
+            "current_policy": self.config.policy.value,
+            "detected_pattern": self.config.detected_pattern.value,
+            "recent_actions": self.scaling_history[-10:],
+        }
 
 
-                async def get_autoscaling_optimizer(
-                project_id: str = None, service_name: str = None
-                ) -> AutoScalingOptimizer:
-                """자동 스케일링 최적화기 인스턴스 획득"""
-                # global _autoscaling_optimizer - removed for functional programming
-                if _autoscaling_optimizer is None:
-                if project_id is None:
-                project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-                if not project_id:
-                raise ValueError("프로젝트 ID가 필요합니다")
-                if service_name is None:
-                service_name = os.environ.get("K_SERVICE", "rfs-service")
-                _autoscaling_optimizer = AutoScalingOptimizer(project_id, service_name)
-                await _autoscaling_optimizer.initialize()
-                return _autoscaling_optimizer
+_autoscaling_optimizer: Optional[AutoScalingOptimizer] = None
 
 
-                async def optimize_scaling(
-                policy: ScalingPolicy = ScalingPolicy.BALANCED,
-                ) -> Result[None, str]:
-                """스케일링 최적화 시작"""
-                try:
-                optimizer = await get_autoscaling_optimizer()
-                optimizer.config.policy = policy
-                return Success(None)
-                except Exception as e:
-                return Failure(f"스케일링 최적화 실패: {str(e)}")
+async def get_autoscaling_optimizer(
+    project_id: str = None, service_name: str = None
+) -> AutoScalingOptimizer:
+    """자동 스케일링 최적화기 인스턴스 획득"""
+    # global _autoscaling_optimizer - removed for functional programming
+    if _autoscaling_optimizer is None:
+        if project_id is None:
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+            raise ValueError("프로젝트 ID가 필요합니다")
+        if service_name is None:
+            service_name = os.environ.get("K_SERVICE", "rfs-service")
+        _autoscaling_optimizer = AutoScalingOptimizer(project_id, service_name)
+        await _autoscaling_optimizer.initialize()
+    return _autoscaling_optimizer
 
 
-                async def get_scaling_stats() -> Dict[str, Any]:
-                """스케일링 통계 조회"""
-                try:
-                optimizer = await get_autoscaling_optimizer()
-                return optimizer.get_scaling_stats()
-                except Exception as e:
-                return {"error": str(e)}
+async def optimize_scaling(
+    policy: ScalingPolicy = ScalingPolicy.BALANCED,
+) -> Result[None, str]:
+    """스케일링 최적화 시작"""
+    try:
+        optimizer = await get_autoscaling_optimizer()
+        optimizer.config.policy = policy
+        return Success(None)
+    except Exception as e:
+        return Failure(f"스케일링 최적화 실패: {str(e)}")
+
+
+async def get_scaling_stats() -> Dict[str, Any]:
+    """스케일링 통계 조회"""
+    try:
+        optimizer = await get_autoscaling_optimizer()
+        return optimizer.get_scaling_stats()
+    except Exception as e:
+        return {"error": str(e)}

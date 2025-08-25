@@ -15,7 +15,7 @@ from ..cloud_run.monitoring import record_metric
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, field)
 
 
 class RFSMiddleware(ABC):

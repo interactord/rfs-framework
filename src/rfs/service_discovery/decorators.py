@@ -10,7 +10,7 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import (
     HealthCheck,
     LoadBalancerType,

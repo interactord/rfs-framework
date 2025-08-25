@@ -22,7 +22,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 
@@ -120,7 +120,7 @@ class MetricCollector:
     def add_metric(self, metrics: ResourceMetrics) -> None:
         """메트릭 추가"""
         with self.lock:
-            self.metrics_history = metrics_history + [metrics]
+            self.metrics_history.append(metrics)
     
     def register_custom_collector(self, name: str, collector_func: Callable[[], float]) -> None:
         """커스텀 메트릭 수집기 등록"""
@@ -141,17 +141,17 @@ class MetricCollector:
         for metric in recent_metrics:
             match metric_type:
                 case MetricType.CPU_USAGE:
-                    values = values + [metric.cpu_usage_percent]
+                    values.append(metric.cpu_usage_percent)
                 case MetricType.MEMORY_USAGE:
-                    values = values + [metric.memory_usage_percent]
+                    values.append(metric.memory_usage_percent)
                 case MetricType.REQUEST_RATE:
-                    values = values + [metric.request_rate_per_second]
+                    values.append(metric.request_rate_per_second)
                 case MetricType.RESPONSE_TIME:
-                    values = values + [metric.avg_response_time_ms]
+                    values.append(metric.avg_response_time_ms)
                 case MetricType.ERROR_RATE:
-                    values = values + [metric.error_rate_percent]
+                    values.append(metric.error_rate_percent)
                 case MetricType.QUEUE_DEPTH:
-                    values = values + [float(metric.queue_depth)]
+                    values.append(float(metric.queue_depth))
         
         return values
     
@@ -201,14 +201,14 @@ class PredictiveScaling:
         weekday = metrics.timestamp.weekday()
         
         # 시간대별 패턴
-        self.seasonal_patterns[hour] = seasonal_patterns[hour] + [metrics.cpu_usage_percent]
+        self.seasonal_patterns[hour].append(metrics.cpu_usage_percent)
         if len(self.seasonal_patterns[hour]) > 100:  # 최근 100개만 유지
-            self.seasonal_patterns = {**self.seasonal_patterns, hour: self.seasonal_patterns[hour][-100:]}
+            self.seasonal_patterns[hour] = self.seasonal_patterns[hour][-100:]
         
         # 요일별 패턴
-        self.weekly_patterns[weekday] = weekly_patterns[weekday] + [metrics.request_rate_per_second]
+        self.weekly_patterns[weekday].append(metrics.request_rate_per_second)
         if len(self.weekly_patterns[weekday]) > 100:
-            self.weekly_patterns = {**self.weekly_patterns, weekday: self.weekly_patterns[weekday][-100:]}
+            self.weekly_patterns[weekday] = self.weekly_patterns[weekday][-100:]
     
     def predict_future_load(self, minutes_ahead: int = 15) -> Dict[str, float]:
         """미래 부하 예측"""
@@ -344,7 +344,8 @@ class ScalingDecisionEngine:
         # CPU 사용률 체크
         cpu_stats = metric_stats.get(MetricType.CPU_USAGE, {})
         if cpu_stats.get('mean', 0) > self.config.thresholds.cpu_scale_up_percent:
-            signals = signals + [0.8]
+            signals.append(0.8)
+            reasons.append('High CPU usage')
             reasons = reasons + [f"High CPU usage: {cpu_stats.get('mean', 0):.1f}%"]
         
         # 메모리 사용률 체크
@@ -406,7 +407,8 @@ class ScalingDecisionEngine:
         # CPU 사용률 체크
         cpu_stats = metric_stats.get(MetricType.CPU_USAGE, {})
         if cpu_stats.get('mean', 100) < self.config.thresholds.cpu_scale_down_percent:
-            signals = signals + [0.7]
+            signals.append(0.7)
+            reasons.append('Low CPU usage')
             reasons = reasons + [f"Low CPU usage: {cpu_stats.get('mean', 0):.1f}%"]
         
         # 메모리 사용률 체크
@@ -448,7 +450,7 @@ class ScalingDecisionEngine:
         return {'score': score, 'confidence': confidence, 'reason': reason}
     
     def _estimate_cost_impact(self, current_instances: int, target_instances: int) -> float:
-        """비용 영향 추정\"\"\"
+        """비용 영향 추정"""
         instance_diff = target_instances - current_instances
         
         # 인스턴스당 시간당 비용 (예시: $0.10)
@@ -486,7 +488,7 @@ class ScalingDecisionEngine:
         return 0.0  # 안정 상태
     
     def record_scaling_action(self, direction: ScalingDirection) -> None:
-        """스케일링 액션 기록\"\"\"
+        """스케일링 액션 기록"""
         now = datetime.now()
         if direction == ScalingDirection.UP:
             self.last_scale_up_time = now
@@ -494,7 +496,7 @@ class ScalingDecisionEngine:
             self.last_scale_down_time = now
     
     def get_decision_statistics(self) -> Dict[str, Any]:
-        """결정 통계\"\"\"
+        """결정 통계"""
         if not self.decision_history:
             return {}
         
@@ -516,7 +518,7 @@ class ScalingDecisionEngine:
         }
 
 class ResourcePrediction:
-    """리소스 예측\"\"\"
+    """리소스 예측"""
     
     def __init__(self):
         self.prediction_models: Dict[str, Any] = {}
@@ -526,7 +528,7 @@ class ResourcePrediction:
     def predict_resource_needs(self, current_metrics: ResourceMetrics,
                              historical_metrics: List[ResourceMetrics],
                              time_horizon_minutes: int = 15) -> Dict[str, Any]:
-        """리소스 요구사항 예측\"\"\"
+        """리소스 요구사항 예측"""
         
         predictions = {
             'cpu_usage_percent': self._predict_cpu_usage(historical_metrics, time_horizon_minutes),
@@ -550,7 +552,7 @@ class ResourcePrediction:
     
     def _predict_cpu_usage(self, historical_metrics: List[ResourceMetrics], 
                           time_horizon_minutes: int) -> float:
-        """CPU 사용률 예측\"\"\"
+        """CPU 사용률 예측"""
         if len(historical_metrics) < 3:
             return historical_metrics[-1].cpu_usage_percent if historical_metrics else 50.0
         
@@ -567,7 +569,7 @@ class ResourcePrediction:
     
     def _predict_memory_usage(self, historical_metrics: List[ResourceMetrics],
                              time_horizon_minutes: int) -> float:
-        """메모리 사용률 예측\"\"\"
+        """메모리 사용률 예측"""
         if len(historical_metrics) < 3:
             return historical_metrics[-1].memory_usage_percent if historical_metrics else 50.0
         
@@ -577,7 +579,7 @@ class ResourcePrediction:
     
     def _predict_request_rate(self, historical_metrics: List[ResourceMetrics],
                              time_horizon_minutes: int) -> float:
-        """요청률 예측\"\"\"
+        """요청률 예측"""
         if len(historical_metrics) < 3:
             return historical_metrics[-1].request_rate_per_second if historical_metrics else 100.0
         
@@ -594,7 +596,7 @@ class ResourcePrediction:
     
     def _predict_instance_count(self, current_metrics: ResourceMetrics,
                               historical_metrics: List[ResourceMetrics]) -> int:
-        """인스턴스 수 예측\"\"\"
+        """인스턴스 수 예측"""
         # CPU와 메모리 예측값을 기반으로 필요한 인스턴스 수 계산
         predicted_cpu = self._predict_cpu_usage(historical_metrics, 15)
         predicted_memory = self._predict_memory_usage(historical_metrics, 15)
@@ -613,7 +615,7 @@ class ResourcePrediction:
         return max(1, min(recommended, 20))  # 1-20 범위로 제한
     
     def _calculate_prediction_confidence(self, predictions: Dict[str, Any]) -> float:
-        """예측 신뢰도 계산\"\"\"
+        """예측 신뢰도 계산"""
         # 과거 예측 정확도를 기반으로 신뢰도 계산
         if not self.prediction_history:
             return 0.5  # 기본 신뢰도
@@ -624,7 +626,7 @@ class ResourcePrediction:
             if metric_type in self.accuracy_metrics:
                 recent_accuracies = list(self.accuracy_metrics[metric_type])[-10:]
                 if recent_accuracies:
-                    accuracies = accuracies + [statistics.mean(recent_accuracies))
+                    accuracies = accuracies + [statistics.mean(recent_accuracies)]
         
         if accuracies:
             return statistics.mean(accuracies)
@@ -632,7 +634,7 @@ class ResourcePrediction:
         return 0.5
     
     def evaluate_prediction_accuracy(self, actual_metrics: ResourceMetrics) -> None:
-        """예측 정확도 평가\"\"\"
+        """예측 정확도 평가"""
         if not self.prediction_history:
             return
         
@@ -648,19 +650,19 @@ class ResourcePrediction:
                     predicted = predictions['cpu_usage_percent']
                     actual = actual_metrics.cpu_usage_percent
                     accuracy = 1.0 - abs(predicted - actual) / 100.0
-                    self.accuracy_metrics['cpu_usage_percent'] = self.accuracy_metrics['cpu_usage_percent'] + [max(0.0, accuracy)])
+                    self.accuracy_metrics['cpu_usage_percent'] = self.accuracy_metrics['cpu_usage_percent'] + [max(0.0, accuracy)]
                 
                 # 메모리 예측 정확도
                 if 'memory_usage_percent' in predictions:
                     predicted = predictions['memory_usage_percent']
                     actual = actual_metrics.memory_usage_percent
                     accuracy = 1.0 - abs(predicted - actual) / 100.0
-                    self.accuracy_metrics['memory_usage_percent'] = self.accuracy_metrics['memory_usage_percent'] + [max(0.0, accuracy)])
+                    self.accuracy_metrics['memory_usage_percent'] = self.accuracy_metrics['memory_usage_percent'] + [max(0.0, accuracy)]
                 
                 break
     
     def get_prediction_accuracy_stats(self) -> Dict[str, float]:
-        """예측 정확도 통계\"\"\"
+        """예측 정확도 통계"""
         stats = {}
         for metric_type, accuracies in self.accuracy_metrics.items():
             if accuracies:
@@ -673,7 +675,7 @@ class ResourcePrediction:
         return stats
 
 class ScalingOptimizer:
-    """스케일링 최적화 엔진\"\"\"
+    """스케일링 최적화 엔진"""
     
     def __init__(self, config: Optional[AutoScalingConfig] = None):
         self.config = config or AutoScalingConfig()
@@ -692,7 +694,7 @@ class ScalingOptimizer:
         self.scale_down_callback: Optional[Callable[[int], Any]] = None
     
     async def initialize(self) -> Result[bool, str]:
-        """스케일링 최적화 엔진 초기화\"\"\"
+        """스케일링 최적화 엔진 초기화"""
         try:
             if self.config.monitoring_interval_seconds > 0:
                 await self.start_monitoring()
@@ -700,16 +702,16 @@ class ScalingOptimizer:
             return Success(True)
             
         except Exception as e:
-            return Failure(f\"Scaling optimizer initialization failed: {e}\")
+            return Failure(f"Scaling optimizer initialization failed: {e}")
     
     def register_scaling_callbacks(self, scale_up_callback: Callable[[int], Any],
                                  scale_down_callback: Callable[[int], Any]) -> None:
-        """스케일링 콜백 등록\"\"\"
+        """스케일링 콜백 등록"""
         self.scale_up_callback = scale_up_callback
         self.scale_down_callback = scale_down_callback
     
     async def start_monitoring(self) -> Result[bool, str]:
-        """스케일링 모니터링 시작\"\"\"
+        """스케일링 모니터링 시작"""
         if self.is_running:
             return Success(True)
             
@@ -719,10 +721,10 @@ class ScalingOptimizer:
             return Success(True)
             
         except Exception as e:
-            return Failure(f\"Failed to start scaling monitoring: {e}\")
+            return Failure(f"Failed to start scaling monitoring: {e}")
     
     async def stop_monitoring(self) -> Result[bool, str]:
-        """스케일링 모니터링 중지\"\"\"
+        """스케일링 모니터링 중지"""
         try:
             self.is_running = False
             if self.monitoring_task:
@@ -736,10 +738,10 @@ class ScalingOptimizer:
             return Success(True)
             
         except Exception as e:
-            return Failure(f\"Failed to stop scaling monitoring: {e}\")
+            return Failure(f"Failed to stop scaling monitoring: {e}")
     
     async def _monitoring_loop(self) -> None:
-        """스케일링 모니터링 루프\"\"\"
+        """스케일링 모니터링 루프"""
         while self.is_running:
             try:
                 # 현재 메트릭 수집 (실제로는 외부 시스템에서 수집)
@@ -765,11 +767,11 @@ class ScalingOptimizer:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f\"Scaling monitoring error: {e}\")
+                print(f"Scaling monitoring error: {e}")
                 await asyncio.sleep(self.config.monitoring_interval_seconds)
     
     async def _collect_current_metrics(self) -> Optional[ResourceMetrics]:
-        """현재 메트릭 수집 (플레이스홀더)\"\"\"
+        """현재 메트릭 수집 (플레이스홀더)"""
         # 실제 구현에서는 시스템 메트릭을 수집
         # 여기서는 예시 데이터 생성
         import random
@@ -787,7 +789,7 @@ class ScalingOptimizer:
         )
     
     async def _make_scaling_decision(self, current_metrics: ResourceMetrics) -> None:
-        """스케일링 결정 생성 및 실행\"\"\"
+        """스케일링 결정 생성 및 실행"""
         # 메트릭 통계 계산
         metric_stats = {}
         for metric_type in MetricType:
@@ -813,7 +815,7 @@ class ScalingOptimizer:
             await self._execute_scaling_decision(decision)
     
     async def _execute_scaling_decision(self, decision: ScalingDecision) -> None:
-        """스케일링 결정 실행\"\"\"
+        """스케일링 결정 실행"""
         try:
             if decision.direction == ScalingDirection.UP:
                 if self.scale_up_callback:
@@ -821,7 +823,7 @@ class ScalingOptimizer:
                         self.scale_up_callback, decision.target_instances
                     )
                 self.decision_engine.record_scaling_action(ScalingDirection.UP)
-                print(f\"Scaled UP to {decision.target_instances} instances: {decision.reason}\")
+                print(f"Scaled UP to {decision.target_instances} instances: {decision.reason}")
                 
             elif decision.direction == ScalingDirection.DOWN:
                 if self.scale_down_callback:
@@ -829,7 +831,7 @@ class ScalingOptimizer:
                         self.scale_down_callback, decision.target_instances
                     )
                 self.decision_engine.record_scaling_action(ScalingDirection.DOWN)
-                print(f\"Scaled DOWN to {decision.target_instances} instances: {decision.reason}\")
+                print(f"Scaled DOWN to {decision.target_instances} instances: {decision.reason}")
             
             # 액션 기록
             self.scaling_actions = self.scaling_actions + [{
@@ -839,7 +841,7 @@ class ScalingOptimizer:
             }]
             
         except Exception as e:
-            print(f\"Failed to execute scaling decision: {e}\")
+            print(f"Failed to execute scaling decision: {e}")
             self.scaling_actions = self.scaling_actions + [{
                 'timestamp': datetime.now(),
                 'decision': decision,
@@ -848,27 +850,27 @@ class ScalingOptimizer:
             }]
     
     async def _safe_callback_execution(self, callback: Callable, *args) -> None:
-        """안전한 콜백 실행\"\"\"
+        """안전한 콜백 실행"""
         try:
             if asyncio.iscoroutinefunction(callback):
                 await callback(*args)
             else:
                 callback(*args)
         except Exception as e:
-            print(f\"Callback execution failed: {e}\")
+            print(f"Callback execution failed: {e}")
             raise
     
     def add_custom_metric_collector(self, name: str, collector_func: Callable[[], float]) -> None:
-        """커스텀 메트릭 수집기 추가\"\"\"
+        """커스텀 메트릭 수집기 추가"""
         self.metric_collector.register_custom_collector(name, collector_func)
     
     async def optimize(self) -> Result[Dict[str, Any], str]:
-        """스케일링 최적화 실행\"\"\"
+        """스케일링 최적화 실행"""
         try:
             # 현재 메트릭 수집
             current_metrics = await self._collect_current_metrics()
             if not current_metrics:
-                return Failure(\"Failed to collect current metrics\")
+                return Failure("Failed to collect current metrics")
             
             # 최근 메트릭 분석
             recent_metrics = self.metric_collector.get_recent_metrics(30)
@@ -907,12 +909,12 @@ class ScalingOptimizer:
             return Success(results)
             
         except Exception as e:
-            return Failure(f\"Scaling optimization failed: {e}\")
+            return Failure(f"Scaling optimization failed: {e}")
     
     def _generate_optimization_recommendations(self, current_metrics: ResourceMetrics,
                                              recent_metrics: List[ResourceMetrics],
                                              predictions: Dict[str, Any]) -> List[str]:
-        """최적화 추천사항 생성\"\"\"
+        """최적화 추천사항 생성"""
         recommendations = []
         
         # 리소스 효율성 분석
@@ -920,37 +922,37 @@ class ScalingOptimizer:
             recommendations = recommendations + ["Low resource utilization - consider scaling down or using smaller instances"]
         
         if current_metrics.cpu_usage_percent > 80 or current_metrics.memory_usage_percent > 85:
-            recommendations = recommendations + ["High resource utilization - consider scaling up\"]
+            recommendations = recommendations + ["High resource utilization - consider scaling up"]
         
         # 예측 신뢰도 분석
         prediction_confidence = predictions.get('confidence', 0.0)
         if prediction_confidence < 0.5:
-            recommendations = recommendations + ["Low prediction confidence - gather more historical data\"]
+            recommendations = recommendations + ["Low prediction confidence - gather more historical data"]
         
         # 응답 시간 분석
         if current_metrics.avg_response_time_ms > 2000:
-            recommendations = recommendations + ["High response time - consider horizontal scaling\"]
+            recommendations = recommendations + ["High response time - consider horizontal scaling"]
         
         # 에러율 분석
         if current_metrics.error_rate_percent > 5:
-            recommendations = recommendations + ["High error rate - investigate before scaling\"]
+            recommendations = recommendations + ["High error rate - investigate before scaling"]
         
         # 큐 깊이 분석
         if current_metrics.queue_depth > 50:
-            recommendations = recommendations + ["High queue depth - immediate scaling may be needed\"]
+            recommendations = recommendations + ["High queue depth - immediate scaling may be needed"]
         
         # 스케일링 패턴 분석
         decision_stats = self.decision_engine.get_decision_statistics()
         if decision_stats.get('scale_up_ratio', 0) > 0.7:
-            recommendations = recommendations + ["Frequent scale-ups detected - consider higher baseline capacity\"]
+            recommendations = recommendations + ["Frequent scale-ups detected - consider higher baseline capacity"]
         
         if decision_stats.get('scale_down_ratio', 0) > 0.5:
-            recommendations = recommendations + ["Frequent scale-downs detected - consider lower baseline capacity\"]
+            recommendations = recommendations + ["Frequent scale-downs detected - consider lower baseline capacity"]
         
         return recommendations
     
     def _calculate_efficiency_score(self, metrics: ResourceMetrics) -> float:
-        """효율성 점수 계산 (0-100)\"\"\"
+        """효율성 점수 계산 (0-100)"""
         score = 100.0
         
         # CPU 효율성 (60-80% 사용률이 최적)
@@ -980,7 +982,7 @@ class ScalingOptimizer:
         return max(0.0, min(100.0, score))
     
     def _calculate_predicted_efficiency(self, predictions: Dict[str, Any]) -> float:
-        """예측 효율성 계산\"\"\"
+        """예측 효율성 계산"""
         predicted_cpu = predictions.get('cpu_usage_percent', 70)
         predicted_memory = predictions.get('memory_usage_percent', 77.5)
         
@@ -992,7 +994,7 @@ class ScalingOptimizer:
         return max(0.0, min(100.0, predicted_efficiency))
     
     def get_current_status(self) -> Dict[str, Any]:
-        """현재 상태 조회\"\"\"
+        """현재 상태 조회"""
         recent_metrics = self.metric_collector.get_recent_metrics(5)
         latest_metrics = recent_metrics[-1] if recent_metrics else None
         
@@ -1009,26 +1011,26 @@ class ScalingOptimizer:
         }
     
     async def cleanup(self) -> Result[bool, str]:
-        """리소스 정리\"\"\"
+        """리소스 정리"""
         try:
             await self.stop_monitoring()
             return Success(True)
             
         except Exception as e:
-            return Failure(f\"Cleanup failed: {e}\")
+            return Failure(f"Cleanup failed: {e}")
 
 # 전역 optimizer 인스턴스
 _scaling_optimizer: Optional[ScalingOptimizer] = None
 
 def get_scaling_optimizer(config: Optional[AutoScalingConfig] = None) -> ScalingOptimizer:
-    """스케일링 optimizer 싱글톤 인스턴스 반환\"\"\"
+    """스케일링 optimizer 싱글톤 인스턴스 반환"""
     global _scaling_optimizer
     if _scaling_optimizer is None:
         _scaling_optimizer = ScalingOptimizer(config)
     return _scaling_optimizer
 
 async def optimize_scaling_strategy(strategy: ScalingStrategy = ScalingStrategy.REACTIVE) -> Result[Dict[str, Any], str]:
-    """스케일링 전략 최적화 실행\"\"\"
+    """스케일링 전략 최적화 실행"""
     config = AutoScalingConfig(strategy=strategy)
     optimizer = get_scaling_optimizer(config)
     

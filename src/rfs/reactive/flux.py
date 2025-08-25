@@ -7,8 +7,11 @@ Inspired by Spring Reactor Flux
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from functools import reduce
 from typing import Any, AsyncIterator, Callable, Generic, List, Optional, TypeVar, Union
+
+# Import from HOF library
+from ..hof.collections import fold_left
+from ..hof.decorators import throttle as throttle_decorator
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -58,6 +61,14 @@ class Flux(Generic[T]):
             for i in range(start, start + count):
                 yield i
 
+        return Flux(generator)
+
+    @staticmethod
+    def empty() -> "Flux[T]":
+        """빈 Flux 생성"""
+        async def generator():
+            return
+            yield  # Make it a generator
         return Flux(generator)
 
     @staticmethod
@@ -177,6 +188,63 @@ class Flux(Generic[T]):
                 yield (item1, item2)
 
         return Flux(zipped)
+
+    @staticmethod
+    def zip(*fluxes: "Flux") -> "Flux[tuple]":
+        """여러 Flux를 zip으로 결합"""
+        async def generator():
+            iterators = [flux.source() for flux in fluxes]
+            try:
+                while True:
+                    items = []
+                    for iterator in iterators:
+                        items.append(await iterator.__anext__())
+                    yield tuple(items)
+            except StopAsyncIteration:
+                pass
+        return Flux(generator)
+
+    @staticmethod
+    def merge(*fluxes: "Flux") -> "Flux":
+        """여러 Flux를 병합"""
+        async def generator():
+            tasks = []
+            queues = []
+            
+            for flux in fluxes:
+                queue = asyncio.Queue()
+                queues.append(queue)
+                
+                async def consume(flux, queue):
+                    async for item in flux.source():
+                        await queue.put(item)
+                    await queue.put(None)  # End marker
+                
+                task = asyncio.create_task(consume(flux, queue))
+                tasks.append(task)
+            
+            active_queues = len(queues)
+            while active_queues > 0:
+                for queue in queues:
+                    try:
+                        item = queue.get_nowait()
+                        if item is None:
+                            active_queues -= 1
+                        else:
+                            yield item
+                    except asyncio.QueueEmpty:
+                        await asyncio.sleep(0.01)
+                        
+        return Flux(generator)
+
+    @staticmethod
+    def concat(*fluxes: "Flux") -> "Flux":
+        """여러 Flux를 순차적으로 연결"""
+        async def generator():
+            for flux in fluxes:
+                async for item in flux.source():
+                    yield item
+        return Flux(generator)
 
     @staticmethod
     async def _zip_async_iterators(iter1: AsyncIterator[T], iter2: AsyncIterator[R]):

@@ -18,17 +18,46 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from .result import Failure, Result, Success
 from .transactions import (
-    DistributedTransactionConfig,
     IsolationLevel,
-    RedisTransactionConfig,
-    TransactionConfig,
     TransactionContext,
-    TransactionType,
-    execute_with_retry,
-    get_transaction_registry,
+    TransactionManager,
+    get_transaction_manager,
 )
 
 logger = logging.getLogger(__name__)
+
+# Temporary definitions until properly implemented
+from enum import Enum
+
+class TransactionType(Enum):
+    DATABASE = "database"
+    REDIS = "redis"
+    DISTRIBUTED = "distributed"
+
+@dataclass
+class TransactionConfig:
+    isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
+    timeout: int = 30
+    retry_count: int = 3
+    retry_delay: float = 0.1
+
+@dataclass  
+class RedisTransactionConfig:
+    watch_keys: List[str] = field(default_factory=list)
+    timeout: int = 30
+    retry_count: int = 3
+
+@dataclass
+class DistributedTransactionConfig:
+    saga_steps: List[str] = field(default_factory=list)
+    timeout: int = 60
+    compensation_enabled: bool = True
+
+def get_transaction_registry():
+    return None
+
+def execute_with_retry(func, config, transaction_type, *args, **kwargs):
+    return func(*args, **kwargs)
 
 
 def Transactional(
@@ -394,7 +423,7 @@ def saga_transaction(**kwargs):
 class TransactionStatus:
     """트랜잭션 상태 추적 유틸리티"""
 
-    _active_transactions: Dict[str, TransactionContext] = {}
+    _active_transactions: Dict[str, Any] = {}
 
     @classmethod
     def register_transaction(cls, context: TransactionContext):

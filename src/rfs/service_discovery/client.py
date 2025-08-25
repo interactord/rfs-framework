@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .base import LoadBalancerType, ServiceEndpoint
 from .discovery import ServiceDiscovery, get_service_discovery
 

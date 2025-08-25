@@ -24,7 +24,7 @@ from urllib.parse import parse_qs, urlencode
 import aiohttp
 import jwt
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 
 class IntegrationType(Enum):

@@ -126,317 +126,315 @@ class ScheduleConfig:
                 run_count = run_count + 1
 
 
-                @dataclass
-                class ScheduledTask:
-                """스케줄된 작업 정보"""
+@dataclass
+class ScheduledTask:
+    """스케줄된 작업 정보"""
 
-                config: ScheduleConfig
-                next_run_time: datetime
-                task_definition: TaskDefinition
+    config: ScheduleConfig
+    next_run_time: datetime
+    task_definition: TaskDefinition
 
-                def __lt__(self, other: "ScheduledTask") -> bool:
-                """우선순위 큐를 위한 비교"""
-                return self.next_run_time < other.next_run_time
+    def __lt__(self, other: "ScheduledTask") -> bool:
+        """우선순위 큐를 위한 비교"""
+        return self.next_run_time < other.next_run_time
 
 
-                class TaskScheduler:
-                """작업 스케줄러"""
 
-                def __init__(self, task_manager: Optional[AsyncTaskManager] = None):
-                self.task_manager = task_manager or AsyncTaskManager()
-                self._schedules: Dict[str, ScheduleConfig] = {}
-                self._scheduled_tasks: List[ScheduledTask] = []
-                self._running_tasks: Dict[str, asyncio.Task] = {}
-                self._dependencies: Dict[str, Set[str]] = defaultdict(set)
-                self._dependents: Dict[str, Set[str]] = defaultdict(set)
-                self._completed_tasks: Set[str] = set()
-                self._scheduler_task: Optional[asyncio.Task] = None
-                self._running = False
-                self._shutdown_event = asyncio.Event()
-                self.logger = logging.getLogger(__name__)
-                self._stats = {
-                "scheduled_count": 0,
-                "executed_count": 0,
-                "failed_count": 0,
-                "skipped_count": 0,
-                }
+class TaskScheduler:
+    """작업 스케줄러"""
 
-                async def start(self) -> None:
-                """스케줄러 시작"""
-                if self._running:
-                return
-                self._running = True
-                _shutdown_event = {}
-                self._scheduler_task = asyncio.create_task(self._scheduler_loop())
-                self.logger.info("Task scheduler started")
+    def __init__(self, task_manager: Optional[AsyncTaskManager] = None):
+        self.task_manager = task_manager or AsyncTaskManager()
+        self._schedules: Dict[str, ScheduleConfig] = {}
+        self._scheduled_tasks: List[ScheduledTask] = []
+        self._running_tasks: Dict[str, asyncio.Task] = {}
+        self._dependencies: Dict[str, Set[str]] = defaultdict(set)
+        self._dependents: Dict[str, Set[str]] = defaultdict(set)
+        self._completed_tasks: Set[str] = set()
+        self._scheduler_task: Optional[asyncio.Task] = None
+        self._running = False
+        self._shutdown_event = asyncio.Event()
+        self.logger = logging.getLogger(__name__)
+        self._stats = {
+            "scheduled_count": 0,
+            "executed_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+        }
 
-                async def stop(self) -> None:
-                """스케줄러 중지"""
-                if not self._running:
-                return
-                self._running = False
-                self._shutdown_event.set()
-                for task in self._running_tasks.values():
-                if not task.done():
+    async def start(self) -> None:
+        """스케줄러 시작"""
+        if self._running:
+            return
+        self._running = True
+        self._shutdown_event.clear()
+        self._scheduler_task = asyncio.create_task(self._scheduler_loop())
+        self.logger.info("Task scheduler started")
+
+    async def stop(self) -> None:
+        """스케줄러 중지"""
+        if not self._running:
+            return
+        self._running = False
+        self._shutdown_event.set()
+        for task in self._running_tasks.values():
+            if not task.done():
                 task.cancel()
-                if self._running_tasks:
-                await asyncio.gather(*self._running_tasks.values(), return_exceptions=True)
-                if self._scheduler_task and (not self._scheduler_task.done()):
-                self._scheduler_task.cancel()
-                try:
+        if self._running_tasks:
+            await asyncio.gather(*self._running_tasks.values(), return_exceptions=True)
+        if self._scheduler_task and not self._scheduler_task.done():
+            self._scheduler_task.cancel()
+            try:
                 await self._scheduler_task
-                except asyncio.CancelledError:
+            except asyncio.CancelledError:
                 pass
-                self.logger.info("Task scheduler stopped")
+        self.logger.info("Task scheduler stopped")
 
-                def schedule_task(
-                self, task_name: str, schedule_type: ScheduleType, **schedule_kwargs
-                ) -> Result[None, str]:
-                """작업 스케줄 등록"""
-                try:
-                task_def = get_task_definition(task_name)
-                if not task_def:
-                return Failure(f"Task definition not found: {task_name}")
-                config = ScheduleConfig(
+    def schedule_task(
+        self, task_name: str, schedule_type: ScheduleType, **schedule_kwargs
+    ) -> Result[None, str]:
+        """작업 스케줄 등록"""
+        try:
+            task_def = get_task_definition(task_name)
+            if not task_def:
+                    return Failure(f"Task definition not found: {task_name}")
+            config = ScheduleConfig(
                 task_name=task_name, schedule_type=schedule_type, **schedule_kwargs
-                )
-                if task_def.dependencies:
+            )
+            if task_def.dependencies:
                 for dep in task_def.dependencies:
-                self._dependencies[task_name].add(dep)
-                self._dependents[dep].add(task_name)
-                self._schedules = {**self._schedules, task_name: config}
-                self._schedule_next_run(task_name, config, task_def)
-                self._stats = {
-                **self._stats,
-                "scheduled_count": self._stats["scheduled_count"] + 1,
-                }
-                self.logger.info(f"Task scheduled: {task_name} ({schedule_type.value})")
-                return Success(None)
-                except Exception as e:
-                return Failure(f"Failed to schedule task: {e}")
+                    self._dependencies[task_name].add(dep)
+                    self._dependents[dep].add(task_name)
+            self._schedules[task_name] = config
+            self._schedule_next_run(task_name, config, task_def)
+            self._stats["scheduled_count"] = self._stats["scheduled_count"] + 1
+            self.logger.info(f"Task scheduled: {task_name} ({schedule_type.value})")
+            return Success(None)
+        except Exception as e:
+            return Failure(f"Failed to schedule task: {e}")
 
-                def unschedule_task(self, task_name: str) -> Result[None, str]:
-                """작업 스케줄 해제"""
-                try:
-                if task_name not in self._schedules:
+    def unschedule_task(self, task_name: str) -> Result[None, str]:
+        """작업 스케줄 해제"""
+        try:
+            if task_name not in self._schedules:
                 return Failure(f"Task not scheduled: {task_name}")
-                del self._schedules[task_name]
-                self._scheduled_tasks = [
+            del self._schedules[task_name]
+            self._scheduled_tasks = [
                 task
                 for task in self._scheduled_tasks
                 if task.config.task_name != task_name
-                ]
-                heapq.heapify(self._scheduled_tasks)
-                if task_name in self._running_tasks:
+            ]
+            heapq.heapify(self._scheduled_tasks)
+            if task_name in self._running_tasks:
                 self._running_tasks[task_name].cancel()
                 del self._running_tasks[task_name]
-                if task_name in self._dependencies:
+            if task_name in self._dependencies:
                 for dep in self._dependencies[task_name]:
-                self._dependents[dep].discard(task_name)
+                    self._dependents[dep].discard(task_name)
                 del self._dependencies[task_name]
-                if task_name in self._dependents:
+            if task_name in self._dependents:
                 for dependent in self._dependents[task_name]:
-                self._dependencies[dependent].discard(task_name)
+                    self._dependencies[dependent].discard(task_name)
                 del self._dependents[task_name]
-                self.logger.info(f"Task unscheduled: {task_name}")
-                return Success(None)
-                except Exception as e:
-                return Failure(f"Failed to unschedule task: {e}")
+            self.logger.info(f"Task unscheduled: {task_name}")
+            return Success(None)
+        except Exception as e:
+            return Failure(f"Failed to unschedule task: {e}")
 
-                def _schedule_next_run(
-                self, task_name: str, config: ScheduleConfig, task_def: TaskDefinition
-                ) -> None:
-                """다음 실행을 스케줄"""
-                next_time = config.get_next_run_time()
-                if next_time:
-                scheduled_task = ScheduledTask(
+    def _schedule_next_run(
+        self, task_name: str, config: ScheduleConfig, task_def: TaskDefinition
+    ) -> None:
+        """다음 실행을 스케줄"""
+        next_time = config.get_next_run_time()
+        if next_time:
+            scheduled_task = ScheduledTask(
                 config=config, next_run_time=next_time, task_definition=task_def
-                )
-                heapq.heappush(self._scheduled_tasks, scheduled_task)
+            )
+            heapq.heappush(self._scheduled_tasks, scheduled_task)
 
-                async def _scheduler_loop(self) -> None:
-                """메인 스케줄러 루프"""
-                while self._running and (not self._shutdown_event.is_set()):
-                try:
+    async def _scheduler_loop(self) -> None:
+        """메인 스케줄러 루프"""
+        while self._running and (not self._shutdown_event.is_set()):
+            try:
                 current_time = datetime.now()
                 ready_tasks = []
                 while (
-                self._scheduled_tasks
-                and self._scheduled_tasks[0].next_run_time <= current_time
+                    self._scheduled_tasks
+                    and self._scheduled_tasks[0].next_run_time <= current_time
                 ):
-                ready_tasks = ready_tasks + [heapq.heappop(self._scheduled_tasks)]
+                    ready_tasks = ready_tasks + [heapq.heappop(self._scheduled_tasks)]
                 for scheduled_task in ready_tasks:
-                await self._execute_scheduled_task(scheduled_task)
+                    await self._execute_scheduled_task(scheduled_task)
                 await self._cleanup_completed_tasks()
                 try:
-                await asyncio.wait_for(self._shutdown_event.wait(), timeout=1.0)
-                break
+                    await asyncio.wait_for(self._shutdown_event.wait(), timeout=1.0)
+                    break
                 except asyncio.TimeoutError:
-                continue
-                except Exception as e:
+                    continue
+            except Exception as e:
                 self.logger.error(f"Scheduler loop error: {e}")
                 await asyncio.sleep(1.0)
 
-                async def _execute_scheduled_task(self, scheduled_task: ScheduledTask) -> None:
-                """스케줄된 작업 실행"""
-                task_name = scheduled_task.config.task_name
-                try:
-                if not self._are_dependencies_met(task_name):
+    async def _execute_scheduled_task(self, scheduled_task: ScheduledTask) -> None:
+        """스케줄된 작업 실행"""
+        task_name = scheduled_task.config.task_name
+        try:
+            if not self._are_dependencies_met(task_name):
                 scheduled_task.next_run_time = datetime.now() + timedelta(seconds=10)
                 heapq.heappush(self._scheduled_tasks, scheduled_task)
                 self._stats = {
-                **self._stats,
-                "skipped_count": self._stats["skipped_count"] + 1,
+                    **self._stats,
+                    "skipped_count": self._stats["skipped_count"] + 1,
                 }
                 return
-                context = TaskContext(
+            context = TaskContext(
                 task_id=f"{task_name}_{datetime.now().isoformat()}",
                 task_name=task_name,
                 task_type=scheduled_task.task_definition.task_type,
                 execution_time=datetime.now(),
-                )
-                if not scheduled_task.task_definition.can_execute(context):
+            )
+            if not scheduled_task.task_definition.can_execute(context):
                 self._stats = {
-                **self._stats,
-                "skipped_count": self._stats["skipped_count"] + 1,
+                    **self._stats,
+                    "skipped_count": self._stats["skipped_count"] + 1,
                 }
                 self.logger.info(f"Task skipped (conditions not met): {task_name}")
-                else:
+            else:
                 task_info = await self.task_manager.submit_task(
-                task_name, TaskPriority.NORMAL, context=context
+                    task_name, TaskPriority.NORMAL, context=context
                 )
                 if task_info:
-                self._running_tasks = {
-                **self._running_tasks,
-                task_name: asyncio.create_task(
-                self._monitor_task_execution(task_name, task_info.task_id)
-                ),
-                }
-                self._stats = {
-                **self._stats,
-                "executed_count": self._stats["executed_count"] + 1,
-                }
+                    self._running_tasks = {
+                        **self._running_tasks,
+                        task_name: asyncio.create_task(
+                            self._monitor_task_execution(task_name, task_info.task_id)
+                        ),
+                    }
+                    self._stats = {
+                        **self._stats,
+                        "executed_count": self._stats["executed_count"] + 1,
+                    }
                 else:
-                self._stats = {
-                **self._stats,
-                "failed_count": self._stats["failed_count"] + 1,
-                }
-                scheduled_task.config.increment_run_count()
-                self._schedule_next_run(
+                    self._stats = {
+                        **self._stats,
+                        "failed_count": self._stats["failed_count"] + 1,
+                    }
+            scheduled_task.config.increment_run_count()
+            self._schedule_next_run(
                 task_name, scheduled_task.config, scheduled_task.task_definition
-                )
-                except Exception as e:
-                self.logger.error(f"Failed to execute scheduled task {task_name}: {e}")
-                self._stats = {
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to execute scheduled task {task_name}: {e}")
+            self._stats = {
                 **self._stats,
                 "failed_count": self._stats["failed_count"] + 1,
-                }
+            }
 
-                def _are_dependencies_met(self, task_name: str) -> bool:
-                """의존성 충족 여부 확인"""
-                dependencies = self._dependencies.get(task_name, set())
-                return all((dep in self._completed_tasks for dep in dependencies))
+    def _are_dependencies_met(self, task_name: str) -> bool:
+        """의존성 충족 여부 확인"""
+        dependencies = self._dependencies.get(task_name, set())
+        return all((dep in self._completed_tasks for dep in dependencies))
 
-                async def _monitor_task_execution(self, task_name: str, task_id: str) -> None:
-                """작업 실행 모니터링"""
-                try:
-                while True:
+    async def _monitor_task_execution(self, task_name: str, task_id: str) -> None:
+        """작업 실행 모니터링"""
+        try:
+            while True:
                 task_info = self.task_manager.get_task_info(task_id)
                 if not task_info:
-                break
+                    break
                 if task_info.status in [
-                TaskStatus.COMPLETED,
-                TaskStatus.FAILED,
-                TaskStatus.CANCELLED,
+                    TaskStatus.COMPLETED,
+                    TaskStatus.FAILED,
+                    TaskStatus.CANCELLED,
                 ]:
-                if task_info.status == TaskStatus.COMPLETED:
-                self._completed_tasks.add(task_name)
-                await self._notify_dependents(task_name)
-                break
+                    if task_info.status == TaskStatus.COMPLETED:
+                        self._completed_tasks.add(task_name)
+                        await self._notify_dependents(task_name)
+                    break
                 await asyncio.sleep(0.5)
-                except Exception as e:
-                self.logger.error(f"Error monitoring task {task_name}: {e}")
-                finally:
-                if task_name in self._running_tasks:
+        except Exception as e:
+            self.logger.error(f"Error monitoring task {task_name}: {e}")
+        finally:
+            if task_name in self._running_tasks:
                 del self._running_tasks[task_name]
 
-                async def _notify_dependents(self, completed_task: str) -> None:
-                """의존하는 작업들에게 완료 알림"""
-                dependents = self._dependents.get(completed_task, set())
-                for dependent in dependents:
-                if self._are_dependencies_met(dependent):
+    async def _notify_dependents(self, completed_task: str) -> None:
+        """의존하는 작업들에게 완료 알림"""
+        dependents = self._dependents.get(completed_task, set())
+        for dependent in dependents:
+            if self._are_dependencies_met(dependent):
                 config = self._schedules.get(dependent)
                 task_def = get_task_definition(dependent)
                 if config and task_def:
-                scheduled_task = ScheduledTask(
-                config=config,
-                next_run_time=datetime.now(),
-                task_definition=task_def,
-                )
-                heapq.heappush(self._scheduled_tasks, scheduled_task)
+                    scheduled_task = ScheduledTask(
+                        config=config,
+                        next_run_time=datetime.now(),
+                        task_definition=task_def,
+                    )
+                    heapq.heappush(self._scheduled_tasks, scheduled_task)
 
-                async def _cleanup_completed_tasks(self) -> None:
-                """완료된 작업 정리"""
-                completed_tasks = []
-                for task_name, task in self._running_tasks.items():
-                if task.done():
+    async def _cleanup_completed_tasks(self) -> None:
+        """완료된 작업 정리"""
+        completed_tasks = []
+        for task_name, task in self._running_tasks.items():
+            if task.done():
                 completed_tasks = completed_tasks + [task_name]
-                for task_name in completed_tasks:
-                del self._running_tasks[task_name]
+        for task_name in completed_tasks:
+            del self._running_tasks[task_name]
 
-                def get_schedule_info(self, task_name: str) -> Optional[Dict[str, Any]]:
-                """스케줄 정보 조회"""
-                config = self._schedules.get(task_name)
-                if not config:
-                return None
-                next_run_time = config.get_next_run_time()
-                return {
-                "task_name": task_name,
-                "schedule_type": config.schedule_type.value,
-                "enabled": config.enabled,
-                "run_count": config.run_count,
-                "max_runs": config.max_runs,
-                "next_run_time": next_run_time.isoformat() if next_run_time else None,
-                "dependencies": list(self._dependencies.get(task_name, set())),
-                "dependents": list(self._dependents.get(task_name, set())),
-                }
+    def get_schedule_info(self, task_name: str) -> Optional[Dict[str, Any]]:
+        """스케줄 정보 조회"""
+        config = self._schedules.get(task_name)
+        if not config:
+            return None
+        next_run_time = config.get_next_run_time()
+        return {
+            "task_name": task_name,
+            "schedule_type": config.schedule_type.value,
+            "enabled": config.enabled,
+            "run_count": config.run_count,
+            "max_runs": config.max_runs,
+            "next_run_time": next_run_time.isoformat() if next_run_time else None,
+            "dependencies": list(self._dependencies.get(task_name, set())),
+            "dependents": list(self._dependents.get(task_name, set())),
+        }
 
-                def list_scheduled_tasks(self) -> List[Dict[str, Any]]:
-                """스케줄된 작업 목록"""
-                return [
-                self.get_schedule_info(task_name) for task_name in self._schedules.keys()
-                ]
+    def list_scheduled_tasks(self) -> List[Dict[str, Any]]:
+        """스케줄된 작업 목록"""
+        return [
+            self.get_schedule_info(task_name) for task_name in self._schedules.keys()
+        ]
 
-                def get_statistics(self) -> Dict[str, Any]:
-                """스케줄러 통계"""
-                return {
-                **self._stats,
-                "active_schedules": len(self._schedules),
-                "pending_tasks": len(self._scheduled_tasks),
-                "running_tasks": len(self._running_tasks),
-                "completed_tasks": len(self._completed_tasks),
-                }
-
-
-                _default_scheduler: Optional[TaskScheduler] = None
+    def get_statistics(self) -> Dict[str, Any]:
+        """스케줄러 통계"""
+        return {
+            **self._stats,
+            "active_schedules": len(self._schedules),
+            "pending_tasks": len(self._scheduled_tasks),
+            "running_tasks": len(self._running_tasks),
+            "completed_tasks": len(self._completed_tasks),
+        }
 
 
-                def create_scheduler(task_manager: Optional[AsyncTaskManager] = None) -> TaskScheduler:
-                """스케줄러 생성"""
-                return TaskScheduler(task_manager)
+_default_scheduler: Optional[TaskScheduler] = None
 
 
-                def get_default_scheduler() -> TaskScheduler:
-                """기본 스케줄러 조회"""
-                # global _default_scheduler - removed for functional programming
-                if _default_scheduler is None:
-                _default_scheduler = TaskScheduler()
-                return _default_scheduler
+def create_scheduler(task_manager: Optional[AsyncTaskManager] = None) -> TaskScheduler:
+    """스케줄러 생성"""
+    return TaskScheduler(task_manager)
 
 
-                async def schedule_task(
-                task_name: str, schedule_type: ScheduleType, **kwargs
-                ) -> Result[None, str]:
-                """작업 스케줄 등록 (편의 함수)"""
-                scheduler = get_default_scheduler()
-                return scheduler.schedule_task(task_name, schedule_type, **kwargs)
+def get_default_scheduler() -> TaskScheduler:
+    """기본 스케줄러 조회"""
+    # global _default_scheduler - removed for functional programming
+    if _default_scheduler is None:
+        _default_scheduler = TaskScheduler()
+    return _default_scheduler
+
+
+async def schedule_task(
+    task_name: str, schedule_type: ScheduleType, **kwargs
+) -> Result[None, str]:
+    """작업 스케줄 등록 (편의 함수)"""
+    scheduler = get_default_scheduler()
+    return scheduler.schedule_task(task_name, schedule_type, **kwargs)

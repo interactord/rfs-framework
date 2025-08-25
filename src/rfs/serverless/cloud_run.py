@@ -35,7 +35,7 @@ class CloudRunConfig:
     timeout: int = 300
     port: int = 8080
     enable_cold_start_optimization: bool = True
-    warm_up_endpoints: List[str] = []
+    warm_up_endpoints: List[str] = field(default_factory=list)
     warm_up_interval: int = 300
     enable_resource_monitoring: bool = True
     cpu_threshold: float = 0.8

@@ -40,7 +40,7 @@ class ChartType(Enum):
 class ChartData:
     """차트 데이터"""
 
-    labels: List[str] = []
+    labels: List[str] = field(default_factory=list)
     datasets: List[Dict[str, Any]] = field(default_factory=list)
 
     def add_dataset(
@@ -80,7 +80,7 @@ class ChartOptions:
     grid: bool = True
     tooltip: bool = True
     animation: bool = True
-    color_scheme: List[str] = []
+    color_scheme: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""

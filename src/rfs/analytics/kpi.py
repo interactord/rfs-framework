@@ -14,7 +14,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from ..core.types import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 from .data_source import DataQuery, DataSource
 
 
@@ -87,7 +87,7 @@ class KPIValue:
     value: float
     timestamp: datetime
     status: KPIStatus
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""

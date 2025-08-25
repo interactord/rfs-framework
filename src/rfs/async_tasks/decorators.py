@@ -14,6 +14,10 @@ from .base import BackoffStrategy, RetryPolicy, TaskChain, TaskGroup, TaskPriori
 from .manager import get_task_manager
 from .scheduler import CronSchedule, IntervalSchedule, get_scheduler
 
+# Import from HOF library
+from ..hof.decorators import memoize as hof_memoize, retry as hof_retry, rate_limit as hof_rate_limit
+from ..hof.async_hof import async_retry, async_timeout
+
 logger = logging.getLogger(__name__)
 
 

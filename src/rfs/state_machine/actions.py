@@ -27,7 +27,7 @@ class ActionResult:
     success: bool
     action_type: ActionType
     action_name: str
-    context_changes: Dict[str, Any] = {}
+    context_changes: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Exception] = None
     duration_ms: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)

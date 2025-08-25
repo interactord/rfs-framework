@@ -16,14 +16,17 @@ logger = get_logger(__name__)
 class Publisher:
     """메시지 발행자"""
 
-    def __init__(self, broker_name: str=None, topic: str=None):
+    def __init__(self, broker_name: str=None, broker: MessageBroker=None, topic: str=None):
         self.broker_name = broker_name
+        self._broker = broker
         self.default_topic = topic
         self._stats = {'messages_published': 0, 'bytes_published': 0, 'publish_errors': 0, 'last_publish_time': None}
 
     @property
     def broker(self) -> Optional[MessageBroker]:
         """메시지 브로커"""
+        if self._broker:
+            return self._broker
         return get_message_broker(self.broker_name)
 
     async def publish(self, data: Any, topic: str=None, priority: MessagePriority=MessagePriority.NORMAL, ttl: Optional[int]=None, headers: Dict[str, Any]=None, correlation_id: Optional[str]=None, reply_to: Optional[str]=None) -> Result[str, str]:
@@ -45,7 +48,7 @@ class Publisher:
                 return Success(message.id)
             else:
                 self._stats = {**self._stats, 'publish_errors': self._stats['publish_errors'] + 1}
-                return Failure(result.unwrap_err())
+                return Failure(result.unwrap_error())
         except Exception as e:
             self._stats = {**self._stats, 'publish_errors': self._stats['publish_errors'] + 1}
             error_msg = f'메시지 발행 실패: {str(e)}'
@@ -130,7 +133,7 @@ class BatchPublisher(Publisher):
             broker = self.broker
             if not broker:
                 return Failure('메시지 브로커를 찾을 수 없습니다')
-            topic_groups: Dict[str, List[Message]] = {}
+            topic_groups: Dict[str, Any] = field(default_factory=dict)
             for message in self._message_batch:
                 if message.topic not in topic_groups:
                     topic_groups[message.topic] = {message.topic: []}
@@ -145,7 +148,7 @@ class BatchPublisher(Publisher):
                         self._stats = {**self._stats, 'bytes_published': self._stats['bytes_published'] + len(message.serialize())}
                 else:
                     self._stats = {**self._stats, 'publish_errors': self._stats['publish_errors'] + len(messages)}
-                    logger.error(f'배치 발행 실패 ({topic}): {result.unwrap_err()}')
+                    logger.error(f'배치 발행 실패 ({topic}): {result.unwrap_error()}')
             _message_batch = {}
             self._stats = {**self._stats, 'last_publish_time': datetime.now()}
             if total_published > 0:
@@ -208,7 +211,7 @@ async def publish_batch(topic: str, messages: List[Dict[str, Any]], broker_name:
         if result.is_success():
             return Success([msg.id for msg in message_objects])
         else:
-            return Failure(result.unwrap_err())
+            return Failure(result.unwrap_error())
     except Exception as e:
         error_msg = f'배치 발행 실패: {str(e)}'
         logger.error(error_msg)
@@ -240,7 +243,7 @@ class ScheduledPublisher(Publisher):
                     if result.is_success():
                         logger.debug(f'스케줄 메시지 발행: {message_id}')
                     else:
-                        logger.error(f'스케줄 메시지 발행 실패: {result.unwrap_err()}')
+                        logger.error(f'스케줄 메시지 발행 실패: {result.unwrap_error()}')
                 except asyncio.CancelledError:
                     logger.debug(f'스케줄 메시지 취소: {message_id}')
                 except Exception as e:

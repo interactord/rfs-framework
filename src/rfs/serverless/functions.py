@@ -49,7 +49,7 @@ class HttpMethod(Enum):
 class HttpTrigger:
     """HTTP 트리거"""
 
-    methods: List[HttpMethod] = []
+    methods: List[str] = field(default_factory=list)
     cors: bool = True
     security_level: str = "SECURE_ALWAYS"
 
@@ -70,7 +70,7 @@ class FunctionConfig:
     runtime: str = "python311"
     memory: str = "256MB"
     timeout: int = 60
-    environment_variables: Dict[str, str] = {}
+    environment_variables: Dict[str, Any] = field(default_factory=dict)
     trigger: Optional[Union[HttpTrigger, PubSubTrigger]] = None
     min_instances: int = 0
     max_instances: int = 100
@@ -86,7 +86,7 @@ class FunctionContext:
     timestamp: datetime = field(default_factory=datetime.now)
     trigger_type: Optional[TriggerType] = None
     request_id: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class ServerlessFunction:

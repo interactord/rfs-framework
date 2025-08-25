@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 
-from ..core import Failure, Result, Success
+from ..core.result import Failure, Result, Success
 
 T = TypeVar("T")
 

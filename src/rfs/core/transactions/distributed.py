@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 
-from ..core import Failure, Result, Success
-from ..events import Event, EventBus, get_event_bus
+from ..result import Failure, Result, Success
+from ...events import Event, EventBus, get_event_bus
 from .base import (
     TransactionError,
     TransactionMetadata,
@@ -48,7 +48,7 @@ class ParticipantInfo:
     committed_at: Optional[datetime] = None
     aborted_at: Optional[datetime] = None
     vote: Optional[bool] = None
-    data: Dict[str, Any] = {}
+    data: Dict[str, Any] = field(default_factory=dict)
 
 
 class TransactionCoordinator(ABC):

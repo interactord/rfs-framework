@@ -28,7 +28,7 @@ import aiohttp
 
 from rfs.core.config import get_config
 from rfs.core.result import Failure, Result, Success
-from rfs.events.event import Event
+from rfs.events.event_bus import Event
 from rfs.reactive.mono import Mono
 
 
@@ -434,7 +434,7 @@ class NetworkIOOptimizer:
 
     def get_stats(self) -> Dict[str, Any]:
         """네트워크 I/O 통계"""
-        stats = {'cache_stats': self.cache.get_stats() if self.cache else {}
+        stats = {'cache_stats': self.cache.get_stats() if self.cache else {}}
         for operation, records in self.operation_stats.items():
             if records:
                 total_operations = len(records)

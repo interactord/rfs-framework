@@ -94,7 +94,7 @@ if PYDANTIC_AVAILABLE:
         metrics_export_interval: int = Field(
             default=60, ge=10, le=3600, description="메트릭 내보내기 간격(초)"
         )
-        custom: Dict[str, Any] = {}
+        custom: Dict[str, Any] = field(default_factory=dict)
 
         @field_validator("environment", mode="before")
         @classmethod
@@ -365,6 +365,11 @@ def get_config() -> RFSConfig:
 def get(key: str, default: Any = None) -> Any:
     """설정 값 조회"""
     return config_manager.get(key, default)
+
+
+def reload_config() -> RFSConfig:
+    """설정 강제 재로드"""
+    return config_manager.reload_config()
 
 
 def is_cloud_run_environment() -> bool:

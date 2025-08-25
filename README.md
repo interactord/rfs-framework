@@ -727,10 +727,10 @@ RFS Framework v4.3.0의 모든 기능에 대한 **포괄적인 한국어 문서*
 - **[CLI 인터페이스](./wiki/14-cli-interface.md)** - Enterprise-Grade 명령행 인터페이스
 
 ### 📚 일반 문서
-- **[API Reference](./docs/api/)** - 완전한 API 문서
-- **[User Guide](./docs/guide/)** - 단계별 사용 가이드  
+- **[API Reference](./docs/API_REFERENCE.md)** - 완전한 API 문서
+- **[User Guide](./docs/USER_GUIDE.md)** - 단계별 사용 가이드  
 - **[Examples](./examples/)** - 실제 예제 코드
-- **[Migration Guide](./docs/migration/)** - v3에서 v4로 마이그레이션
+- **[Migration Guide](./MIGRATION_GUIDE.md)** - v3에서 v4로 마이그레이션
 - **[Contributing](./CONTRIBUTING.md)** - 기여 가이드
 - **[Changelog](./CHANGELOG.md)** - 변경 이력
 

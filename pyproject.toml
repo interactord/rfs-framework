@@ -275,6 +275,12 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+    # 추상 메서드 제외
+    "@(abc\\.)?abstractmethod",
+    "@(abc\\.)?abstractproperty",
+    # pass 문 제외
+    "^\\s*pass$",
+    "^\\s*\\.\\.\\.$",
 ]
 
 # Bandit 보안 검사 설정

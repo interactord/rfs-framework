@@ -1,0 +1,36 @@
+[run]
+source = src
+omit = 
+    */tests/*
+    */test_*.py
+    */__init__.py
+    */setup.py
+
+[report]
+exclude_lines =
+    # 기본 제외 패턴
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    
+    # 추상 메서드 제외
+    @(abc\.)?abstractmethod
+    @(abc\.)?abstractproperty
+    
+    # if TYPE_CHECKING 블록 제외
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    
+    # __main__ 블록 제외
+    if __name__ == .__main__.:
+    
+    # 방어적 프로그래밍
+    ^\s*\.\.\.$
+    ^\s*pass$
+    
+precision = 2
+show_missing = True
+skip_covered = False

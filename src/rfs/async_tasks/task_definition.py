@@ -130,13 +130,15 @@ class TaskDefinition:
     def can_execute(self, context: TaskContext) -> bool:
         """실행 가능 여부 확인"""
         # 조건 검사
-        for condition in self.conditions:
-            if not condition(context):
-                return False
+        try:
+            for condition in self.conditions:
+                if not condition(context):
+                    return False
+            return True
+        except Exception as e:
             # 조건 검사 실패시 실행 불가
             context.add_metadata("condition_error", str(e))
-            return Failure("Operation failed")
-        return True
+            return False
 
     async def execute(self, context: TaskContext, *args, **kwargs) -> Result[Any, str]:
         """작업 실행"""

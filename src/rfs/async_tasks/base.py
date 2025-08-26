@@ -174,33 +174,59 @@ class TaskCallback(ABC):
 
     @abstractmethod
     def on_start(self, metadata: TaskMetadata):
-        """작업 시작 시"""
-        pass
+        """작업 시작 시 호출되는 콜백
+        
+        Args:
+            metadata: 작업 메타데이터
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def on_complete(self, result: TaskResult):
-        """작업 완료 시"""
-        pass
+        """작업 완료 시 호출되는 콜백
+        
+        Args:
+            result: 작업 실행 결과
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def on_error(self, metadata: TaskMetadata, error: Exception):
-        """에러 발생 시"""
-        pass
+        """에러 발생 시 호출되는 콜백
+        
+        Args:
+            metadata: 작업 메타데이터
+            error: 발생한 예외
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def on_cancel(self, metadata: TaskMetadata):
-        """작업 취소 시"""
-        pass
+        """작업 취소 시 호출되는 콜백
+        
+        Args:
+            metadata: 작업 메타데이터
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def on_timeout(self, metadata: TaskMetadata):
-        """타임아웃 시"""
-        pass
+        """타임아웃 시 호출되는 콜백
+        
+        Args:
+            metadata: 작업 메타데이터
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def on_retry(self, metadata: TaskMetadata, attempt: int):
-        """재시도 시"""
-        pass
+        """재시도 시 호출되는 콜백
+        
+        Args:
+            metadata: 작업 메타데이터
+            attempt: 재시도 횟수
+        """
+        raise NotImplementedError
 
 
 class TaskError(Exception):
@@ -234,18 +260,36 @@ class Task(ABC, Generic[T]):
 
     @abstractmethod
     async def execute(self, context: Dict[str, Any]) -> T:
-        """작업 실행"""
-        pass
+        """작업 실행 메서드
+        
+        Args:
+            context: 작업 실행 컨텍스트
+            
+        Returns:
+            작업 실행 결과
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def validate(self, context: Dict[str, Any]) -> Result[None, str]:
-        """작업 검증"""
-        pass
+        """작업 실행 전 검증
+        
+        Args:
+            context: 작업 실행 컨텍스트
+            
+        Returns:
+            Success(None) 또는 Failure(에러 메시지)
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def cleanup(self, context: Dict[str, Any]):
-        """작업 정리"""
-        pass
+        """작업 종료 후 정리
+        
+        Args:
+            context: 작업 실행 컨텍스트
+        """
+        raise NotImplementedError
 
 
 class CallableTask(Task[T]):
@@ -341,18 +385,33 @@ class TaskHook(ABC):
 
     @abstractmethod
     async def before_execute(self, metadata: TaskMetadata, context: Dict[str, Any]):
-        """실행 전 훅"""
-        pass
+        """작업 실행 전 훅
+        
+        Args:
+            metadata: 작업 메타데이터
+            context: 작업 실행 컨텍스트
+        """
+        raise NotImplementedError
 
     @abstractmethod
     async def after_execute(self, metadata: TaskMetadata, result: Any):
-        """실행 후 훅"""
-        pass
+        """작업 실행 후 훅
+        
+        Args:
+            metadata: 작업 메타데이터
+            result: 작업 실행 결과
+        """
+        raise NotImplementedError
 
     @abstractmethod
     async def on_exception(self, metadata: TaskMetadata, exception: Exception):
-        """예외 발생 시 훅"""
-        pass
+        """예외 발생 시 훅
+        
+        Args:
+            metadata: 작업 메타데이터
+            exception: 발생한 예외
+        """
+        raise NotImplementedError
 
 
 class LoggingHook(TaskHook):

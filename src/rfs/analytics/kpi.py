@@ -12,7 +12,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from functools import lru_cache
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, ClassVar
+from weakref import WeakKeyDictionary
 
 from ..core.result import Failure, Result, Success
 from .data_source import DataQuery, DataSource
@@ -128,16 +130,35 @@ class KPI(ABC):
         self.targets: List[KPITarget] = []
         self.history: List[KPIValue] = []
         self.metadata: Dict[str, Any] = {}
+        self._cache: Dict[str, Any] = {}
+        self._cache_timestamp: Optional[datetime] = None
+        self._cache_ttl: int = 300  # 5분 캐시
 
-    async def _execute_query(self, query: DataQuery) -> Result[Any, str]:
-        """데이터 쿼리 실행
+    def _is_cache_valid(self) -> bool:
+        """캐시 유효성 검사"""
+        if self._cache_timestamp is None:
+            return False
+        return (datetime.now() - self._cache_timestamp).seconds < self._cache_ttl
+    
+    def _get_cache_key(self, operation: str, **kwargs) -> str:
+        """캐시 키 생성"""
+        params = "_".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
+        return f"{self.kpi_id}_{operation}_{params}"
+    
+    async def _execute_query(self, query: DataQuery, cache_key: Optional[str] = None) -> Result[Any, str]:
+        """데이터 쿼리 실행 (캐싱 지원)
         
         Args:
             query: 실행할 쿼리
+            cache_key: 캐시 키 (옵션)
             
         Returns:
             Result[Any, str]: 쿼리 결과 또는 오류
         """
+        # 캐시 확인
+        if cache_key and self._is_cache_valid() and cache_key in self._cache:
+            return Success(self._cache[cache_key])
+            
         if not self.data_source:
             return Failure("Data source not configured")
             
@@ -156,8 +177,17 @@ class KPI(ABC):
             else:
                 data_source = self.data_source
                 
-            # 쿼리 실행
-            result = await data_source.execute(query)
+            # 쿼리 실행 (테스트 호환성을 위해 execute 메서드 사용)
+            if hasattr(data_source, 'execute'):
+                result = await data_source.execute(query)
+            else:
+                result = await data_source.execute_query(query)
+            
+            # 결과 캐시 저장
+            if result.is_success() and cache_key:
+                self._cache[cache_key] = result.value
+                self._cache_timestamp = datetime.now()
+                
             return result
         except Exception as e:
             return Failure(f"Query execution failed: {str(e)}")
@@ -175,9 +205,14 @@ class KPI(ABC):
         raise NotImplementedError("Subclasses must implement calculate method")
 
     def add_threshold(self, threshold: KPIThreshold) -> Result[bool, str]:
-        """임계값 추가"""
+        """임계값 추가 (중복 방지)"""
         try:
-            self.thresholds = self.thresholds + [threshold]
+            # 중복 임계값 확인
+            existing_ids = {t.threshold_id for t in self.thresholds}
+            if threshold.threshold_id in existing_ids:
+                return Failure(f"Threshold '{threshold.threshold_id}' already exists")
+                
+            self.thresholds.append(threshold)
             self.thresholds.sort(
                 key=lambda t: {
                     KPIStatus.CRITICAL: 0,
@@ -186,6 +221,8 @@ class KPI(ABC):
                     KPIStatus.EXCELLENT: 3,
                 }.get(t.status, 4)
             )
+            # 캐시 무효화
+            self._cache.clear()
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to add threshold: {str(e)}")
@@ -193,7 +230,9 @@ class KPI(ABC):
     def add_target(self, target: KPITarget) -> Result[bool, str]:
         """목표 추가"""
         try:
-            self.targets = self.targets + [target]
+            self.targets.append(target)
+            # 캐시 무효화
+            self._cache.clear()
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to add target: {str(e)}")
@@ -216,7 +255,8 @@ class KPI(ABC):
             kpi_value = KPIValue(
                 value=value, timestamp=datetime.now(), status=status, metadata=kwargs
             )
-            self.history = self.history + [kpi_value]
+            self.history.append(kpi_value)
+            # 메모리 효율성을 위해 최대 1000개로 제한
             if len(self.history) > 1000:
                 self.history = self.history[-1000:]
             return Success(kpi_value)
@@ -227,16 +267,24 @@ class KPI(ABC):
         """현재 값 조회"""
         return self.history[-1] if self.history else None
 
-    def get_history(self, days: int = 30) -> List[KPIValue]:
-        """히스토리 조회"""
-        cutoff_date = datetime.now() - timedelta(days=days)
+    @lru_cache(maxsize=32)
+    def _get_cached_history(self, days: int, cache_timestamp: str) -> List[KPIValue]:
+        """히스토리 캐시 (내부 사용)"""
+        cutoff_date = datetime.strptime(cache_timestamp, "%Y%m%d%H") - timedelta(days=days)
         return [v for v in self.history if v.timestamp >= cutoff_date]
+        
+    def get_history(self, days: int = 30) -> List[KPIValue]:
+        """히스토리 조회 (캐시 지원)"""
+        # 1시간 단위로 캐시
+        cache_timestamp = datetime.now().strftime("%Y%m%d%H")
+        return self._get_cached_history(days, cache_timestamp)
 
-    def get_trend(self, days: int = 7) -> Optional[str]:
-        """트렌드 분석"""
+    @lru_cache(maxsize=16)
+    def _calculate_trend(self, values_hash: int, days: int) -> str:
+        """트렌드 계산 (내부 사용)"""
         recent_values = self.get_history(days)
         if len(recent_values) < 2:
-            return None
+            return "unknown"
         values = [v.value for v in recent_values]
         n = len(values)
         x = list(range(n))
@@ -253,6 +301,14 @@ class KPI(ABC):
             return "decreasing"
         else:
             return "stable"
+            
+    def get_trend(self, days: int = 7) -> Optional[str]:
+        """트렌드 분석 (캐시 지원)"""
+        recent_values = self.get_history(days)
+        if len(recent_values) < 2:
+            return None
+        values_hash = hash(tuple(v.value for v in recent_values[-20:]))  # 최근 20개 값만 사용
+        return self._calculate_trend(values_hash, days)
 
 
 class CountKPI(KPI):
@@ -263,12 +319,15 @@ class CountKPI(KPI):
         self.query = query
 
     async def calculate(self, **kwargs) -> Result[float, str]:
-        """카운트 계산"""
+        """카운트 계산 (캐싱 지원)"""
         try:
             from ..analytics.data_source import DataQuery
             
+            # 캐시 키 생성
+            cache_key = self._get_cache_key("count", **kwargs)
+            
             data_query = DataQuery(query=self.query, parameters=kwargs)
-            result = await self._execute_query(data_query)
+            result = await self._execute_query(data_query, cache_key)
             if result.is_failure():
                 return Failure(f"Failed to calculate count: {result.error}")
             
@@ -276,7 +335,7 @@ class CountKPI(KPI):
             if not data:
                 return Success(0.0)
                 
-            # 카운트 계산 로직
+            # 카운트 계산 로직 최적화
             if isinstance(data, list):
                 count = float(len(data))
             elif isinstance(data, dict) and "count" in data:
@@ -572,7 +631,7 @@ class KPICalculator:
                 ):
                     summary = {
                         **summary,
-                        "last_updated": {"last_updated": current_value.timestamp},
+                        "last_updated": current_value.timestamp,
                     }
         return summary
 
@@ -600,7 +659,7 @@ class KPIDashboard:
     def remove_kpi(self, kpi_id: str) -> Result[bool, str]:
         """KPI 제거"""
         if kpi_id in self.kpi_ids:
-            kpi_ids = [i for i in kpi_ids if i != kpi_id]
+            self.kpi_ids = [i for i in self.kpi_ids if i != kpi_id]
         return Success(True)
 
     async def refresh(self, **kwargs) -> Result[Dict[str, Any], str]:
@@ -774,7 +833,7 @@ _global_kpi_calculator = None
 
 def get_kpi_calculator() -> KPICalculator:
     """전역 KPI 계산기 가져오기"""
-    # global _global_kpi_calculator - removed for functional programming
+    global _global_kpi_calculator
     if _global_kpi_calculator is None:
         _global_kpi_calculator = KPICalculator()
     return _global_kpi_calculator

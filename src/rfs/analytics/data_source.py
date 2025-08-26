@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Union
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Union, TypeVar, Generic
 
 from ..core.result import Failure, Result, ResultAsync, Success
 
@@ -31,7 +31,7 @@ class DataQuery:
     """데이터 쿼리 정의"""
 
     query: str
-    parameters: Dict[str, Any]
+    parameters: Dict[str, Any] = field(default_factory=dict)
     limit: Optional[int] = None
     offset: Optional[int] = None
     timeout: Optional[int] = None
@@ -41,7 +41,7 @@ class DataQuery:
 class DataSchema:
     """데이터 스키마 정의"""
 
-    columns: Dict[str, str]
+    columns: Dict[str, str] = field(default_factory=dict)
     primary_key: Optional[str] = None
     indexes: List[str] = field(default_factory=list)
 
@@ -58,7 +58,7 @@ class DataSource(ABC):
         self.name = name
         self.config = config
         self._schema: Optional[DataSchema] = None
-        self._connected = False
+        self._connected: bool = False
 
     @abstractmethod
     async def connect(self) -> Result[bool, str]:
@@ -131,9 +131,9 @@ class DatabaseDataSource(DataSource):
 
     def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
         super().__init__(source_id, name, config)
-        self.connection_string = config.get("connection_string")
-        self.driver = config.get("driver", "postgresql")
-        self._connection = None
+        self.connection_string: Optional[str] = config.get("connection_string")
+        self.driver: str = config.get("driver", "postgresql")
+        self._connection: Optional[Any] = None
 
     async def connect(self) -> Result[bool, str]:
         """데이터베이스 연결"""
@@ -248,8 +248,10 @@ class DatabaseDataSource(DataSource):
         match self.driver:
             case "postgresql":
                 return "SELECT 1"
-            case "mysql":            return "SELECT 1"
-            case "sqlite":            return "SELECT 1"
+            case "mysql":
+                return "SELECT 1"
+            case "sqlite":
+                return "SELECT 1"
         return "SELECT 1"
 
 
@@ -258,9 +260,9 @@ class FileDataSource(DataSource):
 
     def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
         super().__init__(source_id, name, config)
-        self.file_path = Path(config["file_path"])
-        self.file_type = config.get("file_type", "csv")
-        self.encoding = config.get("encoding", "utf-8")
+        self.file_path: Path = Path(config["file_path"])
+        self.file_type: str = config.get("file_type", "csv")
+        self.encoding: str = config.get("encoding", "utf-8")
         self._data: List[Dict[str, Any]] = []
 
     async def connect(self) -> Result[bool, str]:
@@ -271,30 +273,33 @@ class FileDataSource(DataSource):
             match self.file_type:
                 case "csv":
                     await self._load_csv()
-                case "json":                await self._load_json()
-                case "excel":                await self._load_excel()
-                case _:                return Failure(f"Unsupported file type: {self.file_type}")
+                case "json":
+                    await self._load_json()
+                case "excel":
+                    await self._load_excel()
+                case _:
+                    return Failure(f"Unsupported file type: {self.file_type}")
             self._connected = True
             return Success(True)
         except Exception as e:
             return Failure(f"File loading failed: {str(e)}")
 
-    async def _load_csv(self):
+    async def _load_csv(self) -> None:
         """CSV 파일 로드"""
         with open(self.file_path, "r", encoding=self.encoding) as f:
             reader = csv.DictReader(f)
             self._data = list(reader)
 
-    async def _load_json(self):
+    async def _load_json(self) -> None:
         """JSON 파일 로드"""
         with open(self.file_path, "r", encoding=self.encoding) as f:
             data = json.load(f)
-            if type(data).__name__ == "list":
+            if isinstance(data, list):
                 self._data = data
             else:
                 self._data = [data]
 
-    async def _load_excel(self):
+    async def _load_excel(self) -> None:
         """Excel 파일 로드"""
         try:
             import pandas as pd
@@ -348,14 +353,14 @@ class FileDataSource(DataSource):
             sample_row = self._data[0]
             columns = {}
             for key, value in sample_row.items():
-                if type(value).__name__ == "int":
-                    columns[key] = {key: "integer"}
-                elif type(value).__name__ == "float":
-                    columns[key] = {key: "float"}
-                elif type(value).__name__ == "bool":
-                    columns[key] = {key: "boolean"}
+                if isinstance(value, int):
+                    columns[key] = "integer"
+                elif isinstance(value, float):
+                    columns[key] = "float"
+                elif isinstance(value, bool):
+                    columns[key] = "boolean"
                 else:
-                    columns[key] = {key: "string"}
+                    columns[key] = "string"
             self._schema = DataSchema(columns=columns)
             return Success(self._schema)
         except Exception as e:
@@ -371,10 +376,10 @@ class APIDataSource(DataSource):
 
     def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
         super().__init__(source_id, name, config)
-        self.base_url = config["base_url"]
-        self.headers = config.get("headers", {})
-        self.auth = config.get("auth", {})
-        self._session = None
+        self.base_url: str = config["base_url"]
+        self.headers: Dict[str, str] = config.get("headers", {})
+        self.auth: Dict[str, Any] = config.get("auth", {})
+        self._session: Optional[Any] = None
 
     async def connect(self) -> Result[bool, str]:
         """API 연결 설정"""
@@ -414,7 +419,7 @@ class APIDataSource(DataSource):
             async with self._session.get(url, params=query.parameters) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if type(data).__name__ == "dict":
+                    if isinstance(data, dict):
                         if "data" in data:
                             result_data = data["data"]
                         elif "results" in data:
@@ -423,7 +428,7 @@ class APIDataSource(DataSource):
                             result_data = [data]
                     else:
                         result_data = data
-                    if not type(result_data).__name__ == "list":
+                    if not isinstance(result_data, list):
                         result_data = [result_data]
                     return Success(result_data)
                 else:
@@ -448,18 +453,18 @@ class APIDataSource(DataSource):
             sample_row = data[0]
             columns = {}
             for key, value in sample_row.items():
-                if type(value).__name__ == "int":
-                    columns[key] = {key: "integer"}
-                elif type(value).__name__ == "float":
-                    columns[key] = {key: "float"}
-                elif type(value).__name__ == "bool":
-                    columns[key] = {key: "boolean"}
-                elif type(value).__name__ == "list":
-                    columns[key] = {key: "array"}
-                elif type(value).__name__ == "dict":
-                    columns[key] = {key: "object"}
+                if isinstance(value, int):
+                    columns[key] = "integer"
+                elif isinstance(value, float):
+                    columns[key] = "float"
+                elif isinstance(value, bool):
+                    columns[key] = "boolean"
+                elif isinstance(value, list):
+                    columns[key] = "array"
+                elif isinstance(value, dict):
+                    columns[key] = "object"
                 else:
-                    columns[key] = {key: "string"}
+                    columns[key] = "string"
             self._schema = DataSchema(columns=columns)
             return Success(self._schema)
         except Exception as e:
@@ -475,8 +480,9 @@ class MetricsDataSource(DataSource):
 
     def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
         super().__init__(source_id, name, config)
-        self.metrics_config = config.get("metrics", {})
-        self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}
+        self.metrics_config: Dict[str, Any] = config.get("metrics", {})
+        self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}  
+        self.collector: Optional[Any] = None
 
     async def connect(self) -> Result[bool, str]:
         """메트릭 수집 초기화"""
@@ -534,13 +540,17 @@ class MetricsDataSource(DataSource):
 
     def _parse_time_range(self, time_range: str) -> timedelta:
         """시간 범위 파싱"""
-        if time_range.endswith("m"):
-            return timedelta(minutes=int(time_range[:-1]))
-        elif time_range.endswith("h"):
-            return timedelta(hours=int(time_range[:-1]))
-        elif time_range.endswith("d"):
-            return timedelta(days=int(time_range[:-1]))
-        else:
+        try:
+            match time_range[-1]:
+                case "m":
+                    return timedelta(minutes=int(time_range[:-1]))
+                case "h":
+                    return timedelta(hours=int(time_range[:-1]))
+                case "d":
+                    return timedelta(days=int(time_range[:-1]))
+                case _:
+                    return timedelta(hours=1)
+        except (ValueError, TypeError, IndexError):
             return timedelta(hours=1)
 
     async def get_schema(self) -> Result[DataSchema, str]:
@@ -628,12 +638,9 @@ class DataSourceManager:
 
     async def validate_all_connections(self) -> Dict[str, Result[bool, str]]:
         """모든 연결된 데이터 소스 검증"""
-        results = {}
+        results: Dict[str, Result[bool, str]] = {}
         for source_id, source in self._connected_sources.items():
-            results = {
-                **results,
-                source_id: {source_id: await source.validate_connection()},
-            }
+            results[source_id] = await source.validate_connection()
         return results
 
 
@@ -642,7 +649,7 @@ _global_data_source_manager = None
 
 def get_data_source_manager() -> DataSourceManager:
     """전역 데이터 소스 매니저 가져오기"""
-    # global _global_data_source_manager - removed for functional programming
+    global _global_data_source_manager
     if _global_data_source_manager is None:
         _global_data_source_manager = DataSourceManager()
     return _global_data_source_manager

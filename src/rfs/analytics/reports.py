@@ -14,8 +14,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Union, ClassVar
+from weakref import WeakKeyDictionary
 
 from ..core.result import Failure, Result, Success
 from .charts import Chart
@@ -64,7 +66,7 @@ class ReportTemplate:
     template_id: str
     name: str
     description: str
-    sections: List[ReportSection]
+    sections: List[ReportSection] = field(default_factory=list)
     variables: Dict[str, Any] = field(default_factory=dict)
     styles: Dict[str, Any] = field(default_factory=dict)
     header_template: Optional[str] = None
@@ -72,6 +74,7 @@ class ReportTemplate:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     version: str = "1.0"
+    _cached_sections: Optional[List[ReportSection]] = field(default=None, init=False)
 
 
 @dataclass
@@ -110,6 +113,9 @@ class Report(ABC):
         self.sections: List[ReportSection] = []
         self.variables: Dict[str, Any] = {}
         self.generated_at: Optional[datetime] = None
+        self._cache: Dict[str, Any] = {}
+        self._cache_timestamp: Optional[datetime] = None
+        self._cache_ttl: int = 600  # 10분 캐시
 
     @abstractmethod
     async def generate(self) -> Result[bytes, str]:
@@ -130,9 +136,16 @@ class Report(ABC):
         raise NotImplementedError("Subclasses must implement get_mime_type method")
 
     def add_section(self, section: ReportSection) -> Result[bool, str]:
-        """섹션 추가"""
+        """섹션 추가 (중복 방지)"""
         try:
-            self.sections = self.sections + [section]
+            # 중복 섹션 확인
+            existing_ids = {s.section_id for s in self.sections}
+            if section.section_id in existing_ids:
+                return Failure(f"Section '{section.section_id}' already exists")
+                
+            self.sections.append(section)
+            # 캐시 무효화
+            self._cache.clear()
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to add section: {str(e)}")
@@ -140,7 +153,12 @@ class Report(ABC):
     def remove_section(self, section_id: str) -> Result[bool, str]:
         """섹션 제거"""
         try:
+            original_length = len(self.sections)
             self.sections = [s for s in self.sections if s.section_id != section_id]
+            if len(self.sections) == original_length:
+                return Failure(f"Section '{section_id}' not found")
+            # 캐시 무효화
+            self._cache.clear()
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to remove section: {str(e)}")
@@ -148,7 +166,9 @@ class Report(ABC):
     def set_variable(self, key: str, value: Any) -> Result[bool, str]:
         """변수 설정"""
         try:
-            self.variables = {**self.variables, key: value}
+            self.variables[key] = value
+            # 캐시 무효화
+            self._cache.clear()
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to set variable: {str(e)}")
@@ -157,8 +177,20 @@ class Report(ABC):
         """변수 조회"""
         return self.variables.get(key, default)
 
+    def _is_cache_valid(self) -> bool:
+        """캐시 유효성 검사"""
+        if self._cache_timestamp is None:
+            return False
+        return (datetime.now() - self._cache_timestamp).seconds < self._cache_ttl
+    
     async def _process_sections(self) -> Result[List[ReportSection], str]:
-        """섹션 처리 (조건부 표시, 변수 치환 등)"""
+        """섹션 처리 (조건부 표시, 변수 치환 등) - 캐시 지원"""
+        cache_key = "processed_sections"
+        
+        # 캐시 확인
+        if self._is_cache_valid() and cache_key in self._cache:
+            return Success(self._cache[cache_key])
+            
         try:
             processed_sections = []
             for section in self.sections:
@@ -168,7 +200,12 @@ class Report(ABC):
                 if not section.visible:
                     continue
                 processed_section = await self._substitute_variables(section)
-                processed_sections = processed_sections + [processed_section]
+                processed_sections.append(processed_section)
+                
+            # 결과 캐시 저장
+            self._cache[cache_key] = processed_sections
+            self._cache_timestamp = datetime.now()
+            
             return Success(processed_sections)
         except Exception as e:
             return Failure(f"Section processing failed: {str(e)}")

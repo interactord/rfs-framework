@@ -191,7 +191,7 @@ rfs-framework/
 
 ## 🚧 Status
 
-- **완성도**: 93% (v4.3.0)
+- **완성도**: 93% (v4.3.0) - [현재 커버리지 ~10%](https://codecov.io/gh/interactord/rfs-framework)
 - **프로덕션 준비**: ✅ Ready
 - **미완성 항목**: [TODO.md](./TODO.md) 참조
 

@@ -1,10 +1,14 @@
 [run]
-source = src
+source = src/rfs
 omit = 
     */tests/*
-    */test_*.py
-    */__init__.py
-    */setup.py
+    */examples/*
+    */__pycache__/*
+    */venv/*
+    */test_venv/*
+    setup.py
+    conftest.py
+    */migrations/*
 
 [report]
 exclude_lines =

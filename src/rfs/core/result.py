@@ -109,6 +109,24 @@ class Success(Result[T, E]):
     def map_error(self, func: Callable[[E], U]) -> Result[T, U]:
         return Success(self.value)
 
+    def flat_map(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+        """flat_map alias for bind"""
+        return self.bind(func)
+
+    def or_else(self, alternative: Callable[[], Result[T, E]]) -> Result[T, E]:
+        """Return self on Success"""
+        return self
+
+    def filter(self, predicate: Callable[[T], bool], error: E) -> Result[T, E]:
+        """Filter success value with predicate"""
+        try:
+            if predicate(self.value):
+                return self
+            else:
+                return Failure(error)
+        except Exception as e:
+            return Failure(e)
+
     def __repr__(self) -> str:
         return f"Success({self.value})"
 
@@ -163,6 +181,21 @@ class Failure(Result[T, E]):
             return Failure(func(self.error))
         except Exception as e:
             return Failure(e)
+
+    def flat_map(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+        """flat_map alias for bind"""
+        return self.bind(func)
+
+    def or_else(self, alternative: Callable[[], Result[T, E]]) -> Result[T, E]:
+        """Return alternative on Failure"""
+        try:
+            return alternative()
+        except Exception as e:
+            return Failure(e)
+
+    def filter(self, predicate: Callable[[T], bool], error: E) -> Result[T, E]:
+        """Filter returns self (Failure) unchanged"""
+        return self
 
     def __repr__(self) -> str:
         return f"Failure({self.error})"

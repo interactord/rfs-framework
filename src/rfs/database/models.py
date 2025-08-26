@@ -133,10 +133,14 @@ class BaseModel(ABC):
                 setattr(self, key, value)
 
 
-class SQLAlchemyModel(BaseModel, SQLAlchemy_Base):
+class SQLAlchemyModel(BaseModel):
     """SQLAlchemy 모델 베이스"""
 
     __abstract__ = True
+    
+    # SQLAlchemy Base를 컴포지션으로 사용
+    if SQLALCHEMY_AVAILABLE:
+        _sa_base = SQLAlchemy_Base
     id = (
         Column(Integer, primary_key=True, autoincrement=True)
         if SQLALCHEMY_AVAILABLE
@@ -259,11 +263,15 @@ class SQLAlchemyModel(BaseModel, SQLAlchemy_Base):
             return Failure(f"모델 목록 조회 실패: {str(e)}")
 
 
-class TortoiseModel(BaseModel, TortoiseBaseModel):
+class TortoiseModel(BaseModel):
     """Tortoise ORM 모델 베이스"""
 
     class Meta:
         abstract = True
+    
+    # Tortoise Base를 컴포지션으로 사용
+    if TORTOISE_AVAILABLE:
+        _tortoise_base = TortoiseBaseModel
 
     @classmethod
     def create_table(cls) -> Table:

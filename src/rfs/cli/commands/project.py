@@ -28,7 +28,7 @@ from ...core.result import Failure, Result, Success
 from ..core import Command
 
 if RICH_AVAILABLE:
-    console = Console(, field)
+    console = Console()
 else:
     console = None
 

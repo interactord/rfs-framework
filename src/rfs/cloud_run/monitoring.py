@@ -180,6 +180,38 @@ else:
         labels: Dict[str, Any] = field(default_factory=dict)
         extra_data: Dict[str, Any] = field(default_factory=dict)
 
+        def to_cloud_logging_entry(self) -> Dict[str, Any]:
+            """Cloud Logging 형식으로 변환"""
+            entry = {
+                "jsonPayload": {
+                    "message": self.message,
+                    "level": self.level.value,
+                    "service_name": self.service_name,
+                    "version": self.version,
+                    **self.extra_data,
+                },
+                "resource": {
+                    "type": "cloud_run_revision",
+                    "labels": {
+                        "service_name": self.service_name,
+                        "revision_name": f"{self.service_name}-{self.version}",
+                        "configuration_name": self.service_name,
+                        "location": "us-central1",
+                    },
+                },
+                "severity": self.level.name,
+                "timestamp": self.timestamp.isoformat() + "Z",
+                "labels": self.labels,
+            }
+            
+            if self.trace_id:
+                entry["trace"] = f"projects/{os.environ.get('GOOGLE_CLOUD_PROJECT', 'test-project')}/traces/{self.trace_id}"
+                
+            if self.span_id:
+                entry["spanId"] = self.span_id
+                
+            return entry
+
 
 class CloudMonitoringClient:
     """Cloud Monitoring 클라이언트"""
@@ -329,14 +361,15 @@ class CloudMonitoringClient:
         try:
             if metric_name not in self.registered_metrics:
                 return Failure(f"등록되지 않은 메트릭: {metric_name}")
-                metric_def = self.registered_metrics[metric_name]
-                metric_data = {
+            
+            metric_def = self.registered_metrics[metric_name]
+            metric_data = {
                 "name": metric_name,
                 "value": value,
                 "labels": labels or {},
                 "timestamp": timestamp or datetime.now(),
                 "definition": metric_def,
-                }
+            }
             self.metrics_buffer = self.metrics_buffer + [metric_data]
             if len(self.metrics_buffer) >= self.buffer_size:
                 await self._flush_metrics()

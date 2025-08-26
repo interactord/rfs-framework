@@ -94,7 +94,7 @@ if PYDANTIC_AVAILABLE:
         metrics_export_interval: int = Field(
             default=60, ge=10, le=3600, description="메트릭 내보내기 간격(초)"
         )
-        custom: Dict[str, Any] = field(default_factory=dict)
+        custom: Dict[str, Any] = Field(default_factory=dict)
 
         @field_validator("environment", mode="before")
         @classmethod

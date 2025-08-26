@@ -242,6 +242,137 @@ def setup_test_environment():
     os.environ.update(original_env)
 
 
+# Cloud Run 전용 픽스처들 추가
+@pytest.fixture(autouse=True)
+def reset_cloud_run_singletons():
+    """각 테스트 후 Cloud Run 싱글톤 인스턴스들 초기화"""
+    yield
+    
+    # 싱글톤 레지스트리 정리
+    try:
+        from rfs.core.singleton import SingletonMeta
+        SingletonMeta._instances = {}
+    except ImportError:
+        pass
+
+
+@pytest.fixture
+def clean_environment():
+    """환경 변수 정리된 상태 제공"""
+    cloud_run_vars = [
+        'K_SERVICE', 'K_REVISION', 'K_CONFIGURATION',
+        'GOOGLE_CLOUD_PROJECT', 'GOOGLE_CLOUD_REGION',
+        'CLOUD_RUN_REGION', 'PORT', 'CLOUD_RUN_JOB'
+    ]
+    
+    # 기존 값들 백업
+    backup = {}
+    for var in cloud_run_vars:
+        if var in os.environ:
+            backup[var] = os.environ[var]
+            del os.environ[var]
+    
+    yield
+    
+    # 환경 변수 복원
+    for var, value in backup.items():
+        os.environ[var] = value
+
+
+@pytest.fixture
+def mock_cloud_run_environment():
+    """Mock Cloud Run 환경 제공"""
+    env_vars = {
+        'K_SERVICE': 'test-service',
+        'K_REVISION': 'test-service-00001-abc',
+        'K_CONFIGURATION': 'test-service',
+        'GOOGLE_CLOUD_PROJECT': 'test-project-123',
+        'GOOGLE_CLOUD_REGION': 'asia-northeast3',
+        'PORT': '8080'
+    }
+    
+    from unittest.mock import patch
+    with patch.dict(os.environ, env_vars):
+        yield env_vars
+
+
+@pytest.fixture
+def isolated_monitoring_client():
+    """격리된 모니터링 클라이언트 제공"""
+    from rfs.cloud_run.helpers import CloudMonitoringClient
+    
+    # 새 인스턴스 강제 생성
+    if hasattr(CloudMonitoringClient, '_instances'):
+        CloudMonitoringClient._instances.clear()
+    
+    client = CloudMonitoringClient()
+    client._metrics = []
+    client._logs = []
+    
+    yield client
+    
+    # 정리
+    if hasattr(CloudMonitoringClient, '_instances'):
+        CloudMonitoringClient._instances.clear()
+
+
+@pytest.fixture
+def isolated_task_queue():
+    """격리된 작업 큐 제공"""
+    from rfs.cloud_run.helpers import CloudTaskQueue
+    
+    # 새 인스턴스 강제 생성
+    if hasattr(CloudTaskQueue, '_instances'):
+        CloudTaskQueue._instances.clear()
+    
+    queue = CloudTaskQueue()
+    queue._queue = []
+    queue._processing = False
+    
+    yield queue
+    
+    # 정리
+    if hasattr(CloudTaskQueue, '_instances'):
+        CloudTaskQueue._instances.clear()
+
+
+@pytest.fixture
+def isolated_service_discovery():
+    """격리된 서비스 디스커버리 제공"""
+    from rfs.cloud_run.helpers import CloudRunServiceDiscovery
+    
+    # 새 인스턴스 강제 생성
+    if hasattr(CloudRunServiceDiscovery, '_instances'):
+        CloudRunServiceDiscovery._instances.clear()
+    
+    discovery = CloudRunServiceDiscovery()
+    discovery._services = {}
+    discovery._initialized = False
+    
+    yield discovery
+    
+    # 정리
+    if hasattr(CloudRunServiceDiscovery, '_instances'):
+        CloudRunServiceDiscovery._instances.clear()
+
+
+# 성능 최적화를 위한 마커들
+def pytest_configure(config):
+    """커스텀 마커 등록"""
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests"
+    )
+    config.addinivalue_line(
+        "markers", "unit: marks tests as unit tests"
+    )
+    config.addinivalue_line(
+        "markers", "cloud_run: marks tests as cloud run specific"
+    )
+
+
 # Parametrize helpers - 중복 방지를 위해 비활성화
 # def pytest_generate_tests(metafunc):
 #     """동적 매개변수 생성"""

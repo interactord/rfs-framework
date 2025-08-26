@@ -196,7 +196,7 @@ class CloudTaskQueue(metaclass=SingletonMeta):
         """큐 처리"""
         self._processing = True
         while self._queue:
-            _queue = {k: v for k, v in _queue.items() if k != "0"}
+            task = self._queue.pop(0)  # 첫 번째 작업 가져오기
             try:
                 await self._execute_task(task)
             except Exception as e:
@@ -412,7 +412,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
 
     def configure(self, **kwargs):
         """설정 업데이트"""
-        self._config = {**_config, **kwargs}
+        self._config = {**self._config, **kwargs}
 
     def analyze_metrics(self) -> Dict[str, Any]:
         """메트릭 분석"""

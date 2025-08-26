@@ -123,10 +123,68 @@ class Chart(ABC):
         self.options = options or ChartOptions(title=title)
         self.data = ChartData()
 
-    @abstractmethod
     def prepare_data(self, raw_data: List[Dict[str, Any]]) -> Result[ChartData, str]:
-        """원시 데이터를 차트 데이터로 변환"""
-        pass
+        """원시 데이터를 차트 데이터로 변환
+        
+        Args:
+            raw_data: 원시 데이터 리스트
+            
+        Returns:
+            Result[ChartData, str]: 변환된 차트 데이터 또는 오류
+        """
+        try:
+            if not raw_data:
+                return Success(ChartData(labels=[], datasets=[]))
+                
+            # 기본 데이터 변환 로직
+            labels = []
+            values = []
+            
+            for item in raw_data:
+                if isinstance(item, dict):
+                    # 딕셔너리 형태의 데이터
+                    keys = list(item.keys())
+                    if len(keys) >= 2:
+                        # 첫 번째 키를 레이블로, 두 번째 키를 값으로 사용
+                        labels.append(str(item[keys[0]]))
+                        try:
+                            values.append(float(item[keys[1]]))
+                        except (ValueError, TypeError):
+                            values.append(0)
+                    elif len(keys) == 1:
+                        # 하나의 키만 있는 경우
+                        labels.append(str(keys[0]))
+                        try:
+                            values.append(float(item[keys[0]]))
+                        except (ValueError, TypeError):
+                            values.append(0)
+                else:
+                    # 비-딕셔너리 형태의 데이터
+                    labels.append(str(len(labels)))
+                    try:
+                        values.append(float(item))
+                    except (ValueError, TypeError):
+                        values.append(0)
+                        
+            # 기본 데이터셋 생성
+            dataset = {
+                "label": "Data",
+                "data": values,
+                "backgroundColor": self._get_default_colors()[:len(values)],
+                "borderColor": self._get_default_colors()[:len(values)],
+                "borderWidth": 1,
+            }
+            
+            return Success(ChartData(labels=labels, datasets=[dataset]))
+        except Exception as e:
+            return Failure(f"Failed to prepare chart data: {str(e)}")
+            
+    def _get_default_colors(self) -> List[str]:
+        """기본 색상 팔레트 반환"""
+        return [
+            "#007bff", "#28a745", "#dc3545", "#ffc107", "#6f42c1",
+            "#20c997", "#fd7e14", "#e83e8c", "#6c757d", "#17a2b8"
+        ]
 
     def set_data(self, raw_data: List[Dict[str, Any]]) -> Result["Chart", str]:
         """데이터 설정"""

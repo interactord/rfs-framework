@@ -86,15 +86,36 @@ class PlotData:
 class Theme(ABC):
     """테마 추상 클래스"""
 
-    @abstractmethod
     def get_colors(self) -> List[str]:
-        """색상 팔레트 반환"""
-        pass
+        """색상 팔레트 반환
+        
+        Returns:
+            List[str]: 색상 리스트
+        """
+        return [
+            "#007bff",  # Blue
+            "#28a745",  # Green
+            "#dc3545",  # Red
+            "#ffc107",  # Yellow
+            "#6f42c1",  # Purple
+            "#20c997",  # Teal
+            "#fd7e14",  # Orange
+            "#e83e8c",  # Pink
+        ]
 
-    @abstractmethod
     def get_config_overrides(self) -> Dict[str, Any]:
-        """설정 오버라이드 반환"""
-        pass
+        """설정 오버라이드 반환
+        
+        Returns:
+            Dict[str, Any]: 설정 오버라이드 딕셔너리
+        """
+        return {
+            "backgroundColor": "#ffffff",
+            "textColor": "#333333",
+            "gridColor": "#e0e0e0",
+            "fontSize": 12,
+            "fontFamily": "Arial, sans-serif",
+        }
 
 
 class DefaultTheme(Theme):

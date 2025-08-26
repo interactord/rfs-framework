@@ -113,13 +113,21 @@ class Report(ABC):
 
     @abstractmethod
     async def generate(self) -> Result[bytes, str]:
-        """리포트 생성"""
-        pass
+        """리포트 생성
+        
+        Returns:
+            Result[bytes, str]: 생성된 리포트 바이트 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement generate method")
 
     @abstractmethod
     def get_mime_type(self) -> str:
-        """MIME 타입 반환"""
-        pass
+        """MIME 타입 반환
+        
+        Returns:
+            str: MIME 타입 문자열
+        """
+        raise NotImplementedError("Subclasses must implement get_mime_type method")
 
     def add_section(self, section: ReportSection) -> Result[bool, str]:
         """섹션 추가"""

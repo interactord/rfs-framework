@@ -62,25 +62,44 @@ class DataSource(ABC):
 
     @abstractmethod
     async def connect(self) -> Result[bool, str]:
-        """데이터 소스 연결"""
-        pass
+        """데이터 소스 연결
+        
+        Returns:
+            Result[bool, str]: 연결 성공 여부 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement connect method")
 
     @abstractmethod
     async def disconnect(self) -> Result[bool, str]:
-        """데이터 소스 연결 해제"""
-        pass
+        """데이터 소스 연결 해제
+        
+        Returns:
+            Result[bool, str]: 연결 해제 성공 여부 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement disconnect method")
 
     @abstractmethod
     async def execute_query(
         self, query: DataQuery
     ) -> Result[List[Dict[str, Any]], str]:
-        """쿼리 실행"""
-        pass
+        """쿼리 실행
+        
+        Args:
+            query: 실행할 쿼리
+            
+        Returns:
+            Result[List[Dict[str, Any]], str]: 쿼리 결과 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement execute_query method")
 
     @abstractmethod
     async def get_schema(self) -> Result[DataSchema, str]:
-        """스키마 조회"""
-        pass
+        """스키마 조회
+        
+        Returns:
+            Result[DataSchema, str]: 데이터 스키마 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement get_schema method")
 
     async def validate_connection(self) -> Result[bool, str]:
         """연결 유효성 검사"""
@@ -93,10 +112,14 @@ class DataSource(ABC):
         except Exception as e:
             return Failure(f"Connection validation failed: {str(e)}")
 
-    @abstractmethod
     def _get_test_query(self) -> str:
-        """연결 테스트용 쿼리"""
-        pass
+        """연결 테스트용 쿼리
+        
+        Returns:
+            str: 테스트 쿼리 문자열
+        """
+        # 기본 테스트 쿼리
+        return "SELECT 1"  # 대부분의 데이터베이스에서 사용 가능
 
     @property
     def is_connected(self) -> bool:

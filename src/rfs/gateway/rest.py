@@ -11,13 +11,15 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Pattern, Union
+from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Union
 from urllib.parse import parse_qs, urlparse
 
 from rfs.core.result import Failure, Result, Success
 
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
+from ..security.auth import User, UserSession
+from ..security.jwt import JWTService
 
 logger = get_logger(__name__)
 
@@ -174,7 +176,7 @@ class RoutePattern:
             )
         regex_pattern = f"^{regex_pattern}$"
         return cls(
-            pattern=pattern, pattern=re.compile(regex_pattern), param_names=param_names
+            pattern=pattern, regex=re.compile(regex_pattern), param_names=param_names
         )
 
     def match(self, path: str) -> Optional[Dict[str, str]]:
@@ -192,7 +194,7 @@ class RestRoute:
     method: HttpMethod
     pattern: RoutePattern
     handler: RestHandler
-    middleware: List.get("RestMiddleware") = field(default_factory=list)
+    middleware: List["RestMiddleware"] = field(default_factory=list)
 
     def match(self, method: HttpMethod, path: str) -> Optional[Dict[str, str]]:
         """요청과 라우트 매칭"""
@@ -209,14 +211,14 @@ class RestMiddleware(ABC):
         self, request: RestRequest
     ) -> Result[RestRequest, RestResponse]:
         """요청 전처리"""
-        pass
+        return Success(request)
 
     @abstractmethod
     async def process_response(
         self, request: RestRequest, response: RestResponse
     ) -> Result[RestResponse, str]:
         """응답 후처리"""
-        pass
+        return Success(response)
 
 
 class CorsMiddleware(RestMiddleware):
@@ -293,6 +295,201 @@ class LoggingMiddleware(RestMiddleware):
         await logger.log_info(
             f"{request.method.value} {request.path} - {response.status_code} - {duration:.3f}s"
         )
+        return Success(response)
+
+
+class AuthenticationMiddleware(RestMiddleware):
+    """JWT 인증 미들웨어"""
+    
+    def __init__(
+        self,
+        jwt_service: Optional[JWTService] = None,
+        exclude_paths: Optional[List[str]] = None,
+        required_roles: Optional[List[str]] = None,
+        required_permissions: Optional[List[tuple[str, str]]] = None,
+    ):
+        """인증 미들웨어 초기화
+        
+        Args:
+            jwt_service: JWT 서비스 인스턴스
+            exclude_paths: 인증을 제외할 경로 패턴 리스트
+            required_roles: 필요한 역할 리스트
+            required_permissions: 필요한 권한 리스트 (resource, action) 튜플
+        """
+        self.jwt_service = jwt_service or JWTService()
+        self.exclude_paths = exclude_paths or ["/health", "/metrics", "/auth/login", "/auth/register"]
+        self.required_roles = required_roles or []
+        self.required_permissions = required_permissions or []
+        
+    def _is_excluded_path(self, path: str) -> bool:
+        """경로가 인증 제외 대상인지 확인"""
+        for excluded in self.exclude_paths:
+            if path.startswith(excluded):
+                return True
+        return False
+        
+    async def process_request(
+        self, request: RestRequest
+    ) -> Result[RestRequest, RestResponse]:
+        """JWT 토큰 검증 및 사용자 정보 추출"""
+        
+        # 제외 경로 확인
+        if self._is_excluded_path(request.path):
+            return Success(request)
+            
+        # Authorization 헤더 확인
+        auth_header = request.get_header("Authorization")
+        if not auth_header:
+            error_response = RestResponse(status_code=401)
+            error_response.set_json({"error": "Authorization header required"})
+            return Failure(error_response)
+            
+        # Bearer 토큰 추출
+        if not auth_header.startswith("Bearer "):
+            error_response = RestResponse(status_code=401)
+            error_response.set_json({"error": "Invalid authorization format"})
+            return Failure(error_response)
+            
+        token = auth_header[7:]  # "Bearer " 제거
+        
+        # JWT 토큰 검증
+        decode_result = await self.jwt_service.verify_token(token)
+        if decode_result.is_failure():
+            error_response = RestResponse(status_code=401)
+            error_response.set_json({"error": "Invalid or expired token"})
+            return Failure(error_response)
+            
+        payload = decode_result.value
+        
+        # 사용자 정보를 request에 추가
+        request.user = payload.get("user")
+        request.user_id = payload.get("user_id")
+        request.roles = payload.get("roles", [])
+        request.permissions = payload.get("permissions", [])
+        
+        # 역할 확인
+        if self.required_roles:
+            user_roles = set(request.roles)
+            required_roles = set(self.required_roles)
+            if not required_roles.intersection(user_roles):
+                error_response = RestResponse(status_code=403)
+                error_response.set_json({"error": "Insufficient role privileges"})
+                return Failure(error_response)
+                
+        # 권한 확인
+        if self.required_permissions:
+            user_perms = set(map(tuple, request.permissions))
+            required_perms = set(self.required_permissions)
+            if not required_perms.issubset(user_perms):
+                error_response = RestResponse(status_code=403)
+                error_response.set_json({"error": "Insufficient permissions"})
+                return Failure(error_response)
+                
+        return Success(request)
+        
+    async def process_response(
+        self, request: RestRequest, response: RestResponse
+    ) -> Result[RestResponse, str]:
+        """응답에 사용자 정보 헤더 추가 (선택적)"""
+        if hasattr(request, "user_id"):
+            response.set_header("X-User-Id", str(request.user_id))
+        return Success(response)
+
+
+class RateLimitMiddleware(RestMiddleware):
+    """레이트 리미팅 미들웨어"""
+    
+    def __init__(
+        self,
+        requests_per_minute: int = 60,
+        requests_per_hour: int = 1000,
+        by_user: bool = True,
+    ):
+        """레이트 리미팅 미들웨어 초기화
+        
+        Args:
+            requests_per_minute: 분당 최대 요청 수
+            requests_per_hour: 시간당 최대 요청 수
+            by_user: 사용자별 리미팅 여부 (False면 IP 기준)
+        """
+        self.requests_per_minute = requests_per_minute
+        self.requests_per_hour = requests_per_hour
+        self.by_user = by_user
+        self._request_counts: Dict[str, List[float]] = {}
+        
+    def _get_identifier(self, request: RestRequest) -> str:
+        """요청자 식별자 추출"""
+        if self.by_user and hasattr(request, "user_id"):
+            return f"user:{request.user_id}"
+        return f"ip:{request.remote_addr or 'unknown'}"
+        
+    def _is_rate_limited(self, identifier: str) -> bool:
+        """레이트 리미팅 확인"""
+        current_time = time.time()
+        
+        # 요청 기록 초기화
+        if identifier not in self._request_counts:
+            self._request_counts[identifier] = []
+            
+        # 오래된 기록 제거 (1시간 이상)
+        self._request_counts[identifier] = [
+            t for t in self._request_counts[identifier]
+            if current_time - t < 3600
+        ]
+        
+        # 분당 제한 확인
+        recent_minute = [
+            t for t in self._request_counts[identifier]
+            if current_time - t < 60
+        ]
+        if len(recent_minute) >= self.requests_per_minute:
+            return True
+            
+        # 시간당 제한 확인
+        if len(self._request_counts[identifier]) >= self.requests_per_hour:
+            return True
+            
+        # 현재 요청 기록
+        self._request_counts[identifier].append(current_time)
+        return False
+        
+    async def process_request(
+        self, request: RestRequest
+    ) -> Result[RestRequest, RestResponse]:
+        """레이트 리미팅 확인"""
+        identifier = self._get_identifier(request)
+        
+        if self._is_rate_limited(identifier):
+            error_response = RestResponse(status_code=429)
+            error_response.set_json({"error": "Rate limit exceeded"})
+            error_response.set_header("Retry-After", "60")
+            return Failure(error_response)
+            
+        return Success(request)
+        
+    async def process_response(
+        self, request: RestRequest, response: RestResponse
+    ) -> Result[RestResponse, str]:
+        """응답에 레이트 리미팅 정보 헤더 추가"""
+        identifier = self._get_identifier(request)
+        current_time = time.time()
+        
+        if identifier in self._request_counts:
+            # 남은 요청 수 계산
+            recent_minute = [
+                t for t in self._request_counts[identifier]
+                if current_time - t < 60
+            ]
+            remaining_minute = max(0, self.requests_per_minute - len(recent_minute))
+            
+            recent_hour = self._request_counts[identifier]
+            remaining_hour = max(0, self.requests_per_hour - len(recent_hour))
+            
+            response.set_header("X-RateLimit-Limit-Minute", str(self.requests_per_minute))
+            response.set_header("X-RateLimit-Remaining-Minute", str(remaining_minute))
+            response.set_header("X-RateLimit-Limit-Hour", str(self.requests_per_hour))
+            response.set_header("X-RateLimit-Remaining-Hour", str(remaining_hour))
+            
         return Success(response)
 
 

@@ -129,10 +129,50 @@ class KPI(ABC):
         self.history: List[KPIValue] = []
         self.metadata: Dict[str, Any] = {}
 
+    async def _execute_query(self, query: DataQuery) -> Result[Any, str]:
+        """데이터 쿼리 실행
+        
+        Args:
+            query: 실행할 쿼리
+            
+        Returns:
+            Result[Any, str]: 쿼리 결과 또는 오류
+        """
+        if not self.data_source:
+            return Failure("Data source not configured")
+            
+        try:
+            from ..analytics.data_source import DataSourceManager
+            
+            # 데이터 소스 매니저 사용
+            manager = DataSourceManager()
+            
+            # 데이터 소스가 문자열인 경우 ID로 찾기
+            if isinstance(self.data_source, str):
+                source_result = manager.get_source(self.data_source)
+                if source_result.is_failure():
+                    return Failure(f"Data source '{self.data_source}' not found")
+                data_source = source_result.value
+            else:
+                data_source = self.data_source
+                
+            # 쿼리 실행
+            result = await data_source.execute(query)
+            return result
+        except Exception as e:
+            return Failure(f"Query execution failed: {str(e)}")
+    
     @abstractmethod
     async def calculate(self, **kwargs) -> Result[float, str]:
-        """KPI 값 계산"""
-        pass
+        """KPI 값 계산
+        
+        Args:
+            **kwargs: 계산에 필요한 추가 매개변수
+            
+        Returns:
+            Result[float, str]: 계산된 KPI 값 또는 오류
+        """
+        raise NotImplementedError("Subclasses must implement calculate method")
 
     def add_threshold(self, threshold: KPIThreshold) -> Result[bool, str]:
         """임계값 추가"""
@@ -224,18 +264,40 @@ class CountKPI(KPI):
 
     async def calculate(self, **kwargs) -> Result[float, str]:
         """카운트 계산"""
-        if not self.data_source:
-            return Failure("Data source not configured")
         try:
+            from ..analytics.data_source import DataQuery
+            
             data_query = DataQuery(query=self.query, parameters=kwargs)
-            result = await self.data_source.execute_query(data_query)
+            result = await self._execute_query(data_query)
             if result.is_failure():
-                return result
-            data = result.unwrap()
-            count = float(len(data))
+                return Failure(f"Failed to calculate count: {result.error}")
+            
+            data = result.value
+            if not data:
+                return Success(0.0)
+                
+            # 카운트 계산 로직
+            if isinstance(data, list):
+                count = float(len(data))
+            elif isinstance(data, dict) and "count" in data:
+                count = float(data["count"])
+            elif isinstance(data, (int, float)):
+                count = float(data)
+            else:
+                # 첫 번째 행의 첫 번째 값을 카운트로 사용
+                if data and isinstance(data, list) and data[0]:
+                    if isinstance(data[0], dict):
+                        # 첫 번째 키의 값 사용
+                        first_value = list(data[0].values())[0] if data[0] else 0
+                        count = float(first_value)
+                    else:
+                        count = float(data[0])
+                else:
+                    count = 0.0
+                    
             return Success(count)
         except Exception as e:
-            return Failure(f"Count calculation failed: {str(e)}")
+            return Failure(f"Failed to calculate count: {str(e)}")
 
 
 class AverageKPI(KPI):
@@ -248,29 +310,53 @@ class AverageKPI(KPI):
 
     async def calculate(self, **kwargs) -> Result[float, str]:
         """평균 계산"""
-        if not self.data_source:
-            return Failure("Data source not configured")
         try:
+            from ..analytics.data_source import DataQuery
+            import statistics
+            
             data_query = DataQuery(query=self.query, parameters=kwargs)
-            result = await self.data_source.execute_query(data_query)
+            result = await self._execute_query(data_query)
             if result.is_failure():
-                return result
-            data = result.unwrap()
+                return Failure(f"Failed to calculate average: {result.error}")
+                
+            data = result.value
             if not data:
                 return Success(0.0)
+                
             values = []
-            for row in data:
-                if self.column in row:
-                    try:
-                        values = values + [float(row[self.column])]
-                    except (ValueError, TypeError):
-                        continue
+            if isinstance(data, list):
+                for row in data:
+                    if isinstance(row, dict) and self.column in row:
+                        value = row[self.column]
+                        if value is not None:
+                            try:
+                                values.append(float(value))
+                            except (ValueError, TypeError):
+                                continue
+                    elif isinstance(row, (int, float)):
+                        try:
+                            values.append(float(row))
+                        except (ValueError, TypeError):
+                            continue
+            elif isinstance(data, dict) and self.column in data:
+                try:
+                    values = [float(data[self.column])]
+                except (ValueError, TypeError):
+                    pass
+                    
             if not values:
                 return Success(0.0)
+                
+            # None 값 제거
+            values = [v for v in values if v is not None]
+            
+            if not values:
+                return Success(0.0)
+                
             average = statistics.mean(values)
-            return Success(average)
+            return Success(float(average))
         except Exception as e:
-            return Failure(f"Average calculation failed: {str(e)}")
+            return Failure(f"Failed to calculate average: {str(e)}")
 
 
 class PercentageKPI(KPI):

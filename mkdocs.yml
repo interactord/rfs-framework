@@ -101,8 +101,14 @@ plugins:
       arguments:
         theme: 'default'
   - awesome-pages
-  # - tags:
-  #     tags_file: tags.md
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+      timezone: Asia/Seoul
+      locale: ko
+  - git-committers:
+      repository: interactord/rfs-framework
+      branch: main
 
 # Markdown Extensions
 markdown_extensions:
@@ -168,18 +174,6 @@ extra:
       link: https://github.com/interactord/rfs-framework
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/rfs-framework/
-  analytics:
-    provider: google
-    property: G-XXXXXXXXXX
-  consent:
-    title: Cookie 동의
-    description: >- 
-      우리는 쿠키를 사용하여 콘텐츠와 광고를 개인화하고, 소셜 미디어 기능을 제공하며,
-      트래픽을 분석합니다. 사이트 사용 정보를 소셜 미디어, 광고 및 분석 파트너와 공유합니다.
-    actions:
-      - accept
-      - reject
-      - manage
 
 # Navigation
 nav:

@@ -6,6 +6,12 @@
 [![Version](https://img.shields.io/badge/Version-4.3.0-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Cloud Run Ready](https://img.shields.io/badge/Cloud%20Run-Ready-green.svg)](https://cloud.google.com/run)
+[![Code Coverage](https://codecov.io/gh/interactord/rfs-framework/branch/main/graph/badge.svg)](https://codecov.io/gh/interactord/rfs-framework)
+[![Build Status](https://github.com/interactord/rfs-framework/workflows/CI/badge.svg)](https://github.com/interactord/rfs-framework/actions)
+[![Code Quality](https://img.shields.io/codacy/grade/YOUR_PROJECT_ID?label=Code%20Quality)](https://www.codacy.com/gh/interactord/rfs-framework)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/rfs-framework.svg)](https://pypi.org/project/rfs-framework/)
+[![GitHub Stars](https://img.shields.io/github/stars/interactord/rfs-framework?style=social)](https://github.com/interactord/rfs-framework)
+[![GitHub Issues](https://img.shields.io/github/issues/interactord/rfs-framework)](https://github.com/interactord/rfs-framework/issues)
 
 현대적인 엔터프라이즈 Python 애플리케이션을 위한 함수형 프로그래밍 프레임워크입니다.
 

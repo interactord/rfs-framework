@@ -51,6 +51,8 @@ jobs:
         bandit -r src/rfs
     
     - name: Run tests with pytest
+      env:
+        PYTHONPATH: ${{ github.workspace }}/src
       run: |
         pytest tests/ -v --cov=rfs --cov-report=term-missing --cov-report=xml
     

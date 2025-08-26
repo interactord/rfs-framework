@@ -13,7 +13,7 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
 from ..core.singleton import SingletonMeta
-from .models import BaseModel, ModelRegistry, get_model_registry
+from .models_refactored import BaseModel, ModelRegistry, get_model_registry
 from .query import Filter, Pagination, QueryBuilder, Sort
 
 logger = get_logger(__name__)

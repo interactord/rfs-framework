@@ -88,7 +88,7 @@ class DatabaseSession(ABC):
         """컨텍스트 매니저 시작"""
         result = await self.begin()
         if not result.is_success():
-            raise Exception(f"세션 시작 실패: {result.unwrap_err()}")
+            raise Exception(f"세션 시작 실패: {result.unwrap_error()}")
 
         # 컨텍스트 변수 설정
         current_session.set(self)
@@ -320,7 +320,7 @@ class DatabaseTransaction:
         """컨텍스트 매니저 시작"""
         result = await self.begin()
         if not result.is_success():
-            raise Exception(f"트랜잭션 시작 실패: {result.unwrap_err()}")
+            raise Exception(f"트랜잭션 시작 실패: {result.unwrap_error()}")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -376,10 +376,10 @@ class SessionManager(metaclass=SingletonMeta):
         try:
             result = await session.close()
             if result.is_success():
-                _sessions = {
+                self._sessions = {
                     k: v
-                    for k, v in _sessions.items()
-                    if k != "session.session_id, None"
+                    for k, v in self._sessions.items()
+                    if k != session.session_id
                 }
                 logger.info(f"세션 종료: {session.session_id}")
 
@@ -449,7 +449,7 @@ class session_scope:
 
         result = await manager.create_session(self.database)
         if not result.is_success():
-            raise Exception(f"세션 생성 실패: {result.unwrap_err()}")
+            raise Exception(f"세션 생성 실패: {result.unwrap_error()}")
 
         self.session = result.unwrap()
         return self.session
@@ -476,7 +476,7 @@ class transaction_scope:
             manager = get_session_manager()
             result = await manager.create_session()
             if not result.is_success():
-                raise Exception(f"세션 생성 실패: {result.unwrap_err()}")
+                raise Exception(f"세션 생성 실패: {result.unwrap_error()}")
 
             self.session = result.unwrap()
             self._created_session = True
@@ -484,7 +484,7 @@ class transaction_scope:
             # 세션 시작
             begin_result = await self.session.begin()
             if not begin_result.is_success():
-                raise Exception(f"세션 시작 실패: {begin_result.unwrap_err()}")
+                raise Exception(f"세션 시작 실패: {begin_result.unwrap_error()}")
 
         # 트랜잭션 생성
         self.transaction = DatabaseTransaction(self.session)

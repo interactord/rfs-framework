@@ -126,7 +126,7 @@ class Query(ABC):
 
     def filter(self, *filters: Filter) -> "Query":
         """필터 추가"""
-        self.filters = self.filters + filters
+        self.filters = self.filters + list(filters)
         return self
 
     def order_by(self, field: str, order: SortOrder = SortOrder.ASC) -> "Query":
@@ -159,12 +159,12 @@ class Query(ABC):
 
     def select(self, *fields: str) -> "Query":
         """SELECT 필드 지정"""
-        self._select_fields = self._select_fields + fields
+        self._select_fields = self._select_fields + list(fields)
         return self
 
     def group_by(self, *fields: str) -> "Query":
         """GROUP BY 추가"""
-        self._group_by = self._group_by + fields
+        self._group_by = self._group_by + list(fields)
         return self
 
     def having(self, field: str, operator: Operator, value: Any) -> "Query":

@@ -34,18 +34,38 @@ from .migration import (
     run_migrations,
     set_migration_manager,
 )
-from .models import (
+from .models_refactored import (
     BaseModel,
     Field,
-    Model,
-    ModelRegistry,
-    SQLAlchemyModel,
     Table,
-    TortoiseModel,
+    ModelRegistry,
     create_model,
     get_model_registry,
     register_model,
 )
+
+# ORM 타입에 따라 조건부 import
+import os
+ORM_TYPE = os.environ.get('RFS_ORM_TYPE', 'SQLALCHEMY').upper()
+
+if ORM_TYPE == 'SQLALCHEMY':
+    try:
+        from .models_refactored import SQLAlchemyModel, Model
+    except ImportError:
+        SQLAlchemyModel = None
+        Model = BaseModel
+    TortoiseModel = None
+elif ORM_TYPE == 'TORTOISE':
+    try:
+        from .models_refactored import TortoiseModel, Model
+    except ImportError:
+        TortoiseModel = None
+        Model = BaseModel
+    SQLAlchemyModel = None
+else:
+    SQLAlchemyModel = None
+    TortoiseModel = None
+    Model = BaseModel
 from .query import (  # 필터 편의 함수들
     AdvancedQueryBuilder,
     Filter,

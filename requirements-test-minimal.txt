@@ -1,0 +1,25 @@
+# RFS Framework - 테스트 실행에 필요한 최소 패키지
+# 이 파일은 테스트 실행을 위한 필수 패키지만 포함합니다
+
+# Testing Framework
+pytest==8.4.1
+pytest-asyncio==1.1.0
+pytest-cov==6.2.1
+pytest-mock==3.14.1
+
+# Coverage
+coverage==7.10.5
+
+# Testing Utilities
+Faker==37.5.3
+
+# Required Dependencies for RFS
+PyJWT==2.10.1
+aiofiles==24.1.0
+aiohttp==3.12.15
+click==8.2.1
+
+# Type checking (optional but recommended)
+# mypy==1.8.0
+# types-aiofiles
+# types-PyJWT

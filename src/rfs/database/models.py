@@ -108,13 +108,13 @@ class BaseModel(ABC):
 
     @classmethod
     @abstractmethod
-    async def get(cls, **filters) -> Result[Optional.get("BaseModel"), str]:
+    async def get(cls, **filters) -> Result[Optional["BaseModel"], str]:
         """단일 모델 조회"""
         pass
 
     @classmethod
     @abstractmethod
-    async def filter(cls, **filters) -> Result[List.get("BaseModel"), str]:
+    async def filter(cls, **filters) -> Result[List["BaseModel"], str]:
         """모델 목록 조회"""
         pass
 
@@ -221,7 +221,7 @@ class SQLAlchemyModel(BaseModel, SQLAlchemy_Base):
             return Failure(f"모델 삭제 실패: {str(e)}")
 
     @classmethod
-    async def get(cls, **filters) -> Result[Optional.get("SQLAlchemyModel"), str]:
+    async def get(cls, **filters) -> Result[Optional["SQLAlchemyModel"], str]:
         """SQLAlchemy 모델 단일 조회"""
         try:
             from .base import get_database
@@ -240,7 +240,7 @@ class SQLAlchemyModel(BaseModel, SQLAlchemy_Base):
             return Failure(f"모델 조회 실패: {str(e)}")
 
     @classmethod
-    async def filter(cls, **filters) -> Result[List.get("SQLAlchemyModel"), str]:
+    async def filter(cls, **filters) -> Result[List["SQLAlchemyModel"], str]:
         """SQLAlchemy 모델 목록 조회"""
         try:
             from .base import get_database
@@ -306,7 +306,7 @@ class TortoiseModel(BaseModel, TortoiseBaseModel):
             return Failure(f"모델 삭제 실패: {str(e)}")
 
     @classmethod
-    async def get(cls, **filters) -> Result[Optional.get("TortoiseModel"), str]:
+    async def get(cls, **filters) -> Result[Optional["TortoiseModel"], str]:
         """Tortoise 모델 단일 조회"""
         try:
             model = await cls.get_or_none(**filters)
@@ -315,7 +315,7 @@ class TortoiseModel(BaseModel, TortoiseBaseModel):
             return Failure(f"모델 조회 실패: {str(e)}")
 
     @classmethod
-    async def filter(cls, **filters) -> Result[List.get("TortoiseModel"), str]:
+    async def filter(cls, **filters) -> Result[List["TortoiseModel"], str]:
         """Tortoise 모델 목록 조회"""
         try:
             models = await cls.filter(**filters).all()

@@ -83,7 +83,7 @@ class ThreadPoolExecutor(TaskExecutor):
         loop = asyncio.get_event_loop()
 
         with self._lock:
-            active_tasks = active_tasks + 1
+            self.active_tasks = self.active_tasks + 1
 
         try:
             # 동기 작업을 스레드에서 실행
@@ -97,17 +97,17 @@ class ThreadPoolExecutor(TaskExecutor):
                 )
 
             with self._lock:
-                completed_tasks = completed_tasks + 1
+                self.completed_tasks = self.completed_tasks + 1
 
             return result
 
         except Exception as e:
             with self._lock:
-                failed_tasks = failed_tasks + 1
+                self.failed_tasks = self.failed_tasks + 1
             raise
         finally:
             with self._lock:
-                active_tasks = active_tasks - 1
+                self.active_tasks = self.active_tasks - 1
 
     async def submit(
         self, func: Callable, *args, **kwargs
@@ -197,10 +197,6 @@ class ProcessPoolExecutor(TaskExecutor):
                 **self._stats,
                 "active_tasks": self._stats["active_tasks"] - 1,
             }
-            self._stats = {
-                **self._stats,
-                "active_tasks": self._stats["active_tasks"] - 1,
-            }
 
     async def submit(
         self, func: Callable, *args, **kwargs
@@ -249,7 +245,7 @@ class AsyncIOExecutor(TaskExecutor):
             if self.active_tasks:
                 await asyncio.gather(*self.active_tasks, return_exceptions=True)
 
-            active_tasks = {}
+            self.active_tasks = []
 
         logger.info("AsyncIOExecutor stopped")
 
@@ -259,7 +255,7 @@ class AsyncIOExecutor(TaskExecutor):
             async with self._lock:
                 current_task = asyncio.current_task()
                 if current_task:
-                    self.active_tasks = self.active_tasks + [current_task]
+                    self.active_tasks.append(current_task)
 
             try:
                 # 비동기 작업 실행
@@ -271,19 +267,19 @@ class AsyncIOExecutor(TaskExecutor):
                     result = await loop.run_in_executor(None, task.execute, context)
 
                 async with self._lock:
-                    completed_tasks = completed_tasks + 1
+                    self.completed_tasks = self.completed_tasks + 1
 
                 return result
 
             except Exception as e:
                 async with self._lock:
-                    failed_tasks = failed_tasks + 1
+                    self.failed_tasks = self.failed_tasks + 1
                 raise
             finally:
                 async with self._lock:
                     current_task = asyncio.current_task()
                     if current_task in self.active_tasks:
-                        active_tasks = [i for i in active_tasks if i != current_task]
+                        self.active_tasks = [i for i in self.active_tasks if i != current_task]
 
     async def submit(self, func: Callable, *args, **kwargs) -> asyncio.Task:
         """작업 제출"""
@@ -299,7 +295,7 @@ class AsyncIOExecutor(TaskExecutor):
         task = asyncio.create_task(wrapped())
 
         async with self._lock:
-            self.active_tasks = self.active_tasks + [task]
+            self.active_tasks.append(task)
 
         return task
 
@@ -364,7 +360,7 @@ class HybridExecutor(TaskExecutor):
 
     async def submit(self, func: Callable, *args, **kwargs):
         """작업 제출"""
-        kwargs = {k: v for k, v in kwargs.items() if k != "task_type', 'async"}
+        task_type = kwargs.pop("task_type", "async")
 
         match task_type:
             case "cpu":
@@ -388,7 +384,7 @@ _global_executor: Optional[TaskExecutor] = None
 
 def get_executor() -> TaskExecutor:
     """전역 작업 실행자 반환"""
-    # global _global_executor - removed for functional programming
+    global _global_executor
     if _global_executor is None:
         _global_executor = HybridExecutor()
     return _global_executor

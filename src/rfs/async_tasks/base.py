@@ -466,7 +466,7 @@ class MetricsHook(TaskHook):
                 **self.metrics,
                 "total_duration": self.metrics["total_duration"] + duration,
             }
-            self.metrics["task_durations"] = metrics["task_durations"] + [duration]
+            self.metrics["task_durations"] = self.metrics["task_durations"] + [duration]
 
     async def on_exception(self, metadata: TaskMetadata, exception: Exception):
         """예외 메트릭"""

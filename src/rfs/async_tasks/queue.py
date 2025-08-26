@@ -108,7 +108,7 @@ class PriorityTaskQueue(TaskQueue):
                 priority=priority, timestamp=datetime.now(), task_id=task_id
             )
             heapq.heappush(self._heap, queue_item)
-            _counter = _counter + 1
+            self._counter = self._counter + 1
             self._condition.notify()
 
     async def get(self) -> Tuple[int, str]:
@@ -127,7 +127,8 @@ class PriorityTaskQueue(TaskQueue):
     async def clear(self):
         """큐 클리어"""
         async with self._condition:
-            self._heap = {}
+            self._heap = []
+            self._counter = 0
 
     async def peek(self) -> Optional[Tuple[int, str]]:
         """다음 아이템 미리보기"""
@@ -197,7 +198,7 @@ class DelayedTaskQueue(TaskQueue):
     async def clear(self):
         """큐 클리어"""
         async with self._condition:
-            self._items = {}
+            self._items = []
         while not self._ready_queue.empty():
             try:
                 self._ready_queue.get_nowait()
@@ -224,7 +225,7 @@ class DelayedTaskQueue(TaskQueue):
                     now = datetime.now()
                     ready_items = []
                     while self._items and self._items[0][0] <= now:
-                        _items = {k: v for k, v in _items.items() if k != "0"}
+                        _, item = self._items.pop(0)
                         ready_items = ready_items + [item]
                     for item in ready_items:
                         await self._ready_queue.put(item)
@@ -385,12 +386,12 @@ class DistributedTaskQueue(TaskQueue):
                 length = await asyncio.get_event_loop().run_in_executor(
                     None, self.redis.llen, queue_name
                 )
-                stats[priority.name] = {priority.name: length}
+                stats[priority.name] = length
         else:
             length = await asyncio.get_event_loop().run_in_executor(
                 None, self.redis.llen, self.queue_name
             )
-            stats["total"] = {"total": length}
+            stats["total"] = length
         return stats
 
 
@@ -399,7 +400,7 @@ _global_queue: Optional[TaskQueue] = None
 
 def get_task_queue() -> TaskQueue:
     """전역 작업 큐 반환"""
-    # global _global_queue - removed for functional programming
+    global _global_queue
     if _global_queue is None:
         _global_queue = PriorityTaskQueue()
     return _global_queue

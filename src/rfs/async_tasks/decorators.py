@@ -124,8 +124,13 @@ def scheduled_task(
             )
             return task_id
 
-        asyncio.create_task(wrapper())
-        return func
+        # Note: actual scheduling should be done when the scheduler is started
+        wrapper.schedule_info = {"schedule": None, "start_time": start_time}
+        if cron:
+            wrapper.schedule_info["schedule"] = CronSchedule(cron)
+        elif interval:
+            wrapper.schedule_info["schedule"] = IntervalSchedule(interval)
+        return wrapper
 
     return decorator
 
@@ -375,11 +380,13 @@ def memoized_task(ttl: Optional[timedelta] = None):
                 result = await func(*args, **kwargs)
             else:
                 result = func(*args, **kwargs)
-            cache[cache_key] = {cache_key: result}
-            cache_times[cache_key] = {cache_key: datetime.now()}
+            cache[cache_key] = result
+            if ttl:
+                cache_times[cache_key] = datetime.now()
             return result
 
-        cache = {}
+        wrapper._cache = cache
+        wrapper._cache_times = cache_times
         return wrapper
 
     return decorator

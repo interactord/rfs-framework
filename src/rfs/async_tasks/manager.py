@@ -123,7 +123,7 @@ class AsyncTaskManager:
         Returns:
             작업 ID
         """
-        if type(func).__name__ == "Task":
+        if isinstance(func, Task):
             task = func
         else:
             task = CallableTask(func, *args, **kwargs)
@@ -333,9 +333,12 @@ class AsyncTaskManager:
                 callback.on_start(metadata)
             except Exception as e:
                 logger.error(f"Callback error on start: {e}")
-        try:
-            for hook in self.hooks:
+        for hook in self.hooks:
+            try:
                 await hook.before_execute(metadata, metadata.context)
+            except Exception as e:
+                logger.error(f"Hook error before execute: {e}")
+        try:
             if metadata.timeout:
                 result = await asyncio.wait_for(
                     task.execute(metadata.context),
@@ -351,7 +354,10 @@ class AsyncTaskManager:
             if task_id in self.task_futures:
                 self.task_futures[task_id].set_result(result)
             for hook in self.hooks:
-                await hook.after_execute(metadata, result)
+                try:
+                    await hook.after_execute(metadata, result)
+                except Exception as e:
+                    logger.error(f"Hook error after execute: {e}")
             task_result = TaskResult(
                 task_id=task_id,
                 status=TaskStatus.COMPLETED,
@@ -400,7 +406,7 @@ class AsyncTaskManager:
         metadata = self.tasks.get(task_id)
         if not metadata:
             return
-        retry_count = retry_count + 1
+        metadata.retry_count = metadata.retry_count + 1
         metadata.status = TaskStatus.RETRYING
         for callback in self.callbacks:
             try:
@@ -497,7 +503,7 @@ _global_manager: Optional[AsyncTaskManager] = None
 
 async def get_task_manager() -> AsyncTaskManager:
     """전역 작업 매니저 반환"""
-    # global _global_manager - removed for functional programming
+    global _global_manager
     if _global_manager is None:
         _global_manager = AsyncTaskManager()
         await _global_manager.start()

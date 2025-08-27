@@ -1,0 +1,120 @@
+/* RFS Framework Documentation - Extra Styles */
+
+/* 커스텀 색상 및 브랜딩 */
+:root {
+  --md-primary-fg-color: #3f51b5;
+  --md-primary-fg-color--light: #757de8;
+  --md-primary-fg-color--dark: #002984;
+  --md-accent-fg-color: #ff5722;
+}
+
+/* 로고 및 브랜딩 스타일 */
+.md-header__title {
+  font-weight: 700;
+  color: var(--md-primary-bg-color);
+}
+
+/* 코드 블록 개선 */
+.highlight pre {
+  border-radius: 8px;
+}
+
+/* 카드 스타일 개선 */
+.md-typeset .grid.cards > ol > li,
+.md-typeset .grid.cards > ul > li {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.md-typeset .grid.cards > ol > li:hover,
+.md-typeset .grid.cards > ul > li:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 테이블 스타일 개선 */
+.md-typeset table:not([class]) {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: white;
+  font-weight: 600;
+}
+
+/* 배지 스타일 */
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.375rem;
+}
+
+.badge-success {
+  color: #fff;
+  background-color: #28a745;
+}
+
+.badge-warning {
+  color: #212529;
+  background-color: #ffc107;
+}
+
+.badge-info {
+  color: #fff;
+  background-color: #17a2b8;
+}
+
+/* 반응형 개선 */
+@media screen and (max-width: 76.1875em) {
+  .md-nav--primary .md-nav__title {
+    background-color: var(--md-primary-fg-color);
+  }
+}
+
+/* 다크 모드 개선 */
+[data-md-color-scheme="slate"] {
+  --md-code-bg-color: #2d3748;
+  --md-code-fg-color: #e2e8f0;
+}
+
+/* 프린트 스타일 */
+@media print {
+  .md-header,
+  .md-footer,
+  .md-sidebar,
+  .md-nav__link--active {
+    display: none !important;
+  }
+  
+  .md-content {
+    margin: 0 !important;
+  }
+}
+
+/* 스크롤바 스타일 (웹킷 브라우저) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.3);
+}

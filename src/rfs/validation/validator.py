@@ -86,7 +86,7 @@ class ValidationResult:
     details: Dict[str, Any] = field(default_factory=dict)
     execution_time: float = 0.0
     recommendations: List[str] = field(default_factory=list)
-    severity="info"
+    severity = "info"
 
     @property
     def is_success(self) -> bool:
@@ -107,9 +107,9 @@ class ValidationSuite:
     description: str
     level: ValidationLevel = ValidationLevel.STANDARD
     categories: List[str] = field(default_factory=list)
-    timeout=300
-    parallel=True
-    continue_on_failure=True
+    timeout = 300
+    parallel = True
+    continue_on_failure = True
 
     def should_run_category(self, category: ValidationCategory) -> bool:
         """카테고리 실행 여부"""
@@ -121,9 +121,9 @@ class SystemValidator:
 
     def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self.validation_results=[]
-        self.start_time=None
-        self.end_time=None
+        self.validation_results = []
+        self.start_time = None
+        self.end_time = None
         self._initialize_validators()
 
     def _initialize_validators(self):
@@ -150,7 +150,7 @@ class SystemValidator:
         """검증 스위트 실행"""
         try:
             self.start_time = datetime.now()
-            self.validation_results=[]
+            self.validation_results = []
             if console:
                 console.print(
                     Panel(
@@ -159,7 +159,7 @@ class SystemValidator:
                         border_style="blue",
                     )
                 )
-            validation_tasks=[]
+            validation_tasks = []
             if suite.should_run_category(ValidationCategory.FUNCTIONAL):
                 validation_tasks = validation_tasks + [
                     self._run_category_validation(
@@ -241,7 +241,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """기능 검증 실행"""
-        results=[]
+        results = []
         try:
             core_modules = [
                 "rfs.core",
@@ -345,7 +345,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """통합 검증 실행"""
-        results=[]
+        results = []
         try:
             try:
                 from ..cli.core import RFSCli
@@ -412,7 +412,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """성능 검증 실행"""
-        results=[]
+        results = []
         try:
             import time
 
@@ -500,11 +500,11 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """보안 검증 실행"""
-        results=[]
+        results = []
         try:
             import os
 
-            sensitive_vars=[]
+            sensitive_vars = []
             for key, value in os.environ.items():
                 if any(
                     (
@@ -597,7 +597,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """호환성 검증 실행"""
-        results=[]
+        results = []
         try:
             python_version = sys.version_info
             if python_version >= (3, 10):
@@ -683,7 +683,7 @@ class SystemValidator:
             [r for r in self.validation_results if r.status == ValidationStatus.ERROR]
         )
         critical_issues = len([r for r in self.validation_results if r.is_critical])
-        category_stats={}
+        category_stats = {}
         for category in ValidationCategory:
             category_results = [
                 r for r in self.validation_results if r.category == category
@@ -723,7 +723,7 @@ class SystemValidator:
                         }
                     },
                 }
-        all_recommendations=[]
+        all_recommendations = []
         for result in self.validation_results:
             all_recommendations = all_recommendations + result.recommendations
         success_rate = passed_tests / total_tests * 100 if total_tests > 0 else 0

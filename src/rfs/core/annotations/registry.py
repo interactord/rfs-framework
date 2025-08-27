@@ -48,19 +48,19 @@ class AnnotationRegistry(StatelessRegistry):
 
     def __init__(self):
         super().__init__()
-        self.ports={}
+        self.ports = {}
         self.adapters: Dict[str, List[Type]] = {}
-        self.use_cases={}
-        self.controllers={}
-        self.services={}
-        self.repositories={}
-        self.components={}
-        self.singletons={}
-        self.prototypes={}
-        self.request_scoped={}
+        self.use_cases = {}
+        self.controllers = {}
+        self.services = {}
+        self.repositories = {}
+        self.components = {}
+        self.singletons = {}
+        self.prototypes = {}
+        self.request_scoped = {}
         self.dependency_graph: Dict[str, Set[str]] = {}
         self.profiles: Set[str] = {"default"}
-        self.active_profile="default"
+        self.active_profile = "default"
 
     def scan_and_register(self, *module_paths: str):
         """
@@ -133,9 +133,7 @@ class AnnotationRegistry(StatelessRegistry):
         for dep in metadata.dependencies:
             self.dependency_graph[component_id].add(dep.name)
 
-    def get_component(
-        self, component_id: str, qualifier=None
-    ) -> Result[Any, str]:
+    def get_component(self, component_id: str, qualifier=None) -> Result[Any, str]:
         """
         컴포넌트 인스턴스 획득
 
@@ -202,7 +200,7 @@ class AnnotationRegistry(StatelessRegistry):
         metadata = get_component_metadata(cls)
         if not metadata:
             return cls()
-        constructor_deps={}
+        constructor_deps = {}
         for dep in metadata.constructor_dependencies:
             dep_instance = self.get_component(dep.name, dep.qualifier)
             if type(dep_instance).__name__ == "Success":
@@ -287,12 +285,12 @@ class AnnotationRegistry(StatelessRegistry):
         Returns:
             컴포넌트 인스턴스 리스트
         """
-        components=[]
+        components = []
         match component_type:
             case "port":
                 storage = self.ports
             case "adapter":
-                storage={}
+                storage = {}
                 for adapters in self.adapters.values():
                     for adapter in adapters:
                         metadata = get_component_metadata(adapter)
@@ -324,7 +322,7 @@ class AnnotationRegistry(StatelessRegistry):
 
     def clear_request_scope(self):
         """요청 스코프 클리어"""
-        request_scoped={}
+        request_scoped = {}
 
     def destroy(self):
         """컨테이너 종료 및 리소스 정리"""
@@ -333,11 +331,11 @@ class AnnotationRegistry(StatelessRegistry):
             metadata = get_component_metadata(cls)
             if metadata and metadata.pre_destroy:
                 metadata.pre_destroy(instance)
-        singletons={}
-        request_scoped={}
+        singletons = {}
+        request_scoped = {}
 
 
-_annotation_registry=None
+_annotation_registry = None
 
 
 def get_annotation_registry() -> AnnotationRegistry:
@@ -360,9 +358,7 @@ def auto_wire(obj: Any) -> Result[Any, str]:
     return registry.auto_wire(obj)
 
 
-def get_component(
-    component_id: str, qualifier=None
-) -> Result[Any, str]:
+def get_component(component_id: str, qualifier=None) -> Result[Any, str]:
     """컴포넌트 획득 헬퍼"""
     registry = get_annotation_registry()
     return registry.get_component(component_id, qualifier)

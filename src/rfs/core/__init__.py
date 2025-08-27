@@ -43,6 +43,7 @@ from .annotations import (
 )
 
 # 설정 관리 시스템 (v4 통합)
+from .config import RFSBaseSettings  # 새로 추가된 베이스 클래스
 from .config import (
     ConfigManager,
     Environment,
@@ -101,6 +102,20 @@ from .enhanced_logging import log_warning as enhanced_log_warning
 from .enhanced_logging import (
     set_log_context,
     with_log_context,
+)
+
+# 에러 처리 시스템 (v4.3.2 신규)
+from .errors import (
+    BusinessLogicError,
+    ConfigurationError,
+    IntegrationError,
+    RFSError,
+    ValidationError,
+    business_error,
+    config_error,
+    handle_errors,
+    integration_error,
+    validation_error,
 )
 
 # 헬퍼 함수들

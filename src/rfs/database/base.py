@@ -75,25 +75,25 @@ class DatabaseConfig:
     orm_type: ORMType = ORMType.AUTO
 
     # 연결 풀 설정
-    pool_size=20
-    max_overflow=30
-    pool_timeout=30
-    pool_recycle=3600
-    pool_pre_ping=True
+    pool_size = 20
+    max_overflow = 30
+    pool_timeout = 30
+    pool_recycle = 3600
+    pool_pre_ping = True
 
     # 트랜잭션 설정
-    auto_commit=False
-    isolation_level="READ_COMMITTED"
+    auto_commit = False
+    isolation_level = "READ_COMMITTED"
 
     # Cloud SQL 설정
-    cloud_sql_instance=None
-    cloud_sql_project=None
-    cloud_sql_region=None
+    cloud_sql_instance = None
+    cloud_sql_project = None
+    cloud_sql_region = None
 
     # 추가 옵션
-    echo=False
-    echo_pool=False
-    future=True
+    echo = False
+    echo_pool = False
+    future = True
     extra_options: Dict[str, Any] = field(default_factory=dict)
 
     def get_sqlalchemy_url(self) -> str:
@@ -153,8 +153,8 @@ class ConnectionPool:
         self._async_engine = None
         self._session_factory = None
         self._async_session_factory = None
-        self._connections=[]  # 연결 풀 저장소
-        self._available=[]  # 사용 가능한 연결들 (테스트 호환성)
+        self._connections = []  # 연결 풀 저장소
+        self._available = []  # 사용 가능한 연결들 (테스트 호환성)
         self._in_use: Set[Any] = set()  # 사용 중인 연결들 (테스트 호환성)
         self._lock = asyncio.Lock()  # 스레드 안전성
         self._closed = False  # 종료 상태
@@ -463,7 +463,7 @@ class SQLAlchemyDatabase(Database):
                         if param_count == len(params):
                             # ? 스타일을 :param1, :param2 형태로 변경
                             modified_query = query
-                            param_dict={}
+                            param_dict = {}
                             for i, param in enumerate(params):
                                 placeholder = f":param{i+1}"
                                 modified_query = modified_query.replace(
@@ -602,9 +602,9 @@ class DatabaseManager(metaclass=SingletonMeta):
     """데이터베이스 매니저"""
 
     def __init__(self):
-        self.databases={}
+        self.databases = {}
         self._databases = self.databases  # 테스트 호환성
-        self.default_database=None
+        self.default_database = None
 
     async def add_database(
         self, name: str, config: DatabaseConfig
@@ -691,7 +691,7 @@ class DatabaseManager(metaclass=SingletonMeta):
 
     async def close_all(self) -> Result[None, str]:
         """모든 데이터베이스 연결 종료"""
-        errors=[]
+        errors = []
         for name, database in self.databases.items():
             try:
                 # disconnect 메서드가 있으면 사용, 없으면 close 사용

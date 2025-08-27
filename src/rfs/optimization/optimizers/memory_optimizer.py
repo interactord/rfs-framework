@@ -52,9 +52,9 @@ class MemoryThresholds:
 
     warning_mb: float = 500.0
     critical_mb: float = 800.0
-    max_objects=10000
+    max_objects = 10000
     gc_threshold: float = 100.0
-    pool_max_size=1000
+    pool_max_size = 1000
 
 
 @dataclass
@@ -78,11 +78,11 @@ class MemoryOptimizationConfig:
     strategy: MemoryOptimizationStrategy = MemoryOptimizationStrategy.BALANCED
     gc_strategy: GCStrategy = GCStrategy.ADAPTIVE
     thresholds: MemoryThresholds = field(default_factory=MemoryThresholds)
-    enable_pooling=True
-    enable_weak_refs=True
-    enable_monitoring=True
+    enable_pooling = True
+    enable_weak_refs = True
+    enable_monitoring = True
     monitoring_interval_seconds: float = 30.0
-    auto_optimization=True
+    auto_optimization = True
 
 
 class ObjectPool(Generic[T]):
@@ -206,9 +206,9 @@ class MemoryOptimizer:
     def __init__(self, config=None):
         self.config = config or MemoryOptimizationConfig()
         self.gc_tuner = GarbageCollectionTuner(self.config.gc_strategy)
-        self.object_pools={}
+        self.object_pools = {}
         self.weak_refs: Set[weakref.ref] = set()
-        self.monitoring_task=None
+        self.monitoring_task = None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -312,7 +312,7 @@ class MemoryOptimizer:
 
     async def _detect_memory_leaks(self) -> List[str]:
         """메모리 누수 탐지"""
-        leak_candidates=[]
+        leak_candidates = []
         if len(self.stats_history) < 5:
             return leak_candidates
         recent_stats = list(self.stats_history)[-5:]
@@ -380,9 +380,7 @@ class MemoryOptimizer:
             return Failure(f"Pool '{name}' not found")
         return Success(self.object_pools[name])
 
-    def add_weak_reference(
-        self, obj: Any, callback=None
-    ) -> Result[weakref.ref, str]:
+    def add_weak_reference(self, obj: Any, callback=None) -> Result[weakref.ref, str]:
         """약한 참조 추가"""
         try:
             weak_ref = weakref.ref(obj, callback)
@@ -394,7 +392,7 @@ class MemoryOptimizer:
     async def optimize(self) -> Result[Dict[str, Any], str]:
         """메모리 최적화 실행"""
         try:
-            results={}
+            results = {}
             gc_result = self.gc_tuner.manual_collect()
             results = {
                 **results,
@@ -426,7 +424,7 @@ class MemoryOptimizer:
 
     async def _generate_recommendations(self) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations=[]
+        recommendations = []
         if not self.stats_history:
             return recommendations
         latest_stats = self.stats_history[-1]
@@ -469,9 +467,9 @@ class MemoryOptimizer:
         try:
             await self.stop_monitoring()
             for pool in self.object_pools.values():
-                pool={}
-            object_pools={}
-            weak_refs={}
+                pool = {}
+            object_pools = {}
+            weak_refs = {}
             if hasattr(self.gc_tuner, "original_thresholds"):
                 gc.set_threshold(*self.gc_tuner.original_thresholds)
             return Success(True)
@@ -479,7 +477,7 @@ class MemoryOptimizer:
             return Failure(f"Cleanup failed: {e}")
 
 
-_memory_optimizer=None
+_memory_optimizer = None
 
 
 def get_memory_optimizer(

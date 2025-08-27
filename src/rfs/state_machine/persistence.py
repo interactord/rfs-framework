@@ -69,7 +69,7 @@ class MemoryStatePersistence:
     """메모리 기반 상태 영속성"""
 
     def __init__(self):
-        self.snapshots={}
+        self.snapshots = {}
 
     async def save_snapshot(self, snapshot: StateMachineSnapshot) -> bool:
         """스냅샷 저장"""
@@ -101,7 +101,7 @@ class MemoryStatePersistence:
 
     def clear_all(self):
         """모든 스냅샷 삭제"""
-        snapshots={}
+        snapshots = {}
 
 
 class FileStatePersistence:
@@ -190,7 +190,7 @@ class FileStatePersistence:
     async def list_snapshots(self) -> List[str]:
         """스냅샷 목록"""
         try:
-            snapshots=[]
+            snapshots = []
             for path in self.base_path.glob("*.json"):
                 snapshots = snapshots + [path.stem]
             return snapshots
@@ -336,7 +336,7 @@ class PersistenceManager:
 
     async def create_snapshot(self, state_machine) -> StateMachineSnapshot:
         """상태 머신에서 스냅샷 생성"""
-        event_history=[]
+        event_history = []
         for event in state_machine.event_history:
             event_dict = {
                 "name": event.name,
@@ -374,7 +374,7 @@ class PersistenceManager:
         state_machine.start_time = snapshot.start_time
         from .machine import MachineEvent
 
-        state_machine.event_history=[]
+        state_machine.event_history = []
         for event_dict in snapshot.event_history[-100:]:
             event = MachineEvent(
                 name=event_dict["name"],

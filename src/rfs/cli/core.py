@@ -58,10 +58,10 @@ class CommandContext:
     args: Dict[str, Any] = field(default_factory=dict)
     config: Any = None
     console: Any = None
-    project_root=None
-    verbose=False
-    dry_run=False
-    environment="development"
+    project_root = None
+    verbose = False
+    dry_run = False
+    environment = "development"
 
 
 class Command(ABC):
@@ -70,9 +70,9 @@ class Command(ABC):
     def __init__(self, name: str, description=""):
         self.name = name
         self.description = description
-        self.aliases=[]
-        self.options={}
-        self.subcommands={}
+        self.aliases = []
+        self.options = {}
+        self.subcommands = {}
 
     @abstractmethod
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
@@ -102,7 +102,7 @@ class CommandGroup(Command):
 
     def __init__(self, name: str, description=""):
         super().__init__(name, description)
-        self._commands={}
+        self._commands = {}
 
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
         """그룹 실행 - 도움말 표시"""
@@ -142,11 +142,11 @@ class RFSCli:
     """RFS CLI 메인 애플리케이션"""
 
     def __init__(self):
-        self.commands={}
+        self.commands = {}
         self.console = Console() if RICH_AVAILABLE else None
         self.config = None
         self.project_root = self._find_project_root()
-        self.plugins={}
+        self.plugins = {}
         self.state = {
             "last_command": None,
             "session_start": datetime.now(),
@@ -252,8 +252,8 @@ class RFSCli:
 
     def _parse_global_args(self, args: List[str]) -> tuple[Dict[str, Any], List[str]]:
         """전역 인자 파싱"""
-        global_args={}
-        command_args=[]
+        global_args = {}
+        command_args = []
         i = 0
         while i < len(args):
             arg = args[i]
@@ -280,7 +280,7 @@ class RFSCli:
 
     def _parse_command_args(self, command: Command, args: List[str]) -> Dict[str, Any]:
         """명령어 인자 파싱"""
-        parsed_args={}
+        parsed_args = {}
         i = 0
         while i < len(args):
             arg = args[i]
@@ -397,7 +397,7 @@ class RFSCli:
                 previous_row = current_row
             return previous_row[-1]
 
-        similar=[]
+        similar = []
         for cmd_name in self.commands.keys():
             if cmd_name != command_name:
                 distance = levenshtein_distance(command_name.lower(), cmd_name.lower())

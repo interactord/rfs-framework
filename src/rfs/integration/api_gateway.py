@@ -93,11 +93,11 @@ class Backend:
     id: str
     host: str
     port: int
-    weight=1
-    healthy=True
-    active_connections=0
+    weight = 1
+    healthy = True
+    active_connections = 0
     response_times: List[float] = field(default_factory=list)
-    last_health_check=None
+    last_health_check = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -121,8 +121,8 @@ class Route:
     transformations: List[Dict[str, Any]] = field(default_factory=list)
     cache_config: Optional[Dict[str, Any]] = None
     cors_config: Optional[Dict[str, Any]] = None
-    timeout=30
-    retry_count=3
+    timeout = 30
+    retry_count = 3
     circuit_breaker: Optional[Dict[str, Any]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -137,7 +137,7 @@ class APIEndpoint:
     version: str
     route: Route
     documentation: Optional[Dict[str, Any]] = None
-    deprecated=False
+    deprecated = False
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -162,13 +162,13 @@ class APIKey:
     name: str
     owner: str
     created_at: datetime
-    expires_at=None
-    rate_limit=None
+    expires_at = None
+    rate_limit = None
     allowed_ips: List[str] = field(default_factory=list)
     allowed_routes: List[str] = field(default_factory=list)
-    usage_quota=None
-    current_usage=0
-    active=True
+    usage_quota = None
+    current_usage = 0
+    active = True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -182,9 +182,9 @@ class RequestContext:
     path: str
     headers: Dict[str, str]
     query_params: Dict[str, Any]
-    body=None
-    user_id=None
-    api_key=None
+    body = None
+    user_id = None
+    api_key = None
     start_time: float = field(default_factory=time.time)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -197,8 +197,8 @@ class ResponseContext:
     headers: Dict[str, str]
     body: Any
     elapsed_time: float
-    backend_used=None
-    cached=False
+    backend_used = None
+    cached = False
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -231,7 +231,7 @@ class RateLimiter:
     """속도 제한기"""
 
     def __init__(self):
-        self.buckets={}
+        self.buckets = {}
         self.fixed_windows: Dict[str, Dict[str, int]] = defaultdict(dict)
         self.sliding_windows: Dict[str, List[float]] = defaultdict(list)
 
@@ -294,7 +294,7 @@ class LoadBalancer:
 
     def __init__(self, strategy: LoadBalanceStrategy):
         self.strategy = strategy
-        self.round_robin_indexes={}
+        self.round_robin_indexes = {}
 
     def select_backend(
         self, route_id: str, backends: List[Backend], client_ip: str = None
@@ -336,7 +336,7 @@ class LoadBalancer:
 
     def _weighted_round_robin(self, route_id: str, backends: List[Backend]) -> Backend:
         """가중치 라운드 로빈"""
-        weighted_backends=[]
+        weighted_backends = []
         for backend in backends:
             weighted_backends = weighted_backends + [backend] * backend.weight
         return self._round_robin(route_id, weighted_backends)
@@ -363,15 +363,15 @@ class APIGatewayEnhancer:
     """API Gateway 강화기"""
 
     def __init__(self):
-        self.routes={}
-        self.endpoints={}
-        self.api_keys={}
-        self.rate_rules={}
+        self.routes = {}
+        self.endpoints = {}
+        self.api_keys = {}
+        self.rate_rules = {}
         self.rate_limiter = RateLimiter()
         self.load_balancer = LoadBalancer(LoadBalanceStrategy.ROUND_ROBIN)
-        self.request_middlewares=[]
-        self.response_middlewares=[]
-        self.transformers={}
+        self.request_middlewares = []
+        self.response_middlewares = []
+        self.transformers = {}
         self.request_count = 0
         self.error_count = 0
         self.total_response_time = 0.0
@@ -399,7 +399,7 @@ class APIGatewayEnhancer:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks={}
+                _tasks = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop API gateway: {e}")
@@ -766,7 +766,7 @@ class APIGatewayEnhancer:
         error_rate = (
             self.error_count / self.request_count * 100 if self.request_count > 0 else 0
         )
-        backend_stats={}
+        backend_stats = {}
         for route in self.routes.values():
             for backend in route.backends:
                 backend_stats = {
@@ -820,7 +820,7 @@ class APIGatewayEnhancer:
         while self._running:
             try:
                 current_time = time.time()
-                expired_keys=[]
+                expired_keys = []
                 for key, (_, expiry) in self._response_cache.items():
                     if expiry < current_time:
                         expired_keys = [*expired_keys, key]
@@ -846,7 +846,7 @@ class APIGatewayEnhancer:
                 await asyncio.sleep(300)
 
 
-_api_gateway=None
+_api_gateway = None
 
 
 def get_api_gateway() -> APIGatewayEnhancer:

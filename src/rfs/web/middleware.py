@@ -130,7 +130,7 @@ class MetricsMiddleware(RFSMiddleware):
 
     def __init__(self):
         super().__init__("metrics")
-        self.metrics={}
+        self.metrics = {}
 
     async def process_request(self, request: Any, call_next: Callable) -> Any:
         if not self.enabled:
@@ -346,7 +346,7 @@ class MiddlewareStack:
     """미들웨어 스택 관리자"""
 
     def __init__(self):
-        self.middlewares=[]
+        self.middlewares = []
 
     def add(self, middleware: RFSMiddleware):
         """미들웨어 추가"""
@@ -388,7 +388,7 @@ class MiddlewareStack:
 
 
 # 전역 미들웨어 스택
-_middleware_stack=None
+_middleware_stack = None
 
 
 def get_middleware_stack() -> MiddlewareStack:

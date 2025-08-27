@@ -483,6 +483,6 @@ config = get_config()
 - 설정 변경 이력 관리
 
 ## 🔗 관련 문서
-- [환경 프로파일](./17-profiles.md)
+- [환경 프로파일](./23-profiles.md)
 - [비밀 관리](./11-security.md)
 - [모니터링](./08-monitoring.md)

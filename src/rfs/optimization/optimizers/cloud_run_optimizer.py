@@ -86,15 +86,15 @@ class CloudRunConfig:
     strategy: OptimizationStrategy = OptimizationStrategy.BALANCED
     cold_start_level: ColdStartOptimizationLevel = ColdStartOptimizationLevel.STANDARD
     scaling_strategy: ScalingStrategy = ScalingStrategy.HYBRID
-    resource_profile=None
-    enable_cpu_throttling=True
-    enable_memory_optimization=True
-    enable_io_optimization=True
-    enable_connection_pooling=True
-    enable_caching=True
-    metrics_collection_interval=60
-    performance_monitoring=True
-    cost_monitoring=True
+    resource_profile = None
+    enable_cpu_throttling = True
+    enable_memory_optimization = True
+    enable_io_optimization = True
+    enable_connection_pooling = True
+    enable_caching = True
+    metrics_collection_interval = 60
+    performance_monitoring = True
+    cost_monitoring = True
 
     def get_default_resource_profile(self) -> ResourceProfile:
         """전략별 기본 리소스 프로필"""
@@ -167,10 +167,10 @@ class CloudRunOptimizer:
     def __init__(self, config=None):
         self.config = config or CloudRunConfig()
         self.is_cloud_run = self._detect_cloud_run_environment()
-        self.optimization_history=[]
+        self.optimization_history = []
         self.baseline_metrics: Optional[Dict[str, float]] = None
         self.current_metrics: Optional[Dict[str, float]] = None
-        self.optimizations_applied={}
+        self.optimizations_applied = {}
         self.service_name = os.getenv("K_SERVICE", "unknown")
         self.revision = os.getenv("K_REVISION", "unknown")
         self.configuration = os.getenv("K_CONFIGURATION", "unknown")
@@ -187,11 +187,11 @@ class CloudRunOptimizer:
         """종합적인 Cloud Run 최적화 실행"""
         try:
             start_time = datetime.now()
-            applied_optimizations=[]
-            performance_improvement={}
-            resource_savings={}
-            recommendations=[]
-            errors=[]
+            applied_optimizations = []
+            performance_improvement = {}
+            resource_savings = {}
+            recommendations = []
+            errors = []
             logger.info(
                 f"Starting Cloud Run optimization with strategy: {self.config.strategy.value}"
             )
@@ -363,7 +363,7 @@ class CloudRunOptimizer:
     async def _optimize_cold_start(self) -> Result[Dict[str, float], str]:
         """콜드 스타트 최적화"""
         try:
-            improvements={}
+            improvements = {}
             if self.config.cold_start_level in [
                 ColdStartOptimizationLevel.STANDARD,
                 ColdStartOptimizationLevel.AGGRESSIVE,
@@ -437,7 +437,7 @@ class CloudRunOptimizer:
     async def _preallocate_memory(self):
         """메모리 사전 할당"""
         try:
-            memory_pool=[]
+            memory_pool = []
             for _ in range(100):
                 memory_pool = memory_pool + [bytearray(1024)]
             del memory_pool
@@ -452,14 +452,14 @@ class CloudRunOptimizer:
     async def _optimize_memory(self) -> Result[Dict[str, float], str]:
         """메모리 최적화"""
         try:
-            savings={}
+            savings = {}
             collected = gc.collect()
             savings["objects_collected"] = {"objects_collected": collected}
             gc.set_threshold(700, 10, 10)
             import sys
 
             initial_modules = len(sys.modules)
-            modules_to_remove=[]
+            modules_to_remove = []
             for module_name in sys.modules:
                 if module_name.startswith("__mp_"):
                     modules_to_remove = modules_to_remove + [module_name]
@@ -480,7 +480,7 @@ class CloudRunOptimizer:
     async def _optimize_cpu(self) -> Result[Dict[str, float], str]:
         """CPU 최적화"""
         try:
-            improvements={}
+            improvements = {}
             try:
                 process = psutil.Process()
                 cpu_count = psutil.cpu_count()
@@ -513,7 +513,7 @@ class CloudRunOptimizer:
     async def _optimize_io(self) -> Result[Dict[str, float], str]:
         """I/O 최적화"""
         try:
-            improvements={}
+            improvements = {}
             import io
 
             default_buffer_size = io.DEFAULT_BUFFER_SIZE
@@ -539,7 +539,7 @@ class CloudRunOptimizer:
     async def _optimize_network(self) -> Result[Dict[str, float], str]:
         """네트워크 최적화"""
         try:
-            improvements={}
+            improvements = {}
             improvements = {
                 **improvements,
                 "tcp_optimization": {"tcp_optimization": 1.0},
@@ -559,7 +559,7 @@ class CloudRunOptimizer:
     async def _optimize_scaling(self) -> Result[Dict[str, float], str]:
         """스케일링 최적화"""
         try:
-            savings={}
+            savings = {}
             if not self.config.resource_profile:
                 self.config.resource_profile = (
                     self.config.get_default_resource_profile()
@@ -616,7 +616,7 @@ class CloudRunOptimizer:
 
     async def _generate_recommendations(self) -> List[str]:
         """최적화 권장사항 생성"""
-        recommendations=[]
+        recommendations = []
         if not self.is_cloud_run:
             recommendations = recommendations + [
                 "Consider deploying to Google Cloud Run for optimal performance"
@@ -674,7 +674,7 @@ class CloudRunOptimizer:
         """성능 벤치마킹"""
         try:
             start_time = time.time()
-            samples=[]
+            samples = []
             while time.time() - start_time < duration_seconds:
                 sample = {
                     "timestamp": time.time(),

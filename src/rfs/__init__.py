@@ -10,10 +10,10 @@ RFS Framework - Enterprise-Grade Reactive Functional Serverless
 - 지능형 Auto Scaling & Monitoring
 - 환경별 자동 설정 프로파일
 
-Version: 4.3.1 (Production Ready)
+Version: 4.3.3 (Production Ready)
 """
 
-__version__ = "4.3.1"
+__version__ = "4.3.3"
 __author__ = "RFS Framework Team"
 __phase__ = "Production Ready"
 
@@ -231,6 +231,8 @@ LegacyCloudRunOptimizer = None
 CloudRunConfig = None
 get_optimizer = None
 
+# === Standard Library Integration (stdlib.py) ===
+from . import stdlib
 from .optimization import (  # Cold Start Optimizer (NEW)
     CacheWarmupStrategy,
     ColdStartConfig,
@@ -504,6 +506,8 @@ __all__ = [
     "LegacyCloudRunOptimizer",
     "CloudRunConfig",
     "get_optimizer",
+    # === Standard Library Integration ===
+    "stdlib",
 ]
 
 # 프레임워크 기능

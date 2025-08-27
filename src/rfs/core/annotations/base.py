@@ -55,10 +55,10 @@ class AnnotationMetadata:
     scope: ServiceScope
     target_class: Any
     dependencies: List[str] = field(default_factory=list)
-    lazy=False
-    profile=None
-    port_name=None
-    config_key=None
+    lazy: bool = False
+    profile: Optional[str] = None
+    port_name: Optional[str] = None
+    config_key: Optional[str] = None
 
 
 @dataclass
@@ -67,9 +67,9 @@ class DependencyMetadata:
 
     name: str
     type: Type
-    qualifier=None
-    required=True
-    lazy=False
+    qualifier: Optional[str] = None
+    required: bool = True
+    lazy: bool = False
     injection_type: InjectionType = InjectionType.CONSTRUCTOR
     default_value: Any = None
 
@@ -81,16 +81,16 @@ class ComponentMetadata:
     name: str
     scope: ServiceScope
     dependencies: List[str] = field(default_factory=list)
-    lazy=False
-    primary=False
-    qualifier=None
+    lazy: bool = False
+    primary: bool = False
+    qualifier: Optional[str] = None
 
     def to_service_scope(self) -> ServiceScope:
         """ServiceScope 반환"""
         return self.scope
 
 
-_component_metadata={}
+_component_metadata: Dict[Type, ComponentMetadata] = {}
 _annotation_metadata: Dict[Any, List[AnnotationMetadata]] = {}
 
 
@@ -126,7 +126,7 @@ def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
     Returns:
         List[str]: 검증 오류 메시지들
     """
-    errors=[]
+    errors = []
 
     for cls in classes:
         metadata = get_annotation_metadata(cls)
@@ -217,7 +217,7 @@ def create_annotation_decorator(
 
 def extract_dependencies(cls: Type) -> List[DependencyMetadata]:
     """클래스에서 의존성 추출"""
-    dependencies=[]
+    dependencies = []
     if hasattr(cls, "__init__"):
         sig = inspect.signature(cls.__init__)
         for param_name, param in sig.parameters.items():
@@ -250,9 +250,7 @@ def extract_dependencies(cls: Type) -> List[DependencyMetadata]:
 class AutowiredField:
     """Autowired 필드를 위한 디스크립터"""
 
-    def __init__(
-        self, field_type: Type = None, qualifier: str = None, lazy=False
-    ):
+    def __init__(self, field_type: Type = None, qualifier: str = None, lazy=False):
         self.field_type = field_type
         self.qualifier = qualifier
         self.lazy = lazy

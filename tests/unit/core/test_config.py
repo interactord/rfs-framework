@@ -21,6 +21,18 @@ from rfs.core.config import (
     reload_config,
 )
 
+if PYDANTIC_AVAILABLE:
+    from pydantic import BaseModel
+    try:
+        from pydantic_settings import BaseSettings
+    except ImportError:
+        from pydantic import BaseSettings
+else:
+    # Pydantic이 없을 때 config 모듈의 대체 클래스 사용
+    import rfs.core.config as config_module
+    BaseModel = config_module.BaseModel
+    BaseSettings = config_module.BaseSettings
+
 
 class TestEnvironmentEnum:
     """Environment 열거형 테스트"""

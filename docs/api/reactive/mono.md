@@ -310,4 +310,4 @@ await asyncio.gather(
 
 - [Flux API](flux.md) - 다중 값 반응형 스트림
 - [반응형 프로그래밍](../../01-core-patterns.md#reactive-programming) - 반응형 패턴 개념
-- [비동기 처리](../../16-hot-library.md) - 함수형 반응형 유틸리티
+- [비동기 처리](../../22-hot-library.md) - 함수형 반응형 유틸리티

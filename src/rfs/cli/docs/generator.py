@@ -65,15 +65,15 @@ class DocType(Enum):
 class DocConfig:
     """문서 생성 설정"""
 
-    output_dir="docs"
+    output_dir = "docs"
     formats: List[DocFormat] = field(default_factory=lambda: [DocFormat.MARKDOWN])
-    include_private=False
-    include_source=True
-    language="ko"
-    theme="default"
-    auto_toc=True
-    include_examples=True
-    generate_index=True
+    include_private = False
+    include_source = True
+    language = "ko"
+    theme = "default"
+    auto_toc = True
+    include_examples = True
+    generate_index = True
     project_info: Dict[str, Any] = field(default_factory=dict)
     custom_templates: Dict[str, str] = field(default_factory=dict)
 
@@ -92,7 +92,7 @@ class DocumentationGenerator:
         """프로젝트 정보 자동 수집"""
         try:
             if not self.config.project_info:
-                self.config.project_info={}
+                self.config.project_info = {}
             self.config.project_info.setdefault("name", self.project_path.name)
             self.config.project_info.setdefault("version", "1.0.0")
             self.config.project_info.setdefault("description", "RFS v4 프로젝트")
@@ -180,7 +180,7 @@ class DocumentationGenerator:
                     )
                 )
             self.output_path.mkdir(parents=True, exist_ok=True)
-            generated_docs={}
+            generated_docs = {}
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -246,7 +246,7 @@ class DocumentationGenerator:
 
     async def _analyze_python_modules(self) -> List[Dict[str, Any]]:
         """Python 모듈 분석"""
-        modules=[]
+        modules = []
         try:
             python_files = list(self.project_path.rglob("*.py"))
             for py_file in python_files:
@@ -447,7 +447,7 @@ class DocumentationGenerator:
     def _simple_markdown_to_html(self, text: str) -> str:
         """간단한 Markdown -> HTML 변환"""
         lines = text.split("\n")
-        html_lines=[]
+        html_lines = []
         for line in lines:
             line = line.strip()
             if not line:

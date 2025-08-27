@@ -27,20 +27,20 @@ logger = get_logger(__name__)
 class RedisCacheConfig(CacheConfig):
     """Redis 캐시 설정"""
 
-    redis_url=None
-    ssl=False
-    ssl_cert_reqs=None
-    ssl_ca_certs=None
-    ssl_certfile=None
-    ssl_keyfile=None
-    pool_min_size=1
-    pool_max_size=20
-    cluster_mode=False
+    redis_url: Optional[str] = None
+    ssl: bool = False
+    ssl_cert_reqs: Optional[str] = None
+    ssl_ca_certs: Optional[str] = None
+    ssl_certfile: Optional[str] = None
+    ssl_keyfile: Optional[str] = None
+    pool_min_size: int = 1
+    pool_max_size: int = 20
+    cluster_mode: bool = False
     startup_nodes: List[Dict[str, Any]] = field(default_factory=list)
-    decode_responses=True
-    socket_keepalive=True
+    decode_responses: bool = True
+    socket_keepalive: bool = True
     socket_keepalive_options: Dict[str, Any] = field(default_factory=dict)
-    health_check_interval=30
+    health_check_interval: int = 30
 
 
 class RedisCache(CacheBackend):
@@ -51,8 +51,8 @@ class RedisCache(CacheBackend):
             raise ImportError("aioredis 패키지가 필요합니다: pip install aioredis")
         super().__init__(config)
         self.config: RedisCacheConfig = config
-        self.redis=None
-        self.pool=None
+        self.redis = None
+        self.pool = None
 
     async def connect(self) -> Result[None, str]:
         """Redis 연결"""
@@ -232,7 +232,7 @@ class RedisCache(CacheBackend):
                 return Failure("Redis 연결이 없습니다")
             cache_keys = [self._make_key(key) for key in keys]
             values = await self.redis.mget(cache_keys)
-            result={}
+            result = {}
             for i, value in enumerate(values):
                 if value is not None:
                     original_key = keys[i]
@@ -335,8 +335,8 @@ class RedisClusterConfig(RedisCacheConfig):
     """Redis 클러스터 설정"""
 
     startup_nodes: List[Dict[str, Any]] = field(default_factory=list)
-    skip_full_coverage_check=False
-    max_connections_per_node=20
+    skip_full_coverage_check: bool = False
+    max_connections_per_node: int = 20
 
 
 class RedisClusterCache(RedisCache):
@@ -347,7 +347,7 @@ class RedisClusterCache(RedisCache):
             raise ImportError("aioredis 패키지가 필요합니다: pip install aioredis")
         super().__init__(config)
         self.config: RedisClusterConfig = config
-        self.cluster=None
+        self.cluster = None
 
     async def connect(self) -> Result[None, str]:
         """Redis 클러스터 연결"""

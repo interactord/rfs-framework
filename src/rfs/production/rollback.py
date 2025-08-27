@@ -85,9 +85,9 @@ class RollbackRecord:
     trigger: RollbackTrigger
     reason: str
     start_time: datetime
-    end_time=None
+    end_time = None
     status: RollbackStatus = RollbackStatus.PENDING
-    error_message=None
+    error_message = None
     rolled_back_components: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -103,16 +103,19 @@ class RollbackManager:
     """롤백 관리자"""
 
     def __init__(
-        self, checkpoint_dir="/tmp/rfs_checkpoints", max_checkpoints=10, auto_rollback_enabled=True,
+        self,
+        checkpoint_dir="/tmp/rfs_checkpoints",
+        max_checkpoints=10,
+        auto_rollback_enabled=True,
     ):
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.max_checkpoints = max_checkpoints
         self.auto_rollback_enabled = auto_rollback_enabled
         self.checkpoints: Dict[str, List[DeploymentCheckpoint]] = {}
-        self.rollback_history=[]
-        self.current_rollback=None
-        self.rollback_strategies={}
+        self.rollback_history = []
+        self.current_rollback = None
+        self.rollback_strategies = {}
         self.event_bus = get_event_bus()
         self._load_checkpoints()
 
@@ -140,7 +143,10 @@ class RollbackManager:
         self,
         service_name: str,
         version: str,
-        configuration: Dict[str, Any], environment_variables=None, dependencies=None, metadata=None,
+        configuration: Dict[str, Any],
+        environment_variables=None,
+        dependencies=None,
+        metadata=None,
     ) -> Result[DeploymentCheckpoint, str]:
         """체크포인트 생성"""
         try:
@@ -190,7 +196,10 @@ class RollbackManager:
 
     async def rollback(
         self,
-        service_name: str, target_version=None, trigger=RollbackTrigger.MANUAL, reason="Manual rollback requested",
+        service_name: str,
+        target_version=None,
+        trigger=RollbackTrigger.MANUAL,
+        reason="Manual rollback requested",
     ) -> Result[RollbackRecord, str]:
         """롤백 실행"""
         try:
@@ -333,9 +342,7 @@ class RollbackManager:
         except Exception as e:
             return Failure(f"Error checking rollback availability: {str(e)}")
 
-    def get_rollback_history(
-        self, service_name=None, limit=10
-    ) -> List[RollbackRecord]:
+    def get_rollback_history(self, service_name=None, limit=10) -> List[RollbackRecord]:
         """롤백 히스토리 조회"""
         history = self.rollback_history
         if service_name:
@@ -393,9 +400,7 @@ class RollbackManager:
             logger.error(f"Auto rollback check failed: {e}")
             return Failure(f"Auto rollback check failed: {str(e)}")
 
-    def cleanup_old_checkpoints(
-        self, service_name=None, older_than_days=30
-    ) -> int:
+    def cleanup_old_checkpoints(self, service_name=None, older_than_days=30) -> int:
         """오래된 체크포인트 정리"""
         cutoff_date = datetime.now() - timedelta(days=older_than_days)
         removed_count = 0

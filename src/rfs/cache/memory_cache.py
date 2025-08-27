@@ -23,13 +23,13 @@ logger = get_logger(__name__)
 class MemoryCacheConfig(CacheConfig):
     """메모리 캐시 설정"""
 
-    max_size=1000
-    eviction_policy="lru"
-    cleanup_interval=300
-    lazy_expiration=True
-    memory_limit=100 * 1024 * 1024
-    estimate_size=True
-    enable_detailed_stats=True
+    max_size: int = 1000
+    eviction_policy: str = "lru"
+    cleanup_interval: int = 300
+    lazy_expiration: bool = True
+    memory_limit: int = 100 * 1024 * 1024
+    estimate_size: bool = True
+    enable_detailed_stats: bool = True
 
 
 class CacheItem:
@@ -41,7 +41,7 @@ class CacheItem:
         self.created_at = time.time()
         self.accessed_at = self.created_at
         self.access_count = 1
-        if ttl and ttl > 0:
+        if ttl is not None and ttl >= 0:
             self.expires_at = self.created_at + ttl
         else:
             self.expires_at = None
@@ -60,6 +60,9 @@ class CacheItem:
         """만료 확인"""
         if self.expires_at is None:
             return False
+        # TTL이 0인 경우(즉시 만료)는 항상 만료된 것으로 처리
+        if self.expires_at == self.created_at:
+            return True
         return time.time() > self.expires_at
 
     def touch(self):
@@ -84,15 +87,15 @@ class MemoryCache(CacheBackend):
     def __init__(self, config: MemoryCacheConfig):
         super().__init__(config)
         self.config: MemoryCacheConfig = config
-        self._data={}
+        self._data = {}
         self._access_order: OrderedDict = OrderedDict()
-        self._frequency={}
-        self._insertion_order=[]
+        self._frequency = {}
+        self._insertion_order = []
         self._ttl_heap: List[Tuple[float, str]] = []
         self._lock = RLock()
         self._current_size = 0
         self._current_memory = 0
-        self._cleanup_task=None
+        self._cleanup_task = None
 
     async def connect(self) -> Result[None, str]:
         """캐시 초기화"""
@@ -121,11 +124,11 @@ class MemoryCache(CacheBackend):
                 except asyncio.CancelledError:
                     pass
             with self._lock:
-                self._data={}
+                self._data = {}
                 self._access_order = OrderedDict()
-                self._frequency={}
-                self._insertion_order=[]
-                self._ttl_heap=[]
+                self._frequency = {}
+                self._insertion_order = []
+                self._ttl_heap = []
                 self._current_size = 0
                 self._current_memory = 0
             self._connected = False
@@ -145,10 +148,18 @@ class MemoryCache(CacheBackend):
                 if item is None:
                     self._stats = {**self._stats, "misses": self._stats["misses"] + 1}
                     return Success(None)
-                if self.config.lazy_expiration and item.is_expired():
-                    self._remove_item(cache_key)
-                    self._stats = {**self._stats, "misses": self._stats["misses"] + 1}
-                    return Success(None)
+                # TTL=0 (즉시 만료) 체크는 lazy_expiration 설정과 관계없이 항상 처리
+                if item.is_expired():
+                    if (
+                        item.expires_at is not None
+                        and item.expires_at == item.created_at
+                    ) or self.config.lazy_expiration:
+                        self._remove_item(cache_key)
+                        self._stats = {
+                            **self._stats,
+                            "misses": self._stats["misses"] + 1,
+                        }
+                        return Success(None)
                 item.touch()
                 self._update_access_tracking(cache_key)
                 self._stats = {**self._stats, "hits": self._stats["hits"] + 1}
@@ -163,7 +174,7 @@ class MemoryCache(CacheBackend):
         """값 저장"""
         try:
             cache_key = self._make_key(key)
-            ttl = self._validate_ttl(ttl) if ttl else None
+            ttl = self._validate_ttl(ttl) if ttl is not None else None
             with self._lock:
                 if cache_key in self._data:
                     self._remove_item(cache_key)
@@ -240,8 +251,10 @@ class MemoryCache(CacheBackend):
             cache_key = self._make_key(key)
             with self._lock:
                 item = self._data.get(cache_key)
-                if item is None or item.expires_at is None:
-                    return Success(-1)
+                if item is None:
+                    return Success(-2)  # 키가 존재하지 않음
+                if item.expires_at is None:
+                    return Success(-1)  # 키가 존재하지만 TTL이 설정되지 않음
                 remaining = int(item.expires_at - time.time())
                 return Success(max(0, remaining))
         except Exception as e:
@@ -314,7 +327,7 @@ class MemoryCache(CacheBackend):
         try:
             with self._lock:
                 if self.namespace:
-                    keys_to_delete=[]
+                    keys_to_delete = []
                     prefix = f"{self.namespace}:"
                     for key in self._data.keys():
                         if key.startswith(prefix):
@@ -322,11 +335,11 @@ class MemoryCache(CacheBackend):
                     for key in keys_to_delete:
                         self._remove_item(key)
                 else:
-                    self._data={}
+                    self._data = {}
                     self._access_order = OrderedDict()
-                    self._frequency={}
-                    self._insertion_order=[]
-                    self._ttl_heap=[]
+                    self._frequency = {}
+                    self._insertion_order = []
+                    self._ttl_heap = []
                     self._current_size = 0
                     self._current_memory = 0
                 return Success(None)
@@ -335,6 +348,26 @@ class MemoryCache(CacheBackend):
             error_msg = f"메모리 캐시 CLEAR 실패: {str(e)}"
             logger.error(error_msg)
             return Failure(error_msg)
+
+    def _make_key(self, key: str) -> str:
+        """네임스페이스를 포함한 키 생성"""
+        if hasattr(self.config, "namespace") and self.config.namespace:
+            return f"{self.config.namespace}:{key}"
+        return key
+
+    def _validate_ttl(self, ttl: int) -> int:
+        """TTL 유효성 검증"""
+        if ttl is None:
+            return None
+        if ttl < 0:
+            return None
+        if ttl == 0:
+            return 0  # TTL 0은 즉시 만료를 의미
+        if hasattr(self.config, "min_ttl") and ttl < self.config.min_ttl:
+            return self.config.min_ttl
+        if hasattr(self.config, "max_ttl") and ttl > self.config.max_ttl:
+            return self.config.max_ttl
+        return ttl
 
     def _ensure_space(self, needed_size: int):
         """공간 확보"""
@@ -441,7 +474,7 @@ class MemoryCache(CacheBackend):
             try:
                 await asyncio.sleep(self.config.cleanup_interval)
                 current_time = time.time()
-                expired_keys=[]
+                expired_keys = []
                 with self._lock:
                     while self._ttl_heap:
                         expires_at, key = self._ttl_heap[0]

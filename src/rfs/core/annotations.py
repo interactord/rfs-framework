@@ -57,13 +57,13 @@ class AnnotationMetadata:
     target_class: Type[Any]
     dependencies: List[str] = field(default_factory=list)
     scope: ComponentScope = ComponentScope.SINGLETON
-    lazy=False
-    profile=None
-    port_name=None
-    route=None
+    lazy = False
+    profile = None
+    port_name = None
+    route = None
     created_at: datetime = field(default_factory=datetime.now)
-    description=None
-    version="1.0.0"
+    description = None
+    version = "1.0.0"
 
 
 class PortProtocol(Protocol):
@@ -311,9 +311,9 @@ def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
     Returns:
         List[str]: 검증 오류 메시지들
     """
-    errors=[]
-    ports={}
-    adapters={}
+    errors = []
+    ports = {}
+    adapters = {}
     for cls in classes:
         metadata = get_annotation_metadata(cls)
         if not metadata:

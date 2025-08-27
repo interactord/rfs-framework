@@ -55,21 +55,21 @@ class TaskInfo:
     """작업 정보"""
 
     id: str
-    name=None
+    name = None
     status: TaskStatus = TaskStatus.PENDING
     priority: TaskPriority = TaskPriority.NORMAL
     created_at: datetime = field(default_factory=datetime.now)
-    started_at=None
-    completed_at=None
-    function_name=None
+    started_at = None
+    completed_at = None
+    function_name = None
     args: tuple = field(default_factory=tuple)
     kwargs: dict = field(default_factory=dict)
     result: Any = None
-    error=None
-    error_message=None
-    timeout_seconds=None
-    retry_count=0
-    max_retries=0
+    error = None
+    error_message = None
+    timeout_seconds = None
+    retry_count = 0
+    max_retries = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
 
@@ -169,16 +169,16 @@ class SimpleTaskCallback(TaskCallback):
 class TaskManagerConfig:
     """작업 매니저 설정"""
 
-    max_workers=10
-    max_queue_size=1000
-    default_timeout=None
-    default_max_retries=3
-    enable_result_caching=True
-    result_cache_ttl=3600
-    cleanup_interval=300
-    enable_detailed_logging=False
-    collect_metrics=True
-    metrics_interval=60
+    max_workers = 10
+    max_queue_size = 1000
+    default_timeout = None
+    default_max_retries = 3
+    enable_result_caching = True
+    result_cache_ttl = 3600
+    cleanup_interval = 300
+    enable_detailed_logging = False
+    collect_metrics = True
+    metrics_interval = 60
 
 
 class AsyncTaskManager:
@@ -200,16 +200,16 @@ class AsyncTaskManager:
 
     def __init__(self, config: TaskManagerConfig = None):
         self.config = config or TaskManagerConfig()
-        self.tasks={}
-        self.running_tasks={}
+        self.tasks = {}
+        self.running_tasks = {}
         self.pending_queue: asyncio.PriorityQueue = asyncio.PriorityQueue(
             maxsize=self.config.max_queue_size
         )
         self.semaphore = asyncio.Semaphore(self.config.max_workers)
         self.callbacks: Dict[str, List[TaskCallback]] = {}
-        self.global_callbacks=[]
+        self.global_callbacks = []
         self.is_running = False
-        self.worker_tasks=[]
+        self.worker_tasks = []
         self.metrics = {
             "total_submitted": 0,
             "total_completed": 0,
@@ -219,8 +219,8 @@ class AsyncTaskManager:
             "current_queue_size": 0,
             "active_tasks": 0,
         }
-        self.cleanup_task=None
-        self.metrics_task=None
+        self.cleanup_task = None
+        self.metrics_task = None
 
     async def start(self) -> None:
         """작업 매니저 시작"""
@@ -240,7 +240,7 @@ class AsyncTaskManager:
         if not self.is_running:
             return
         self.is_running = False
-        cancel_tasks=[]
+        cancel_tasks = []
         for task_id in list(self.running_tasks.keys()):
             cancel_tasks = cancel_tasks + [self.cancel_task(task_id)]
         if cancel_tasks:
@@ -453,9 +453,7 @@ class AsyncTaskManager:
         """작업 정보 조회"""
         return self.tasks.get(task_id)
 
-    async def get_result(
-        self, task_id: str, timeout=None
-    ) -> Result[Any, str]:
+    async def get_result(self, task_id: str, timeout=None) -> Result[Any, str]:
         """
         작업 결과 조회
 
@@ -524,7 +522,7 @@ class AsyncTaskManager:
         Returns:
             Dict[str, Result]: 작업별 결과
         """
-        results={}
+        results = {}
 
         async def get_task_result(task_id: str) -> tuple[str, Result]:
             result = await self.get_result(task_id, timeout)
@@ -593,7 +591,7 @@ class AsyncTaskManager:
         if not self.config.enable_result_caching:
             return
         current_time = datetime.now()
-        expired_tasks=[]
+        expired_tasks = []
         for task_id, task_info in self.tasks.items():
             if (
                 task_info.is_finished
@@ -654,7 +652,7 @@ class AsyncTaskManager:
         return [task for task in self.tasks.values() if tag in task.tags]
 
 
-_default_task_manager=None
+_default_task_manager = None
 
 
 def get_default_task_manager() -> AsyncTaskManager:
@@ -676,9 +674,7 @@ async def submit_task(func: Callable, *args, **kwargs) -> str:
     return await manager.submit(func, *args, **kwargs)
 
 
-async def get_task_result(
-    task_id: str, timeout=None
-) -> Result[Any, str]:
+async def get_task_result(task_id: str, timeout=None) -> Result[Any, str]:
     """기본 매니저에서 작업 결과 조회"""
     manager = get_default_task_manager()
     return await manager.get_result(task_id, timeout)

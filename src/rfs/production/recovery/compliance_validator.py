@@ -83,10 +83,10 @@ class ComplianceControl:
     category: ControlCategory
     standard: ComplianceStandard
     requirements: List[str]
-    validation_script=None
+    validation_script = None
     remediation_steps: List[str] = field(default_factory=list)
     severity: Severity = Severity.MEDIUM
-    automated=True
+    automated = True
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -117,7 +117,7 @@ class ComplianceReport:
     control_results: List[ValidationResult]
     summary: Dict[str, Any]
     recommendations: List[str]
-    next_review_date=None
+    next_review_date = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -132,8 +132,8 @@ class AuditLog:
     action: str
     resource: str
     result: str
-    ip_address=None
-    user_agent=None
+    ip_address = None
+    user_agent = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -146,7 +146,7 @@ class CompliancePolicy:
     standards: List[ComplianceStandard]
     controls: List[str]
     validation_frequency: str
-    auto_remediate=False
+    auto_remediate = False
     notification_channels: List[str] = field(default_factory=list)
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -156,11 +156,11 @@ class ComplianceValidator:
     """컴플라이언스 검증자"""
 
     def __init__(self):
-        self.controls={}
-        self.policies={}
-        self.validation_results=[]
-        self.reports=[]
-        self.audit_logs=[]
+        self.controls = {}
+        self.policies = {}
+        self.validation_results = []
+        self.reports = []
+        self.audit_logs = []
         self._running = False
         self._tasks: Set[asyncio.Task] = set()
         self._initialize_default_controls()
@@ -246,7 +246,7 @@ class ComplianceValidator:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks={}
+                _tasks = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop compliance validator: {e}")
@@ -323,7 +323,7 @@ class ComplianceValidator:
             ]
             if not standard_controls:
                 return Failure(f"No controls found for standard {standard.value}")
-            control_results=[]
+            control_results = []
             total_score = 0.0
             for control in standard_controls:
                 result = await self.validate_control(control.id, context)
@@ -358,7 +358,7 @@ class ComplianceValidator:
             if policy_id not in self.policies:
                 return Failure(f"Policy {policy_id} not found")
             policy = self.policies[policy_id]
-            results=[]
+            results = []
             for control_id in policy.controls:
                 result = await self.validate_control(control_id, context)
                 if type(result).__name__ == "Success":
@@ -382,14 +382,17 @@ class ComplianceValidator:
             return Failure(f"Failed to validate policy: {e}")
 
     async def generate_compliance_report(
-        self, standards=None, start_date=None, end_date=None,
+        self,
+        standards=None,
+        start_date=None,
+        end_date=None,
     ) -> Result[Dict[str, Any], str]:
         """종합 컴플라이언스 보고서 생성"""
         try:
             standards = standards or list(ComplianceStandard)
             start_date = start_date or datetime.now() - timedelta(days=30)
             end_date = end_date or datetime.now()
-            standard_reports={}
+            standard_reports = {}
             for standard in standards:
                 latest_report = self._get_latest_report(standard, start_date, end_date)
                 if latest_report:
@@ -403,8 +406,8 @@ class ComplianceValidator:
                 if standard_reports
                 else 0
             )
-            all_findings=[]
-            all_recommendations=[]
+            all_findings = []
+            all_recommendations = []
             for report in standard_reports.values():
                 for result in report.control_results:
                     all_findings = all_findings + result.findings
@@ -428,11 +431,16 @@ class ComplianceValidator:
             return Failure(f"Failed to generate compliance report: {e}")
 
     async def get_audit_logs(
-        self, start_date=None, end_date=None, event_type=None, user=None, limit=1000,
+        self,
+        start_date=None,
+        end_date=None,
+        event_type=None,
+        user=None,
+        limit=1000,
     ) -> Result[List[AuditLog], str]:
         """감사 로그 조회"""
         try:
-            filtered_logs=[]
+            filtered_logs = []
             for log in self.audit_logs:
                 if start_date and log.timestamp < start_date:
                     continue
@@ -543,8 +551,8 @@ class ComplianceValidator:
         self, control: ComplianceControl, context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """통제 검증 수행"""
-        findings=[]
-        recommendations=[]
+        findings = []
+        recommendations = []
         score = 100.0
         for requirement in control.requirements:
             match control.category:
@@ -644,7 +652,7 @@ class ComplianceValidator:
 
     def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
         """권장사항 생성"""
-        all_recommendations=[]
+        all_recommendations = []
         for result in results:
             if result.status != ComplianceStatus.COMPLIANT:
                 all_recommendations = all_recommendations + result.recommendations
@@ -653,7 +661,7 @@ class ComplianceValidator:
 
     def _generate_privacy_recommendations(self, checks: Dict[str, bool]) -> List[str]:
         """프라이버시 권장사항 생성"""
-        recommendations=[]
+        recommendations = []
         if not checks["data_classification"]:
             recommendations = [*recommendations, "Implement data classification system"]
         if not checks["encryption_at_rest"]:
@@ -671,7 +679,7 @@ class ComplianceValidator:
 
     def _generate_security_recommendations(self, checks: Dict[str, bool]) -> List[str]:
         """보안 권장사항 생성"""
-        recommendations=[]
+        recommendations = []
         if not checks["mfa_enabled"]:
             recommendations = [*recommendations, "Enable multi-factor authentication"]
         if not checks["password_policy"]:
@@ -716,7 +724,7 @@ class ComplianceValidator:
 
     def _calculate_compliance_trends(self) -> Dict[str, Any]:
         """컴플라이언스 추세 계산"""
-        trends={}
+        trends = {}
         for month in range(6):
             month_start = datetime.now() - timedelta(days=30 * (month + 1))
             month_end = datetime.now() - timedelta(days=30 * month)
@@ -734,7 +742,7 @@ class ComplianceValidator:
         self, standard_reports: Dict[str, ComplianceReport]
     ) -> List[Dict[str, Any]]:
         """위험 영역 식별"""
-        risk_areas=[]
+        risk_areas = []
         for standard, report in standard_reports.items():
             for result in report.control_results:
                 if result.status == ComplianceStatus.NON_COMPLIANT:
@@ -786,7 +794,8 @@ class ComplianceValidator:
         user: str,
         action: str,
         resource: str,
-        result: str, metadata=None,
+        result: str,
+        metadata=None,
     ):
         """감사 이벤트 로깅"""
         audit_log = AuditLog(
@@ -817,7 +826,7 @@ class ComplianceValidator:
                 return False
 
 
-_compliance_validator=None
+_compliance_validator = None
 
 
 def get_compliance_validator() -> ComplianceValidator:

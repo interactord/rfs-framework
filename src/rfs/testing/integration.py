@@ -17,10 +17,10 @@ from ..core.result import Failure, Result, Success
 class TestEnvironment:
     """테스트 환경 설정"""
 
-    name="test"
+    name = "test"
     config: Dict[str, Any] = field(default_factory=dict)
     services: Dict[str, Any] = field(default_factory=dict)
-    temp_dir=None
+    temp_dir = None
 
     def setup(self) -> Result[None, str]:
         """환경 설정"""
@@ -225,7 +225,7 @@ class TestDataFactory:
 
 
 # 글로벌 테스트 환경
-_test_environment=None
+_test_environment = None
 
 
 def setup_test_environment(

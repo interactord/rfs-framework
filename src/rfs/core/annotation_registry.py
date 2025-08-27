@@ -63,10 +63,10 @@ class AnnotationRegistry(ServiceRegistry):
     def __init__(self, current_profile="default"):
         super().__init__()
         self.current_profile = current_profile
-        self._annotation_metadata={}
-        self._ports={}
+        self._annotation_metadata = {}
+        self._ports = {}
         self._adapters_by_port: Dict[str, List[str]] = {}
-        self._registration_order=[]
+        self._registration_order = []
         self._registration_stats = {
             "total_registered": 0,
             "by_type": {},
@@ -369,7 +369,7 @@ class AnnotationRegistry(ServiceRegistry):
         """순환 의존성 검출"""
         visited: Set[Any] = set()
         rec_stack: Set[Any] = set()
-        cycles=[]
+        cycles = []
 
         def dfs(node: str, path: List[str]):
             nonlocal cycles  # cycles를 외부 스코프에서 수정
@@ -484,7 +484,7 @@ class AnnotationRegistry(ServiceRegistry):
 class RegistryManager:
     """레지스트리 관리자 - 함수형 싱글톤 패턴"""
 
-    _instances={}
+    _instances = {}
 
     @classmethod
     def get_registry(cls, profile="default") -> AnnotationRegistry:

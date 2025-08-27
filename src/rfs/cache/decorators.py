@@ -44,7 +44,7 @@ class CacheKeyBuilder:
 
     def _format_key(self, key: str) -> str:
         """키 포맷팅"""
-        parts=[]
+        parts = []
         if self.namespace:
             parts = parts + [self.namespace]
         if self.prefix:
@@ -312,9 +312,7 @@ def cached_method(
     return decorator
 
 
-def cache_warming(
-    warm_keys: List[tuple], ttl=None, cache_name=None
-):
+def cache_warming(warm_keys: List[tuple], ttl=None, cache_name=None):
     """캐시 워밍 데코레이터"""
 
     def decorator(func: Callable) -> Callable:

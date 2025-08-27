@@ -211,7 +211,7 @@ class StatusCommand(Command):
 
     async def _collect_status_info(self) -> Dict[str, Any]:
         """시스템 상태 정보 수집"""
-        status={}
+        status = {}
         try:
             status = {
                 **status,
@@ -265,7 +265,7 @@ class StatusCommand(Command):
 
     async def _check_dependencies(self) -> Dict[str, Any]:
         """의존성 확인"""
-        deps={}
+        deps = {}
         try:
             import pkg_resources
 
@@ -428,7 +428,7 @@ class HealthCommand(Command):
         self, options: Dict[str, Any]
     ) -> Dict[str, Dict[str, Any]]:
         """헬스체크 실행"""
-        results={}
+        results = {}
         checks = self._get_health_checks()
         for check in checks:
             try:

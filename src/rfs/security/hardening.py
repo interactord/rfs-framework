@@ -47,45 +47,45 @@ class SecurityPolicy:
     level: SecurityLevel = SecurityLevel.STANDARD
 
     # Password policies
-    min_password_length=12
-    require_uppercase=True
-    require_lowercase=True
-    require_numbers=True
-    require_special_chars=True
-    password_history=5
-    password_expiry_days=90
+    min_password_length = 12
+    require_uppercase = True
+    require_lowercase = True
+    require_numbers = True
+    require_special_chars = True
+    password_history = 5
+    password_expiry_days = 90
 
     # Session policies
-    session_timeout_minutes=30
-    max_concurrent_sessions=3
-    require_mfa=False
+    session_timeout_minutes = 30
+    max_concurrent_sessions = 3
+    require_mfa = False
 
     # Access control
-    max_login_attempts=5
-    lockout_duration_minutes=30
+    max_login_attempts = 5
+    lockout_duration_minutes = 30
     ip_whitelist: List[str] = field(default_factory=list)
     ip_blacklist: List[str] = field(default_factory=list)
 
     # Encryption
-    encryption_algorithm="AES-256"
-    key_rotation_days=90
+    encryption_algorithm = "AES-256"
+    key_rotation_days = 90
 
     # API security
-    rate_limit_per_minute=100
-    require_api_key=True
-    require_https=True
+    rate_limit_per_minute = 100
+    require_api_key = True
+    require_https = True
 
     # Data protection
-    data_retention_days=365
-    require_data_encryption_at_rest=True
-    require_data_encryption_in_transit=True
+    data_retention_days = 365
+    require_data_encryption_at_rest = True
+    require_data_encryption_in_transit = True
 
     # Compliance
     compliance_standards: List[str] = field(default_factory=list)
 
     # Audit
-    enable_audit_logging=True
-    audit_retention_days=730
+    enable_audit_logging = True
+    audit_retention_days = 730
 
 
 @dataclass
@@ -95,9 +95,9 @@ class HardeningResult:
     timestamp: datetime
     policy_applied: str
     security_level: SecurityLevel
-    total_checks=0
-    passed_checks=0
-    failed_checks=0
+    total_checks = 0
+    passed_checks = 0
+    failed_checks = 0
     critical_issues: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
@@ -128,7 +128,7 @@ class SecurityHardening:
         self.policy = policy or SecurityPolicy(
             name="default", level=SecurityLevel.STANDARD
         )
-        self._hardening_history=[]
+        self._hardening_history = []
 
     def apply_hardening(
         self, target: Dict[str, Any] = None
@@ -546,7 +546,7 @@ class SecurityHardening:
         Returns:
             Result[검증 결과, 에러 메시지]
         """
-        errors=[]
+        errors = []
 
         if len(password) < self.policy.min_password_length:
             errors = [

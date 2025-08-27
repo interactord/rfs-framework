@@ -43,15 +43,15 @@ class LogLevel(Enum):
 class LogContext:
     """로그 컨텍스트"""
 
-    request_id=None
-    user_id=None
-    session_id=None
-    trace_id=None
-    span_id=None
-    correlation_id=None
-    tenant_id=None
-    service_name=None
-    operation=None
+    request_id = None
+    user_id = None
+    session_id = None
+    trace_id = None
+    span_id = None
+    correlation_id = None
+    tenant_id = None
+    service_name = None
+    operation = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -68,16 +68,16 @@ class LogEntry:
     level: LogLevel
     message: str
     logger_name: str
-    module=None
-    function=None
-    line_number=None
-    context=None
+    module: Optional[str] = None
+    function: Optional[str] = None
+    line_number: Optional[int] = None
+    context: Optional[Dict[str, Any]] = None
     data: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    error_type=None
-    error_traceback=None
-    execution_time_ms=None
-    memory_used_mb=None
+    error_type: Optional[str] = None
+    error_traceback: Optional[str] = None
+    execution_time_ms: Optional[float] = None
+    memory_used_mb: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -147,8 +147,8 @@ class EnhancedLogger:
         self._logger = logging.getLogger(name)
         self._logger.setLevel(getattr(logging, level.value))
         self._setup_handlers()
-        self._log_queue=None
-        self._log_processor_task=None
+        self._log_queue = None
+        self._log_processor_task = None
         self._async_initialized = False
         self._filters: List[Callable[[LogEntry], bool]] = []
         self._handlers: List[Callable[[LogEntry], None]] = []
@@ -431,13 +431,11 @@ class EnhancedLogger:
                 await self._log_processor_task
 
 
-_loggers={}
-_default_logger=None
+_loggers = {}
+_default_logger = None
 
 
-def get_logger(
-    name=None, level: LogLevel = LogLevel.INFO, **kwargs
-) -> EnhancedLogger:
+def get_logger(name=None, level: LogLevel = LogLevel.INFO, **kwargs) -> EnhancedLogger:
     """로거 조회/생성"""
     if name is None:
         name = "rfs"

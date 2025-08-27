@@ -160,7 +160,7 @@ class ErrorHandler:
 
     def __init__(self):
         self.error_handlers: Dict[Type[Exception], Callable] = {}
-        self.global_error_handler=None
+        self.global_error_handler = None
 
     def register_handler(self, exception_type: Type[Exception], handler: Callable):
         """특정 예외 타입에 대한 핸들러 등록"""
@@ -225,14 +225,14 @@ class ErrorHandler:
         """요청 정보 추출"""
         if not request:
             return {}
-        info={}
+        info = {}
         try:
             if hasattr(request, "method"):
                 info["method"] = {"method": request.method}
             if hasattr(request, "url"):
                 info["url"] = {"url": str(request.url)}
             if hasattr(request, "headers"):
-                safe_headers={}
+                safe_headers = {}
                 for key, value in request.headers.items():
                     if key.lower() not in ["authorization", "cookie", "x-api-key"]:
                         safe_headers[key] = {key: value}
@@ -242,7 +242,7 @@ class ErrorHandler:
         return info
 
 
-_global_error_handler=None
+_global_error_handler = None
 
 
 def get_error_handler() -> ErrorHandler:

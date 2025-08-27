@@ -382,7 +382,7 @@ def sequence(monads: List[Maybe[T]]) -> Maybe[List[T]]:
         >>> sequence([Maybe.just(1), Maybe.nothing(), Maybe.just(3)])
         Maybe(None)
     """
-    result=[]
+    result = []
     for monad in monads:
         if monad.is_nothing():
             return Maybe.nothing()
@@ -401,7 +401,7 @@ def traverse(func: Callable[[T], Maybe[U]], items: List[T]) -> Maybe[List[U]]:
         >>> traverse(safe_div, [2, 0, 10])
         Maybe(None)
     """
-    result=[]
+    result = []
     for item in items:
         maybe_result = func(item)
         if maybe_result.is_nothing():

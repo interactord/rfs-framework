@@ -73,14 +73,14 @@ class VulnerabilityReport:
     threat_level: ThreatLevel
     title: str
     description: str
-    file_path=None
-    line_number=None
-    code_snippet=None
-    cwe_id=None
-    cvss_score=None
+    file_path = None
+    line_number = None
+    code_snippet = None
+    cwe_id = None
+    cvss_score = None
     remediation: List[str] = field(default_factory=list)
     references: List[str] = field(default_factory=list)
-    confirmed=False
+    confirmed = False
 
     @property
     def risk_score(self) -> int:
@@ -103,7 +103,7 @@ class SecurityScanner:
 
     def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self.vulnerabilities=[]
+        self.vulnerabilities = []
         self._load_security_patterns()
 
     def _load_security_patterns(self):
@@ -162,8 +162,8 @@ class SecurityScanner:
                         border_style="red",
                     )
                 )
-            self.vulnerabilities=[]
-            scan_tasks=[]
+            self.vulnerabilities = []
+            scan_tasks = []
             if not scan_types or "code" in scan_types:
                 scan_tasks = scan_tasks + [
                     ("코드 취약점 분석", self._scan_code_vulnerabilities)
@@ -213,7 +213,7 @@ class SecurityScanner:
 
     async def _scan_code_vulnerabilities(self) -> List[VulnerabilityReport]:
         """코드 취약점 분석"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             python_files = list(self.project_path.rglob("*.py"))
             for py_file in python_files:
@@ -245,7 +245,7 @@ class SecurityScanner:
         self, tree: ast.AST, file_path: Path, content: str
     ) -> List[VulnerabilityReport]:
         """AST 기반 취약점 분석"""
-        vulnerabilities=[]
+        vulnerabilities = []
         lines = content.split("\n")
         for node in ast.walk(tree):
             if type(node).__name__ == "Call":
@@ -327,7 +327,7 @@ class SecurityScanner:
         self, file_path: Path, content: str
     ) -> List[VulnerabilityReport]:
         """패턴 기반 취약점 분석"""
-        vulnerabilities=[]
+        vulnerabilities = []
         lines = content.split("\n")
         for i, line in enumerate(lines, 1):
             for pattern in self.sqli_patterns:
@@ -374,7 +374,7 @@ class SecurityScanner:
 
     async def _scan_dependency_vulnerabilities(self) -> List[VulnerabilityReport]:
         """의존성 보안 검사"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             requirements_file = self.project_path / "requirements.txt"
             if requirements_file.exists():
@@ -397,7 +397,7 @@ class SecurityScanner:
         self, requirements_file: Path
     ) -> List[VulnerabilityReport]:
         """Python 의존성 검사"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             try:
                 result = subprocess.run(
@@ -455,7 +455,7 @@ class SecurityScanner:
         self, requirements_file: Path
     ) -> List[VulnerabilityReport]:
         """수동 의존성 검사"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             content = requirements_file.read_text()
             known_vulnerabilities = {
@@ -497,7 +497,7 @@ class SecurityScanner:
 
     async def _scan_configuration_security(self) -> List[VulnerabilityReport]:
         """설정 보안 점검"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             env_files = list(self.project_path.glob(".env*"))
             for env_file in env_files:
@@ -526,7 +526,7 @@ class SecurityScanner:
         self, env_file: Path
     ) -> List[VulnerabilityReport]:
         """환경 변수 파일 보안 검사"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             content = env_file.read_text()
             lines = content.split("\n")
@@ -585,7 +585,7 @@ class SecurityScanner:
 
     async def _scan_file_permissions(self) -> List[VulnerabilityReport]:
         """파일 권한 검사"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
             sensitive_files = [
                 ".env",
@@ -635,9 +635,9 @@ class SecurityScanner:
 
     async def _scan_hardcoded_secrets(self) -> List[VulnerabilityReport]:
         """하드코딩된 시크릿 탐지"""
-        vulnerabilities=[]
+        vulnerabilities = []
         try:
-            text_files=[]
+            text_files = []
             for ext in [
                 "*.py",
                 "*.js",
@@ -703,7 +703,7 @@ class SecurityScanner:
                 )
             )
             return
-        severity_stats={}
+        severity_stats = {}
         for level in ThreatLevel:
             count = sum((1 for v in self.vulnerabilities if v.threat_level == level))
             if count > 0:
@@ -777,9 +777,7 @@ class SecurityScanner:
                 )
             )
 
-    async def generate_security_report(
-        self, output_path=None
-    ) -> Result[str, str]:
+    async def generate_security_report(self, output_path=None) -> Result[str, str]:
         """보안 리포트 생성"""
         try:
             if output_path is None:
@@ -828,12 +826,12 @@ class SecurityScanner:
         """취약점 요약 정보 조회"""
         if not self.vulnerabilities:
             return {"total": 0, "by_severity": {}, "by_type": {}}
-        by_severity={}
+        by_severity = {}
         for level in ThreatLevel:
             count = sum((1 for v in self.vulnerabilities if v.threat_level == level))
             if count > 0:
                 by_severity[level.value] = {level.value: count}
-        by_type={}
+        by_type = {}
         for vuln_type in VulnerabilityType:
             count = sum((1 for v in self.vulnerabilities if v.vuln_type == vuln_type))
             if count > 0:

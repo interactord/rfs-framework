@@ -58,7 +58,7 @@ class ValidationResult:
     is_valid: bool
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
-    sanitized_data=None
+    sanitized_data = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -280,7 +280,7 @@ def ValidateInput(
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            errors=[]
+            errors = []
             if level == ValidationLevel.STRICT:
                 sig = inspect.signature(func)
                 for param_name, param in sig.parameters.items():
@@ -331,7 +331,7 @@ def ValidateInput(
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            errors=[]
+            errors = []
             if level == ValidationLevel.STRICT:
                 import inspect
 
@@ -496,9 +496,7 @@ def SanitizeInput(
     return decorator
 
 
-def ValidateSchema(
-    schema: Type[BaseModel], parameter="data", coerce=False
-):
+def ValidateSchema(schema: Type[BaseModel], parameter="data", coerce=False):
     """
     Pydantic 스키마 검증 데코레이터
 
@@ -557,7 +555,7 @@ class RateLimiter:
 
     def __init__(self):
         self.requests: Dict[str, deque] = defaultdict(lambda: deque())
-        self.blocked_until={}
+        self.blocked_until = {}
 
     def is_allowed(
         self,

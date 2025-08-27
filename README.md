@@ -118,7 +118,7 @@ Infrastructure Layer
 
 ### 전체 문서
 - **[📖 Docs (한국어)](./docs/)** - 17개 모듈 상세 문서
-- **[📚 HOF Library](./docs/16-hot-library.md)** - Higher-Order Functions
+- **[📚 HOF Library](./docs/22-hot-library.md)** - Higher-Order Functions
 - **[마이그레이션 가이드](./MIGRATION_GUIDE.md)** - v3에서 v4로 업그레이드
 
 ## 🛠️ Development

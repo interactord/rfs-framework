@@ -447,7 +447,7 @@ transform = compose(
     validate_schema,
     enrich_metadata
 )
-# 더 많은 HOF 패턴은 [HOF Library](16-hot-library.md) 참조
+# 더 많은 HOF 패턴은 [HOF Library](22-hot-library.md) 참조
 
 # ✅ Better - 반응형 스트림
 from rfs.reactive import Flux
@@ -676,11 +676,11 @@ class CustomTransformer(BaseTransformer):
 ## 관련 자료
 
 - [RFS Framework Core Patterns](01-core-patterns.md)
-- [HOF Library](16-hot-library.md) - Higher-Order Functions와 함수형 유틸리티
+- [HOF Library](22-hot-library.md) - Higher-Order Functions와 함수형 유틸리티
 - [Configuration Management](03-configuration.md) 
 - [CLI Interface](14-cli-interface.md)
 - [Implementation Status & TBD](99-implementation-status.md)
-- [HOF Library](16-hot-library.md) - 함수형 프로그래밍 유틸리티
+- [HOF Library](22-hot-library.md) - 함수형 프로그래밍 유틸리티
 - [Core Patterns](01-core-patterns.md) - Result 패턴 및 함수형 원칙
 
 ## 코드 품질 체크리스트
@@ -744,7 +744,7 @@ jobs:
 RFS Framework의 코드 품질 관리 시스템은 현대적인 Python 개발의 모범 사례를 체계화한 포괄적인 가이드라인입니다. 함수형 프로그래밍, Result 패턴, 반응형 스트림 등의 고급 패러다임을 통해 안전하고 유지보수가 쉬운 엔터프라이즈급 애플리케이션을 구축할 수 있습니다.
 
 ### 핵심 원칙
-1. **함수형 프로그래밍**: 불변성, 순수 함수, 함수 합성 ([HOF Library](16-hot-library.md) 참조)
+1. **함수형 프로그래밍**: 불변성, 순수 함수, 함수 합성 ([HOF Library](22-hot-library.md) 참조)
 2. **타입 안전성**: 완전한 타입 힌트와 정적 검증
 3. **명시적 오류 처리**: Result 패턴으로 예외 없는 프로그래밍
 4. **테스트 우선**: TDD와 80% 이상 커버리지

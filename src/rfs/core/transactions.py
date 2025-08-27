@@ -62,12 +62,12 @@ class TransactionConfig:
     """트랜잭션 설정"""
 
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
-    timeout_seconds=30
-    retry_count=3
+    timeout_seconds = 30
+    retry_count = 3
     retry_delay_seconds: float = 1.0
     rollback_for: List[type] = field(default_factory=list)
     no_rollback_for: List[type] = field(default_factory=list)
-    readonly=False
+    readonly = False
 
     def __post_init__(self):
         if not self.rollback_for:
@@ -78,12 +78,12 @@ class TransactionConfig:
 class RedisTransactionConfig:
     """Redis 트랜잭션 설정"""
 
-    ttl_seconds=None
-    key_pattern=None
+    ttl_seconds = None
+    key_pattern = None
     watch_keys: List[str] = field(default_factory=list)
-    timeout_seconds=30
-    retry_count=3
-    pipeline_mode=True
+    timeout_seconds = 30
+    retry_count = 3
+    pipeline_mode = True
 
 
 @dataclass
@@ -91,10 +91,10 @@ class DistributedTransactionConfig:
     """분산 트랜잭션 설정"""
 
     saga_id: str
-    timeout_seconds=300  # 5분
-    retry_count=3
-    compensation_timeout=60
-    idempotent=True
+    timeout_seconds = 300  # 5분
+    retry_count = 3
+    compensation_timeout = 60
+    idempotent = True
 
 
 @dataclass
@@ -105,15 +105,15 @@ class TransactionContext:
     transaction_type: TransactionType = TransactionType.DATABASE
     status: TransactionStatus = TransactionStatus.PENDING
     started_at: datetime = field(default_factory=datetime.now)
-    completed_at=None
+    completed_at = None
     config: Optional[
         Union[TransactionConfig, RedisTransactionConfig, DistributedTransactionConfig]
     ] = None
 
     # 실행 정보
-    attempts=0
-    last_error=None
-    rollback_reason=None
+    attempts = 0
+    last_error = None
+    rollback_reason = None
 
     # 메타데이터
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -154,7 +154,7 @@ class DatabaseTransactionManager(TransactionManager):
 
     def __init__(self, connection_factory: Callable = None):
         self.connection_factory = connection_factory
-        self._active_transactions={}
+        self._active_transactions = {}
 
     async def begin_transaction(self, context: TransactionContext) -> Result[Any, str]:
         """데이터베이스 트랜잭션 시작"""
@@ -333,7 +333,7 @@ class RedisTransactionManager(TransactionManager):
 
     def __init__(self, redis_client_factory: Callable = None):
         self.redis_client_factory = redis_client_factory
-        self._active_transactions={}
+        self._active_transactions = {}
 
     async def begin_transaction(self, context: TransactionContext) -> Result[Any, str]:
         """Redis 트랜잭션 시작"""
@@ -474,7 +474,7 @@ class DistributedTransactionManager(TransactionManager):
 
     def __init__(self, saga_manager=None):
         self.saga_manager = saga_manager
-        self._active_transactions={}
+        self._active_transactions = {}
 
     async def begin_transaction(self, context: TransactionContext) -> Result[Any, str]:
         """분산 트랜잭션 시작"""
@@ -603,8 +603,8 @@ class TransactionRegistry:
     """트랜잭션 매니저 레지스트리"""
 
     def __init__(self):
-        self._managers={}
-        self._default_configs={}
+        self._managers = {}
+        self._default_configs = {}
 
     def register_manager(
         self, transaction_type: TransactionType, manager: TransactionManager

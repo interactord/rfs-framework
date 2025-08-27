@@ -116,7 +116,7 @@ class MemoryMetrics:
     snapshots: List[MemorySnapshot] = field(default_factory=list)
     object_history: Dict[str, List[ObjectTypeInfo]] = field(default_factory=dict)
     detected_leaks: List[MemoryLeak] = field(default_factory=list)
-    peak_memory=0
+    peak_memory = 0
 
     def add_snapshot(self, snapshot: MemorySnapshot):
         """스냅샷 추가"""
@@ -165,21 +165,19 @@ class MemoryMetrics:
 class MemoryProfiler:
     """메모리 프로파일러"""
 
-    def __init__(
-        self, collection_interval=2.0, enable_tracemalloc=True
-    ):
+    def __init__(self, collection_interval=2.0, enable_tracemalloc=True):
         self.collection_interval = collection_interval
         self.enable_tracemalloc = enable_tracemalloc
         self.metrics = MemoryMetrics()
         self.is_running = False
-        self.collection_task=None
+        self.collection_task = None
         self.start_time = datetime.now()
         self.leak_detection_enabled = True
         self.leak_detection_window = 50
         self.leak_threshold_growth = 1.5
         self.tracked_types: Set[str] = set()
         self.object_refs: Dict[str, List[weakref.ref]] = defaultdict(list)
-        self.alert_callbacks=[]
+        self.alert_callbacks = []
         if self.enable_tracemalloc and (not tracemalloc.is_tracing()):
             tracemalloc.start(25)
 
@@ -238,7 +236,7 @@ class MemoryProfiler:
             process = psutil.Process()
             process_memory = process.memory_info()
             gc_counts = list(gc.get_count())
-            gc_stats={}
+            gc_stats = {}
             try:
                 if hasattr(gc, "get_stats"):
                     gc_stats = {
@@ -305,7 +303,7 @@ class MemoryProfiler:
     async def _check_memory_alerts(self, snapshot: MemorySnapshot):
         """메모리 알림 확인"""
         try:
-            alerts=[]
+            alerts = []
             if snapshot.memory_percent > 85.0:
                 alerts = alerts + [f"High memory usage: {snapshot.memory_percent:.1f}%"]
             if snapshot.swap_percent > 50.0:
@@ -395,7 +393,7 @@ class MemoryProfiler:
         """가비지 컬렉션 강제 실행"""
         try:
             before = self.get_current_snapshot()
-            collected=[]
+            collected = []
             for generation in range(gc.get_count().__len__()):
                 collected = collected + [gc.collect(generation)]
             await asyncio.sleep(0.1)
@@ -414,9 +412,7 @@ class MemoryProfiler:
         except Exception as e:
             return {"error": str(e)}
 
-    def get_tracemalloc_statistics(
-        self, limit=10
-    ) -> Optional[List[Dict[str, Any]]]:
+    def get_tracemalloc_statistics(self, limit=10) -> Optional[List[Dict[str, Any]]]:
         """tracemalloc 통계 정보 반환"""
         if not tracemalloc.is_tracing():
             return None

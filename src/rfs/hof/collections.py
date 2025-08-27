@@ -22,6 +22,9 @@ from typing import (
     overload,
 )
 
+# RFS Framework imports
+from ..core.result import Failure, Result, Success
+
 # Type variables
 T = TypeVar("T")
 U = TypeVar("U")
@@ -110,6 +113,43 @@ def compact_map(func: Callable[[T], Optional[U]], iterable: Iterable[T]) -> List
         [4, 16]
     """
     return [result for item in iterable if (result := func(item)) is not None]
+
+
+def safe_map(func: Callable[[T], U], iterable: Iterable[T]) -> Result[List[U], str]:
+    """
+    안전한 map 연산 - 예외를 Result로 변환
+
+    모든 요소에 함수를 적용하되, 예외 발생 시 Failure로 래핑합니다.
+    PR 문서에서 제안된 API 일관성을 위해 function-first 매개변수 순서를 사용합니다.
+
+    Args:
+        func: 변환 함수 (예외 발생 가능)
+        iterable: 변환할 컬렉션
+
+    Returns:
+        Result[List[U], str]: 성공 시 변환된 리스트, 실패 시 에러 메시지
+
+    Example:
+        >>> safe_map(lambda x: x / 2, [2, 4, 6])
+        Success([1.0, 2.0, 3.0])
+
+        >>> safe_map(lambda x: 10 // x, [2, 0, 4])  # ZeroDivisionError at index 1
+        Failure("Error at index 1: division by zero")
+
+        >>> safe_map(int, ["1", "2", "invalid", "4"])  # ValueError at index 2
+        Failure("Error at index 2: invalid literal for int() with base 10: 'invalid'")
+    """
+    try:
+        results = []
+        for index, item in enumerate(iterable):
+            try:
+                result = func(item)
+                results.append(result)
+            except Exception as e:
+                return Failure(f"Error at index {index}: {str(e)}")
+        return Success(results)
+    except Exception as e:
+        return Failure(f"Iteration error: {str(e)}")
 
 
 def flat_map(func: Callable[[T], Iterable[U]], iterable: Iterable[T]) -> List[U]:
@@ -379,8 +419,8 @@ def partition(
         >>> partition(lambda x: x % 2 == 0, [1, 2, 3, 4, 5])
         ([2, 4], [1, 3, 5])
     """
-    true_items=[]
-    false_items=[]
+    true_items = []
+    false_items = []
     for item in iterable:
         if predicate(item):
             true_items.append(item)
@@ -404,7 +444,7 @@ def group_by(key_func: Callable[[T], K], iterable: Iterable[T]) -> Dict[K, List[
         >>> group_by(lambda x: x % 3, [1, 2, 3, 4, 5, 6])
         {1: [1, 4], 2: [2, 5], 0: [3, 6]}
     """
-    result={}
+    result = {}
     for item in iterable:
         key = key_func(item)
         if key not in result:
@@ -429,7 +469,7 @@ def chunk(iterable: Iterable[T], size: int) -> List[List[T]]:
         [[1, 2], [3, 4], [5]]
     """
     it = iter(iterable)
-    chunks=[]
+    chunks = []
     while True:
         chunk_items = list(islice(it, size))
         if not chunk_items:

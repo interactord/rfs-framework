@@ -89,7 +89,7 @@ class OptimizationResult:
     after_metrics: Dict[str, Any] = field(default_factory=dict)
     recommendations: List[str] = field(default_factory=list)
     code_changes: List[Dict[str, str]] = field(default_factory=list)
-    applied=False
+    applied = False
 
     @property
     def roi_score(self) -> float:
@@ -105,10 +105,10 @@ class OptimizationSuite:
 
     name: str
     target_types: List[str] = field(default_factory=list)
-    auto_apply=False
+    auto_apply = False
     max_impact_threshold: float = 50.0
-    include_experimental=False
-    timeout=300
+    include_experimental = False
+    timeout = 300
 
 
 class PerformanceOptimizer:
@@ -116,10 +116,10 @@ class PerformanceOptimizer:
 
     def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self.optimization_results=[]
-        self.baseline_metrics={}
+        self.optimization_results = []
+        self.baseline_metrics = {}
         self.monitoring_active = False
-        self.monitoring_task=None
+        self.monitoring_task = None
         self.performance_history: List[Dict[str, Any]] = []
         self.max_history_size = 1000
 
@@ -139,7 +139,7 @@ class PerformanceOptimizer:
             if console:
                 console.print("📊 기준 성능 측정 중...")
             await self._measure_baseline_performance()
-            optimization_tasks=[]
+            optimization_tasks = []
             if not suite.target_types or OptimizationType.MEMORY in suite.target_types:
                 optimization_tasks = optimization_tasks + [
                     self._analyze_memory_optimization(suite)
@@ -233,18 +233,18 @@ class PerformanceOptimizer:
         except Exception as e:
             if console:
                 console.print(f"⚠️  기준 성능 측정 실패: {str(e)}", style="yellow")
-            self.baseline_metrics={}
+            self.baseline_metrics = {}
 
     async def _analyze_memory_optimization(
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """메모리 최적화 분석"""
-        results=[]
+        results = []
         try:
             if "memory" in self.baseline_metrics:
                 memory_mb = self.baseline_metrics["memory"]["rss_mb"]
                 if memory_mb > 100:
-                    cache={}
+                    cache = {}
                 gc_stats = self.baseline_metrics.get("gc", {})
                 if gc_stats and any(
                     (
@@ -285,7 +285,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """CPU 최적화 분석"""
-        results=[]
+        results = []
         try:
             if "cpu" in self.baseline_metrics:
                 num_threads = self.baseline_metrics["cpu"]["num_threads"]
@@ -344,7 +344,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """I/O 최적화 분석"""
-        results=[]
+        results = []
         try:
             results = results + [
                 OptimizationResult(
@@ -400,7 +400,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """시작 시간 최적화 분석"""
-        results=[]
+        results = []
         try:
             if "startup" in self.baseline_metrics:
                 import_time = self.baseline_metrics["startup"]["import_time"]
@@ -463,7 +463,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """Cloud Run 최적화 분석"""
-        results=[]
+        results = []
         try:
             is_cloud_run = os.getenv("K_SERVICE") is not None
             results = results + [
@@ -599,9 +599,7 @@ class PerformanceOptimizer:
             )
         )
 
-    async def start_performance_monitoring(
-        self, interval=60
-    ) -> Result[str, str]:
+    async def start_performance_monitoring(self, interval=60) -> Result[str, str]:
         """성능 모니터링 시작"""
         try:
             if self.monitoring_active:

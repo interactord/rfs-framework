@@ -39,23 +39,23 @@ class TransactionType(Enum):
 @dataclass
 class TransactionConfig:
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
-    timeout=30
-    retry_count=3
+    timeout = 30
+    retry_count = 3
     retry_delay: float = 0.1
 
 
 @dataclass
 class RedisTransactionConfig:
     watch_keys: List[str] = field(default_factory=list)
-    timeout=30
-    retry_count=3
+    timeout = 30
+    retry_count = 3
 
 
 @dataclass
 class DistributedTransactionConfig:
     saga_steps: List[str] = field(default_factory=list)
-    timeout=60
-    compensation_enabled=True
+    timeout = 60
+    compensation_enabled = True
 
 
 def get_transaction_registry():
@@ -429,7 +429,7 @@ def saga_transaction(**kwargs):
 class TransactionStatus:
     """트랜잭션 상태 추적 유틸리티"""
 
-    _active_transactions={}
+    _active_transactions = {}
 
     @classmethod
     def register_transaction(cls, context: TransactionContext):

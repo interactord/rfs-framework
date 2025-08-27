@@ -36,10 +36,10 @@ class EventStreamMetadata:
     """이벤트 스트림 메타데이터"""
 
     stream_id: str
-    version=0
+    version = 0
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    event_count=0
+    event_count = 0
 
 
 class EventStoreProtocol(Protocol):
@@ -75,8 +75,8 @@ class MemoryEventStore:
 
     def __init__(self):
         self.streams: Dict[str, List[Event]] = {}
-        self.metadata={}
-        self.all_events=[]
+        self.metadata = {}
+        self.all_events = []
 
     async def append_events(
         self, stream_id: str, events: List[Event], expected_version: int = -1
@@ -177,7 +177,7 @@ class FileEventStore:
         import aiofiles
 
         stream_file = self._get_stream_file(stream_id)
-        events=[]
+        events = []
         try:
             async with aiofiles.open(stream_file, "r", encoding="utf-8") as f:
                 async for line in f:
@@ -368,7 +368,7 @@ async def read_from_stream(stream: EventStream, from_version=0) -> List[Event]:
     return await stream.read(from_version)
 
 
-_event_store=None
+_event_store = None
 
 
 def get_event_store(

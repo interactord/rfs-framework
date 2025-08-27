@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import pytest_asyncio
 
 from rfs.core.result import Failure, Success
 from rfs.messaging.base import (
@@ -45,7 +46,7 @@ def memory_broker_config():
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def memory_broker(memory_broker_config):
     """메모리 브로커 fixture"""
     broker = MemoryMessageBroker(memory_broker_config)
@@ -516,7 +517,7 @@ class TestMemoryMessageBroker:
 class TestPublisherSubscriber:
     """Publisher/Subscriber 패턴 테스트"""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def pub_sub_setup(self):
         """Publisher/Subscriber 설정 fixture"""
         config = MemoryMessageConfig()

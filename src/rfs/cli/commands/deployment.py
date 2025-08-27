@@ -117,7 +117,7 @@ class DeployCommand(Command):
     ) -> Result[Dict[str, Any], str]:
         """배포 설정 수집"""
         try:
-            config={}
+            config = {}
             rfs_config = get_config()
             for i, arg in enumerate(args):
                 match arg:
@@ -274,7 +274,7 @@ class MonitorCommand(Command):
         while True:
             metrics = await self._collect_metrics(config)
             dashboard = self._create_dashboard_table(metrics)
-            console={}
+            console = {}
             console.print(dashboard)
             console.print(
                 f"\n🔄 마지막 업데이트: {datetime.now().strftime('%H:%M:%S')} | Ctrl+C로 종료"

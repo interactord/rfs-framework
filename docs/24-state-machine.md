@@ -48,6 +48,6 @@ Transition(
 
 ## 관련 문서
 
-- [Event System](16-event-system.md) - 이벤트 시스템
+- [Event System](21-event-system.md) - 이벤트 시스템
 - [Transactions](04-transactions.md) - 트랜잭션 시스템
-- [HOF Library](16-hot-library.md) - 함수형 상태 관리 패턴
+- [HOF Library](22-hot-library.md) - 함수형 상태 관리 패턴

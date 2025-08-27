@@ -41,15 +41,15 @@ class ScheduleConfig:
 
     task_name: str
     schedule_type: ScheduleType
-    start_time=None
-    end_time=None
-    interval=None
-    delay=None
-    cron_expression=None
-    max_runs=None
-    run_count=0
+    start_time = None
+    end_time = None
+    interval = None
+    delay = None
+    cron_expression = None
+    max_runs = None
+    run_count = 0
     conditions: List[Callable] = field(default_factory=list)
-    enabled=True
+    enabled = True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def should_run(self, current_time: datetime) -> bool:
@@ -64,9 +64,7 @@ class ScheduleConfig:
             return False
         return True
 
-    def get_next_run_time(
-        self, from_time=None
-    ) -> Optional[datetime]:
+    def get_next_run_time(self, from_time=None) -> Optional[datetime]:
         """다음 실행 시간 계산"""
         if not from_time:
             from_time = datetime.now()
@@ -144,13 +142,13 @@ class TaskScheduler:
 
     def __init__(self, task_manager=None):
         self.task_manager = task_manager or AsyncTaskManager()
-        self._schedules={}
-        self._scheduled_tasks=[]
-        self._running_tasks={}
+        self._schedules = {}
+        self._scheduled_tasks = []
+        self._running_tasks = {}
         self._dependencies: Dict[str, Set[str]] = defaultdict(set)
         self._dependents: Dict[str, Set[str]] = defaultdict(set)
         self._completed_tasks: Set[str] = set()
-        self._scheduler_task=None
+        self._scheduler_task = None
         self._running = False
         self._shutdown_event = asyncio.Event()
         self.logger = logging.getLogger(__name__)
@@ -256,7 +254,7 @@ class TaskScheduler:
         while self._running and (not self._shutdown_event.is_set()):
             try:
                 current_time = datetime.now()
-                ready_tasks=[]
+                ready_tasks = []
                 while (
                     self._scheduled_tasks
                     and self._scheduled_tasks[0].next_run_time <= current_time
@@ -374,7 +372,7 @@ class TaskScheduler:
 
     async def _cleanup_completed_tasks(self) -> None:
         """완료된 작업 정리"""
-        completed_tasks=[]
+        completed_tasks = []
         for task_name, task in self._running_tasks.items():
             if task.done():
                 completed_tasks = completed_tasks + [task_name]
@@ -415,7 +413,7 @@ class TaskScheduler:
         }
 
 
-_default_scheduler=None
+_default_scheduler = None
 
 
 def create_scheduler(task_manager=None) -> TaskScheduler:

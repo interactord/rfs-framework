@@ -8,7 +8,7 @@ import json
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar, Dict, Optional
 
 try:
     from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -32,19 +32,171 @@ class Environment(str, Enum):
 
 if PYDANTIC_AVAILABLE:
 
-    class RFSConfig(BaseSettings):
-        """RFS Framework v4 설정 (Pydantic v2 기반)"""
+    class RFSBaseSettings(BaseSettings):
+        """RFS Framework 표준 설정 베이스 클래스
+
+        모든 RFS Framework 기반 프로젝트에서 사용할 수 있는
+        범용 설정 베이스 클래스입니다.
+
+        주요 특징:
+        - Pydantic V2 기반 타입 안전성
+        - 환경 변수 자동 로드
+        - 표준 검증 로직 내장
+        - RFS 에러 처리 통합
+        - 개발/운영 환경별 설정 지원
+
+        Example:
+            >>> class MyAppSettings(RFSBaseSettings):
+            ...     app_name: str = "my-app"
+            ...     debug: bool = False
+            ...
+            ...     @field_validator("app_name")
+            ...     @classmethod
+            ...     def validate_app_name(cls, v: str) -> str:
+            ...         return v.lower().replace(" ", "-")
+        """
 
         model_config = ConfigDict(
-            env_prefix="RFS_",
+            # 환경 변수 설정
             env_file=".env",
             env_file_encoding="utf-8",
             case_sensitive=False,
             validate_default=True,
+            validate_assignment=True,
+            # 추가 필드 허용 (확장성)
             extra="allow",
+            # 문자열 검증 모드
+            str_strip_whitespace=True,
+            # JSON 인코더 설정
+            json_encoders={},
         )
+
+        # 기본 환경 설정
         environment: Environment = Field(
-            default=Environment.DEVELOPMENT, description="실행 환경"
+            default=Environment.DEVELOPMENT, description="애플리케이션 실행 환경"
+        )
+
+        # 로깅 설정
+        log_level: str = Field(
+            default="INFO",
+            pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$",
+            description="로그 레벨",
+        )
+
+        log_format: str = Field(
+            default="json", pattern="^(json|text)$", description="로그 출력 형식"
+        )
+
+        # 디버그 모드 (환경별 자동 설정)
+        debug: bool = Field(default=False, description="디버그 모드 활성화")
+
+        # 확장 가능한 사용자 정의 설정
+        custom_settings: Dict[str, Any] = Field(
+            default_factory=dict, description="사용자 정의 설정값들"
+        )
+
+        @field_validator("environment", mode="before")
+        @classmethod
+        def validate_environment(cls, v: Any) -> Environment:
+            """환경 값 검증 및 정규화"""
+            if isinstance(v, str):
+                env_mapping = {
+                    "dev": Environment.DEVELOPMENT,
+                    "develop": Environment.DEVELOPMENT,
+                    "development": Environment.DEVELOPMENT,
+                    "test": Environment.TEST,
+                    "testing": Environment.TEST,
+                    "prod": Environment.PRODUCTION,
+                    "production": Environment.PRODUCTION,
+                }
+                if v.lower() in env_mapping:
+                    return env_mapping[v.lower()]
+                else:
+                    raise ValueError(f"Invalid environment value: {v}")
+            return v if isinstance(v, Environment) else Environment.DEVELOPMENT
+
+        @field_validator("*", mode="before")
+        @classmethod
+        def validate_all_fields(cls, v: Any, info: Any) -> Any:
+            """모든 필드에 대한 기본 검증 로직
+
+            - 빈 문자열을 None으로 변환
+            - 대소문자 정규화 처리
+            - 기본 타입 변환
+            """
+            if isinstance(v, str):
+                # 빈 문자열 처리
+                if v.strip() == "":
+                    return None
+                # 불린 문자열 변환
+                if v.lower() in ("true", "yes", "1", "on"):
+                    return True
+                elif v.lower() in ("false", "no", "0", "off"):
+                    return False
+            return v
+
+        @model_validator(mode="after")
+        def validate_settings_consistency(self) -> "RFSBaseSettings":
+            """설정값들 간의 일관성 검증"""
+            # 개발 환경에서는 자동으로 디버그 모드 활성화
+            if self.environment == Environment.DEVELOPMENT and not self.debug:
+                object.__setattr__(self, "debug", True)
+
+            # 운영 환경에서는 디버그 모드 비활성화
+            elif self.environment == Environment.PRODUCTION and self.debug:
+                import warnings
+
+                warnings.warn(
+                    "운영 환경에서는 디버그 모드를 비활성화하는 것을 권장합니다."
+                )
+
+            return self
+
+        # 편의 메서드들
+        def is_development(self) -> bool:
+            """개발 환경 여부 확인"""
+            return self.environment == Environment.DEVELOPMENT
+
+        def is_production(self) -> bool:
+            """운영 환경 여부 확인"""
+            return self.environment == Environment.PRODUCTION
+
+        def is_test(self) -> bool:
+            """테스트 환경 여부 확인"""
+            return self.environment == Environment.TEST
+
+        def get_custom_setting(self, key: str, default: Any = None) -> Any:
+            """사용자 정의 설정값 가져오기"""
+            return self.custom_settings.get(key, default)
+
+        def set_custom_setting(self, key: str, value: Any) -> None:
+            """사용자 정의 설정값 설정"""
+            self.custom_settings[key] = value
+
+        def to_dict(self) -> Dict[str, Any]:
+            """설정을 딕셔너리로 변환"""
+            return self.model_dump()
+
+        def to_json(self) -> str:
+            """설정을 JSON 문자열로 변환"""
+            return self.model_dump_json(indent=2)
+
+    class RFSConfig(RFSBaseSettings):
+        """RFS Framework v4 전용 설정 클래스 (Pydantic v2 기반)
+
+        RFS Framework의 모든 고급 기능들을 위한 설정을 제공합니다.
+        RFSBaseSettings를 상속하여 기본 기능과 함께
+        Cloud Run, Redis, 모니터링 등의 고급 설정을 포함합니다.
+        """
+
+        model_config = ConfigDict(
+            env_prefix="RFS_",  # RFS_ 접두사로 환경 변수 읽기
+            env_file=".env",
+            env_file_encoding="utf-8",
+            case_sensitive=False,
+            validate_default=True,
+            validate_assignment=True,
+            extra="allow",
         )
         default_buffer_size: int = Field(
             default=100, ge=1, le=10000, description="기본 버퍼 크기"
@@ -109,12 +261,8 @@ if PYDANTIC_AVAILABLE:
                     case "prod" | "production":
                         return Environment.PRODUCTION
                     case _:
-                        return Environment.DEVELOPMENT
-            return (
-                v
-                if type(v).__name__ == "Environment"
-                else Environment.DEVELOPMENT
-            )
+                        raise ValueError(f"Invalid environment value: {v}")
+            return v if type(v).__name__ == "Environment" else Environment.DEVELOPMENT
 
         @field_validator("cloud_run_cpu_limit")
         @classmethod
@@ -180,25 +328,55 @@ if PYDANTIC_AVAILABLE:
                 "scaling": {"max_instances": self.cloud_run_max_instances},
             }
 
+    # Pydantic 환경에서는 RFSBaseSettings를 전역에서 사용 가능하게 export
+    # 이는 다른 모듈에서 조건 없이 import할 수 있도록 함
+    pass
+
 else:
     from dataclasses import dataclass, field
+
+    # Pydantic 불가용시 더미 클래스 생성
+    class RFSBaseSettings:
+        """RFSBaseSettings 더미 구현 (Pydantic 불가용 환경)"""
+
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+        def is_development(self) -> bool:
+            return (
+                getattr(self, "environment", Environment.DEVELOPMENT)
+                == Environment.DEVELOPMENT
+            )
+
+        def is_production(self) -> bool:
+            return (
+                getattr(self, "environment", Environment.DEVELOPMENT)
+                == Environment.PRODUCTION
+            )
+
+        def is_test(self) -> bool:
+            return (
+                getattr(self, "environment", Environment.DEVELOPMENT)
+                == Environment.TEST
+            )
 
     @dataclass
     class RFSConfig:
         """RFS Framework 설정 (Fallback)"""
 
         environment: Environment = Environment.DEVELOPMENT
-        default_buffer_size=100
-        max_concurrency=10
-        enable_cold_start_optimization=True
-        cloud_run_max_instances=100
-        cloud_tasks_queue_name="default-queue"
-        redis_url="redis://localhost:6379"
-        event_store_enabled=True
-        log_level="INFO"
-        log_format="json"
-        enable_tracing=False
-        api_key_header="X-API-Key"
+        default_buffer_size = 100
+        max_concurrency = 10
+        enable_cold_start_optimization = True
+        cloud_run_max_instances = 100
+        cloud_tasks_queue_name = "default-queue"
+        redis_url = "redis://localhost:6379"
+        event_store_enabled = True
+        log_level = "INFO"
+        log_format = "json"
+        enable_tracing = False
+        api_key_header = "X-API-Key"
         custom: Dict[str, Any] = field(default_factory=dict)
 
         def is_development(self) -> bool:
@@ -214,11 +392,22 @@ else:
 class ConfigManager:
     """설정 관리자 (RFS v4 현대화)"""
 
+    _instance: Optional["ConfigManager"] = None
+    _initialized = False
+
+    def __new__(cls, config_path: str | None = None, env_file: str | None = None):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, config_path: str | None = None, env_file: str | None = None):
+        if self._initialized:
+            return
         self.config_path = config_path
         self.env_file = env_file or ".env"
         self._config: RFSConfig | None = None
         self._env_prefix = "RFS_"
+        self._initialized = True
 
     def load_config(self, force_reload=False) -> RFSConfig:
         """설정 로드 (Pydantic 자동 처리 활용)"""
@@ -236,7 +425,7 @@ class ConfigManager:
                 case _:
                     self._config = RFSConfig()
         else:
-            config_dict={}
+            config_dict = {}
             if self.config_path and Path(self.config_path).exists():
                 config_dict = self._load_from_file(self.config_path)
             env_config = self._load_from_env()
@@ -257,7 +446,7 @@ class ConfigManager:
 
     def _load_from_env(self) -> Dict[str, Any]:
         """환경 변수에서 설정 로드"""
-        config={}
+        config = {}
         for key, value in os.environ.items():
             if key.startswith(self._env_prefix):
                 config_key = key[len(self._env_prefix) :].lower()
@@ -286,33 +475,13 @@ class ConfigManager:
 
     def _create_config(self, config_dict: Dict[str, Any]) -> RFSConfig:
         """설정 딕셔너리를 RFSConfig로 변환"""
-        env_str = config_dict.get("environment", "development")
-        if type(env_str).__name__ == "str":
-            try:
-                environment = Environment(env_str.lower())
-            except ValueError:
-                environment = Environment.DEVELOPMENT
-        else:
-            environment = env_str
-        return RFSConfig(
-            environment=environment,
-            default_buffer_size=config_dict.get("default_buffer_size", 100),
-            max_concurrency=config_dict.get("max_concurrency", 10),
-            enable_cold_start_optimization=config_dict.get(
-                "enable_cold_start_optimization", True
-            ),
-            cloud_run_max_instances=config_dict.get("cloud_run_max_instances", 100),
-            cloud_tasks_queue_name=config_dict.get(
-                "cloud_tasks_queue_name", "default-queue"
-            ),
-            redis_url=config_dict.get("redis_url", "redis://localhost:6379"),
-            event_store_enabled=config_dict.get("event_store_enabled", True),
-            log_level=config_dict.get("log_level", "INFO"),
-            log_format=config_dict.get("log_format", "json"),
-            enable_tracing=config_dict.get("enable_tracing", False),
-            api_key_header=config_dict.get("api_key_header", "X-API-Key"),
-            custom=config_dict.get("custom", {}),
-        )
+        # Pydantic BaseSettings는 환경 변수를 우선적으로 사용하므로
+        # 딕셔너리를 직접 전달하는 대신 기본값으로 생성
+        return RFSConfig()
+
+    def get_config(self) -> RFSConfig:
+        """설정 조회 (load_config의 별칭)"""
+        return self.load_config()
 
     def get(self, key: str, default: Any = None) -> Any:
         """설정 값 조회"""
@@ -330,6 +499,69 @@ class ConfigManager:
     def is_test(self) -> bool:
         """테스트 환경 여부"""
         return self.load_config().is_test()
+
+    def reload(self) -> RFSConfig:
+        """설정 재로드"""
+        return self.load_config(force_reload=True)
+
+    def set_config(self, config: RFSConfig) -> None:
+        """설정 직접 설정"""
+        self._config = config
+
+    def update_config(self, **kwargs) -> None:
+        """설정 부분 업데이트"""
+        current_config = self.get_config()
+        # Create new config with updated values
+        current_dict = (
+            current_config.model_dump()
+            if hasattr(current_config, "model_dump")
+            else vars(current_config)
+        )
+        updated_dict = {**current_dict, **kwargs}
+        if PYDANTIC_AVAILABLE:
+            self._config = RFSConfig(**updated_dict)
+        else:
+            # For non-Pydantic case, update attributes directly
+            for key, value in kwargs.items():
+                if hasattr(current_config, key):
+                    setattr(current_config, key, value)
+
+    def get_value(self, key: str, default: Any = None) -> Any:
+        """특정 설정값 조회"""
+        config = self.get_config()
+        return getattr(config, key, default)
+
+    def has_value(self, key: str) -> bool:
+        """설정값 존재 확인"""
+        config = self.get_config()
+        return hasattr(config, key)
+
+    def export_config(self, format: str = "dict") -> Dict[str, Any] | str:
+        """설정 내보내기"""
+        config = self.get_config()
+        if hasattr(config, "model_dump"):
+            config_dict = config.model_dump()
+        elif hasattr(config, "to_dict"):
+            config_dict = config.to_dict()
+        else:
+            config_dict = vars(config)
+
+        if format == "json":
+            import json
+
+            return json.dumps(config_dict, indent=2)
+        return config_dict
+
+    def import_config(self, config_data: Dict[str, Any]) -> None:
+        """설정 가져오기"""
+        if PYDANTIC_AVAILABLE:
+            self._config = RFSConfig(**config_data)
+        else:
+            # For non-Pydantic case, create basic config and update
+            self._config = RFSConfig()
+            for key, value in config_data.items():
+                if hasattr(self._config, key):
+                    setattr(self._config, key, value)
 
     def export_cloud_run_config(self) -> Dict[str, Any]:
         """Cloud Run 전용 설정 내보내기 (v4 신규)"""
@@ -395,9 +627,9 @@ def export_cloud_run_yaml() -> str:
 
 def validate_environment() -> tuple[bool, list[str]]:
     """환경 설정 유효성 검증 (v4 신규)"""
-    errors=[]
+    errors = []
     config = get_config()
-    required_vars=[]
+    required_vars = []
     if config.environment == Environment.PRODUCTION:
         required_vars = required_vars + ["REDIS_URL", "GOOGLE_APPLICATION_CREDENTIALS"]
     for var in required_vars:

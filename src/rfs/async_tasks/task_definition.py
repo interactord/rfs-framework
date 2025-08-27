@@ -39,9 +39,9 @@ class TaskContext:
     task_name: str
     task_type: TaskType
     execution_time: datetime = field(default_factory=datetime.now)
-    retry_count=0
-    max_retries=3
-    timeout_seconds=None
+    retry_count = 0
+    max_retries = 3
+    timeout_seconds = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def with_retry(self) -> "TaskContext":
@@ -77,19 +77,19 @@ class TaskDefinition:
     name: str
     task_type: TaskType
     handler: Callable
-    description=None
-    priority=5  # 1-10, 높을수록 우선순위
-    timeout_seconds=None
-    max_retries=3
-    retry_delay_seconds=1
-    retry_exponential_backoff=False
+    description = None
+    priority = 5  # 1-10, 높을수록 우선순위
+    timeout_seconds = None
+    max_retries = 3
+    retry_delay_seconds = 1
+    retry_exponential_backoff = False
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     # 스케줄링 관련
-    schedule_cron=None
-    schedule_interval=None
-    schedule_at=None
+    schedule_cron = None
+    schedule_interval = None
+    schedule_at = None
 
     # 의존성
     dependencies: List[str] = field(default_factory=list)
@@ -176,9 +176,7 @@ class TaskDefinition:
         except Exception as e:
             return Failure(f"Task execution error: {e}")
 
-    def get_next_run_time(
-        self, from_time=None
-    ) -> Optional[datetime]:
+    def get_next_run_time(self, from_time=None) -> Optional[datetime]:
         """다음 실행 시간 계산"""
         if not from_time:
             from_time = datetime.now()
@@ -263,8 +261,8 @@ class TaskRegistry:
     """작업 정의 레지스트리"""
 
     def __init__(self):
-        self._tasks={}
-        self._handlers={}
+        self._tasks = {}
+        self._handlers = {}
 
     def register(self, task_def: TaskDefinition) -> None:
         """작업 정의 등록"""

@@ -62,13 +62,13 @@ class OperationContext:
     operation_id: str
     operation_name: str
     start_time: datetime
-    end_time=None
-    duration_ms=None
-    user_id=None
-    session_id=None
-    trace_id=None
-    span_id=None
-    parent_span_id=None
+    end_time = None
+    duration_ms = None
+    user_id = None
+    session_id = None
+    trace_id = None
+    span_id = None
+    parent_span_id = None
     tags: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -93,12 +93,12 @@ class AuditLogEntry:
     resource_id: Optional[str]
     action: str
     result: str
-    ip_address=None
-    user_agent=None
-    session_id=None
+    ip_address = None
+    user_agent = None
+    session_id = None
     changes: Optional[Dict[str, Any]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    error_message=None
+    error_message = None
 
     def to_json(self) -> str:
         """JSON 문자열로 변환"""
@@ -113,7 +113,7 @@ class AuditLogger:
 
     def __init__(self, log_file=None):
         self.log_file = log_file
-        self.audit_logs=[]
+        self.audit_logs = []
         self.logger = logging.getLogger("audit")
         if log_file:
             file_handler = logging.FileHandler(log_file)
@@ -309,7 +309,7 @@ def AuditLogged(
             resource_id = kwargs.get("id") or kwargs.get("resource_id")
             before_state = None
             if event_type == AuditEventType.UPDATE and include_changes:
-                before_state={}
+                before_state = {}
             try:
                 result = await func(*args, **kwargs)
                 changes = None
@@ -366,7 +366,7 @@ def AuditLogged(
             resource_id = kwargs.get("id") or kwargs.get("resource_id")
             before_state = None
             if event_type == AuditEventType.UPDATE and include_changes:
-                before_state={}
+                before_state = {}
             try:
                 result = func(*args, **kwargs)
                 changes = None
@@ -475,7 +475,7 @@ def ErrorLogged(
 def _mask_sensitive_data(data: Any) -> Any:
     """민감한 데이터 마스킹"""
     if type(data).__name__ == "dict":
-        masked={}
+        masked = {}
         sensitive_keys = [
             "password",
             "token",

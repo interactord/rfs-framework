@@ -410,7 +410,7 @@ result = await mono.to_future()  # 42
 ```
 
 ## 🔗 관련 문서
-- [HOF Library](./16-hot-library.md) - Higher-Order Functions와 함수형 프로그래밍 유틸리티
+- [HOF Library](./22-hot-library.md) - Higher-Order Functions와 함수형 프로그래밍 유틸리티
 - [의존성 주입](./02-dependency-injection.md)
 - [트랜잭션 관리](./04-transactions.md)
 - [에러 처리 패턴](./11-security.md)

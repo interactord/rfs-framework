@@ -171,14 +171,14 @@ else:
         handler_path: str
         payload: Dict[str, Any] = field(default_factory=dict)
         priority: TaskPriority = TaskPriority.NORMAL
-        schedule_time=None
-        delay_seconds=0
-        max_retry_count=3
-        retry_min_backoff=1
-        retry_max_backoff=300
-        http_method="POST"
+        schedule_time = None
+        delay_seconds = 0
+        max_retry_count = 3
+        retry_min_backoff = 1
+        retry_max_backoff = 300
+        http_method = "POST"
         headers: Dict[str, Any] = field(default_factory=dict)
-        queue_name="default"
+        queue_name = "default"
         tags: List[str] = field(default_factory=list)
         created_at: datetime = field(default_factory=datetime.now)
 
@@ -194,9 +194,7 @@ else:
 class CloudTaskQueue:
     """Cloud Tasks 큐 관리자"""
 
-    def __init__(
-        self, project_id: str, location="us-central1", service_url=None
-    ):
+    def __init__(self, project_id: str, location="us-central1", service_url=None):
         self.project_id = project_id
         self.location = location
         self.service_url = (
@@ -209,8 +207,8 @@ class CloudTaskQueue:
                 self.client = tasks_v2.CloudTasksClient()
             except Exception as e:
                 logger.warning(f"Cloud Tasks 클라이언트 초기화 실패: {e}")
-        self.queues={}
-        self.task_handlers={}
+        self.queues = {}
+        self.task_handlers = {}
         self.task_stats = {"submitted": 0, "completed": 0, "failed": 0, "retried": 0}
 
     async def initialize(self):
@@ -222,7 +220,9 @@ class CloudTaskQueue:
 
     async def create_queue(
         self,
-        queue_name: str, max_concurrent_dispatches=100, max_dispatches_per_second=100.0,
+        queue_name: str,
+        max_concurrent_dispatches=100,
+        max_dispatches_per_second=100.0,
     ) -> Result[str, str]:
         """큐 생성"""
         if not GOOGLE_CLOUD_AVAILABLE or not self.client:
@@ -339,8 +339,8 @@ class CloudTaskQueue:
         self, tasks: List[TaskDefinition]
     ) -> Dict[str, Result[str, str]]:
         """배치 작업 제출"""
-        results={}
-        submit_tasks=[]
+        results = {}
+        submit_tasks = []
         for task in tasks:
             submit_task = asyncio.create_task(self.submit_task(task))
             submit_tasks = submit_tasks + [(task.task_id, submit_task)]
@@ -423,7 +423,9 @@ class TaskScheduler:
         self,
         task_id: str,
         handler_path: str,
-        payload: Dict[str, Any], hour=9, minute=0,
+        payload: Dict[str, Any],
+        hour=9,
+        minute=0,
     ) -> Result[str, str]:
         """매일 반복 작업 스케줄링"""
         from datetime import date
@@ -445,7 +447,9 @@ class TaskScheduler:
         self,
         task_id: str,
         handler_path: str,
-        payload: Dict[str, Any], weekday=0, hour=9,
+        payload: Dict[str, Any],
+        weekday=0,
+        hour=9,
     ) -> Result[str, str]:
         """매주 반복 작업 스케줄링"""
         from datetime import date
@@ -468,7 +472,7 @@ class TaskScheduler:
         return await self.queue.submit_task(task)
 
 
-_task_queue=None
+_task_queue = None
 
 
 async def get_task_queue(project_id: str = None) -> CloudTaskQueue:
@@ -498,7 +502,8 @@ async def submit_task(
 async def schedule_task(
     task_id: str,
     handler_path: str,
-    schedule_time: datetime, payload=None,
+    schedule_time: datetime,
+    payload=None,
     **kwargs,
 ) -> Result[str, str]:
     """시간 예약 작업 제출"""

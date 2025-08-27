@@ -160,7 +160,7 @@ else:
         name: str
         type: MetricType
         description: str
-        unit="1"
+        unit = "1"
         labels: Dict[str, Any] = field(default_factory=dict)
 
         def get_full_name(self, project_id: str) -> str:
@@ -173,10 +173,10 @@ else:
         message: str
         level: LogLevel = LogLevel.INFO
         timestamp: datetime = field(default_factory=datetime.now)
-        service_name="rfs-service"
-        version="1.0.0"
-        trace_id=None
-        span_id=None
+        service_name = "rfs-service"
+        version = "1.0.0"
+        trace_id = None
+        span_id = None
         labels: Dict[str, Any] = field(default_factory=dict)
         extra_data: Dict[str, Any] = field(default_factory=dict)
 
@@ -229,12 +229,12 @@ class CloudMonitoringClient:
                 self.logging_client = cloud_logging.Client(project=project_id)
             except Exception as e:
                 logger.warning(f"Google Cloud 클라이언트 초기화 실패: {e}")
-        self.registered_metrics={}
+        self.registered_metrics = {}
         self.metrics_buffer: List[Dict[str, Any]] = []
-        self.logs_buffer=[]
+        self.logs_buffer = []
         self.buffer_size = 100
         self.flush_interval = 30
-        self.flush_task=None
+        self.flush_task = None
         self._running = False
 
     async def initialize(self):
@@ -355,7 +355,9 @@ class CloudMonitoringClient:
     async def record_metric(
         self,
         metric_name: str,
-        value: float, labels=None, timestamp=None,
+        value: float,
+        labels=None,
+        timestamp=None,
     ) -> Result[None, str]:
         """메트릭 값 기록"""
         try:
@@ -385,10 +387,10 @@ class CloudMonitoringClient:
             return
         if not GOOGLE_CLOUD_AVAILABLE or not self.monitoring_client:
             logger.debug(f"메트릭 {len(self.metrics_buffer)}개 기록 (로컬)")
-            metrics_buffer={}
+            metrics_buffer = {}
             return
         try:
-            time_series_list=[]
+            time_series_list = []
             for metric_data in self.metrics_buffer:
                 metric_def = metric_data["definition"]
                 time_series = TimeSeries()
@@ -425,7 +427,7 @@ class CloudMonitoringClient:
         except Exception as e:
             logger.error(f"메트릭 전송 실패: {e}")
         finally:
-            self.metrics_buffer={}
+            self.metrics_buffer = {}
 
     async def log_structured(self, entry: LogEntry) -> Result[None, str]:
         """구조화된 로그 기록"""
@@ -452,7 +454,7 @@ class CloudMonitoringClient:
                     log_entry.message,
                     extra=log_entry.extra_data,
                 )
-            self.logs_buffer=[]
+            self.logs_buffer = []
             return
         try:
             cloud_logger = self.logging_client.logger("rfs-application")
@@ -473,7 +475,7 @@ class CloudMonitoringClient:
         except Exception as e:
             logger.error(f"로그 전송 실패: {e}")
         finally:
-            self.logs_buffer=[]
+            self.logs_buffer = []
 
     async def _flush_scheduler(self):
         """정기적 배치 전송"""
@@ -504,7 +506,7 @@ class PerformanceMonitor:
 
     def __init__(self, monitoring_client: CloudMonitoringClient):
         self.client = monitoring_client
-        self.active_requests={}
+        self.active_requests = {}
 
     def start_request_monitoring(self, request_id: str, method: str, path: str) -> None:
         """요청 모니터링 시작"""
@@ -563,7 +565,7 @@ class PerformanceMonitor:
         return decorator
 
 
-_monitoring_client=None
+_monitoring_client = None
 
 
 async def get_monitoring_client(project_id: str = None) -> CloudMonitoringClient:

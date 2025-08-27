@@ -191,7 +191,7 @@ RFS Framework의 미완성 기능 및 개선이 필요한 항목들을 추적하
 ## 🔗 관련 문서
 
 - [Implementation Status](99-implementation-status.md) - 상세 구현 현황
-- [Code Quality Guidelines](15-code-quality.md) - 코드 품질 가이드
+- [Code Quality Guidelines](20-code-quality.md) - 코드 품질 가이드
 - [Contributing Guide](CONTRIBUTING.md) - 기여 가이드
 - [Issue Tracker](https://github.com/yourusername/rfs-framework/issues) - GitHub Issues
 

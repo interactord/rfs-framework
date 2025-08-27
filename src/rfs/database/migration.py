@@ -36,11 +36,11 @@ class MigrationInfo:
 
     version: str
     name: str
-    description=""
+    description = ""
     created_at: datetime = field(default_factory=datetime.now)
-    applied_at=None
+    applied_at = None
     status: MigrationStatus = MigrationStatus.PENDING
-    checksum=None
+    checksum = None
 
 
 class Migration(ABC):
@@ -114,9 +114,7 @@ class SQLMigration(Migration):
 class PythonMigration(Migration):
     """Python 마이그레이션"""
 
-    def __init__(
-        self, version: str, name: str, up_func, down_func, description=""
-    ):
+    def __init__(self, version: str, name: str, up_func, down_func, description=""):
         super().__init__(version, name, description)
         self.up_func = up_func
         self.down_func = down_func
@@ -155,7 +153,7 @@ class MigrationManager(ABC):
 
     def __init__(self, migrations_dir="migrations"):
         self.migrations_dir = migrations_dir
-        self.migrations={}
+        self.migrations = {}
 
     @abstractmethod
     async def create_migration_table(self) -> Result[None, str]:
@@ -185,7 +183,7 @@ class MigrationManager(ABC):
                     f"마이그레이션 디렉토리가 없습니다: {self.migrations_dir}"
                 )
                 return Success([])
-            migrations=[]
+            migrations = []
             for filename in sorted(os.listdir(self.migrations_dir)):
                 if filename.endswith(".py") and filename != "__init__.py":
                     result = await self._load_migration_file(filename)
@@ -233,13 +231,13 @@ class MigrationManager(ABC):
             if not applied_result.is_success():
                 return Failure(applied_result.unwrap_err())
             applied_versions = set(applied_result.unwrap())
-            pending_migrations=[]
+            pending_migrations = []
             for migration in sorted(all_migrations, key=lambda m: m.info.version):
                 if migration.info.version not in applied_versions:
                     pending_migrations = pending_migrations + [migration]
                     if target_version and migration.info.version == target_version:
                         break
-            applied_migrations=[]
+            applied_migrations = []
             for migration in pending_migrations:
                 logger.info(f"마이그레이션 실행 중: {migration.info.name}")
                 migration.info.status = MigrationStatus.RUNNING
@@ -272,7 +270,7 @@ class MigrationManager(ABC):
             if not applied_result.is_success():
                 return Failure(applied_result.unwrap_err())
             applied_versions = applied_result.unwrap()
-            rollback_migrations=[]
+            rollback_migrations = []
             for version in reversed(sorted(applied_versions)):
                 if version in self.migrations:
                     rollback_migrations = rollback_migrations + [
@@ -280,7 +278,7 @@ class MigrationManager(ABC):
                     ]
                     if target_version and version == target_version:
                         break
-            rolled_back=[]
+            rolled_back = []
             for migration in rollback_migrations:
                 logger.info(f"마이그레이션 롤백 중: {migration.info.name}")
                 down_result = await migration.down()
@@ -395,7 +393,7 @@ class AlembicMigrationManager(MigrationManager):
             return Failure(f"마이그레이션 기록 제거 실패: {str(e)}")
 
 
-_migration_manager=None
+_migration_manager = None
 
 
 def get_migration_manager() -> Optional[MigrationManager]:

@@ -44,9 +44,9 @@ class TransactionManager:
 
     def __init__(self):
         self.context = TransactionContext()
-        self.resources={}
-        self.callbacks=[]
-        self.synchronizations={}
+        self.resources = {}
+        self.callbacks = []
+        self.synchronizations = {}
         self._lock = threading.RLock()
 
     def register_resource(
@@ -71,9 +71,7 @@ class TransactionManager:
         """콜백 등록"""
         self.callbacks = self.callbacks + [callback]
 
-    def begin(
-        self, options=None
-    ) -> Result[TransactionMetadata, str]:
+    def begin(self, options=None) -> Result[TransactionMetadata, str]:
         """
         트랜잭션 시작
 
@@ -160,7 +158,7 @@ class TransactionManager:
                 callback.before_commit(current)
             except Exception as e:
                 logger.error(f"Callback error before commit: {e}")
-        committed_resources=[]
+        committed_resources = []
         for name, resource in self.resources.items():
             result = resource.commit(current)
             if type(result).__name__ == "Failure":
@@ -181,7 +179,7 @@ class TransactionManager:
                 callback.after_commit(current)
             except Exception as e:
                 logger.error(f"Callback error after commit: {e}")
-        context={}
+        context = {}
         if current.transaction_id in self.synchronizations:
             del self.synchronizations[current.transaction_id]
         return Success(None)
@@ -217,7 +215,7 @@ class TransactionManager:
                 callback.after_rollback(current)
             except Exception as e:
                 logger.error(f"Callback error after rollback: {e}")
-        context={}
+        context = {}
         if current.transaction_id in self.synchronizations:
             del self.synchronizations[current.transaction_id]
         return Success(None)
@@ -350,7 +348,7 @@ class TransactionManager:
         current = self.context.get_current()
         if not current:
             return Success(None)
-        suspended_resources={}
+        suspended_resources = {}
         for name, resource in self.resources.items():
             result = resource.suspend()
             if type(result).__name__ == "Failure":
@@ -360,7 +358,7 @@ class TransactionManager:
             suspended_resources[name] = {name: result.value}
         current.status = TransactionStatus.SUSPENDED
         current.resources = {**current.resources, "suspended": suspended_resources}
-        context={}
+        context = {}
         return Success(current)
 
     def _resume_transaction(self, metadata: TransactionMetadata) -> Result[None, str]:
@@ -392,7 +390,7 @@ class TransactionManager:
         metadata.resources = {**metadata.resources, "timeout_timer": timer}
 
 
-_global_manager=None
+_global_manager = None
 
 
 def get_transaction_manager() -> TransactionManager:

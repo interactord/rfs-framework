@@ -43,18 +43,18 @@ class TaskResult:
     task_type: TaskType
     status: ResultStatus
     start_time: datetime
-    end_time=None
-    execution_time_ms=None
+    end_time = None
+    execution_time_ms = None
     result_data: Any = None
-    error_message=None
-    error_type=None
-    error_traceback=None
-    context=None
-    retry_count=0
+    error_message = None
+    error_type = None
+    error_traceback = None
+    context = None
+    retry_count = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    memory_used_mb=None
-    cpu_time_ms=None
+    memory_used_mb = None
+    cpu_time_ms = None
 
     def __post_init__(self):
         """초기화 후 처리"""
@@ -215,12 +215,12 @@ class TaskResultStore:
     def __init__(self, storage_path=None, max_results=10000):
         self.storage_path = Path(storage_path) if storage_path else None
         self.max_results = max_results
-        self._results={}
+        self._results = {}
         self._results_by_name: Dict[str, List[str]] = {}
         self._results_by_status: Dict[ResultStatus, List[str]] = {
             status: [] for status in ResultStatus
         }
-        self._task_ids_by_time=[]
+        self._task_ids_by_time = []
         self._stats = {
             "total_results": 0,
             "success_count": 0,
@@ -285,7 +285,7 @@ class TaskResultStore:
         self, start_time: datetime, end_time: datetime
     ) -> List[TaskResult]:
         """시간 범위내 결과 조회"""
-        results=[]
+        results = []
         for task_id in self._task_ids_by_time:
             result = self._results.get(task_id)
             if result and start_time <= result.start_time <= end_time:
@@ -363,7 +363,7 @@ class TaskResultStore:
             return
         if len(self._results) > self.max_results:
             removal_count = len(self._results) - self.max_results
-            candidates=[]
+            candidates = []
             for task_id in self._task_ids_by_time:
                 result = self._results.get(task_id)
                 if result and result.status == ResultStatus.SUCCESS:
@@ -500,8 +500,8 @@ class ResultAnalyzer:
         ]
         if not failed_results:
             return {"error": "No failures found"}
-        failure_by_type={}
-        failure_by_task={}
+        failure_by_type = {}
+        failure_by_task = {}
         for result in failed_results:
             error_type = result.error_type or "Unknown"
             if error_type not in failure_by_type:
@@ -536,7 +536,7 @@ class ResultAnalyzer:
         }
 
 
-_default_result_store=None
+_default_result_store = None
 
 
 def get_default_result_store() -> TaskResultStore:

@@ -27,17 +27,17 @@ logger = logging.getLogger(__name__)
 class CloudRunConfig:
     """Cloud Run 설정"""
 
-    cpu="1"
-    memory="512Mi"
-    max_instances=100
-    min_instances=0
-    concurrency=80
-    timeout=300
-    port=8080
-    enable_cold_start_optimization=True
+    cpu = "1"
+    memory = "512Mi"
+    max_instances = 100
+    min_instances = 0
+    concurrency = 80
+    timeout = 300
+    port = 8080
+    enable_cold_start_optimization = True
     warm_up_endpoints: List[str] = field(default_factory=list)
-    warm_up_interval=300
-    enable_resource_monitoring=True
+    warm_up_interval = 300
+    enable_resource_monitoring = True
     cpu_threshold: float = 0.8
     memory_threshold: float = 0.8
 
@@ -46,13 +46,13 @@ class CloudRunConfig:
 class PerformanceMetrics:
     """성능 메트릭"""
 
-    request_count=0
-    cold_starts=0
-    warm_starts=0
+    request_count = 0
+    cold_starts = 0
+    warm_starts = 0
     avg_response_time: float = 0.0
     memory_usage: float = 0.0
     cpu_usage: float = 0.0
-    last_request=None
+    last_request = None
 
 
 class CloudRunOptimizer:
@@ -62,14 +62,14 @@ class CloudRunOptimizer:
         self.config = config
         self.metrics = PerformanceMetrics()
         self.is_warm = False
-        self.warm_up_task=None
+        self.warm_up_task = None
         self.startup_time = datetime.now()
         self._instance_id = os.environ.get(
             "INSTANCE_ID", f"instance_{int(time.time())}"
         )
         self._is_first_request = True
-        self._cache={}
-        self._cache_ttl={}
+        self._cache = {}
+        self._cache_ttl = {}
 
     async def initialize(self):
         """인스턴스 초기화"""
@@ -269,8 +269,8 @@ async def _warm_execute(func: Callable, warm_up_data: Any, *args, **kwargs):
 
 def with_caching(ttl_seconds=300):
     """함수형 캐싱"""
-    cache={}
-    cache_ttl={}
+    cache = {}
+    cache_ttl = {}
 
     def decorator(func: Callable) -> Callable:
 
@@ -291,7 +291,7 @@ def with_caching(ttl_seconds=300):
     return decorator
 
 
-_optimizer=None
+_optimizer = None
 
 
 async def get_optimizer(config=None) -> CloudRunOptimizer:

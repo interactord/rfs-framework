@@ -284,7 +284,7 @@ class TestCommand(Command):
             process = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
             )
-            output_lines=[]
+            output_lines = []
             while True:
                 line = await process.stdout.readline()
                 if not line:

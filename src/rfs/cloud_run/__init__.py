@@ -11,6 +11,7 @@ Phase 2: Cloud Run 전문화 완료
 """
 
 from typing import Any, Dict, List
+
 from .autoscaling import (
     AutoScalingOptimizer,
     MetricSnapshot,
@@ -167,10 +168,15 @@ def get_cloud_run_metadata() -> dict:
 
 
 async def initialize_cloud_run_services(
-    project_id: str = None, service_name=None, enable_service_discovery=True, enable_task_queue=True, enable_monitoring=True, enable_autoscaling=True,
+    project_id: str = None,
+    service_name=None,
+    enable_service_discovery=True,
+    enable_task_queue=True,
+    enable_monitoring=True,
+    enable_autoscaling=True,
 ) -> dict:
     """Cloud Run 서비스들 일괄 초기화"""
-    initialized_services={}
+    initialized_services = {}
     try:
         if project_id is None:
             project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
@@ -238,7 +244,7 @@ async def shutdown_cloud_run_services():
         from .service_discovery import _service_discovery
         from .task_queue import _task_queue
 
-        shutdown_tasks=[]
+        shutdown_tasks = []
         if _service_discovery:
             shutdown_tasks = shutdown_tasks + [_service_discovery.shutdown()]
         if _monitoring_client:

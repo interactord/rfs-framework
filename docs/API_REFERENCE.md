@@ -23,8 +23,8 @@ RFS Framework API 전체 참조 문서.
 ## 고급 기능
 
 - [Database](18-database.md) - 데이터베이스 ORM 시스템
-- [Event System](16-event-system.md) - 이벤트 버스 시스템
-- [State Machine](17-state-machine.md) - 상태 머신 시스템
+- [Event System](21-event-system.md) - 이벤트 버스 시스템
+- [State Machine](24-state-machine.md) - 상태 머신 시스템
 - [Security](11-security.md) - 보안 및 인증 시스템
 - [Monitoring](08-monitoring.md) - 모니터링 및 로깅
 - [Validation](09-validation.md) - 데이터 유효성 검사

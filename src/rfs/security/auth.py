@@ -60,7 +60,7 @@ class Role:
 
     name: str
     permissions: Set[Permission]
-    description=None
+    description = None
 
     def has_permission(self, permission: Permission) -> bool:
         return permission in self.permissions
@@ -80,10 +80,10 @@ class User:
     username: str
     email: str
     roles: Set[Role]
-    is_active=True
-    is_verified=False
-    created_at=None
-    last_login=None
+    is_active = True
+    is_verified = False
+    created_at = None
+    last_login = None
 
     def has_role(self, role_name: str) -> bool:
         return any((role.name == role_name for role in self.roles))
@@ -103,9 +103,9 @@ class UserSession:
     user_id: str
     created_at: datetime
     expires_at: datetime
-    ip_address=None
-    user_agent=None
-    is_active=True
+    ip_address = None
+    user_agent = None
+    is_active = True
 
     def is_expired(self) -> bool:
         return datetime.now() > self.expires_at
@@ -131,7 +131,7 @@ class RefreshToken:
     token: str
     user_id: str
     expires_at: datetime
-    is_used=False
+    is_used = False
 
     def is_expired(self) -> bool:
         return datetime.now() > self.expires_at
@@ -284,15 +284,13 @@ class TokenManager:
 
     def __init__(self, jwt_provider: JWTAuthProvider):
         self.jwt_provider = jwt_provider
-        self.refresh_tokens={}
+        self.refresh_tokens = {}
 
     def generate_access_token(self, user: User, expires_in=3600) -> JWTToken:
         """액세스 토큰 생성"""
         return self.jwt_provider.generate_token(user, expires_in)
 
-    def generate_refresh_token(
-        self, user: User, expires_in=86400 * 30
-    ) -> RefreshToken:
+    def generate_refresh_token(self, user: User, expires_in=86400 * 30) -> RefreshToken:
         """리프레시 토큰 생성"""
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(seconds=expires_in)
@@ -333,9 +331,9 @@ class AuthenticationManager:
     """인증 관리자"""
 
     def __init__(self):
-        self.providers={}
-        self.sessions={}
-        self.token_manager=None
+        self.providers = {}
+        self.sessions = {}
+        self.token_manager = None
 
     def register_provider(self, method: AuthMethod, provider: AuthProvider):
         """인증 제공자 등록"""

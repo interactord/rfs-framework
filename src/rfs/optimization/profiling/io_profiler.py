@@ -241,7 +241,7 @@ class IOProfiler:
         self.top_processes_count = top_processes_count
         self.metrics = IOMetrics()
         self.is_running = False
-        self.collection_task=None
+        self.collection_task = None
         self.start_time = datetime.now()
         self.bottleneck_thresholds = {
             "disk_usage_percent": 90.0,
@@ -249,7 +249,7 @@ class IOProfiler:
             "network_error_rate": 0.01,
             "filesystem_usage_percent": 95.0,
         }
-        self.alert_callbacks=[]
+        self.alert_callbacks = []
         self.prev_disk_counters: Optional[Dict[str, Any]] = None
         self.prev_network_counters: Optional[Dict[str, Any]] = None
 
@@ -302,7 +302,7 @@ class IOProfiler:
     async def _collect_io_snapshot(self) -> Optional[IOSnapshot]:
         """I/O 스냅샷 수집"""
         try:
-            disk_io_stats=[]
+            disk_io_stats = []
             total_disk_reads = 0
             total_disk_writes = 0
             try:
@@ -324,7 +324,7 @@ class IOProfiler:
                         total_disk_writes = total_disk_writes + stats.write_bytes
             except Exception as e:
                 logger.warning(f"Failed to collect disk I/O stats: {e}")
-            network_io_stats=[]
+            network_io_stats = []
             total_network_sent = 0
             total_network_recv = 0
             try:
@@ -347,7 +347,7 @@ class IOProfiler:
                         total_network_recv = total_network_recv + stats.bytes_recv
             except Exception as e:
                 logger.warning(f"Failed to collect network I/O stats: {e}")
-            filesystem_usage=[]
+            filesystem_usage = []
             try:
                 partitions = psutil.disk_partitions()
                 for partition in partitions:
@@ -367,9 +367,9 @@ class IOProfiler:
                         continue
             except Exception as e:
                 logger.warning(f"Failed to collect filesystem usage: {e}")
-            top_io_processes=[]
+            top_io_processes = []
             try:
-                processes=[]
+                processes = []
                 for proc in psutil.process_iter(["pid", "name"]):
                     try:
                         io_info = proc.io_counters()
@@ -421,7 +421,7 @@ class IOProfiler:
     async def _detect_io_bottlenecks(self, snapshot: IOSnapshot):
         """I/O 병목 탐지"""
         try:
-            bottlenecks=[]
+            bottlenecks = []
             for fs in snapshot.filesystem_usage:
                 if fs.percent > self.bottleneck_thresholds["filesystem_usage_percent"]:
                     bottleneck = IOBottleneck(
@@ -492,7 +492,7 @@ class IOProfiler:
     async def _check_io_alerts(self, snapshot: IOSnapshot):
         """I/O 알림 확인"""
         try:
-            alerts=[]
+            alerts = []
             for fs in snapshot.filesystem_usage:
                 if fs.percent > 90.0:
                     alerts = alerts + [

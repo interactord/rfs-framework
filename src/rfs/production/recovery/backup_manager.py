@@ -69,11 +69,11 @@ class BackupPolicy:
     backup_type: BackupType
     schedule: str
     retention_days: int
-    compression=True
-    encryption=True
-    verify_after_backup=True
-    max_concurrent_backups=1
-    priority=5
+    compression = True
+    encryption = True
+    verify_after_backup = True
+    max_concurrent_backups = 1
+    priority = 5
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -88,8 +88,8 @@ class BackupTarget:
     source_path: str
     exclude_patterns: List[str] = field(default_factory=list)
     include_patterns: List[str] = field(default_factory=list)
-    pre_backup_script=None
-    post_backup_script=None
+    pre_backup_script = None
+    post_backup_script = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -102,14 +102,14 @@ class BackupMetadata:
     target_id: str
     backup_type: BackupType
     start_time: datetime
-    end_time=None
-    size_bytes=0
-    file_count=0
-    checksum=None
+    end_time = None
+    size_bytes = 0
+    file_count = 0
+    checksum = None
     compression_ratio: float = 1.0
-    encrypted=False
-    verified=False
-    parent_backup_id=None
+    encrypted = False
+    verified = False
+    parent_backup_id = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -124,11 +124,11 @@ class BackupOperation:
     status: BackupStatus
     progress: float = 0.0
     start_time: datetime = field(default_factory=datetime.now)
-    end_time=None
-    error_message=None
+    end_time = None
+    error_message = None
     metadata: BackupMetadata = None
-    retry_count=0
-    max_retries=3
+    retry_count = 0
+    max_retries = 3
 
 
 @dataclass
@@ -141,10 +141,10 @@ class RestoreOperation:
     status: BackupStatus
     progress: float = 0.0
     start_time: datetime = field(default_factory=datetime.now)
-    end_time=None
-    error_message=None
-    verify_after_restore=True
-    overwrite_existing=False
+    end_time = None
+    error_message = None
+    verify_after_restore = True
+    overwrite_existing = False
 
 
 @dataclass
@@ -154,8 +154,8 @@ class StorageConfig:
     type: StorageType
     path: str
     credentials: Dict[str, Any] = field(default_factory=dict)
-    max_size_gb=None
-    auto_cleanup=True
+    max_size_gb = None
+    auto_cleanup = True
     cleanup_threshold_percent: float = 80.0
 
 
@@ -164,11 +164,11 @@ class BackupManager:
 
     def __init__(self, storage_config: StorageConfig):
         self.storage_config = storage_config
-        self.policies={}
-        self.targets={}
-        self.operations={}
-        self.restore_operations={}
-        self.backup_history=[]
+        self.policies = {}
+        self.targets = {}
+        self.operations = {}
+        self.restore_operations = {}
+        self.backup_history = []
         self._running = False
         self._tasks: Set[asyncio.Task] = set()
 
@@ -193,7 +193,7 @@ class BackupManager:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks={}
+                _tasks = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop backup manager: {e}")
@@ -248,7 +248,9 @@ class BackupManager:
     async def restore_backup(
         self,
         backup_id: str,
-        target_path: str, overwrite=False, verify=True,
+        target_path: str,
+        overwrite=False,
+        verify=True,
     ) -> Result[RestoreOperation, str]:
         """백업 복원"""
         try:
@@ -305,11 +307,15 @@ class BackupManager:
             return Failure(f"Failed to verify backup: {e}")
 
     async def list_backups(
-        self, policy_id=None, target_id=None, status=None, limit=100,
+        self,
+        policy_id=None,
+        target_id=None,
+        status=None,
+        limit=100,
     ) -> Result[List[BackupMetadata], str]:
         """백업 목록 조회"""
         try:
-            filtered_backups=[]
+            filtered_backups = []
             for metadata in self.backup_history:
                 if policy_id and metadata.policy_id != policy_id:
                     continue
@@ -779,7 +785,7 @@ class BackupManager:
             print(f"Failed to save metadata: {e}")
 
 
-_backup_manager=None
+_backup_manager = None
 
 
 def get_backup_manager(storage_config=None) -> BackupManager:
@@ -795,7 +801,10 @@ def get_backup_manager(storage_config=None) -> BackupManager:
 
 
 async def create_backup_policy(
-    name: str, backup_type=BackupType.FULL, schedule="daily", retention_days=30,
+    name: str,
+    backup_type=BackupType.FULL,
+    schedule="daily",
+    retention_days=30,
 ) -> Result[BackupPolicy, str]:
     """백업 정책 생성 헬퍼"""
     try:

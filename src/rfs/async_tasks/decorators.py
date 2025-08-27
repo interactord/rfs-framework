@@ -361,8 +361,8 @@ def memoized_task(ttl=None):
         async def expensive_computation(x, y):
             return x ** y
     """
-    cache={}
-    cache_times={}
+    cache = {}
+    cache_times = {}
 
     def decorator(func: Callable) -> Callable:
 
@@ -403,7 +403,7 @@ def rate_limited(max_calls: int, period: timedelta):
         async def api_call():
             pass
     """
-    calls=[]
+    calls = []
 
     def decorator(func: Callable) -> Callable:
 

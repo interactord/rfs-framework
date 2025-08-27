@@ -71,9 +71,9 @@ class CacheConfig:
     max_size: int
     max_memory_mb: int
     default_ttl: int
-    enable_compression=False
-    compression_threshold=1024
-    enable_statistics=True
+    enable_compression = False
+    compression_threshold = 1024
+    enable_statistics = True
     connection_config: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -86,23 +86,23 @@ class CacheEntry:
     ttl: int
     created_at: float
     accessed_at: float
-    access_count=0
-    size_bytes=0
+    access_count = 0
+    size_bytes = 0
     tags: Set[str] = field(default_factory=set)
-    version=1
-    compressed=False
+    version = 1
+    compressed = False
 
 
 @dataclass
 class CacheStatistics:
     """캐시 통계"""
 
-    hits=0
-    misses=0
-    evictions=0
-    expired=0
-    total_requests=0
-    total_size_bytes=0
+    hits = 0
+    misses = 0
+    evictions = 0
+    expired = 0
+    total_requests = 0
+    total_size_bytes = 0
     average_hit_time_ms: float = 0.0
     average_miss_time_ms: float = 0.0
     hit_ratio: float = 0.0
@@ -131,9 +131,9 @@ class LocalCache:
 
     def __init__(self, config: CacheConfig):
         self.config = config
-        self.entries={}
+        self.entries = {}
         self.access_order = OrderedDict()
-        self.frequency_count={}
+        self.frequency_count = {}
         self.statistics = CacheStatistics()
         self._lock = asyncio.Lock()
 
@@ -215,16 +215,16 @@ class LocalCache:
         """전체 캐시 클리어"""
         async with self._lock:
             count = len(self.entries)
-            entries={}
-            access_order={}
-            frequency_count={}
+            entries = {}
+            access_order = {}
+            frequency_count = {}
             self.statistics.total_size_bytes = 0
             return count
 
     async def invalidate_by_tags(self, tags: Set[str]) -> int:
         """태그 기반 무효화"""
         async with self._lock:
-            keys_to_remove=[]
+            keys_to_remove = []
             for key, entry in self.entries.items():
                 if entry.tags & tags:
                     keys_to_remove = keys_to_remove + [key]
@@ -326,13 +326,13 @@ class DistributedCacheManager:
             max_memory_mb=100,
             default_ttl=3600,
         )
-        self.partitions={}
+        self.partitions = {}
         self.l1_cache = LocalCache(self.default_config)
-        self.l2_cache=None
-        self.warmup_tasks={}
+        self.l2_cache = None
+        self.warmup_tasks = {}
         self.prefetch_patterns: Dict[str, Dict[str, Any]] = {}
         self.global_statistics = CacheStatistics()
-        self.invalidation_listeners=[]
+        self.invalidation_listeners = []
         self._running = False
         self._tasks: Set[asyncio.Task] = set()
 
@@ -360,7 +360,7 @@ class DistributedCacheManager:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks={}
+                _tasks = {}
             if self.l2_cache:
                 pass
             return Success(True)
@@ -479,7 +479,7 @@ class DistributedCacheManager:
             )
             if partition_id and partition_id in self.partitions:
                 partition = self.partitions[partition_id]
-                keys_to_remove=[]
+                keys_to_remove = []
                 for key, entry in partition.entries.items():
                     if entry.tags & tags:
                         keys_to_remove = keys_to_remove + [key]
@@ -498,14 +498,14 @@ class DistributedCacheManager:
                 if partition_id in self.partitions:
                     partition = self.partitions[partition_id]
                     total_cleared = len(partition.entries)
-                    entries={}
+                    entries = {}
             else:
-                l1_cache={}
+                l1_cache = {}
                 if self.l2_cache:
                     pass
                 for partition in self.partitions.values():
                     total_cleared = total_cleared + len(partition.entries)
-                    entries={}
+                    entries = {}
             return Success(total_cleared)
         except Exception as e:
             return Failure(f"Failed to clear cache: {e}")
@@ -558,7 +558,7 @@ class DistributedCacheManager:
         """메모리 사용량 조회"""
         try:
             l1_size = self.l1_cache.statistics.total_size_bytes
-            partition_sizes={}
+            partition_sizes = {}
             for pid, partition in self.partitions.items():
                 total_size = sum(
                     (entry.size_bytes for entry in partition.entries.values())
@@ -603,7 +603,7 @@ class DistributedCacheManager:
         while self._running:
             try:
                 current_time = time.time()
-                expired_keys=[]
+                expired_keys = []
                 for key, entry in self.l1_cache.entries.items():
                     if self._is_expired(entry):
                         expired_keys = expired_keys + [key]
@@ -611,7 +611,7 @@ class DistributedCacheManager:
                     await self.l1_cache.delete(key)
                     expired = expired + 1
                 for partition in self.partitions.values():
-                    expired_keys=[]
+                    expired_keys = []
                     for key, entry in partition.entries.items():
                         if self._is_expired(entry):
                             expired_keys = expired_keys + [key]
@@ -668,7 +668,7 @@ class DistributedCacheManager:
                 await asyncio.sleep(300)
 
 
-_distributed_cache_manager=None
+_distributed_cache_manager = None
 
 
 def get_distributed_cache_manager(

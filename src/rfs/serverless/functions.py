@@ -50,8 +50,8 @@ class HttpTrigger:
     """HTTP 트리거"""
 
     methods: List[str] = field(default_factory=list)
-    cors=True
-    security_level="SECURE_ALWAYS"
+    cors = True
+    security_level = "SECURE_ALWAYS"
 
 
 @dataclass
@@ -59,7 +59,7 @@ class PubSubTrigger:
     """Pub/Sub 트리거"""
 
     topic: str
-    subscription=None
+    subscription = None
 
 
 @dataclass
@@ -67,14 +67,14 @@ class FunctionConfig:
     """서버리스 함수 설정"""
 
     name: str
-    runtime="python311"
-    memory="256MB"
-    timeout=60
+    runtime = "python311"
+    memory = "256MB"
+    timeout = 60
     environment_variables: Dict[str, Any] = field(default_factory=dict)
     trigger: Optional[Union[HttpTrigger, PubSubTrigger]] = None
-    min_instances=0
-    max_instances=100
-    ingress_settings="ALLOW_ALL"
+    min_instances = 0
+    max_instances = 100
+    ingress_settings = "ALLOW_ALL"
 
 
 @dataclass
@@ -84,8 +84,8 @@ class FunctionContext:
     function_name: str
     execution_id: str
     timestamp: datetime = field(default_factory=datetime.now)
-    trigger_type=None
-    request_id=None
+    trigger_type = None
+    request_id = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -97,8 +97,8 @@ class ServerlessFunction:
         self.handler = handler
         self.execution_count = 0
         self.error_count = 0
-        self.last_execution=None
-        self.middlewares=[]
+        self.last_execution = None
+        self.middlewares = []
 
     def add_middleware(self, middleware: Callable):
         """미들웨어 추가"""
@@ -143,7 +143,7 @@ class FunctionRegistry:
     """함수 레지스트리"""
 
     def __init__(self):
-        self.functions={}
+        self.functions = {}
 
     def register(self, function: ServerlessFunction):
         """함수 등록"""
@@ -173,7 +173,7 @@ class FunctionManager:
 
     def __init__(self):
         self.registry = FunctionRegistry()
-        self.global_middlewares=[]
+        self.global_middlewares = []
 
     def add_global_middleware(self, middleware: Callable):
         """전역 미들웨어 추가"""
@@ -207,7 +207,7 @@ class FunctionManager:
         return await function.execute(event, context)
 
 
-_manager=None
+_manager = None
 
 
 def get_manager() -> FunctionManager:
@@ -226,9 +226,7 @@ def serverless_handler(config: FunctionConfig):
         function = manager.create_function(config, func)
 
         @functools.wraps(func)
-        async def wrapper(
-            event: Dict[str, Any], context=None
-        ):
+        async def wrapper(event: Dict[str, Any], context=None):
             if context is None:
                 context = FunctionContext(
                     function_name=config.name,

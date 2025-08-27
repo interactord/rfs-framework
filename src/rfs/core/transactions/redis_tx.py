@@ -104,7 +104,7 @@ class RedisTransactionResource(TransactionResource):
 
     def __init__(self, redis_client: Any):
         self.redis = redis_client
-        self.pipelines={}
+        self.pipelines = {}
         self.savepoints: Dict[str, Dict[str, Any]] = {}
 
     def begin(self, metadata: TransactionMetadata) -> Result[None, str]:
@@ -198,9 +198,7 @@ class RedisTransactionManager:
         manager = get_transaction_manager()
         manager.register_resource("redis", self.resource)
 
-    def pipeline(
-        self, transaction=True
-    ) -> Any:  # Pipeline when redis is available
+    def pipeline(self, transaction=True) -> Any:  # Pipeline when redis is available
         """파이프라인 생성"""
         pipeline = self.redis.pipeline(transaction=transaction)
         self.current_pipeline = pipeline

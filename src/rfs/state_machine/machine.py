@@ -46,20 +46,20 @@ class StateMachine:
 
     def __init__(self, name="StateMachine"):
         self.name = name
-        self.states={}
+        self.states = {}
         self.transitions: Dict[str, List[Transition]] = {}
-        self.current_state=None
-        self.initial_state=None
+        self.current_state = None
+        self.initial_state = None
         self.machine_state = MachineState.IDLE
-        self.context={}
-        self.event_queue=[]
+        self.context = {}
+        self.event_queue = []
         self.processing_events = False
         self.total_transitions = 0
         self.failed_transitions = 0
-        self.start_time=None
-        self.event_history=[]
-        self.state_listeners=[]
-        self.transition_listeners=[]
+        self.start_time = None
+        self.event_history = []
+        self.state_listeners = []
+        self.transition_listeners = []
 
     def add_state(self, state: State) -> "StateMachine":
         """상태 추가"""
@@ -222,7 +222,7 @@ class StateMachine:
 
     def get_transition_stats(self) -> List[Dict[str, Any]]:
         """모든 전이의 통계"""
-        stats=[]
+        stats = []
         for transitions in self.transitions.values():
             for transition in transitions:
                 stats = stats + [transition.get_stats()]
@@ -241,10 +241,10 @@ class StateMachineBuilder:
 
     def __init__(self, name: str):
         self.name = name
-        self.states=[]
-        self.transitions=[]
-        self.state_listeners=[]
-        self.transition_listeners=[]
+        self.states = []
+        self.transitions = []
+        self.state_listeners = []
+        self.transition_listeners = []
 
     def state(self, state: State) -> "StateMachineBuilder":
         """상태 추가"""

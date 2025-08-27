@@ -42,6 +42,12 @@ class Guard:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if isinstance(exc_val, _GuardReturn):
+            # For Guard class, we need to somehow return the value
+            # This is tricky because __exit__ can't change the function's return value
+            # The test expects the function to return the guard return value
+            # We need to re-raise this exception to be caught outside
+            return False
         if not self._handled and not self.condition:
             raise GuardError(self.message)
         return False
@@ -49,12 +55,14 @@ class Guard:
     def else_return(self, value: Any = None) -> NoReturn:
         """Return early with a value if guard fails."""
         if not self.condition:
+            self._handled = True
             # This is a bit hacky but works for early return simulation
             raise _GuardReturn(value)
 
     def else_raise(self, exception: Exception) -> NoReturn:
         """Raise an exception if guard fails."""
         if not self.condition:
+            self._handled = True
             raise exception
 
     def else_call(self, func: Callable[[], Any]) -> NoReturn:
@@ -113,9 +121,7 @@ def guard(
             raise GuardError(message)
 
 
-def guard_let(
-    value: Optional[T], else_return: Any = None, else_raise=None
-) -> T:
+def guard_let(value: Optional[T], else_return: Any = None, else_raise=None) -> T:
     """
     Guard for optional values - unwraps or returns early.
     Swift-inspired: guard let unwrapped = optional else { return }
@@ -272,7 +278,7 @@ def guard_range(
         if else_raise is not None:
             raise else_raise
         elif else_return is not None:
-            raise _GuardReturn(else_return)
+            return else_return
         else:
             raise GuardError(f"Value {value} is less than minimum {min_val}")
 
@@ -280,7 +286,7 @@ def guard_range(
         if else_raise is not None:
             raise else_raise
         elif else_return is not None:
-            raise _GuardReturn(else_return)
+            return else_return
         else:
             raise GuardError(f"Value {value} is greater than maximum {max_val}")
 
@@ -316,7 +322,7 @@ def guard_not_empty(
         if else_raise is not None:
             raise else_raise
         elif else_return is not None:
-            raise _GuardReturn(else_return)
+            return else_return
         else:
             raise GuardError("Collection is empty")
     return collection
@@ -342,16 +348,30 @@ class GuardContext:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(exc_val, _GuardReturn):
-            # Suppress the GuardReturn exception, it's handled by caller
-            return True
+        # Let _GuardReturn exceptions propagate to be handled by @with_guards
         return False
 
-    def check(self, condition: bool, message="") -> "GuardContext":
+    def check(
+        self, condition: Union[bool, Callable[[], bool]], message=""
+    ) -> "GuardContext":
         """Check a condition."""
-        if not condition and not self.failed:
+        if self.failed:
+            return self
+
+        try:
+            if callable(condition):
+                condition_result = condition()
+            else:
+                condition_result = condition
+
+            if not condition_result:
+                self.failed = True
+                self.failure_message = message
+        except Exception:
+            # If condition evaluation fails, consider it a failure
             self.failed = True
-            self.failure_message = message
+            self.failure_message = message or "Condition evaluation failed"
+
         return self
 
     def check_not_none(self, value: Optional[T], message="") -> Optional[T]:

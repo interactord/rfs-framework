@@ -28,7 +28,7 @@ class ActionResult:
     action_type: ActionType
     action_name: str
     context_changes: Dict[str, Any] = field(default_factory=dict)
-    error=None
+    error = None
     duration_ms: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
 
@@ -56,7 +56,7 @@ class Action:
         self.execution_count = 0
         self.failure_count = 0
         self.total_duration_ms = 0.0
-        self.last_executed=None
+        self.last_executed = None
 
     async def execute(self, context: Dict[str, Any] = None) -> ActionResult:
         """액션 실행"""
@@ -65,7 +65,7 @@ class Action:
         start_time = time.time()
 
         if context is None:
-            context={}
+            context = {}
 
         try:
             self.last_executed = datetime.now()
@@ -88,7 +88,7 @@ class Action:
             total_duration_ms = total_duration_ms + duration_ms
 
             # 컨텍스트 변경사항 추출
-            context_changes={}
+            context_changes = {}
             if type(result).__name__ == "dict":
                 context_changes = result
 
@@ -167,7 +167,7 @@ class Guard:
         start_time = time.time()
 
         if context is None:
-            context={}
+            context = {}
 
         try:
             evaluation_count = evaluation_count + 1

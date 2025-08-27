@@ -42,5 +42,5 @@ async def on_data_processed(event: Event):
 ## 관련 문서
 
 - [Transactions](04-transactions.md) - 트랜잭션 시스템
-- [State Machine](17-state-machine.md) - 상태 관리
+- [State Machine](24-state-machine.md) - 상태 관리
 - [Result Pattern](04-transactions.md) - 트랜잭션과 이벤트 연동

@@ -58,25 +58,25 @@ class WebServerConfig:
     """웹 서버 설정"""
 
     framework: WebFramework = WebFramework.AUTO
-    host="0.0.0.0"
-    port=8080
-    debug=False
+    host = "0.0.0.0"
+    port = 8080
+    debug = False
 
     # CORS 설정
-    enable_cors=True
+    enable_cors = True
     cors_origins: List[str] = field(default_factory=list)
     cors_methods: List[str] = field(default_factory=list)
     cors_headers: List[str] = field(default_factory=list)
 
     # 미들웨어 설정
-    enable_logging=True
-    enable_metrics=True
-    enable_security_headers=True
+    enable_logging = True
+    enable_metrics = True
+    enable_security_headers = True
 
     # Cloud Run 최적화
-    cloud_run_optimized=True
-    request_timeout=300
-    max_request_size=32 * 1024 * 1024  # 32MB
+    cloud_run_optimized = True
+    request_timeout = 300
+    max_request_size = 32 * 1024 * 1024  # 32MB
 
     # 추가 설정
     extra_config: Dict[str, Any] = field(default_factory=dict)
@@ -88,10 +88,10 @@ class RFSWebServer:
     def __init__(self, config: WebServerConfig = None):
         self.config = config or WebServerConfig()
         self.app: Optional[Union[FastAPI, Flask]] = None
-        self.framework=None
-        self._server_task=None
-        self._startup_handlers=[]
-        self._shutdown_handlers=[]
+        self.framework = None
+        self._server_task = None
+        self._startup_handlers = []
+        self._shutdown_handlers = []
 
         # 프레임워크 결정
         self._determine_framework()
@@ -331,7 +331,7 @@ class RFSWebServer:
 
 
 # 전역 서버 인스턴스
-_web_server=None
+_web_server = None
 
 
 def get_web_server(config: WebServerConfig = None) -> RFSWebServer:

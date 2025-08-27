@@ -32,13 +32,13 @@ current_transaction: ContextVar[Optional["DatabaseTransaction"]] = ContextVar(
 class SessionConfig:
     """세션 설정"""
 
-    auto_commit=True
-    auto_flush=True
-    expire_on_commit=False
-    isolation_level="READ_COMMITTED"
-    timeout=30
-    pool_size=10
-    max_overflow=20
+    auto_commit = True
+    auto_flush = True
+    expire_on_commit = False
+    isolation_level = "READ_COMMITTED"
+    timeout = 30
+    pool_size = 10
+    max_overflow = 20
 
 
 class DatabaseSession(ABC):
@@ -336,7 +336,7 @@ class SessionManager(metaclass=SingletonMeta):
 
     def __init__(self):
         self.config = SessionConfig()
-        self._sessions={}
+        self._sessions = {}
 
     def set_config(self, config: SessionConfig):
         """세션 설정"""

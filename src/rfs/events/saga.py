@@ -52,13 +52,13 @@ class SagaStep:
     step_id: str
     action: Callable[[Dict[str, Any]], Any]
     compensation: Optional[Callable[[Dict[str, Any]], Any]] = None
-    retry_count=3
-    timeout_seconds=30
+    retry_count = 3
+    timeout_seconds = 30
     status: StepStatus = StepStatus.PENDING
-    attempts=0
-    error=None
-    started_at=None
-    completed_at=None
+    attempts = 0
+    error = None
+    started_at = None
+    completed_at = None
     result: Any = None
     compensation_result: Any = None
 
@@ -70,9 +70,9 @@ class SagaContext:
     saga_id: str
     correlation_id: str
     data: Dict[str, Any] = field(default_factory=dict)
-    current_step=0
+    current_step = 0
     completed_steps: List[str] = field(default_factory=list)
-    failed_step=None
+    failed_step = None
 
     def with_data(self, **data) -> "SagaContext":
         """데이터 추가"""
@@ -93,12 +93,12 @@ class Saga:
     def __init__(self, saga_id: str, name: str = None):
         self.saga_id = saga_id
         self.name = name or saga_id
-        self.steps=[]
+        self.steps = []
         self.status = SagaStatus.PENDING
         self.created_at = datetime.now()
-        self.started_at=None
-        self.completed_at=None
-        self.total_duration=None
+        self.started_at = None
+        self.completed_at = None
+        self.total_duration = None
         self.execution_count = 0
         self.success_count = 0
         self.failure_count = 0
@@ -222,8 +222,8 @@ class SagaManager:
 
     def __init__(self, event_bus=None):
         self.event_bus = event_bus
-        self.sagas={}
-        self.running_sagas={}
+        self.sagas = {}
+        self.running_sagas = {}
         self.total_executions = 0
         self.total_successes = 0
         self.total_failures = 0
@@ -354,8 +354,8 @@ def compensation_for(step_id: str):
 def build_saga_from_functions(saga_id: str, functions: List[Callable]) -> Saga:
     """함수들로부터 사가 빌드"""
     saga = create_saga(saga_id)
-    steps={}
-    compensations={}
+    steps = {}
+    compensations = {}
     for func in functions:
         if hasattr(func, "_saga_step_id"):
             steps[func._saga_step_id] = {func._saga_step_id: func}
@@ -391,7 +391,7 @@ class ReactiveSaga:
         )
 
 
-_saga_manager=None
+_saga_manager = None
 
 
 async def get_saga_manager() -> SagaManager:

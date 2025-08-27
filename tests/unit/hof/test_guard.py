@@ -264,7 +264,7 @@ class TestGuardContext:
         def process(value):
             with GuardContext() as guard:
                 guard.check_type(value, int, "Must be integer")
-                guard.check(value > 0, "Must be positive")
+                guard.check(lambda: value > 0, "Must be positive")
                 guard.else_return(0)
 
             return value * 2
@@ -296,11 +296,11 @@ class TestGuardClass:
     def test_guard_class_basic(self):
         """Test basic Guard class usage."""
 
+        @with_guards
         def process(value):
             with Guard(value > 0, "Value must be positive") as g:
                 if not g.condition:
                     g.else_return(-1)
-                    return -1
             return value * 2
 
         assert process(5) == 10
@@ -309,6 +309,7 @@ class TestGuardClass:
     def test_guard_class_with_exception(self):
         """Test Guard class with exception."""
 
+        @with_guards
         def process(value):
             with Guard(value > 0) as g:
                 if not g.condition:

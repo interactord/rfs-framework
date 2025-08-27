@@ -243,7 +243,7 @@ class CICDManager:
 
     def _generate_cloudbuild_config(self, config: PipelineConfig) -> Dict[str, Any]:
         """Cloud Build 설정 생성"""
-        steps=[]
+        steps = []
         if PipelineStage.BUILD in config.stages:
             steps = steps + [
                 {

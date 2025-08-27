@@ -48,7 +48,7 @@ class PerformanceMetrics:
 
     function_name: str
     start_time: datetime
-    end_time=None
+    end_time = None
     duration_ms: float = 0.0
     cpu_percent_before: float = 0.0
     cpu_percent_after: float = 0.0
@@ -56,10 +56,10 @@ class PerformanceMetrics:
     memory_mb_before: float = 0.0
     memory_mb_after: float = 0.0
     memory_delta_mb: float = 0.0
-    io_read_bytes=0
-    io_write_bytes=0
-    success=True
-    error_message=None
+    io_read_bytes = 0
+    io_write_bytes = 0
+    success = True
+    error_message = None
     performance_level: PerformanceLevel = PerformanceLevel.GOOD
     tags: Dict[str, Any] = field(default_factory=dict)
 
@@ -83,7 +83,7 @@ class PerformanceMonitor:
     def __init__(self, project_id=None):
         self.metrics_history: deque = deque(maxlen=1000)
         self.aggregated_metrics: Dict[str, List[PerformanceMetrics]] = defaultdict(list)
-        self.monitoring_client=None
+        self.monitoring_client = None
         if project_id:
             try:
                 self.monitoring_client = CloudMonitoringClient(project_id)
@@ -137,7 +137,7 @@ class PerformanceMonitor:
 
     def _check_alerts(self, metrics: PerformanceMetrics) -> None:
         """알림 체크"""
-        alerts=[]
+        alerts = []
         if metrics.duration_ms > self.alert_thresholds["duration_ms"]:
             alerts = alerts + [f"Slow performance: {metrics.duration_ms:.2f}ms"]
         if metrics.memory_delta_mb > self.alert_thresholds["memory_delta_mb"]:
@@ -331,8 +331,8 @@ class SimpleCache:
     """간단한 캐시 구현"""
 
     def __init__(self, max_size=100, ttl_seconds=300):
-        self.cache={}
-        self.timestamps={}
+        self.cache = {}
+        self.timestamps = {}
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.hits = 0
@@ -367,8 +367,8 @@ class SimpleCache:
     def clear(self) -> None:
         """캐시 초기화"""
         with self.lock:
-            cache={}
-            timestamps={}
+            cache = {}
+            timestamps = {}
 
     def get_stats(self) -> Dict[str, Any]:
         """캐시 통계"""
@@ -381,9 +381,7 @@ class SimpleCache:
         }
 
 
-def Cached(
-    ttl_seconds=300, max_size=100, key_func=None
-):
+def Cached(ttl_seconds=300, max_size=100, key_func=None):
     """
     결과 캐싱 데코레이터
 

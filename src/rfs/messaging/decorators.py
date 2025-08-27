@@ -144,13 +144,11 @@ def retry_on_failure(
     return decorator
 
 
-def dead_letter_queue(
-    dlq_topic: str = None, max_failures=5, broker_name: str = None
-):
+def dead_letter_queue(dlq_topic: str = None, max_failures=5, broker_name: str = None):
     """Dead Letter Queue 데코레이터"""
 
     def decorator(func: Callable) -> Callable:
-        failure_count={}
+        failure_count = {}
 
         @functools.wraps(func)
         async def wrapper(message: Message, *args, **kwargs):
@@ -264,7 +262,7 @@ def rate_limit(
     key_func: Optional[Callable[[Message], str]] = None,
 ):
     """속도 제한 데코레이터"""
-    call_history={}
+    call_history = {}
 
     def get_key(message: Message) -> str:
         if key_func:
@@ -359,12 +357,10 @@ def message_metrics(
     return decorator
 
 
-def batch_handler(
-    batch_size=10, batch_timeout: float = 1.0, max_batch_size=100
-):
+def batch_handler(batch_size=10, batch_timeout: float = 1.0, max_batch_size=100):
     """배치 메시지 처리 데코레이터"""
-    message_batches={}
-    batch_timers={}
+    message_batches = {}
+    batch_timers = {}
 
     def decorator(func: Callable) -> Callable:
 

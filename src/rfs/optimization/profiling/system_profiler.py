@@ -140,14 +140,14 @@ class SystemProfiler:
         self.collection_interval = collection_interval
         self.metrics = SystemMetrics(system_info=SystemInfo.collect())
         self.is_running = False
-        self.collection_task=None
+        self.collection_task = None
         self.start_time = datetime.now()
         self.alert_thresholds = {
             "cpu_percent": 80.0,
             "memory_percent": 85.0,
             "disk_usage_percent": 90.0,
         }
-        self.alert_callbacks=[]
+        self.alert_callbacks = []
 
     async def start(self) -> Result[bool, str]:
         """프로파일링 시작"""
@@ -232,7 +232,7 @@ class SystemProfiler:
     async def _check_alerts(self, usage: ResourceUsage):
         """알림 조건 검사"""
         try:
-            alerts=[]
+            alerts = []
             if usage.cpu_percent > self.alert_thresholds["cpu_percent"]:
                 alerts = alerts + [f"High CPU usage: {usage.cpu_percent:.1f}%"]
             if usage.memory_percent > self.alert_thresholds["memory_percent"]:

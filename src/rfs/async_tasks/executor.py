@@ -54,7 +54,7 @@ class ThreadPoolExecutor(TaskExecutor):
 
     def __init__(self, max_workers=10):
         self.max_workers = max_workers
-        self.executor=None
+        self.executor = None
         self.active_tasks = 0
         self.completed_tasks = 0
         self.failed_tasks = 0
@@ -135,7 +135,7 @@ class ProcessPoolExecutor(TaskExecutor):
 
     def __init__(self, max_workers=None):
         self.max_workers = max_workers or multiprocessing.cpu_count()
-        self.executor=None
+        self.executor = None
         self.active_tasks = 0
         self.completed_tasks = 0
         self.failed_tasks = 0
@@ -224,7 +224,7 @@ class AsyncIOExecutor(TaskExecutor):
     def __init__(self, max_workers=10):
         self.max_workers = max_workers
         self.semaphore = asyncio.Semaphore(max_workers)
-        self.active_tasks=[]
+        self.active_tasks = []
         self.completed_tasks = 0
         self.failed_tasks = 0
         self._lock = asyncio.Lock()
@@ -245,7 +245,7 @@ class AsyncIOExecutor(TaskExecutor):
             if self.active_tasks:
                 await asyncio.gather(*self.active_tasks, return_exceptions=True)
 
-            self.active_tasks=[]
+            self.active_tasks = []
 
         logger.info("AsyncIOExecutor stopped")
 
@@ -383,7 +383,7 @@ class HybridExecutor(TaskExecutor):
 
 
 # 전역 실행자
-_global_executor=None
+_global_executor = None
 
 
 def get_executor() -> TaskExecutor:

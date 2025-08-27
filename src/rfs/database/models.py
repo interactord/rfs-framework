@@ -59,14 +59,14 @@ class Field:
     """필드 정의"""
 
     field_type: str
-    primary_key=False
-    nullable=True
+    primary_key = False
+    nullable = True
     default: Any = None
-    max_length=None
-    foreign_key=None
-    index=False
-    unique=False
-    description=None
+    max_length = None
+    foreign_key = None
+    index = False
+    unique = False
+    description = None
 
 
 @dataclass
@@ -158,7 +158,7 @@ class SQLAlchemyModel(BaseModel):
     @classmethod
     def create_table(cls) -> Table:
         """SQLAlchemy 테이블 정의"""
-        fields={}
+        fields = {}
         fields["id"] = {"id": Field("integer", primary_key=True)}
         fields = {
             **fields,
@@ -276,7 +276,7 @@ class TortoiseModel(BaseModel):
     @classmethod
     def create_table(cls) -> Table:
         """Tortoise 테이블 정의"""
-        fields={}
+        fields = {}
         if hasattr(cls, "_meta") and hasattr(cls._meta, "fields_map"):
             for field_name, field_obj in cls._meta.fields_map.items():
                 fields = {
@@ -337,7 +337,7 @@ class ModelRegistry(metaclass=SingletonMeta):
 
     def __init__(self):
         self.models: Dict[str, Type[BaseModel]] = {}
-        self.tables={}
+        self.tables = {}
 
     def register_model(self, model_class: Type[BaseModel]):
         """모델 등록"""

@@ -48,27 +48,27 @@ class ColorScheme(Enum):
 class PlotConfig:
     """플롯 설정"""
 
-    title=""
-    subtitle=""
-    width=800
-    height=600
-    background_color="white"
-    grid=True
-    legend=True
-    responsive=True
-    animation=True
-    interactive=True
-    x_label=""
-    y_label=""
-    x_axis_type="linear"
-    y_axis_type="linear"
+    title = ""
+    subtitle = ""
+    width = 800
+    height = 600
+    background_color = "white"
+    grid = True
+    legend = True
+    responsive = True
+    animation = True
+    interactive = True
+    x_label = ""
+    y_label = ""
+    x_axis_type = "linear"
+    y_axis_type = "linear"
     color_scheme: ColorScheme = ColorScheme.DEFAULT
-    font_family="Arial, sans-serif"
-    font_size=12
-    margin_top=50
-    margin_right=50
-    margin_bottom=80
-    margin_left=80
+    font_family = "Arial, sans-serif"
+    font_size = 12
+    margin_top = 50
+    margin_right = 50
+    margin_bottom = 80
+    margin_left = 80
 
 
 @dataclass
@@ -449,7 +449,10 @@ class VisualizationEngine:
 async def generate_plot(
     plot_type: PlotType,
     x_data: List[Any],
-    y_data: List[Any], config=None, backend="plotly", theme=None,
+    y_data: List[Any],
+    config=None,
+    backend="plotly",
+    theme=None,
 ) -> Result[Dict[str, Any], str]:
     """플롯 생성 헬퍼 함수"""
     engine = VisualizationEngine(backend)
@@ -489,7 +492,9 @@ async def export_chart(
 async def create_interactive_plot(
     plot_type: PlotType,
     x_data: List[Any],
-    y_data: List[Any], config=None, callbacks=None,
+    y_data: List[Any],
+    config=None,
+    callbacks=None,
 ) -> Result[Dict[str, Any], str]:
     """인터랙티브 플롯 생성"""
     if config is None:
@@ -518,11 +523,11 @@ class PlotBuilder:
     """플롯 빌더 (Fluent API)"""
 
     def __init__(self):
-        self._plot_type=None
-        self._x_data=[]
-        self._y_data=[]
+        self._plot_type = None
+        self._x_data = []
+        self._y_data = []
         self._config = PlotConfig()
-        self._theme=None
+        self._theme = None
         self._backend = "plotly"
 
     def plot_type(self, plot_type: PlotType) -> "PlotBuilder":
@@ -599,9 +604,7 @@ def create_plot() -> PlotBuilder:
     return PlotBuilder()
 
 
-def generate_sample_data(
-    data_type="line", size=50
-) -> Tuple[List[Any], List[Any]]:
+def generate_sample_data(data_type="line", size=50) -> Tuple[List[Any], List[Any]]:
     """샘플 데이터 생성"""
     import math
     import random

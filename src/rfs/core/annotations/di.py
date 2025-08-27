@@ -458,9 +458,7 @@ def Injectable(cls=None, *, name=None):
     return decorator
 
 
-def Autowired(
-    qualifier=None, lazy=False, required=True
-):
+def Autowired(qualifier=None, lazy=False, required=True):
     """
     자동 주입 필드
 

@@ -85,10 +85,10 @@ class User:
     email: str
     roles: Set[Role] = field(default_factory=set)
     permissions: Set[Permission] = field(default_factory=set)
-    is_active=True
-    is_verified=False
+    is_active = True
+    is_verified = False
     created_at: datetime = field(default_factory=datetime.now)
-    last_login=None
+    last_login = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def has_role(self, role: Union[Role, str]) -> bool:
@@ -131,9 +131,9 @@ class AuthContext:
     """인증 컨텍스트"""
 
     def __init__(self):
-        self._current_user=None
-        self._token=None
-        self._session_id=None
+        self._current_user = None
+        self._token = None
+        self._session_id = None
 
     @property
     def current_user(self) -> Optional[User]:
@@ -190,12 +190,10 @@ def set_current_user(user: User) -> None:
 
 def clear_auth_context() -> None:
     """인증 컨텍스트 초기화"""
-    _auth_context={}
+    _auth_context = {}
 
 
-def RequiresAuthentication(
-    allow_service_account=True, check_verified=False
-):
+def RequiresAuthentication(allow_service_account=True, check_verified=False):
     """
     인증 필수 데코레이터
 
@@ -286,7 +284,7 @@ def RequiresRole(
             if not user:
                 logger.warning(f"Unauthenticated access attempt to {func.__name__}")
                 raise AuthenticationError("Authentication required")
-            roles=[]
+            roles = []
             for role in required_roles:
                 if type(role).__name__ == "str":
                     roles = roles + [Role(role)]
@@ -319,7 +317,7 @@ def RequiresRole(
             if not user:
                 logger.warning(f"Unauthenticated access attempt to {func.__name__}")
                 raise AuthenticationError("Authentication required")
-            roles=[]
+            roles = []
             for role in required_roles:
                 if type(role).__name__ == "str":
                     roles = roles + [Role(role)]
@@ -354,9 +352,7 @@ def RequiresRole(
     return decorator
 
 
-def RequiresPermission(
-    *required_permissions: Union[Permission, str], require_all=True
-):
+def RequiresPermission(*required_permissions: Union[Permission, str], require_all=True):
     """
     권한 기반 접근 제어 데코레이터
 
@@ -373,7 +369,7 @@ def RequiresPermission(
             if not user:
                 logger.warning(f"Unauthenticated access attempt to {func.__name__}")
                 raise AuthenticationError("Authentication required")
-            permissions=[]
+            permissions = []
             for perm in required_permissions:
                 if type(perm).__name__ == "str":
                     permissions = permissions + [Permission(perm)]
@@ -408,7 +404,7 @@ def RequiresPermission(
             if not user:
                 logger.warning(f"Unauthenticated access attempt to {func.__name__}")
                 raise AuthenticationError("Authentication required")
-            permissions=[]
+            permissions = []
             for perm in required_permissions:
                 if type(perm).__name__ == "str":
                     permissions = permissions + [Permission(perm)]
@@ -572,9 +568,7 @@ class TokenManager:
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def verify_token(
-        self, token: str, token_type="access"
-    ) -> Optional[Dict[str, Any]]:
+    def verify_token(self, token: str, token_type="access") -> Optional[Dict[str, Any]]:
         """토큰 검증"""
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])

@@ -18,9 +18,7 @@ class AssertionError(Exception):
     pass
 
 
-def _format_assertion_message(
-    expected: Any, actual: Any, message=None
-) -> str:
+def _format_assertion_message(expected: Any, actual: Any, message=None) -> str:
     """어설션 메시지 포맷팅"""
     base_message = f"Expected: {expected}, but was: {actual}"
     if message:
@@ -113,9 +111,7 @@ def assert_not_empty(collection: Collection, message=None):
         )
 
 
-def assert_length(
-    collection: Collection, expected_length: int, message=None
-):
+def assert_length(collection: Collection, expected_length: int, message=None):
     """컬렉션의 길이 확인"""
     actual_length = len(collection)
     if actual_length != expected_length:
@@ -185,9 +181,7 @@ def assert_failure(result: Result, message=None):
         )
 
 
-def assert_result_value(
-    result: Result, expected_value: Any, message=None
-):
+def assert_result_value(result: Result, expected_value: Any, message=None):
     """Result의 성공 값 확인"""
     assert_success(result, message)
     actual_value = result.unwrap()
@@ -197,9 +191,7 @@ def assert_result_value(
         )
 
 
-def assert_result_error(
-    result: Result, expected_error: Any, message=None
-):
+def assert_result_error(result: Result, expected_error: Any, message=None):
     """Result의 오류 값 확인"""
     assert_failure(result, message)
     actual_error = result.unwrap_err()
@@ -311,9 +303,7 @@ def assert_less_equal(
         )
 
 
-def assert_almost_equal(
-    first: float, second: float, places=7, message=None
-):
+def assert_almost_equal(first: float, second: float, places=7, message=None):
     """부동소수점 근사 비교"""
     if round(abs(second - first), places) != 0:
         raise AssertionError(
@@ -382,9 +372,7 @@ def create_assertion(
 class assert_raises_context:
     """예외 발생 확인을 위한 컨텍스트 매니저"""
 
-    def __init__(
-        self, expected_exception: Type[Exception], message=None
-    ):
+    def __init__(self, expected_exception: Type[Exception], message=None):
         self.expected_exception = expected_exception
         self.message = message
         self.exception = None

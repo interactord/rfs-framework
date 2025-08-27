@@ -73,9 +73,9 @@ class RPO:
     """Recovery Point Objective - 복구 시점 목표"""
 
     target_minutes: int
-    actual_minutes=None
-    last_backup_time=None
-    data_loss_acceptable=False
+    actual_minutes = None
+    last_backup_time = None
+    data_loss_acceptable = False
 
 
 @dataclass
@@ -83,9 +83,9 @@ class RTO:
     """Recovery Time Objective - 복구 시간 목표"""
 
     target_minutes: int
-    actual_minutes=None
-    recovery_start_time=None
-    recovery_end_time=None
+    actual_minutes = None
+    recovery_start_time = None
+    recovery_end_time = None
 
 
 @dataclass
@@ -95,9 +95,9 @@ class BackupStrategy:
     type: str
     frequency_hours: int
     retention_days: int
-    encryption_enabled=True
-    compression_enabled=True
-    verification_enabled=True
+    encryption_enabled = True
+    compression_enabled = True
+    verification_enabled = True
     backup_locations: List[str] = field(default_factory=list)
 
 
@@ -107,10 +107,10 @@ class FailoverConfig:
 
     type: FailoverType
     health_check_interval_seconds: float = 30.0
-    failure_threshold=3
-    success_threshold=2
-    auto_failback=False
-    failback_delay_minutes=60
+    failure_threshold = 3
+    success_threshold = 2
+    auto_failback = False
+    failback_delay_minutes = 60
     notification_channels: List[str] = field(default_factory=list)
 
 
@@ -127,10 +127,10 @@ class RecoveryPlan:
     rto: RTO
     backup_strategy: BackupStrategy
     failover_config: FailoverConfig
-    priority=1
-    enabled=True
-    test_frequency_days=30
-    last_test_date=None
+    priority = 1
+    enabled = True
+    test_frequency_days = 30
+    last_test_date = None
     procedures: List[Dict[str, Any]] = field(default_factory=list)
     contacts: List[Dict[str, str]] = field(default_factory=list)
 
@@ -144,9 +144,9 @@ class RecoveryOperation:
     disaster_type: DisasterType
     phase: RecoveryPhase
     started_at: datetime
-    completed_at=None
-    status="in_progress"
-    error_message=None
+    completed_at = None
+    status = "in_progress"
+    error_message = None
     metrics: Dict[str, Any] = field(default_factory=dict)
     logs: List[str] = field(default_factory=list)
 
@@ -323,8 +323,8 @@ class HealthMonitor:
 
     def __init__(self, config: FailoverConfig):
         self.config = config
-        self.health_checks={}
-        self.health_status={}
+        self.health_checks = {}
+        self.health_status = {}
         self.failure_counts: Dict[str, int] = defaultdict(int)
         self.success_counts: Dict[str, int] = defaultdict(int)
 
@@ -334,7 +334,7 @@ class HealthMonitor:
 
     async def check_health(self) -> Dict[str, bool]:
         """헬스 체크 실행"""
-        results={}
+        results = {}
         for name, check_func in self.health_checks.items():
             try:
                 if asyncio.iscoroutinefunction(check_func):
@@ -382,8 +382,8 @@ class FailoverManager:
         self.config = config
         self.is_primary = True
         self.failover_in_progress = False
-        self.last_failover_time=None
-        self.failover_callbacks=[]
+        self.last_failover_time = None
+        self.failover_callbacks = []
 
     def register_failover_callback(self, callback: Callable) -> None:
         """페일오버 콜백 등록"""
@@ -499,17 +499,17 @@ class DisasterRecoveryManager:
     """재해 복구 관리자"""
 
     def __init__(self):
-        self.recovery_plans={}
-        self.active_operations={}
+        self.recovery_plans = {}
+        self.active_operations = {}
         self.operation_history: deque = deque(maxlen=1000)
-        self.health_monitors={}
-        self.failover_managers={}
+        self.health_monitors = {}
+        self.failover_managers = {}
         self.backup_validator = BackupValidator()
         self.total_recoveries = 0
         self.successful_recoveries = 0
         self.failed_recoveries = 0
         self.total_tests = 0
-        self.monitoring_task=None
+        self.monitoring_task = None
         self.is_running = False
 
     async def initialize(self) -> Result[bool, str]:
@@ -769,7 +769,7 @@ class DisasterRecoveryManager:
             total_tests = total_tests + 1
             test_start = datetime.now()
             test_context = {"test_mode": True, "test_timestamp": test_start.isoformat()}
-            test_results=[]
+            test_results = []
             for procedure_config in plan.procedures:
                 procedure = RecoveryProcedure(procedure_config)
                 if procedure.type == "script":
@@ -887,7 +887,7 @@ class DisasterRecoveryManager:
 
     def get_recovery_status(self) -> Dict[str, Any]:
         """복구 상태 조회"""
-        active_operations_list=[]
+        active_operations_list = []
         for op in self.active_operations.values():
             active_operations_list = active_operations_list + [
                 {
@@ -933,17 +933,17 @@ class DisasterRecoveryManager:
         """리소스 정리"""
         try:
             await self.stop_monitoring()
-            recovery_plans={}
-            active_operations={}
-            health_monitors={}
-            failover_managers={}
+            recovery_plans = {}
+            active_operations = {}
+            health_monitors = {}
+            failover_managers = {}
             logging.info("Disaster recovery manager cleanup completed")
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_disaster_recovery_manager=None
+_disaster_recovery_manager = None
 
 
 def get_disaster_recovery_manager() -> DisasterRecoveryManager:

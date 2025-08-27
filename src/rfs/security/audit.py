@@ -59,10 +59,10 @@ class AuditEvent:
     resource: Optional[str]
     outcome: str
     details: Dict[str, Any]
-    ip_address=None
-    user_agent=None
-    request_id=None
-    correlation_id=None
+    ip_address = None
+    user_agent = None
+    request_id = None
+    correlation_id = None
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -95,7 +95,7 @@ class MemoryAuditStorage(AuditStorage):
     """메모리 기반 감사 로그 저장소"""
 
     def __init__(self, max_events=10000):
-        self.events=[]
+        self.events = []
         self.max_events = max_events
         self._lock = asyncio.Lock()
 
@@ -112,7 +112,7 @@ class MemoryAuditStorage(AuditStorage):
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            filtered_events=[]
+            filtered_events = []
             for event in self.events:
                 match = True
                 for key, value in filters.items():
@@ -151,9 +151,7 @@ class MemoryAuditStorage(AuditStorage):
 class FileAuditStorage(AuditStorage):
     """파일 기반 감사 로그 저장소"""
 
-    def __init__(
-        self, log_file_path="audit.log", max_file_size=100 * 1024 * 1024
-    ):
+    def __init__(self, log_file_path="audit.log", max_file_size=100 * 1024 * 1024):
         self.log_file_path = log_file_path
         self.max_file_size = max_file_size
         self._lock = asyncio.Lock()
@@ -186,7 +184,7 @@ class FileAuditStorage(AuditStorage):
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            events=[]
+            events = []
             with open(self.log_file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     try:
@@ -387,7 +385,7 @@ class AuditLogger:
         return await self.storage.query_events(filters or {}, limit, offset)
 
 
-_audit_logger=None
+_audit_logger = None
 
 
 def get_audit_logger(storage=None) -> AuditLogger:

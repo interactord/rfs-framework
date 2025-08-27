@@ -560,6 +560,6 @@ async def transfer(from_id: int, to_id: int):
 - 인덱스 최적화
 
 ## 🔗 관련 문서
-- [이벤트 시스템](./16-event-system.md)
-- [상태 머신](./17-state-machine.md)
+- [이벤트 시스템](./21-event-system.md)
+- [상태 머신](./24-state-machine.md)
 - [데이터베이스 패턴](./18-database.md)

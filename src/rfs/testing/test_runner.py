@@ -40,9 +40,9 @@ class TestResult:
     test_name: str
     status: TestStatus
     duration: float
-    message=None
-    error=None
-    traceback=None
+    message = None
+    error = None
+    traceback = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def is_passed(self) -> bool:
@@ -166,9 +166,9 @@ class TestSuite:
 
     def __init__(self, name: str):
         self.name = name
-        self.test_cases=[]
-        self.setup_hooks=[]
-        self.teardown_hooks=[]
+        self.test_cases = []
+        self.setup_hooks = []
+        self.teardown_hooks = []
 
     def add_test(self, test_case: Union[TestCase, Callable]):
         """테스트 추가"""
@@ -219,7 +219,7 @@ class TestRunner:
     def __init__(self, verbose=True, stop_on_failure=False):
         self.verbose = verbose
         self.stop_on_failure = stop_on_failure
-        self.results=[]
+        self.results = []
 
     async def run_test_case(self, test_case: TestCase) -> TestResult:
         """단일 테스트 케이스 실행"""
@@ -348,9 +348,7 @@ def discover_tests(directory: str, pattern="test_*.py") -> List[TestCase]:
     return test_cases
 
 
-async def run_test(
-    test_case: Union[TestCase, Callable], verbose=True
-) -> TestResult:
+async def run_test(test_case: Union[TestCase, Callable], verbose=True) -> TestResult:
     """단일 테스트 실행"""
     runner = TestRunner(verbose=verbose)
     if not type(test_case).__name__ == "TestCase":

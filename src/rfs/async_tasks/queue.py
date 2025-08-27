@@ -96,7 +96,7 @@ class PriorityTaskQueue(TaskQueue):
     """우선순위 작업 큐"""
 
     def __init__(self):
-        self._heap=[]
+        self._heap = []
         self._condition = asyncio.Condition()
         self._counter = 0
 
@@ -127,7 +127,7 @@ class PriorityTaskQueue(TaskQueue):
     async def clear(self):
         """큐 클리어"""
         async with self._condition:
-            self._heap=[]
+            self._heap = []
             self._counter = 0
 
     async def peek(self) -> Optional[Tuple[int, str]]:
@@ -155,7 +155,7 @@ class DelayedTaskQueue(TaskQueue):
     def __init__(self):
         self._items: List[Tuple[datetime, QueueItem]] = []
         self._condition = asyncio.Condition()
-        self._worker_task=None
+        self._worker_task = None
         self._ready_queue = asyncio.Queue()
 
     async def start(self):
@@ -198,7 +198,7 @@ class DelayedTaskQueue(TaskQueue):
     async def clear(self):
         """큐 클리어"""
         async with self._condition:
-            self._items=[]
+            self._items = []
         while not self._ready_queue.empty():
             try:
                 self._ready_queue.get_nowait()
@@ -223,7 +223,7 @@ class DelayedTaskQueue(TaskQueue):
             try:
                 async with self._condition:
                     now = datetime.now()
-                    ready_items=[]
+                    ready_items = []
                     while self._items and self._items[0][0] <= now:
                         _, item = self._items.pop(0)
                         ready_items = ready_items + [item]
@@ -380,7 +380,7 @@ class DistributedTaskQueue(TaskQueue):
 
     async def get_stats(self) -> Dict[str, int]:
         """큐 통계"""
-        stats={}
+        stats = {}
         if self.priority_queues:
             for priority, queue_name in self.queue_names.items():
                 length = await asyncio.get_event_loop().run_in_executor(
@@ -395,7 +395,7 @@ class DistributedTaskQueue(TaskQueue):
         return stats
 
 
-_global_queue=None
+_global_queue = None
 
 
 def get_task_queue() -> TaskQueue:

@@ -16,9 +16,9 @@ from ..core.result import Failure, Result, Success
 class CoverageReport:
     """커버리지 리포트"""
 
-    total_lines=0
-    covered_lines=0
-    missed_lines=0
+    total_lines = 0
+    covered_lines = 0
+    missed_lines = 0
     coverage_percentage: float = 0.0
     files: Dict[str, Dict[str, any]] = field(default_factory=dict)
 
@@ -133,7 +133,7 @@ class CoverageCollector:
 
 
 # Global coverage instance
-_coverage_collector=None
+_coverage_collector = None
 
 
 def start_coverage(source_paths: Optional[List[str]] = None) -> Result[None, str]:

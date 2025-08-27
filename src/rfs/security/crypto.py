@@ -54,9 +54,9 @@ class EncryptionResult:
     """암호화 결과"""
 
     encrypted_data: bytes
-    nonce=None
-    tag=None
-    salt=None
+    nonce = None
+    tag = None
+    salt = None
 
 
 @dataclass
@@ -65,7 +65,7 @@ class KeyPair:
 
     private_key: bytes
     public_key: bytes
-    algorithm="RSA"
+    algorithm = "RSA"
 
 
 class CryptoManager:

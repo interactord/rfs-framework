@@ -28,13 +28,13 @@ class FixtureConfig:
     """픽스처 설정"""
 
     scope: FixtureScope = FixtureScope.FUNCTION
-    autouse=False
-    params=None
-    ids=None
+    autouse = False
+    params = None
+    ids = None
 
 
 # 픽스처 레지스트리
-_fixtures={}
+_fixtures = {}
 
 
 def fixture(

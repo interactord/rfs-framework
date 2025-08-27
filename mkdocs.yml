@@ -188,10 +188,10 @@ nav:
     - 02-dependency-injection.md
     - 03-configuration.md
     - 04-transactions.md
-    - 16-hot-library.md
-    - 16-event-system.md
-    - 17-profiles.md
-    - 17-state-machine.md
+    - 22-hot-library.md
+    - 21-event-system.md
+    - 23-profiles.md
+    - 24-state-machine.md
     - 18-database.md
   
   - 프로덕션:
@@ -209,7 +209,7 @@ nav:
     - 12-circuit-breaker.md
     - 13-load-balancing.md
     - 14-cli-interface.md
-    - 15-code-quality.md
+    - 20-code-quality.md
   
   - API 레퍼런스:
     - API 개요: api/index.md

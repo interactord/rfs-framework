@@ -49,9 +49,9 @@ class TaskStatus(Enum):
 class RetryConfig:
     """재시도 설정"""
 
-    max_attempts=3
-    min_backoff=1
-    max_backoff=300
+    max_attempts = 3
+    min_backoff = 1
+    max_backoff = 300
     backoff_multiplier: float = 2.0
 
 
@@ -63,13 +63,13 @@ class Task:
     handler: str
     payload: Dict[str, Any] = field(default_factory=dict)
     priority: TaskPriority = TaskPriority.NORMAL
-    schedule_time=None
+    schedule_time = None
     retry_config: RetryConfig = field(default_factory=RetryConfig)
     created_at: datetime = field(default_factory=datetime.now)
     status: TaskStatus = TaskStatus.PENDING
-    attempts=0
-    last_attempt=None
-    error_message=None
+    attempts = 0
+    last_attempt = None
+    error_message = None
 
 
 @dataclass
@@ -77,19 +77,19 @@ class QueueConfig:
     """큐 설정"""
 
     name: str
-    location="asia-northeast3"
+    location = "asia-northeast3"
     max_dispatches_per_second: float = 100.0
-    max_concurrent_dispatches=100
-    max_retry_duration=3600
-    target_uri=""
-    service_account_email=""
+    max_concurrent_dispatches = 100
+    max_retry_duration = 3600
+    target_uri = ""
+    service_account_email = ""
 
 
 class TaskHandler:
     """작업 핸들러 관리자"""
 
     def __init__(self):
-        self._handlers={}
+        self._handlers = {}
 
     def register(self, name: str, handler: Callable):
         """핸들러 등록"""
@@ -113,7 +113,7 @@ class CloudTasksClient:
         self.location = location
         self.handler_registry = TaskHandler()
         self._client = None
-        self._local_queue=[]
+        self._local_queue = []
         self._processing = False
 
     async def initialize(self):
@@ -312,7 +312,7 @@ class CloudTasksClient:
     async def purge_queue(self, queue_name: str) -> bool:
         """큐 비우기"""
         if not self._client:
-            self._local_queue={}
+            self._local_queue = {}
             logger.info(f"Local queue purged: {queue_name}")
             return True
         try:
@@ -344,9 +344,7 @@ def create_task(
     )
 
 
-def with_retry(
-    max_attempts=3, min_backoff=1, max_backoff=300
-) -> RetryConfig:
+def with_retry(max_attempts=3, min_backoff=1, max_backoff=300) -> RetryConfig:
     """순수 함수: 재시도 설정 생성"""
     return RetryConfig(
         max_attempts=max_attempts, min_backoff=min_backoff, max_backoff=max_backoff
@@ -368,7 +366,7 @@ def status_filter(status: TaskStatus) -> Callable[[Task], bool]:
     return lambda task: task.status == status
 
 
-_client=None
+_client = None
 
 
 async def get_client(

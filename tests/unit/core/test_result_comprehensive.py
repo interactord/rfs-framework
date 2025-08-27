@@ -159,7 +159,7 @@ class TestResultFunctorOperations:
 
     def test_map_error_with_exception(self):
         """map_error에서 예외 발생시 Failure 유지"""
-        result = Failure("error")
+        result = Failure(10)
         mapped = result.map_error(lambda e: e / 0)
 
         assert mapped.is_failure()
@@ -191,7 +191,7 @@ class TestResultMonadOperations:
         bound = result.bind(lambda x: x / 0)  # 예외 발생
 
         assert bound.is_failure()
-        assert isinstance(bound.unwrap_error(), TypeError)
+        assert isinstance(bound.unwrap_error(), ZeroDivisionError)
 
     def test_failure_bind_unchanged(self):
         """Failure에 대한 bind는 변경되지 않음"""
@@ -220,7 +220,7 @@ class TestResultMonadOperations:
         assert result.unwrap() == 12
 
         # 중간에 실패 케이스
-        result = Success(4).bind(add_one).bind(fail_if_even)
+        result = Success(3).bind(add_one).bind(fail_if_even)
         assert result.is_failure()
         assert result.unwrap_error() == "even"
 
@@ -923,6 +923,7 @@ class TestResultEdgeCases:
             assert mapped.unwrap().startswith("processed_")
 
     @pytest.mark.parametrize("concurrency_level", [1, 5, 10])
+    @pytest.mark.asyncio
     async def test_concurrent_result_operations(self, concurrency_level):
         """동시 Result 연산 테스트"""
 

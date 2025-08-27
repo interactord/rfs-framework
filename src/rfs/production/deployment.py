@@ -60,14 +60,14 @@ class DeploymentConfig:
     """배포 설정"""
 
     strategy: DeploymentStrategy = DeploymentStrategy.ROLLING
-    target_environment="production"
-    health_check_url="/health"
-    health_check_timeout=30
-    rollback_on_failure=True
-    canary_percentage=10
-    validation_duration=300  # seconds
-    max_rollback_attempts=3
-    deployment_timeout=1800  # seconds
+    target_environment = "production"
+    health_check_url = "/health"
+    health_check_timeout = 30
+    rollback_on_failure = True
+    canary_percentage = 10
+    validation_duration = 300  # seconds
+    max_rollback_attempts = 3
+    deployment_timeout = 1800  # seconds
     pre_deployment_hooks: List[str] = field(default_factory=list)
     post_deployment_hooks: List[str] = field(default_factory=list)
     rollback_hooks: List[str] = field(default_factory=list)
@@ -81,12 +81,12 @@ class DeploymentResult:
     status: DeploymentStatus
     strategy: DeploymentStrategy
     start_time: datetime
-    end_time=None
-    version=None
-    environment=None
+    end_time = None
+    version = None
+    environment = None
     metrics: Dict[str, Any] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
-    rollback_performed=False
+    rollback_performed = False
 
 
 class ProductionDeployer:
@@ -98,8 +98,8 @@ class ProductionDeployer:
 
     def __init__(self, config=None):
         self.config = config or DeploymentConfig()
-        self._deployments={}
-        self._current_deployment=None
+        self._deployments = {}
+        self._current_deployment = None
         self._rollback_manager = RollbackManagerImpl()
         self._strategy_factory = DeploymentStrategyFactory()
 
@@ -315,8 +315,8 @@ class ProductionDeployer:
 
 
 # Export functions for easy access
-_production_deployer=None
-_rollback_manager=None
+_production_deployer = None
+_rollback_manager = None
 
 
 def get_production_deployer(config: DeploymentConfig = None) -> ProductionDeployer:
@@ -349,7 +349,9 @@ def get_rollback_manager() -> RollbackManagerImpl:
 
 
 async def deploy_to_production(
-    version: str, strategy=DeploymentStrategy.ROLLING, environment="production",
+    version: str,
+    strategy=DeploymentStrategy.ROLLING,
+    environment="production",
 ) -> Result[DeploymentResult, str]:
     """
     프로덕션 배포 헬퍼 함수

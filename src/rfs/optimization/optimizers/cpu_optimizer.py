@@ -78,8 +78,8 @@ class CPUThresholds:
 
     high_usage_percent: float = 80.0
     critical_usage_percent: float = 95.0
-    thread_pool_max=32
-    process_pool_max=8
+    thread_pool_max = 32
+    process_pool_max = 8
     task_timeout_seconds: float = 300.0
     monitoring_interval: float = 5.0
 
@@ -107,10 +107,10 @@ class CPUOptimizationConfig:
     strategy: CPUOptimizationStrategy = CPUOptimizationStrategy.HYBRID
     concurrency_level: ConcurrencyLevel = ConcurrencyLevel.MEDIUM
     thresholds: CPUThresholds = field(default_factory=CPUThresholds)
-    enable_monitoring=True
-    auto_scaling=True
-    prefer_threads_for_io=True
-    prefer_processes_for_cpu=True
+    enable_monitoring = True
+    auto_scaling = True
+    prefer_threads_for_io = True
+    prefer_processes_for_cpu = True
 
 
 class TaskProfile:
@@ -289,7 +289,7 @@ class AsyncOptimizer:
 
     def __init__(self):
         self.semaphore = asyncio.Semaphore(100)
-        self.task_registry={}
+        self.task_registry = {}
         self.completed_tasks = 0
         self.failed_tasks = 0
         self.task_times: deque = deque(maxlen=100)
@@ -333,7 +333,7 @@ class AsyncOptimizer:
 
         tasks = [execute_single(coro) for coro in coros]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results=[]
+        processed_results = []
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -437,8 +437,8 @@ class CPUOptimizer:
         )
         self.async_optimizer = AsyncOptimizer()
         self.concurrency_tuner = ConcurrencyTuner(self.config)
-        self.task_profiles={}
-        self.monitoring_task=None
+        self.task_profiles = {}
+        self.monitoring_task = None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -517,7 +517,7 @@ class CPUOptimizer:
                 + process_stats.get("failed_tasks")
                 + async_stats.get("failed_tasks")
             )
-            all_durations=[]
+            all_durations = []
             if self.thread_pool.task_times:
                 all_durations = all_durations + self.thread_pool.task_times
             if self.process_pool.task_times:
@@ -647,8 +647,8 @@ class CPUOptimizer:
         if not tasks:
             return []
         max_concurrent = max_concurrent or self.config.concurrency_level.value * 4
-        coros=[]
-        funcs=[]
+        coros = []
+        funcs = []
         for i, task in enumerate(tasks):
             if asyncio.iscoroutinefunction(task):
                 coros = coros + [(i, task)]
@@ -663,7 +663,7 @@ class CPUOptimizer:
             for (i, _), result in zip(coros, coro_results):
                 results[i] = {i: result}
         if funcs:
-            func_tasks=[]
+            func_tasks = []
             for _, func in funcs:
                 func_tasks = func_tasks + [self.thread_pool.submit_async(func)]
             func_results = await asyncio.gather(*func_tasks, return_exceptions=True)
@@ -751,13 +751,13 @@ class CPUOptimizer:
             await self.stop_monitoring()
             self.thread_pool.shutdown(wait=True)
             self.process_pool.shutdown(wait=True)
-            task_profiles={}
+            task_profiles = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_cpu_optimizer=None
+_cpu_optimizer = None
 
 
 def get_cpu_optimizer(config=None) -> CPUOptimizer:

@@ -58,7 +58,7 @@ class KPIThreshold:
     threshold_type: ThresholdType
     values: List[float]
     status: KPIStatus
-    message=""
+    message: str = ""
 
     def evaluate(self, value: float) -> bool:
         """임계값 평가"""
@@ -106,8 +106,8 @@ class KPITarget:
     """KPI 목표"""
 
     target_value: float
-    target_date=None
-    description=""
+    target_date: Optional[datetime] = None
+    description: str = ""
 
 
 class KPI(ABC):
@@ -116,20 +116,23 @@ class KPI(ABC):
     def __init__(
         self,
         kpi_id: str,
-        name: str, description="", unit="", data_source=None,
+        name: str,
+        description="",
+        unit="",
+        data_source=None,
     ):
         self.kpi_id = kpi_id
         self.name = name
         self.description = description
         self.unit = unit
         self.data_source = data_source
-        self.thresholds=[]
-        self.targets=[]
-        self.history=[]
-        self.metadata={}
-        self._cache={}
-        self._cache_timestamp=None
-        self._cache_ttl=300  # 5분 캐시
+        self.thresholds = []
+        self.targets = []
+        self.history = []
+        self.metadata = {}
+        self._cache = {}
+        self._cache_timestamp = None
+        self._cache_ttl = 300  # 5분 캐시
 
     def _is_cache_valid(self) -> bool:
         """캐시 유효성 검사"""
@@ -386,7 +389,7 @@ class AverageKPI(KPI):
             if not data:
                 return Success(0.0)
 
-            values=[]
+            values = []
             if isinstance(data, list):
                 for row in data:
                     if isinstance(row, dict) and self.column in row:
@@ -507,7 +510,7 @@ class TrendKPI(KPI):
                 )
             except Exception:
                 pass
-            values=[]
+            values = []
             for i, row in enumerate(data):
                 try:
                     value = float(row[self.value_column])
@@ -537,9 +540,9 @@ class KPICalculator:
     """KPI 계산기"""
 
     def __init__(self):
-        self._kpis={}
-        self._calculation_cache={}
-        self._cache_ttl=300
+        self._kpis = {}
+        self._calculation_cache = {}
+        self._cache_ttl = 300
 
     def register_kpi(self, kpi: KPI) -> Result[bool, str]:
         """KPI 등록"""
@@ -593,8 +596,8 @@ class KPICalculator:
         self, use_cache=True, **kwargs
     ) -> Dict[str, Result[KPIValue, str]]:
         """모든 KPI 계산"""
-        results={}
-        tasks=[]
+        results = {}
+        tasks = []
         for kpi_id in self._kpis.keys():
             task = self.calculate_kpi(kpi_id, use_cache, **kwargs)
             tasks = tasks + [(kpi_id, task)]
@@ -647,10 +650,10 @@ class KPIDashboard:
         self.dashboard_id = dashboard_id
         self.name = name
         self.calculator = calculator
-        self.kpi_ids=[]
-        self.refresh_interval=60
-        self.auto_refresh=False
-        self._last_refresh=None
+        self.kpi_ids = []
+        self.refresh_interval = 60
+        self.auto_refresh = False
+        self._last_refresh = None
 
     def add_kpi(self, kpi_id: str) -> Result[bool, str]:
         """KPI 추가"""
@@ -869,7 +872,8 @@ def create_threshold(
     name: str,
     threshold_type: ThresholdType,
     values: List[float],
-    status: KPIStatus, message="",
+    status: KPIStatus,
+    message: str = "",
 ) -> KPIThreshold:
     """임계값 생성"""
     return KPIThreshold(threshold_id, name, threshold_type, values, status, message)

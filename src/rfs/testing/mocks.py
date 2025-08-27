@@ -52,9 +52,7 @@ class MagicMock(BaseMagicMock):
 class Stub:
     """Stub 객체"""
 
-    def __init__(
-        self, return_value: Any = None, side_effect=None
-    ):
+    def __init__(self, return_value: Any = None, side_effect=None):
         """초기화"""
         self.return_value = return_value
         self.side_effect = side_effect
@@ -244,8 +242,8 @@ class FakeRedis:
     """Fake Redis"""
 
     def __init__(self):
-        self.data={}
-        self.expiry={}
+        self.data = {}
+        self.expiry = {}
 
     def get(self, key: str) -> Optional[Any]:
         """값 조회"""

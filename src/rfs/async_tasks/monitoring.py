@@ -54,19 +54,19 @@ class TaskMetrics:
     작업 메트릭 컬렉션
     """
 
-    total_tasks=0
-    successful_tasks=0
-    failed_tasks=0
-    cancelled_tasks=0
-    timeout_tasks=0
-    retried_tasks=0
-    active_tasks=0
-    queued_tasks=0
-    pending_tasks=0
+    total_tasks = 0
+    successful_tasks = 0
+    failed_tasks = 0
+    cancelled_tasks = 0
+    timeout_tasks = 0
+    retried_tasks = 0
+    active_tasks = 0
+    queued_tasks = 0
+    pending_tasks = 0
     total_duration: timedelta = timedelta()
-    min_duration=None
-    max_duration=None
-    avg_duration=None
+    min_duration = None
+    max_duration = None
+    avg_duration = None
     tasks_per_second: float = 0.0
     tasks_per_minute: float = 0.0
     error_rate: float = 0.0
@@ -173,9 +173,9 @@ class TaskMonitor:
         self.metrics = TaskMetrics()
         self.metric_history: deque = deque(maxlen=history_size)
         self.task_history: deque = deque(maxlen=history_size)
-        self.hourly_stats={}
-        self.daily_stats={}
-        self.alert_handlers=[]
+        self.hourly_stats = {}
+        self.daily_stats = {}
+        self.alert_handlers = []
         self.thresholds = {
             "error_rate": 0.1,
             "timeout_rate": 0.05,
@@ -323,7 +323,7 @@ class TaskMonitor:
 
     def _format_prometheus(self, metrics: Dict[str, Any]) -> str:
         """Prometheus 형식으로 포맷"""
-        lines=[]
+        lines = []
         for name, value in metrics.get("counters").items():
             lines = lines + [f"task_{name} {value}"]
         for name, value in metrics.get("gauges").items():
@@ -342,11 +342,11 @@ class TaskMonitor:
     def reset_metrics(self):
         """메트릭 리셋"""
         self.metrics = TaskMetrics()
-        task_history={}
-        metric_history={}
+        task_history = {}
+        metric_history = {}
 
 
-_global_monitor=None
+_global_monitor = None
 
 
 def get_task_monitor() -> TaskMonitor:

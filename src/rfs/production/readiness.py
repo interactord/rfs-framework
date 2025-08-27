@@ -74,7 +74,7 @@ class ReadinessCheck:
     name: str
     description: str
     required_level: ReadinessLevel
-    passed=False
+    passed = False
     score: float = 0.0
     details: Dict[str, Any] = field(default_factory=dict)
     recommendations: List[str] = field(default_factory=list)
@@ -115,7 +115,7 @@ class ProductionReadinessChecker:
 
     def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self.checks=[]
+        self.checks = []
         self.system_validator = SystemValidator(self.project_path)
         self.performance_optimizer = PerformanceOptimizer(self.project_path)
         self.security_scanner = SecurityScanner(self.project_path)
@@ -133,7 +133,7 @@ class ProductionReadinessChecker:
                         border_style="blue",
                     )
                 )
-            self.checks=[]
+            self.checks = []
             check_stages = [
                 ("시스템 안정성", self._check_system_stability),
                 ("성능 기준", self._check_performance_standards),
@@ -173,7 +173,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """시스템 안정성 검증"""
-        checks=[]
+        checks = []
         try:
             validation_suite = ValidationSuite(
                 name="시스템 안정성 검증",
@@ -251,7 +251,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """성능 기준 검증"""
-        checks=[]
+        checks = []
         try:
             optimization_suite = OptimizationSuite(
                 name="성능 기준 검증", target_types=[]
@@ -324,7 +324,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """보안 준비성 검증"""
-        checks=[]
+        checks = []
         try:
             scan_result = await self.security_scanner.run_security_scan()
             if scan_result.is_success():
@@ -389,7 +389,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """모니터링 구성 검증"""
-        checks=[]
+        checks = []
         try:
             logging_check = await self._check_logging_configuration()
             if logging_check:
@@ -420,7 +420,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """배포 구성 검증"""
-        checks=[]
+        checks = []
         try:
             docker_check = await self._check_docker_configuration()
             if docker_check:
@@ -451,7 +451,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """재해 복구 준비성 검증"""
-        checks=[]
+        checks = []
         try:
             backup_check = await self._check_backup_strategy()
             if backup_check:
@@ -479,7 +479,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """컴플라이언스 검증"""
-        checks=[]
+        checks = []
         try:
             data_protection_check = await self._check_data_protection_compliance()
             if data_protection_check:
@@ -591,9 +591,9 @@ class ProductionReadinessChecker:
             overall_level = ReadinessLevel.BASIC_READY
         else:
             overall_level = ReadinessLevel.NOT_READY
-        blockers=[]
-        warnings=[]
-        all_recommendations=[]
+        blockers = []
+        warnings = []
+        all_recommendations = []
         for check in self.checks:
             if not check.passed and check.is_critical:
                 blockers = blockers + [f"{check.name}: {check.description}"]
@@ -770,7 +770,7 @@ class ProductionReadinessChecker:
         """준비성 요약 정보 조회"""
         if not self.checks:
             return {"status": "not_checked"}
-        category_stats={}
+        category_stats = {}
         for category in CheckCategory:
             category_checks = [c for c in self.checks if c.category == category]
             if category_checks:

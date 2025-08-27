@@ -81,7 +81,7 @@ def memoize(
 
     def decorator(func: Callable) -> Callable:
         cache = MemoizeCache(maxsize)
-        cache_times={}
+        cache_times = {}
 
         def make_key(*args, **kwargs) -> str:
             if key_func:
@@ -346,7 +346,7 @@ def rate_limit(calls: int, period: timedelta, scope="global") -> Callable:
     """
 
     def decorator(func: Callable) -> Callable:
-        call_times={}
+        call_times = {}
         lock = Lock()
 
         def get_scope_key(*args, **kwargs) -> str:
@@ -481,7 +481,7 @@ def lazy(func: Callable[[], T]) -> Callable[[], T]:
         Computing...
         >>> result2 = expensive_data()  # Uses cached result
     """
-    cache=[]
+    cache = []
     lock = Lock()
 
     @wraps(func)

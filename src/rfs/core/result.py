@@ -14,6 +14,7 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
+    Dict,
     Generic,
     Iterator,
     List,
@@ -337,7 +338,94 @@ async def async_pipe_results(
                 result = next_result
         return result
 
-    return await pipeline
+    return pipeline
+
+
+async def async_pipe_chain(
+    *operations: Callable[[T], Result[U, E]] | Callable[[T], Awaitable[Result[U, E]]]
+) -> Callable[[T], Awaitable[Result[U, E]]]:
+    """비동기 Result 체이닝 파이프라인 - 에러 컨텍스트 보존"""
+
+    async def chain_pipeline(initial_value: T) -> Result[U, E]:
+        """
+        파이프라인 실행기 - 단계별 실행 및 에러 추적
+
+        Args:
+            initial_value: 초기 입력 값
+
+        Returns:
+            Result[U, E]: 최종 실행 결과 또는 첫 번째 실패 결과
+        """
+        current_result: Result[Any, Any] = Success(initial_value)
+        operation_index: int = 0
+
+        for operation in operations:
+            if current_result.is_failure():
+                # 이전 단계에서 실패한 경우 체이닝 중단
+                break
+
+            try:
+                # 현재 성공 값을 다음 연산에 전달
+                current_value = current_result.unwrap()
+                next_result = operation(current_value)
+
+                # 비동기 연산인지 확인하고 await 처리
+                if hasattr(next_result, "__await__"):
+                    next_result = await next_result
+
+                current_result = next_result
+                operation_index += 1
+
+            except Exception as e:
+                # 연산 중 예외 발생시 컨텍스트 정보 포함하여 Failure 반환
+                error_message = f"Pipeline step {operation_index} failed: {str(e)}"
+                return Failure(error_message)
+
+        return current_result
+
+    return chain_pipeline
+
+
+def with_context(operation_name: str, context: Dict[str, Any] = None) -> Callable:
+    """
+    연산에 컨텍스트 정보를 추가하는 데코레이터
+
+    Args:
+        operation_name: 연산 이름
+        context: 추가 컨텍스트 정보
+
+    Returns:
+        Callable: 컨텍스트가 추가된 연산 함수
+    """
+
+    def decorator(func: Callable[[T], Result[U, E]]) -> Callable[[T], Result[U, E]]:
+        def wrapper(value: T) -> Result[U, E]:
+            try:
+                result = func(value)
+                if result.is_failure():
+                    # 실패시 컨텍스트 정보 추가
+                    enhanced_error = {
+                        "operation": operation_name,
+                        "original_error": result.unwrap_error(),
+                        "context": context or {},
+                        "input_value": str(value)[:100],  # 입력 값의 일부만 포함
+                    }
+                    return Failure(enhanced_error)
+                return result
+            except Exception as e:
+                # 예외 발생시 컨텍스트 정보 포함
+                enhanced_error = {
+                    "operation": operation_name,
+                    "exception": str(e),
+                    "exception_type": type(e).__name__,
+                    "context": context or {},
+                    "input_value": str(value)[:100],
+                }
+                return Failure(enhanced_error)
+
+        return wrapper
+
+    return decorator
 
 
 def is_success(result: "Result[Any, Any]") -> bool:
@@ -361,7 +449,7 @@ def from_optional(value: Optional[T], error: E | None = None) -> "Result[T, E]":
 
 def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values=[]
+    values = []
     for result in results:
         match result:
             case Success() as s:
@@ -374,7 +462,7 @@ def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
 
 async def sequence_async(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """비동기 Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values: List[str] = field(default_factory=list)
+    values = []
     for result in results:
         match result:
             case Success() as s:
@@ -408,7 +496,7 @@ async def traverse_async(
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # 예외를 Failure로 변환 - 함수형 패턴 적용
-    processed_results=[]
+    processed_results = []
     for result in results:
         # 함수형 패턴: isinstance 대신 type 비교 및 hasattr 사용
         # 함수형 패턴: append 대신 리스트 연결
@@ -481,7 +569,7 @@ def async_result_decorator(
 def combine(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
     """여러 Result를 하나의 Result로 결합 - 함수형 패턴 적용"""
     # 함수형 패턴: 리스트 연결 사용 (early return 유지)
-    values=[]
+    values = []
     for result in results:
         match result:
             case Success() as s:
@@ -624,26 +712,33 @@ class ResultAsync(Generic[T, E]):
     """
 
     def __init__(self, result: Awaitable["Result[T, E]"]):
-        self._result = result
+        self._result_awaitable = result
+        self._cached_result: Optional["Result[T, E]"] = None
+
+    async def _get_result(self) -> "Result[T, E]":
+        """결과를 캐시하여 반환"""
+        if self._cached_result is None:
+            self._cached_result = await self._result_awaitable
+        return self._cached_result
 
     async def is_success(self) -> bool:
         """비동기 성공 여부 확인"""
-        result = await self._result
+        result = await self._get_result()
         return result.is_success()
 
     async def is_failure(self) -> bool:
         """비동기 실패 여부 확인"""
-        result = await self._result
+        result = await self._get_result()
         return result.is_failure()
 
     async def unwrap(self) -> T:
         """비동기 값 추출"""
-        result = await self._result
+        result = await self._get_result()
         return result.unwrap()
 
     async def unwrap_or(self, default: T) -> T:
         """비동기 값 추출 (기본값 포함)"""
-        result = await self._result
+        result = await self._get_result()
         return result.unwrap_or(default)
 
     def map(
@@ -652,7 +747,7 @@ class ResultAsync(Generic[T, E]):
         """비동기 값 변환"""
 
         async def mapped() -> "Result[U, E]":
-            result = await self._result
+            result = await self._get_result()
             match result:
                 case Success() as s:
                     try:
@@ -673,14 +768,14 @@ class ResultAsync(Generic[T, E]):
         """비동기 결과 연결"""
 
         async def bound() -> "Result[U, E]":
-            result = await self._result
+            result = await self._get_result()
             match result:
                 case Success() as s:
                     try:
                         next_result = func(s.value)
                         # 함수형 패턴: isinstance 대신 type 비교
                         if type(next_result).__name__ == "ResultAsync":
-                            return await next_result._result
+                            return await next_result._get_result()
                         elif hasattr(next_result, "__await__"):
                             return await next_result
                         else:
@@ -694,14 +789,14 @@ class ResultAsync(Generic[T, E]):
 
     async def to_result(self) -> "Result[T, E]":
         """동기 Result로 변환"""
-        return await self._result
+        return await self._get_result()
 
 
 def async_success(value: T) -> "ResultAsync[T, Any]":
     """비동기 Success 생성"""
 
     async def create() -> "Result[T, Any]":
-        return Success(s.value)
+        return Success(value)
 
     return ResultAsync(create())
 
@@ -710,7 +805,7 @@ def async_failure(error: E) -> "ResultAsync[Any, E]":
     """비동기 Failure 생성"""
 
     async def create() -> "Result[Any, E]":
-        return Failure(f.error)
+        return Failure(error)
 
     return ResultAsync(create())
 
@@ -734,10 +829,10 @@ async def sequence_async_v4(
     """비동기 시퀀스 (성능 최적화)"""
 
     async def sequence() -> "Result[List[T], E]":
-        values: List[str] = field(default_factory=list)
+        values = []
 
         # 병렬 처리를 위한 모든 결과 수집
-        result_awaitables = [r._result for r in results]
+        result_awaitables = [r._result_awaitable for r in results]
         resolved_results = await asyncio.gather(
             *result_awaitables, return_exceptions=False
         )
@@ -935,44 +1030,44 @@ class Maybe(Generic[T]):
         """Result로 변환"""
         match self._value:
             case None:
-                return Failure(f.error)
+                return Failure(error)
             case value:
-                return Success(s.value)
+                return Success(value)
 
     def to_either(self, error: E) -> "Either[T, E]":
         """Either로 변환"""
         match self._value:
             case None:
-                return Either.left(f.error)
+                return Either.left(error)
             case value:
-                return Either.right(s.value)
+                return Either.right(value)
 
     def __repr__(self) -> str:
         return f"Maybe.Some({self._value})" if self.is_some() else "Maybe.None"
 
 
 # Either/Maybe 편의 함수들
-def left(error: E) -> Either[Any, E]:
+def left(error: E) -> "Either[Any, E]":
     """Either.Left 생성"""
-    return Either.left(f.error)
+    return Either.left(error)
 
 
-def right(value: T) -> Either[T, Any]:
+def right(value: T) -> "Either[T, Any]":
     """Either.Right 생성"""
-    return Either.right(s.value)
+    return Either.right(value)
 
 
-def some(value: T) -> Maybe[T]:
+def some(value: T) -> "Maybe[T]":
     """Maybe.Some 생성"""
     return Maybe.some(value)
 
 
-def none() -> Maybe[Any]:
+def none() -> "Maybe[Any]":
     """Maybe.None 생성"""
     return Maybe.none()
 
 
-def maybe_of(value: T | None) -> Maybe[T]:
+def maybe_of(value: T | None) -> "Maybe[T]":
     """값으로부터 Maybe 생성"""
     return Maybe.of(value)
 
@@ -980,7 +1075,7 @@ def maybe_of(value: T | None) -> Maybe[T]:
 # 고급 함수형 조합자들 (Day 3-4)
 def sequence_either(eithers: List[Either[T, E]]) -> Either[List[T], E]:
     """Either 리스트를 리스트 Either로 변환"""
-    values: List[str] = field(default_factory=list)
+    values = []
 
     for either in eithers:
         match either:
@@ -994,7 +1089,7 @@ def sequence_either(eithers: List[Either[T, E]]) -> Either[List[T], E]:
 
 def sequence_maybe(maybes: List[Maybe[T]]) -> Maybe[List[T]]:
     """Maybe 리스트를 리스트 Maybe로 변환"""
-    values: List[str] = field(default_factory=list)
+    values = []
 
     for maybe in maybes:
         match maybe.is_some():
@@ -1058,11 +1153,11 @@ def result_of(func: Callable[[], T]) -> Result[T, Exception]:
         return Failure(e)
 
 
-def maybe_of(value: Optional[T]) -> Maybe[T]:
+def maybe_of_optional(value: Optional[T]) -> "Maybe[T]":
     """Optional 값을 Maybe로 변환"""
     return Maybe.some(value) if value is not None else Maybe.none()
 
 
-def either_of(value: T, error=None) -> Either[T, E]:
+def either_of(value: T, error: Optional[E] = None) -> "Either[T, E]":
     """값 또는 에러로 Either 생성"""
-    return Either.left(f.error) if error is not None else Either.right(value)
+    return Either.left(error) if error is not None else Either.right(value)

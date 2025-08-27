@@ -30,13 +30,13 @@ class WorkflowStep:
     id: str
     name: str
     step_type: StepType
-    task_type=None  # 태스크 타입 (http, database, email 등)
+    task_type = None  # 태스크 타입 (http, database, email 등)
     config: Dict[str, Any] = field(default_factory=dict)
     input_mapping: Optional[Dict[str, str]] = None
     output_mapping: Optional[Dict[str, str]] = None
     condition: Optional.get("Condition") = None
     retry_config: Optional.get("RetryConfig") = None
-    timeout=None  # 초
+    timeout = None  # 초
 
     def with_config(self, **config) -> "WorkflowStep":
         """설정 추가"""
@@ -73,7 +73,7 @@ class WorkflowStep:
 class RetryConfig:
     """재시도 설정"""
 
-    max_attempts=3
+    max_attempts = 3
     delay: float = 1.0
     backoff_factor: float = 2.0
     max_delay: float = 60.0
@@ -169,7 +169,7 @@ class ParallelStep(WorkflowStep):
     """병렬 실행 스텝"""
 
     parallel_steps: List[WorkflowStep] = field(default_factory=list)
-    wait_for_all=True  # 모든 스텝 완료 대기 여부
+    wait_for_all = True  # 모든 스텝 완료 대기 여부
 
     def __post_init__(self):
         self.step_type = StepType.PARALLEL
@@ -190,8 +190,8 @@ class LoopStep(WorkflowStep):
     """반복 실행 스텝"""
 
     loop_steps: List[WorkflowStep] = field(default_factory=list)
-    condition=None
-    max_iterations=None
+    condition = None
+    max_iterations = None
 
     def __post_init__(self):
         self.step_type = StepType.LOOP
@@ -203,8 +203,8 @@ class WorkflowDefinition:
 
     id: str
     name: str
-    description=None
-    version="1.0"
+    description = None
+    version = "1.0"
     steps: List[WorkflowStep] = field(default_factory=list)
     variables: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)

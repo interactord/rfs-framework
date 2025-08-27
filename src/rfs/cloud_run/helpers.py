@@ -67,7 +67,7 @@ class CloudRunServiceDiscovery(metaclass=SingletonMeta):
     """Cloud Run 서비스 디스커버리"""
 
     def __init__(self):
-        self._services={}
+        self._services = {}
         self._initialized = False
 
     async def initialize(self):
@@ -129,7 +129,7 @@ async def discover_services(pattern="*") -> List[ServiceEndpoint]:
     """
     discovery = get_service_discovery()
     await discovery.initialize()
-    services=[]
+    services = []
     for name in discovery.list_services():
         if pattern == "*" or pattern in name:
             endpoint = discovery.get_service(name)
@@ -140,7 +140,10 @@ async def discover_services(pattern="*") -> List[ServiceEndpoint]:
 
 async def call_service(
     service_name: str,
-    path: str, method="GET", data=None, headers=None,
+    path: str,
+    method="GET",
+    data=None,
+    headers=None,
 ) -> Result[Dict[str, Any], str]:
     """
     서비스 호출
@@ -277,9 +280,7 @@ class CloudMonitoringClient(metaclass=SingletonMeta):
         self._metrics: List[Dict[str, Any]] = []
         self._logs: List[Dict[str, Any]] = []
 
-    def record_metric(
-        self, name: str, value: float, unit=None, labels=None
-    ):
+    def record_metric(self, name: str, value: float, unit=None, labels=None):
         """메트릭 기록"""
         metric = {
             "name": name,
@@ -320,9 +321,7 @@ def get_monitoring_client() -> CloudMonitoringClient:
     return CloudMonitoringClient()
 
 
-def record_metric(
-    name: str, value: float, unit=None, labels=None
-):
+def record_metric(name: str, value: float, unit=None, labels=None):
     """
     메트릭 기록 헬퍼
 
@@ -405,7 +404,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
             "target_memory": 70,
             "scale_down_delay": 300,
         }
-        self._metrics=[]
+        self._metrics = []
 
     def configure(self, **kwargs):
         """설정 업데이트"""
@@ -423,7 +422,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
     def get_recommendations(self) -> List[str]:
         """스케일링 권장사항"""
         analysis = self.analyze_metrics()
-        recommendations=[]
+        recommendations = []
         if analysis["should_scale_up"]:
             recommendations = recommendations + [
                 f"Scale up to {analysis.get('recommended_instances')} instances"

@@ -55,8 +55,8 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time=None
-        self.last_success_time=None
+        self.last_failure_time = None
+        self.last_success_time = None
 
     def call(self, func: Callable) -> Result[Any, str]:
         """함수 호출"""
@@ -195,14 +195,14 @@ class WeightedBalancer(LoadBalancer):
     """가중치 기반 로드 밸런서"""
 
     def __init__(self):
-        self.weights={}
-        self.failures={}
+        self.weights = {}
+        self.failures = {}
 
     def select(self, endpoints: List[ServiceEndpoint]) -> Optional[ServiceEndpoint]:
         """엔드포인트 선택"""
         if not endpoints:
             return None
-        weighted_endpoints=[]
+        weighted_endpoints = []
         for endpoint in endpoints:
             weight = self.weights.get(endpoint, 100)
             failures = self.failures.get(endpoint, 0)
@@ -252,8 +252,8 @@ class ServiceClient:
         self.retry_strategy = retry_strategy
         self.max_retries = max_retries
         self.timeout = timeout
-        self.endpoints=[]
-        self.last_discovery=None
+        self.endpoints = []
+        self.last_discovery = None
         self.discovery_interval = timedelta(seconds=30)
         self.total_requests = 0
         self.successful_requests = 0
@@ -365,7 +365,7 @@ class ServiceClient:
         }
 
 
-_client_cache={}
+_client_cache = {}
 
 
 async def get_service_client(service_name: str) -> ServiceClient:

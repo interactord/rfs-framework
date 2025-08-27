@@ -64,13 +64,13 @@ class NetworkThresholds:
 
     connection_timeout_sec: float = 10.0
     read_timeout_sec: float = 30.0
-    max_connections_per_host=10
-    max_total_connections=100
+    max_connections_per_host = 10
+    max_total_connections = 100
     keepalive_timeout_sec: float = 60.0
-    retry_attempts=3
-    circuit_breaker_threshold=5
-    cache_size_mb=100
-    compression_threshold_bytes=1024
+    retry_attempts = 3
+    circuit_breaker_threshold = 5
+    cache_size_mb = 100
+    compression_threshold_bytes = 1024
 
 
 @dataclass
@@ -99,13 +99,13 @@ class NetworkOptimizationConfig:
 
     strategy: NetworkOptimizationStrategy = NetworkOptimizationStrategy.BALANCED
     thresholds: NetworkThresholds = field(default_factory=NetworkThresholds)
-    enable_compression=True
-    enable_caching=True
-    enable_connection_pooling=True
-    enable_circuit_breaker=True
-    enable_request_batching=True
+    enable_compression = True
+    enable_caching = True
+    enable_connection_pooling = True
+    enable_circuit_breaker = True
+    enable_request_batching = True
     monitoring_interval_seconds: float = 60.0
-    user_agent="RFS-Framework/4.2"
+    user_agent = "RFS-Framework/4.2"
 
 
 class ConnectionCache:
@@ -114,7 +114,7 @@ class ConnectionCache:
     def __init__(self, max_size=50):
         self.max_size = max_size
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.access_times={}
+        self.access_times = {}
         self.lock = threading.Lock()
 
     def get_connection_info(self, host: str) -> Optional[Dict[str, Any]]:
@@ -146,8 +146,8 @@ class ConnectionCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache={}
-            access_times={}
+            cache = {}
+            access_times = {}
 
 
 class CircuitBreaker:
@@ -224,7 +224,7 @@ class RequestBatcher:
         if not self.pending_requests:
             return
         batch = self.pending_requests.copy()
-        pending_requests={}
+        pending_requests = {}
         self.last_batch_time = time.time()
         for url, options, future in batch:
             try:
@@ -245,8 +245,8 @@ class ResponseCache:
     def __init__(self, max_size_mb=100):
         self.max_size = max_size_mb * 1024 * 1024
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.sizes={}
-        self.access_times={}
+        self.sizes = {}
+        self.access_times = {}
         self.current_size = 0
         self.hits = 0
         self.misses = 0
@@ -279,7 +279,9 @@ class ResponseCache:
     def put(
         self,
         url: str,
-        data: Dict[str, Any], headers=None, ttl_seconds=300,
+        data: Dict[str, Any],
+        headers=None,
+        ttl_seconds=300,
     ) -> bool:
         """캐시에 응답 저장"""
         key = self._generate_key(url, headers)
@@ -341,9 +343,9 @@ class ResponseCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache={}
-            sizes={}
-            access_times={}
+            cache = {}
+            sizes = {}
+            access_times = {}
             self.current_size = 0
 
 
@@ -353,7 +355,7 @@ class ConnectionOptimizer:
     def __init__(self, config: NetworkOptimizationConfig):
         self.config = config
         self.connection_cache = ConnectionCache()
-        self.sessions={}
+        self.sessions = {}
         self.connection_stats = defaultdict(
             lambda: {
                 "total_connections": 0,
@@ -363,9 +365,7 @@ class ConnectionOptimizer:
             }
         )
 
-    async def get_optimized_session(
-        self, base_url=None
-    ) -> aiohttp.ClientSession:
+    async def get_optimized_session(self, base_url=None) -> aiohttp.ClientSession:
         """최적화된 세션 획득"""
         session_key = base_url or "default"
         if session_key not in self.sessions:
@@ -438,7 +438,7 @@ class ConnectionOptimizer:
                 for stats in self.connection_stats.values()
             )
         )
-        all_connection_times=[]
+        all_connection_times = []
         for stats in self.connection_stats.values():
             all_connection_times = all_connection_times + stats.get("connection_times")
         avg_connection_time = sum(all_connection_times) / max(
@@ -458,7 +458,7 @@ class ConnectionOptimizer:
         for session in self.sessions.values():
             if not session.closed:
                 await session.close()
-        sessions={}
+        sessions = {}
 
 
 class RequestOptimizer:
@@ -466,7 +466,7 @@ class RequestOptimizer:
 
     def __init__(self, config: NetworkOptimizationConfig):
         self.config = config
-        self.circuit_breakers={}
+        self.circuit_breakers = {}
         self.request_batcher = (
             RequestBatcher() if config.enable_request_batching else None
         )
@@ -572,8 +572,8 @@ class RequestOptimizer:
         successful_requests = sum(
             (stats["successful_requests"] for stats in self.request_stats.values())
         )
-        all_response_times=[]
-        all_sizes=[]
+        all_response_times = []
+        all_sizes = []
         for stats in self.request_stats.values():
             all_response_times = all_response_times + stats.get("response_times")
             all_sizes = all_sizes + stats.get("sizes")
@@ -651,7 +651,8 @@ class CachingOptimizer:
         self,
         url: str,
         response_data: Dict[str, Any],
-        response: aiohttp.ClientResponse, headers=None,
+        response: aiohttp.ClientResponse,
+        headers=None,
     ) -> None:
         """응답 캐시"""
         if self.should_cache_response(response):
@@ -664,7 +665,7 @@ class CachingOptimizer:
 
     def clear_cache(self) -> None:
         """캐시 삭제"""
-        response_cache={}
+        response_cache = {}
 
 
 class NetworkOptimizer:
@@ -675,7 +676,7 @@ class NetworkOptimizer:
         self.connection_optimizer = ConnectionOptimizer(self.config)
         self.request_optimizer = RequestOptimizer(self.config)
         self.caching_optimizer = CachingOptimizer(self.config)
-        self.monitoring_task=None
+        self.monitoring_task = None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
         self.total_bytes_sent = 0
@@ -785,7 +786,10 @@ class NetworkOptimizer:
 
     async def post(
         self,
-        url: str, data=None, json=None, headers=None,
+        url: str,
+        data=None,
+        json=None,
+        headers=None,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """POST 요청"""
@@ -795,7 +799,10 @@ class NetworkOptimizer:
 
     async def put(
         self,
-        url: str, data=None, json=None, headers=None,
+        url: str,
+        data=None,
+        json=None,
+        headers=None,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """PUT 요청"""
@@ -865,7 +872,7 @@ class NetworkOptimizer:
 
         tasks = [execute_single(req) for req in requests]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results=[]
+        processed_results = []
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -913,7 +920,7 @@ class NetworkOptimizer:
         cache_stats: Dict,
     ) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations=[]
+        recommendations = []
         if current_stats.avg_response_time > 5.0:
             recommendations = recommendations + [
                 "High response time - consider connection pooling optimization"
@@ -983,7 +990,7 @@ class NetworkOptimizer:
             return Failure(f"Cleanup failed: {e}")
 
 
-_network_optimizer=None
+_network_optimizer = None
 
 
 def get_network_optimizer(

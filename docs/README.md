@@ -126,13 +126,13 @@ Rich UI 기반 명령줄 인터페이스
 - 개발 도구
 - 배포 명령어
 
-#### 15. [Code Quality](15-code-quality.md)
+#### 20. [Code Quality](20-code-quality.md)
 코드 품질 관리와 함수형 프로그래밍 가이드
 - 품질 표준
 - 함수형 프로그래밍 규칙
 - 자동화 도구
 
-#### 16. [HOF Library](16-hot-library.md)
+#### 22. [HOF Library](22-hot-library.md)
 Higher-Order Functions 라이브러리
 - 함수형 프로그래밍 유틸리티
 - Swift/Haskell 영감 받은 패턴
@@ -153,7 +153,7 @@ Higher-Order Functions 라이브러리
 1. **기본 개념 이해**
    - [Core Patterns](01-core-patterns.md) - Result 패턴 이해
    - [Configuration](03-configuration.md) - 설정 관리
-   - [Code Quality](15-code-quality.md) - 코드 작성 가이드
+   - [Code Quality](20-code-quality.md) - 코드 작성 가이드
 
 2. **개발 시작**
    - [CLI Interface](14-cli-interface.md) - CLI 도구 사용법
@@ -192,14 +192,14 @@ Higher-Order Functions 라이브러리
 - **Circuit Breaker**: [Circuit Breaker](12-circuit-breaker.md)
 - **Configuration**: [Configuration](03-configuration.md)
 - **Dependency Injection**: [Dependency Injection](02-dependency-injection.md)
-- **Functional Programming**: [Code Quality](15-code-quality.md)
+- **Functional Programming**: [Code Quality](20-code-quality.md)
 
 ### G-M
-- **HOF (Higher-Order Functions)**: [HOF Library](16-hot-library.md)
+- **HOF (Higher-Order Functions)**: [HOF Library](22-hot-library.md)
 - **Load Balancing**: [Load Balancing](13-load-balancing.md)
 - **Logging**: [Logging](07-logging.md)
 - **Monitoring**: [Monitoring](08-monitoring.md)
-- **Monad**: [Core Patterns](01-core-patterns.md), [HOF Library](16-hot-library.md)
+- **Monad**: [Core Patterns](01-core-patterns.md), [HOF Library](22-hot-library.md)
 
 ### N-R
 - **Pydantic**: [Configuration](03-configuration.md)

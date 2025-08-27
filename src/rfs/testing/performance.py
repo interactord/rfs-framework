@@ -48,7 +48,7 @@ class PerformanceTest:
     def __init__(self, name="PerformanceTest"):
         """초기화"""
         self.name = name
-        self.metrics=[]
+        self.metrics = []
         self.process = psutil.Process()
 
     def measure(

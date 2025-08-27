@@ -42,9 +42,9 @@ class DataQuery:
 
     query: str
     parameters: Dict[str, Any] = field(default_factory=dict)
-    limit=None
-    offset=None
-    timeout=None
+    limit: Optional[int] = None
+    offset: Optional[int] = None
+    timeout: Optional[float] = None
 
 
 @dataclass
@@ -52,12 +52,12 @@ class DataSchema:
     """데이터 스키마 정의"""
 
     columns: Dict[str, str] = field(default_factory=dict)
-    primary_key=None
+    primary_key = None
     indexes: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.indexes is None:
-            self.indexes=[]
+            self.indexes = []
 
 
 class DataSource(ABC):
@@ -67,8 +67,8 @@ class DataSource(ABC):
         self.source_id = source_id
         self.name = name
         self.config = config
-        self._schema=None
-        self._connected=False
+        self._schema = None
+        self._connected = False
 
     @abstractmethod
     async def connect(self) -> Result[bool, str]:
@@ -143,7 +143,7 @@ class DatabaseDataSource(DataSource):
         super().__init__(source_id, name, config)
         self.connection_string: Optional[str] = config.get("connection_string")
         self.driver: str = config.get("driver", "postgresql")
-        self._connection=None
+        self._connection = None
 
     async def connect(self) -> Result[bool, str]:
         """데이터베이스 연결"""
@@ -233,7 +233,7 @@ class DatabaseDataSource(DataSource):
                 if rows.is_failure():
                     return rows
                 rows = rows.unwrap()
-            columns={}
+            columns = {}
             for row in rows:
                 if self.driver == "postgresql":
                     columns = {
@@ -324,7 +324,7 @@ class FileDataSource(DataSource):
 
     async def disconnect(self) -> Result[bool, str]:
         """파일 데이터 해제"""
-        self._data=[]
+        self._data = []
         self._connected = False
         return Success(True)
 
@@ -364,7 +364,7 @@ class FileDataSource(DataSource):
             return Failure("No data loaded")
         try:
             sample_row = self._data[0]
-            columns={}
+            columns = {}
             for key, value in sample_row.items():
                 if isinstance(value, int):
                     columns[key] = "integer"
@@ -392,7 +392,7 @@ class APIDataSource(DataSource):
         self.base_url: str = config["base_url"]
         self.headers: Dict[str, str] = config.get("headers", {})
         self.auth: Dict[str, Any] = config.get("auth", {})
-        self._session=None
+        self._session = None
 
     async def connect(self) -> Result[bool, str]:
         """API 연결 설정"""
@@ -464,7 +464,7 @@ class APIDataSource(DataSource):
             if not data:
                 return Failure("No sample data available")
             sample_row = data[0]
-            columns={}
+            columns = {}
             for key, value in sample_row.items():
                 if isinstance(value, int):
                     columns[key] = "integer"
@@ -495,7 +495,7 @@ class MetricsDataSource(DataSource):
         super().__init__(source_id, name, config)
         self.metrics_config: Dict[str, Any] = config.get("metrics", {})
         self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}
-        self.collector=None
+        self.collector = None
 
     async def connect(self) -> Result[bool, str]:
         """메트릭 수집 초기화"""
@@ -510,7 +510,7 @@ class MetricsDataSource(DataSource):
 
     async def disconnect(self) -> Result[bool, str]:
         """메트릭 수집 해제"""
-        self._metrics_data={}
+        self._metrics_data = {}
         self._connected = False
         return Success(True)
 
@@ -537,7 +537,7 @@ class MetricsDataSource(DataSource):
         start_time = end_time - duration
         import random
 
-        data=[]
+        data = []
         current_time = start_time
         while current_time <= end_time:
             data = data + [
@@ -586,8 +586,8 @@ class DataSourceManager:
     """데이터 소스 관리자"""
 
     def __init__(self):
-        self._sources={}
-        self._connected_sources={}
+        self._sources = {}
+        self._connected_sources = {}
 
     def register_source(self, source: DataSource) -> Result[bool, str]:
         """데이터 소스 등록"""

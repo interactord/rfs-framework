@@ -55,11 +55,11 @@ class RestRequest:
     path: str
     headers: Dict[str, Any] = field(default_factory=dict)
     query_params: Dict[str, List[str]] = field(default_factory=dict)
-    body=None
+    body = None
     json_body: Optional[Dict[str, Any]] = None
     path_params: Dict[str, Any] = field(default_factory=dict)
-    remote_addr=None
-    user_agent=None
+    remote_addr = None
+    user_agent = None
 
     @property
     def content_type(self) -> Optional[str]:
@@ -70,9 +70,7 @@ class RestRequest:
         """헤더 값 가져오기"""
         return self.headers.get(name) or self.headers.get(name.lower())
 
-    def get_query_param(
-        self, name: str, default=None
-    ) -> Optional[str]:
+    def get_query_param(self, name: str, default=None) -> Optional[str]:
         """쿼리 파라미터 가져오기"""
         values = self.query_params.get(name, [])
         return values[0] if values else default
@@ -96,9 +94,9 @@ class RestRequest:
 class RestResponse:
     """REST 응답"""
 
-    status_code=200
+    status_code = 200
     headers: Dict[str, Any] = field(default_factory=dict)
-    body=None
+    body = None
     json_body: Optional[Dict[str, Any]] = None
 
     def set_json(self, data: Any):
@@ -163,7 +161,7 @@ class RoutePattern:
     @classmethod
     def create(cls, pattern: str) -> "RoutePattern":
         """패턴에서 RoutePattern 생성"""
-        param_names=[]
+        param_names = []
         regex_pattern = pattern
         import re
 
@@ -501,9 +499,9 @@ class RateLimitMiddleware(RestMiddleware):
 class RouterConfig:
     """라우터 설정"""
 
-    base_path=""
+    base_path = ""
     middleware: List[str] = field(default_factory=list)
-    error_handler=None
+    error_handler = None
 
 
 class RestGateway:
@@ -511,8 +509,8 @@ class RestGateway:
 
     def __init__(self, config=None):
         self.config = config or RouterConfig()
-        self.routes=[]
-        self.global_middleware=[]
+        self.routes = []
+        self.global_middleware = []
 
     def add_route(
         self,

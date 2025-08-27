@@ -68,9 +68,9 @@ class IOThresholds:
     disk_read_mb_per_sec: float = 100.0
     disk_write_mb_per_sec: float = 80.0
     network_timeout_sec: float = 30.0
-    buffer_size_kb=64
-    max_concurrent_operations=50
-    cache_size_mb=100
+    buffer_size_kb = 64
+    max_concurrent_operations = 50
+    cache_size_mb = 100
 
 
 @dataclass
@@ -99,9 +99,9 @@ class IOOptimizationConfig:
     buffering_strategy: BufferingStrategy = BufferingStrategy.ADAPTIVE
     compression_strategy: CompressionStrategy = CompressionStrategy.ADAPTIVE
     thresholds: IOThresholds = field(default_factory=IOThresholds)
-    enable_caching=True
-    enable_compression=True
-    enable_monitoring=True
+    enable_caching = True
+    enable_compression = True
+    enable_monitoring = True
     monitoring_interval_seconds: float = 30.0
 
 
@@ -111,8 +111,8 @@ class IOCache:
     def __init__(self, max_size_mb=100):
         self.max_size = max_size_mb * 1024 * 1024
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.access_times={}
-        self.sizes={}
+        self.access_times = {}
+        self.sizes = {}
         self.current_size = 0
         self.hits = 0
         self.misses = 0
@@ -174,9 +174,9 @@ class IOCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache={}
-            access_times={}
-            sizes={}
+            cache = {}
+            access_times = {}
+            sizes = {}
             self.current_size = 0
 
     def get_stats(self) -> Dict[str, Any]:
@@ -261,7 +261,7 @@ class CompressionManager:
 
     def get_compression_stats(self) -> Dict[str, Any]:
         """압축 통계"""
-        stats={}
+        stats = {}
         for method, records in self.compression_stats.items():
             if records:
                 avg_ratio = sum((r["ratio"] for r in records)) / len(records)
@@ -312,9 +312,7 @@ class DiskIOOptimizer:
                     return 256 * 1024
         return 64 * 1024
 
-    async def read_file(
-        self, file_path: str, use_cache=True
-    ) -> Result[bytes, str]:
+    async def read_file(self, file_path: str, use_cache=True) -> Result[bytes, str]:
         """파일 읽기 최적화"""
         async with self.semaphore:
             try:
@@ -447,7 +445,7 @@ class NetworkIOOptimizer:
             if config.enable_caching
             else None
         )
-        self.session_cache={}
+        self.session_cache = {}
         self.operation_stats = defaultdict(list)
         self.semaphore = asyncio.Semaphore(config.thresholds.max_concurrent_operations)
 
@@ -554,7 +552,7 @@ class NetworkIOOptimizer:
 
         tasks = [fetch_one(url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results=[]
+        processed_results = []
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -567,7 +565,7 @@ class NetworkIOOptimizer:
         for session in self.session_cache.values():
             if not session.closed:
                 await session.close()
-        session_cache={}
+        session_cache = {}
 
     def get_stats(self) -> Dict[str, Any]:
         """네트워크 I/O 통계"""
@@ -604,7 +602,7 @@ class IOOptimizer:
         self.config = config or IOOptimizationConfig()
         self.disk_optimizer = DiskIOOptimizer(self.config)
         self.network_optimizer = NetworkIOOptimizer(self.config)
-        self.monitoring_task=None
+        self.monitoring_task = None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -748,9 +746,7 @@ class IOOptimizer:
         score = score + (cache_hit_rate - 0.5) * 40
         return max(0.0, min(100.0, score))
 
-    async def read_file(
-        self, file_path: str, use_cache=True
-    ) -> Result[bytes, str]:
+    async def read_file(self, file_path: str, use_cache=True) -> Result[bytes, str]:
         """파일 읽기"""
         return await self.disk_optimizer.read_file(file_path, use_cache)
 
@@ -813,7 +809,7 @@ class IOOptimizer:
 
     def _generate_recommendations(self, stats: IOStats) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations=[]
+        recommendations = []
         if stats.avg_read_time > 1.0:
             recommendations = recommendations + [
                 "Consider using larger buffer sizes for file reading"
@@ -861,15 +857,15 @@ class IOOptimizer:
             await self.stop_monitoring()
             await self.network_optimizer.cleanup_sessions()
             if self.disk_optimizer.cache:
-                cache={}
+                cache = {}
             if self.network_optimizer.cache:
-                cache={}
+                cache = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_io_optimizer=None
+_io_optimizer = None
 
 
 def get_io_optimizer(config=None) -> IOOptimizer:

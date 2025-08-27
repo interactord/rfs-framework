@@ -88,12 +88,12 @@ class StartupMetrics:
     initial_memory_mb: float = 0.0
     final_memory_mb: float = 0.0
     memory_saved_mb: float = 0.0
-    preloaded_modules=0
-    failed_imports=0
-    cached_objects=0
-    cpu_cores=0
+    preloaded_modules = 0
+    failed_imports = 0
+    cached_objects = 0
+    cpu_cores = 0
     available_memory_mb: float = 0.0
-    python_version=""
+    python_version = ""
 
     def __post_init__(self):
         if not self.python_version:
@@ -112,16 +112,16 @@ class OptimizationConfig:
     preload_modules: List[str] = field(default_factory=list)
     preload_patterns: List[str] = field(default_factory=list)
     max_preload_time: float = 5.0
-    enable_cache_warmup=True
+    enable_cache_warmup = True
     cache_warmup_functions: List[Callable] = field(default_factory=list)
     max_warmup_time: float = 3.0
-    enable_gc_optimization=True
-    gc_freeze=True
+    enable_gc_optimization = True
+    gc_freeze = True
     memory_threshold_mb: float = 100.0
-    max_workers=4
-    enable_async_warmup=True
-    collect_detailed_metrics=True
-    log_optimization_steps=True
+    max_workers = 4
+    enable_async_warmup = True
+    collect_detailed_metrics = True
+    log_optimization_steps = True
 
 
 class ColdStartOptimizer:
@@ -140,19 +140,17 @@ class ColdStartOptimizer:
         self.start_time = time.time()
         self.metrics = StartupMetrics()
         self._preloaded_modules: Set[str] = set()
-        self._warmup_functions=[]
+        self._warmup_functions = []
         self._optimization_completed = False
-        self._phase_times={}
-        self._import_times={}
+        self._phase_times = {}
+        self._import_times = {}
         self.metrics.initial_memory_mb = self._get_memory_usage()
         if self.config.log_optimization_steps:
             logger.info(
                 f"ColdStartOptimizer initialized with {self.config.level.value} optimization level"
             )
 
-    def preload_modules(
-        self, modules: List[str], timeout=None
-    ) -> Dict[str, bool]:
+    def preload_modules(self, modules: List[str], timeout=None) -> Dict[str, bool]:
         """
         모듈들을 사전 로딩
 
@@ -165,7 +163,7 @@ class ColdStartOptimizer:
         """
         phase_start = time.time()
         timeout = timeout or self.config.max_preload_time
-        results={}
+        results = {}
         failed_count = 0
         if (
             self.config.level == OptimizationLevel.AGGRESSIVE
@@ -214,7 +212,7 @@ class ColdStartOptimizer:
         self, modules: List[str], timeout: float
     ) -> Dict[str, bool]:
         """병렬 모듈 로딩"""
-        results={}
+        results = {}
 
         def load_module(module_name: str) -> tuple[str, bool, float]:
             start_time = time.time()
@@ -412,7 +410,7 @@ class ColdStartOptimizer:
             "optimization_time": 0.0,
         }
         try:
-            collected_objects=[]
+            collected_objects = []
             for generation in range(3):
                 collected = gc.collect()
                 collected_objects = collected_objects + [collected]
@@ -543,7 +541,7 @@ class ColdStartOptimizer:
 
     def _generate_recommendations(self) -> List[str]:
         """성능 개선 추천사항 생성"""
-        recommendations=[]
+        recommendations = []
         metrics = self.get_metrics()
         if metrics.total_startup_time > 5.0:
             recommendations = recommendations + [
@@ -576,7 +574,9 @@ class ColdStartOptimizer:
 
 
 def create_optimizer(
-    level: OptimizationLevel = OptimizationLevel.MODERATE, modules=None, warmup_functions=None,
+    level: OptimizationLevel = OptimizationLevel.MODERATE,
+    modules=None,
+    warmup_functions=None,
 ) -> ColdStartOptimizer:
     """
     Cold Start Optimizer 생성 편의 함수
@@ -598,7 +598,9 @@ def create_optimizer(
 
 
 async def quick_optimize(
-    modules: List[str] = None, warmup_functions=None, level=OptimizationLevel.MODERATE,
+    modules: List[str] = None,
+    warmup_functions=None,
+    level=OptimizationLevel.MODERATE,
 ) -> StartupMetrics:
     """
     빠른 최적화 실행 함수
@@ -676,8 +678,8 @@ class ColdStartConfig:
     optimization_phase: OptimizationPhase = OptimizationPhase.IMPORT
     max_startup_time: float = 3.0
     max_memory_mb: float = 256.0
-    enable_profiling=True
-    enable_caching=True
+    enable_profiling = True
+    enable_caching = True
 
 
 def get_default_cold_start_optimizer() -> ColdStartOptimizer:

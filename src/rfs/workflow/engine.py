@@ -75,11 +75,11 @@ class StepExecution:
     step_id: str
     step_name: str
     status: StepStatus
-    start_time=None
-    end_time=None
+    start_time = None
+    end_time = None
     input_data: Optional[Dict[str, Any]] = None
     output_data: Optional[Dict[str, Any]] = None
-    error_message=None
+    error_message = None
 
     @property
     def duration(self) -> Optional[float]:
@@ -98,9 +98,9 @@ class WorkflowInstance:
     definition: "WorkflowDefinition"
     status: WorkflowStatus
     context: WorkflowContext
-    current_step=None
-    start_time=None
-    end_time=None
+    current_step = None
+    start_time = None
+    end_time = None
     step_executions: List[str] = field(default_factory=list)
 
     @property
@@ -118,7 +118,7 @@ class WorkflowEvent(Event):
     instance_id: str
     workflow_id: str
     event_type: str
-    step_id=None
+    step_id = None
     data: Optional[Dict[str, Any]] = None
 
 
@@ -126,8 +126,8 @@ class WorkflowEngine:
     """워크플로우 엔진"""
 
     def __init__(self):
-        self.running_instances={}
-        self.task_executors={}
+        self.running_instances = {}
+        self.task_executors = {}
         self.event_bus = get_event_bus()
         self._lock = asyncio.Lock()
 
@@ -366,7 +366,7 @@ class WorkflowEngine:
         self, instance: WorkflowInstance, step: "WorkflowStep"
     ) -> Dict[str, Any]:
         """스텝 입력 데이터 준비"""
-        input_data={}
+        input_data = {}
         if hasattr(step, "input_mapping") and step.input_mapping:
             for output_key, input_expr in step.input_mapping.items():
                 if input_expr.startswith("${") and input_expr.endswith("}"):
@@ -413,7 +413,7 @@ class WorkflowEngine:
             await logger.log_warning(f"워크플로우 이벤트 발생 실패: {str(e)}")
 
 
-_workflow_engine=None
+_workflow_engine = None
 
 
 def get_workflow_engine() -> WorkflowEngine:

@@ -130,13 +130,13 @@ else:
         service_name: str
         url: str
         project_id: str
-        region="us-central1"
-        health_check_path="/health"
+        region = "us-central1"
+        health_check_path = "/health"
         status: ServiceStatus = ServiceStatus.UNKNOWN
-        last_health_check=None
+        last_health_check = None
         response_time_ms: float = 0.0
         error_rate: float = 0.0
-        active_connections=0
+        active_connections = 0
         weight: float = 1.0
 
         def is_healthy(self) -> bool:
@@ -165,15 +165,15 @@ class CircuitBreakerState(str, Enum):
 class CircuitBreaker:
     """회로 차단기 구현"""
 
-    failure_threshold=5
-    recovery_timeout=60
-    success_threshold=2
+    failure_threshold = 5
+    recovery_timeout = 60
+    success_threshold = 2
 
     def __post_init__(self):
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time=None
+        self.last_failure_time = None
 
     def call(self, func: Callable) -> Any:
         """회로 차단기를 통한 함수 호출"""
@@ -238,14 +238,16 @@ class CloudRunServiceDiscovery:
 
     def __init__(
         self,
-        project_id: str, region="us-central1", health_check_interval=30,
+        project_id: str,
+        region="us-central1",
+        health_check_interval=30,
     ):
         self.project_id = project_id
         self.region = region
         self.health_check_interval = health_check_interval
-        self.services={}
-        self.circuit_breakers={}
-        self.session=None
+        self.services = {}
+        self.circuit_breakers = {}
+        self.session = None
         self.cloud_run_client = None
         if GOOGLE_CLOUD_AVAILABLE:
             try:
@@ -253,7 +255,7 @@ class CloudRunServiceDiscovery:
                 self.cloud_run_client = run_v2.ServicesClient(credentials=credentials)
             except Exception as e:
                 logger.warning(f"Cloud Run 클라이언트 초기화 실패: {e}")
-        self.health_check_task=None
+        self.health_check_task = None
 
     async def initialize(self):
         """서비스 검색 초기화"""
@@ -353,7 +355,7 @@ class CloudRunServiceDiscovery:
         """정기적 헬스 체크 실행"""
         while True:
             try:
-                tasks=[]
+                tasks = []
                 for service_name in self.services.keys():
                     task = asyncio.create_task(self.health_check(service_name))
                     tasks = tasks + [(service_name, task)]
@@ -376,7 +378,11 @@ class CloudRunServiceDiscovery:
 
     async def call_service(
         self,
-        service_name: str, path="/", method="GET", data=None, headers=None,
+        service_name: str,
+        path="/",
+        method="GET",
+        data=None,
+        headers=None,
     ) -> Result[Dict[str, Any], str]:
         """회로 차단기를 통한 안전한 서비스 호출"""
         if service_name not in self.services:
@@ -448,7 +454,8 @@ class CloudRunServiceDiscovery:
 
     def get_load_balanced_service(
         self,
-        service_names: List[str], strategy=LoadBalancingStrategy.ROUND_ROBIN,
+        service_names: List[str],
+        strategy=LoadBalancingStrategy.ROUND_ROBIN,
     ) -> Maybe[ServiceEndpoint]:
         """로드 밸런싱된 서비스 선택"""
         healthy_services = [
@@ -533,7 +540,7 @@ class CloudRunServiceDiscovery:
         }
 
 
-_service_discovery=None
+_service_discovery = None
 
 
 async def get_service_discovery(
@@ -559,13 +566,13 @@ async def get_service_discovery(
 class ServiceQuery:
     """서비스 검색 쿼리"""
 
-    service_name=None
-    version=None
-    region=None
+    service_name = None
+    version = None
+    region = None
     tags: Optional[List[str]] = None
-    only_healthy=True
+    only_healthy = True
     min_weight: float = 0.0
-    max_response_time_ms=None
+    max_response_time_ms = None
 
     def matches(self, endpoint: ServiceEndpoint) -> bool:
         """엔드포인트가 쿼리와 일치하는지 확인"""
@@ -591,12 +598,12 @@ class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.service_groups: Dict[str, List[str]] = {}
-        self.round_robin_counters={}
-        self.sticky_sessions={}
+        self.round_robin_counters = {}
+        self.sticky_sessions = {}
         self.call_metrics: Dict[str, List[float]] = {}
-        self.success_rates={}
-        self.service_cache={}
-        self.cache_ttl=300
+        self.success_rates = {}
+        self.service_cache = {}
+        self.cache_ttl = 300
 
     def create_service_group(self, group_name: str, service_names: List[str]) -> None:
         """서비스 그룹 생성"""
@@ -605,7 +612,7 @@ class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
 
     def query_services(self, query: ServiceQuery) -> List[ServiceEndpoint]:
         """고급 서비스 검색"""
-        results=[]
+        results = []
         for service in self.services.values():
             if query.matches(service):
                 results = results + [service]
@@ -614,7 +621,11 @@ class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
 
     async def call_service_with_retry(
         self,
-        service_name: str, path="/", method="GET", max_retries=3, retry_delay=1.0,
+        service_name: str,
+        path="/",
+        method="GET",
+        max_retries=3,
+        retry_delay=1.0,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """재시도 지원 서비스 호출"""
@@ -663,7 +674,10 @@ class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
 
     async def call_service_group(
         self,
-        group_name: str, path="/", method="GET", strategy=LoadBalancingStrategy.ROUND_ROBIN,
+        group_name: str,
+        path="/",
+        method="GET",
+        strategy=LoadBalancingStrategy.ROUND_ROBIN,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """서비스 그룹 호출"""
@@ -734,7 +748,7 @@ async def call_service(
 async def health_check_all() -> Dict[str, bool]:
     """모든 서비스 헬스 체크"""
     discovery = await get_service_discovery()
-    results={}
+    results = {}
     for service_name in discovery.services.keys():
         result = await discovery.health_check(service_name)
         match result:

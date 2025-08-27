@@ -21,10 +21,10 @@ class MemoryMessageConfig(MessageConfig):
     """메모리 메시지 설정"""
 
     # 메모리 브로커 전용 설정
-    max_queue_size=10000  # 큐 최대 크기
-    max_topics=1000  # 최대 토픽 수
-    enable_persistence=False  # 메시지 지속성 (메모리에서만)
-    message_history_size=1000  # 메시지 히스토리 크기
+    max_queue_size: int = 10000  # 큐 최대 크기
+    max_topics: int = 1000  # 최대 토픽 수
+    enable_persistence: bool = False  # 메시지 지속성 (메모리에서만)
+    message_history_size: int = 1000  # 메시지 히스토리 크기
 
     def __post_init__(self):
         # MessageConfig가 dataclass이고 __post_init__이 없을 수 있음
@@ -140,7 +140,7 @@ class MemoryTopic:
             return
 
         # 각 구독자에게 비동기적으로 알림
-        tasks=[]
+        tasks = []
         for handler in list(self.subscribers):  # 복사본으로 순회
             try:
                 if asyncio.iscoroutinefunction(handler):
@@ -176,10 +176,10 @@ class MemoryMessageBroker(MessageBroker):
         self.config: MemoryMessageConfig = config
 
         # 토픽 저장소
-        self.topics={}
+        self.topics = {}
 
         # Work Queue 구현을 위한 데이터
-        self.work_queues={}
+        self.work_queues = {}
         self.work_queue_consumers: Dict[str, List[asyncio.Task]] = defaultdict(list)
 
         # 메시지 지속성 (메모리에서만)
@@ -215,11 +215,11 @@ class MemoryMessageBroker(MessageBroker):
                 if consumers:
                     await asyncio.gather(*consumers, return_exceptions=True)
 
-            work_queue_consumers={}
-            work_queues={}
+            work_queue_consumers = {}
+            work_queues = {}
 
             # 토픽 정리
-            topics={}
+            topics = {}
 
             self._connected = False
             logger.info("메모리 메시지 브로커 정리 완료")
@@ -299,7 +299,7 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                subscribers={}
+                subscribers = {}
                 memory_topic.stats = {**memory_topic.stats, "subscriber_count": 0}
 
             logger.info(f"메모리 구독 해제: {topic}")
@@ -399,9 +399,7 @@ class MemoryMessageBroker(MessageBroker):
         return self.topics[topic]
 
     # Work Queue 구현
-    async def create_work_queue(
-        self, topic: str, worker_count=1
-    ) -> Result[None, str]:
+    async def create_work_queue(self, topic: str, worker_count=1) -> Result[None, str]:
         """Work Queue 생성"""
         try:
             if topic in self.work_queues:
@@ -412,7 +410,7 @@ class MemoryMessageBroker(MessageBroker):
             self.work_queues = {**self.work_queues, topic: queue}
 
             # 워커 생성
-            consumers=[]
+            consumers = []
             for i in range(worker_count):
                 consumer = asyncio.create_task(
                     self._work_queue_consumer(topic, queue, f"worker-{i}")
@@ -516,7 +514,7 @@ class MemoryMessageBroker(MessageBroker):
         """메모리 브로커 전용 통계"""
         base_stats = self.get_stats()
 
-        topic_stats={}
+        topic_stats = {}
         total_messages = 0
         total_subscribers = 0
 
@@ -558,7 +556,7 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                messages={}
+                messages = {}
                 memory_topic.stats = {**memory_topic.stats, "total_size": 0}
 
                 logger.info(f"토픽 메시지 삭제: {topic}")

@@ -39,7 +39,7 @@ class Metric:
     value: Union[int, float]
     labels: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-    description=None
+    description = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -376,7 +376,7 @@ class MemoryMetricsStorage(MetricsStorage):
     ) -> Result[List[Metric], str]:
         """메트릭 조회"""
         async with self._lock:
-            filtered_metrics=[]
+            filtered_metrics = []
             for metric in self._metrics:
                 if name_pattern and name_pattern not in metric.name:
                     continue
@@ -422,10 +422,10 @@ class MetricsCollector:
 
     def __init__(self, storage=None):
         self.storage = storage or MemoryMetricsStorage()
-        self._counters={}
-        self._gauges={}
-        self._histograms={}
-        self._summaries={}
+        self._counters = {}
+        self._gauges = {}
+        self._histograms = {}
+        self._summaries = {}
         self._lock = threading.Lock()
 
     def counter(
@@ -518,7 +518,7 @@ class MetricsCollector:
 
     async def get_all_metrics(self) -> List[Metric]:
         """모든 현재 메트릭 반환"""
-        metrics=[]
+        metrics = []
         for counter in self._counters.values():
             metrics = metrics + [counter.to_metric()]
         for gauge in self._gauges.values():
@@ -530,7 +530,7 @@ class MetricsCollector:
         return metrics
 
 
-_metrics_collector=None
+_metrics_collector = None
 
 
 def get_metrics_collector(storage=None) -> MetricsCollector:

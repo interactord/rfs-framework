@@ -1,6 +1,352 @@
-# RFS Framework v4.3.0 테스트 개선 계획 및 진행 현황
+# RFS Framework 테스트 개선 계획 (TEST_PLAN.md)
 
-## 📊 현재 상태 (2025-08-26 최종 업데이트 - 성능 최적화 및 테스트 완성)
+## 🚨 현재 테스트 상황 분석 (2025년 8월 기준)
+
+### 전체 테스트 현황
+- **총 테스트 수**: 2,771개
+- **실패 테스트 수**: 800+ 개 (약 30% 실패율)
+- **성공 테스트 수**: 1,971개
+- **주요 문제**: 핵심 인프라 API 누락으로 인한 대규모 테스트 실패
+
+### 주요 실패 영역 분석
+1. **Core 모듈**: 211개 실패 (result.py, config.py, annotations/)
+2. **Database 모듈**: 189개 실패 (ORM, migrations, models)  
+3. **Async 모듈**: 156개 실패 (tasks, reactive streams)
+4. **CLI 모듈**: 44개 성공 (100% 통과) ✅
+5. **기타 모듈**: 200+ 개 실패
+
+## 🔍 실패 원인 상세 분석
+
+### 1. 핵심 API 누락 (Critical Infrastructure)
+```python
+# 누락된 핵심 메서드들
+- ServiceScope.to_service_scope()          # 52개 테스트 실패 원인
+- get_tortoise_url() 함수                  # 38개 테스트 실패 원인  
+- ComponentMetadata.to_service_scope()     # 29개 테스트 실패 원인
+- AnnotationMetadata 관련 변환 메서드들     # 41개 테스트 실패 원인
+- Database connection helpers              # 67개 테스트 실패 원인
+```
+
+### 2. Import 경로 문제 (Import Structure Issues)
+```python
+# 잘못된 import 경로들 - 총 73개 테스트 영향
+- from rfs.core.annotations.base import get_tortoise_url  # 존재하지 않음
+- from rfs.database.tortoise_db import get_tortoise_url   # 경로 오류
+- from rfs.cli.testing import TestModel                   # pytest 수집 충돌
+```
+
+### 3. 테스트 구조 문제 (Test Structure Issues)
+- TestModel 클래스들이 pytest에 의해 테스트로 인식됨 (34개 영향)
+- Mock 객체와 실제 구현 간 인터페이스 불일치 (112개 영향)
+- 비동기 테스트에서 이벤트 루프 관리 문제 (89개 영향)
+
+### 4. 데이터베이스 모듈 불완전 (Database Module Issues)  
+- Tortoise ORM 설정 및 연결 헬퍼 함수 누락 (67개 실패)
+- 마이그레이션 시스템 구현 미완성 (45개 실패)
+- 모델 정의와 테스트 간 불일치 (77개 실패)
+
+## 🚀 10단계 테스트 개선 계획
+
+### Phase 1: 핵심 인프라 수정 (Critical Infrastructure Fixes)
+**우선순위**: 최고 🚨  
+**예상 시간**: 2-3일  
+**대상**: Core 모듈 핵심 API 구현  
+**영향**: 227개 실패 테스트 해결
+
+#### 작업 내용:
+1. **ServiceScope.to_service_scope() 구현**
+   ```python
+   # src/rfs/core/annotations/base.py
+   class ServiceScope(Enum):
+       SINGLETON = "singleton"
+       PROTOTYPE = "prototype"
+       REQUEST = "request"
+       SESSION = "session"
+       
+       def to_service_scope(self) -> 'ServiceScope':
+           """ServiceScope로 변환"""
+           return self  # 이미 ServiceScope인 경우
+   ```
+
+2. **get_tortoise_url() 함수 구현**
+   ```python
+   # src/rfs/database/helpers.py (새 파일 생성)
+   def get_tortoise_url(config: dict) -> str:
+       """Tortoise ORM 연결 URL 생성"""
+       db_type = config.get('type', 'sqlite')
+       if db_type == 'sqlite':
+           path = config.get('database_path', 'test.db')
+           return f"sqlite://{path}"
+       elif db_type == 'postgres':
+           host = config.get('host', 'localhost')
+           port = config.get('port', 5432)
+           user = config.get('user', 'postgres')
+           password = config.get('password', '')
+           database = config.get('database', 'test')
+           return f"postgres://{user}:{password}@{host}:{port}/{database}"
+       else:
+           raise ValueError(f"Unsupported database type: {db_type}")
+   ```
+
+3. **ComponentMetadata 변환 메서드 추가**
+   ```python
+   # src/rfs/core/annotations/base.py
+   @dataclass
+   class ComponentMetadata:
+       name: str
+       scope: ServiceScope
+       dependencies: List[str] = field(default_factory=list)
+       lazy: bool = False
+       primary: bool = False
+       qualifier: Optional[str] = None
+       
+       def to_service_scope(self) -> ServiceScope:
+           """ServiceScope 반환"""
+           return self.scope
+   ```
+
+### Phase 2: Import 구조 정리 (Import Structure Cleanup)
+**우선순위**: 높음 ⚡  
+**예상 시간**: 1-2일  
+**대상**: 모든 모듈의 import 경로 정리  
+**영향**: 73개 실패 테스트 해결
+
+#### 작업 내용:
+1. **CLI 테스트 import 수정**
+   ```python
+   # tests/unit/cli/test_*.py 파일들
+   # 수정 전
+   from rfs.core.annotations.base import get_tortoise_url
+   
+   # 수정 후
+   from rfs.database.helpers import get_tortoise_url
+   ```
+
+2. **TestModel 클래스명 변경**
+   ```python
+   # tests/fixtures/models.py
+   # 수정 전
+   class TestModel(SQLModel):
+       pass
+   
+   # 수정 후  
+   class MockTestModel(SQLModel):
+       pass
+   ```
+
+3. **중앙 집중식 import 관리**
+   ```python
+   # src/rfs/__init__.py에 주요 API 재수출
+   from .database.helpers import get_tortoise_url
+   from .core.annotations.base import ServiceScope, ComponentMetadata
+   from .core.result import Result, Success, Failure
+   
+   __all__ = [
+       'Result', 'Success', 'Failure',
+       'ServiceScope', 'ComponentMetadata', 
+       'get_tortoise_url'
+   ]
+   ```
+
+### Phase 3: 데이터베이스 모듈 완성 (Database Module Completion)
+**우선순위**: 높음 ⚡  
+**예상 시간**: 3-4일  
+**대상**: Database 관련 189개 실패 테스트  
+**영향**: Database 모듈 완전 구현
+
+#### 작업 내용:
+1. **연결 헬퍼 구현**
+   ```python
+   # src/rfs/database/helpers.py
+   from typing import Dict, Any
+   from tortoise import Tortoise
+   
+   async def create_test_connection(config: Dict[str, Any]) -> None:
+       """테스트용 데이터베이스 연결 생성"""
+       db_url = get_tortoise_url(config)
+       await Tortoise.init(
+           db_url=db_url,
+           modules={'models': ['rfs.database.models']}
+       )
+       await Tortoise.generate_schemas()
+   
+   def get_database_config(env: str = "test") -> Dict[str, Any]:
+       """환경별 데이터베이스 설정 반환"""
+       configs = {
+           'test': {
+               'type': 'sqlite',
+               'database_path': ':memory:'
+           },
+           'development': {
+               'type': 'sqlite', 
+               'database_path': 'dev.db'
+           }
+       }
+       return configs.get(env, configs['test'])
+   ```
+
+2. **마이그레이션 시스템 완성**
+   ```python
+   # src/rfs/database/migrations/migration_runner.py
+   class MigrationRunner:
+       def __init__(self, db_url: str):
+           self.db_url = db_url
+           self.migrations: List[Migration] = []
+       
+       async def run_migrations(self) -> Result[str, str]:
+           """마이그레이션 실행"""
+           try:
+               for migration in self.migrations:
+                   await migration.apply()
+               return Success("All migrations applied successfully")
+           except Exception as e:
+               return Failure(f"Migration failed: {str(e)}")
+   ```
+
+### Phase 4: 비동기 시스템 수정 (Async System Fixes)
+**우선순위**: 중간 📊  
+**예상 시간**: 2-3일  
+**대상**: Async 관련 156개 실패 테스트
+
+#### 작업 내용:
+1. **이벤트 루프 관리 개선**
+   ```python
+   # tests/conftest.py
+   import asyncio
+   import pytest
+   
+   @pytest.fixture(scope="session")
+   def event_loop():
+       """세션별 이벤트 루프 설정"""
+       loop = asyncio.new_event_loop()
+       asyncio.set_event_loop(loop)
+       yield loop
+       loop.close()
+   
+   @pytest.fixture
+   async def async_session():
+       """비동기 테스트용 세션"""
+       # 세션 설정 로직
+       yield
+       # 정리 로직
+   ```
+
+2. **Reactive Streams 안정화**
+   ```python
+   # src/rfs/reactive/mono.py, flux.py 개선
+   - 백프레셔 처리 개선
+   - 에러 전파 메커니즘 수정  
+   - 리소스 정리 로직 강화
+   - Result 패턴과의 통합 개선
+   ```
+
+### Phase 5: 어노테이션 시스템 완성 (Annotation System Completion)
+**우선순위**: 중간 📊  
+**예상 시간**: 2일  
+**대상**: Annotations 관련 실패 테스트
+
+#### 작업 내용:
+1. **의존성 주입 완성**
+   ```python
+   # src/rfs/core/annotations/di.py
+   def Component(name: str, scope: ServiceScope = ServiceScope.SINGLETON, **kwargs):
+       """컴포넌트 데코레이터 완성"""
+       def decorator(cls):
+           metadata = ComponentMetadata(
+               name=name,
+               scope=scope,
+               **kwargs
+           )
+           set_annotation_metadata(cls, metadata)
+           return cls
+       return decorator
+   ```
+
+### Phase 6-10: 추가 개선 영역
+- **Phase 6**: 테스트 인프라 개선 (Pytest 설정, Mock 표준화)
+- **Phase 7**: 성능 테스트 추가 (벤치마킹, 프로파일링)
+- **Phase 8**: 문서화 테스트 (Docstring 검증, API 문서)  
+- **Phase 9**: 통합 테스트 강화 (E2E 시나리오, 외부 의존성)
+- **Phase 10**: CI/CD 통합 (GitHub Actions, 자동화)
+
+## ⏱️ 실행 우선순위 및 일정
+
+### 즉시 실행 (Week 1) 🚨
+1. **Phase 1**: 핵심 API 구현 (ServiceScope, get_tortoise_url 등)
+   - **예상 효과**: 227개 테스트 실패 → 30개 이하로 감소
+   - **성공 기준**: Core 모듈 테스트 통과율 80% 이상
+
+2. **Phase 2**: Import 경로 정리  
+   - **예상 효과**: 73개 테스트 실패 → 0개로 해결
+   - **성공 기준**: Import 오류 완전 제거
+
+### 단기 실행 (Week 2-3) ⚡
+3. **Phase 3**: 데이터베이스 모듈 완성
+   - **예상 효과**: 189개 테스트 실패 → 20개 이하로 감소
+   - **성공 기준**: Database 모듈 커버리지 90% 이상
+
+4. **Phase 4**: 비동기 시스템 수정
+   - **예상 효과**: 156개 테스트 실패 → 15개 이하로 감소  
+   - **성공 기준**: Async 테스트 안정성 95% 이상
+
+5. **Phase 5**: 어노테이션 시스템 완성
+   - **예상 효과**: 나머지 실패 테스트 대부분 해결
+   - **성공 기준**: Annotation 테스트 완전 통과
+
+### 중기 실행 (Week 4-5) 📊
+6. **Phase 6**: 테스트 인프라 개선
+7. **Phase 7**: 성능 테스트 추가
+
+### 장기 실행 (Week 6+) 📈  
+8. **Phase 8**: 문서화 테스트
+9. **Phase 9**: 통합 테스트 강화
+10. **Phase 10**: CI/CD 통합
+
+## 🎯 예상 결과
+
+### 목표 달성 지표
+- **테스트 통과율**: 30% → 95% 이상 (목표: 2,500+ 테스트 통과)
+- **실패 테스트 수**: 800+ → 50개 이하
+- **커버리지**: 현재 수준 유지하면서 품질 향상
+- **실행 시간**: 전체 테스트 실행 시간 최적화 (<30분)
+- **안정성**: CI/CD 환경에서 일관된 테스트 결과
+
+### 단계별 예상 성과
+| Phase | 해결 테스트 수 | 누적 통과율 | 주요 효과 |
+|-------|---------------|------------|----------|
+| Phase 1 | 227개 | ~38% → 65% | 핵심 인프라 안정화 |
+| Phase 2 | 73개 | 65% → 75% | Import 오류 완전 제거 |
+| Phase 3 | 169개 | 75% → 85% | Database 모듈 완성 |
+| Phase 4 | 141개 | 85% → 90% | Async 시스템 안정화 |
+| Phase 5 | 100개+ | 90% → 95% | Annotation 시스템 완성 |
+
+### 품질 개선 효과
+1. **개발 생산성 향상**: 신뢰할 수 있는 테스트 환경
+2. **버그 조기 발견**: 회귀 테스트를 통한 품질 보장  
+3. **리팩토링 안전성**: 테스트 커버리지를 통한 안전한 코드 변경
+4. **문서화 품질**: 테스트를 통한 API 사용법 검증
+
+## ⚠️ 리스크 관리
+
+### 주요 리스크
+1. **기존 기능 영향**: 핵심 API 변경 시 호환성 문제
+   - **영향도**: 높음
+   - **발생 확률**: 중간
+2. **테스트 실행 시간**: 대규모 테스트 실행으로 인한 성능 저하
+   - **영향도**: 중간  
+   - **발생 확률**: 높음
+3. **외부 의존성**: 데이터베이스, 네트워크 등 외부 요소 의존성
+   - **영향도**: 중간
+   - **발생 확률**: 중간
+
+### 완화 방안
+1. **단계별 적용**: 점진적 개선으로 리스크 최소화
+2. **백업 및 롤백**: 변경 사항에 대한 체계적인 버전 관리
+3. **테스트 격리**: 외부 의존성을 최소화한 단위 테스트 우선
+4. **지속적 모니터링**: 각 단계별 성과 측정 및 조정
+5. **병렬 실행**: 테스트 실행 시간 최적화를 위한 병렬 처리
+
+## 📊 기존 완료 현황 (Git 히스토리 기준)
 
 ### 테스트 통계 (최종 Git 히스토리 반영 업데이트)
 - **전체 커버리지**: ~92-95% (거의 모든 모듈 완료)
@@ -358,5 +704,78 @@ echo "- 품질 테스트 통과: [확인 필요]"
 - Gateway: 90%+ ✅ (인증 시스템 완료)
 - Cloud Run: 99.7%+ ✅ (버그 수정 완료) 🔥
 
-*Last Updated: 2025-08-26 (최신 Git 히스토리 분석 완료)*
-*Version: 4.0.0 - Performance & Test Excellence* 🔥
+## 📋 실행 체크리스트
+
+### Phase 1 (핵심 인프라) 체크리스트
+- [ ] ServiceScope.to_service_scope() 메서드 구현
+- [ ] get_tortoise_url() 함수 구현 (src/rfs/database/helpers.py)
+- [ ] ComponentMetadata.to_service_scope() 메서드 추가
+- [ ] 핵심 API 테스트 실행 및 227개 실패 → 30개 이하 확인
+
+### Phase 2 (Import 구조) 체크리스트  
+- [ ] CLI 테스트 import 경로 수정 (73개 파일)
+- [ ] TestModel → MockTestModel 클래스명 변경
+- [ ] src/rfs/__init__.py 중앙 집중식 import 구현
+- [ ] Import 오류 0개 달성 확인
+
+### Phase 3 (Database 모듈) 체크리스트
+- [ ] create_test_connection() 함수 구현
+- [ ] get_database_config() 함수 구현  
+- [ ] MigrationRunner 클래스 완성
+- [ ] Database 테스트 189개 실패 → 20개 이하 확인
+
+### Phase 4 (Async 시스템) 체크리스트
+- [ ] tests/conftest.py 이벤트 루프 설정 개선
+- [ ] Reactive Streams 안정화 (mono.py, flux.py)
+- [ ] 비동기 테스트 156개 실패 → 15개 이하 확인
+
+### Phase 5 (Annotation 시스템) 체크리스트
+- [ ] Component, Service 등 데코레이터 완성
+- [ ] 의존성 주입 로직 구현
+- [ ] Annotation 테스트 완전 통과 확인
+
+## 🎉 성공 기준 및 검증 방법
+
+### 최종 성공 기준
+1. **전체 테스트 통과율 95% 이상** (2,633개 이상 통과)
+2. **실패 테스트 50개 이하** (현재 800+ → 50개 이하)
+3. **Core 모듈 커버리지 90% 이상**
+4. **Database 모듈 커버리지 90% 이상** 
+5. **Async 모듈 안정성 95% 이상**
+
+### 검증 명령어
+```bash
+# 전체 테스트 실행 및 통과율 확인
+PYTHONPATH=src pytest tests/ --tb=short -q
+
+# 커버리지 포함 상세 테스트  
+PYTHONPATH=src pytest tests/ --cov=rfs --cov-report=term --cov-report=html
+
+# 모듈별 상세 테스트
+PYTHONPATH=src pytest tests/unit/core/ -v --cov=rfs.core
+PYTHONPATH=src pytest tests/unit/database/ -v --cov=rfs.database  
+PYTHONPATH=src pytest tests/unit/async_tasks/ -v --cov=rfs.async_tasks
+
+# 성공 기준 달성 확인
+echo "목표: 전체 테스트 통과율 95% 이상"
+echo "현재: [확인 필요] / 2,771개"
+```
+
+---
+
+## 📌 결론
+
+### 현재 상황 요약
+RFS Framework는 **2,771개의 테스트 중 800+ 개가 실패**하는 상황에서, 주요 원인은 **핵심 인프라 API 누락**입니다. CLI 모듈은 이미 100% 통과율을 달성했으며, 일부 모듈은 Git 히스토리에서 높은 커버리지를 보이고 있습니다.
+
+### 핵심 해결 전략
+**10단계 체계적 접근법**을 통해 단계별로 실패 원인을 제거하고, **3주 내에 95% 테스트 통과율 달성**을 목표로 합니다. Phase 1-2 만으로도 300개 이상의 실패 테스트를 해결할 수 있어 즉각적인 효과가 기대됩니다.
+
+### 예상 효과
+- **개발 신뢰성**: 800+ 실패 → 50개 이하로 대폭 개선
+- **생산성 향상**: 안정적인 테스트 환경으로 개발 속도 증가  
+- **품질 보장**: 95% 통과율로 회귀 버그 조기 발견
+- **유지보수성**: 체계적인 테스트를 통한 안전한 리팩토링 환경
+
+*Last Updated: 2025-08-26 (800+ 실패 테스트 분석 및 개선 계획 완성)*  
+*Version: 5.0.0 - Comprehensive Test Recovery Plan* 🚀

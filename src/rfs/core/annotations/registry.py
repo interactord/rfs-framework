@@ -11,8 +11,8 @@ import pkgutil
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from ..result import Failure, Result, Success
 from ..registry import StatelessRegistry
+from ..result import Failure, Result, Success
 from .base import (
     ComponentMetadata,
     DependencyMetadata,

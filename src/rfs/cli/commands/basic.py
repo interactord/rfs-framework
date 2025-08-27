@@ -177,15 +177,127 @@ class ConfigCommand(Command):
 
     async def _set_config(self, ctx: CommandContext) -> Result[str, str]:
         """설정 값 설정"""
-        return Success("Config set not implemented yet")
+        try:
+            args = ctx.args.get("positional", [])
+            if len(args) < 3:  # set key value 형태
+                return Failure("Usage: config set <key> <value>")
+
+            key = args[1]
+            value = args[2]
+
+            # 설정 파일 경로 결정
+            config_file = (
+                ctx.project_root / "rfs.json" if ctx.project_root else Path("rfs.json")
+            )
+
+            # 기존 설정 로드
+            config_data = {}
+            if config_file.exists():
+                import json
+
+                with open(config_file, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+
+            # 설정 값 업데이트
+            config_data[key] = value
+
+            # 설정 파일 저장
+            with open(config_file, "w", encoding="utf-8") as f:
+                import json
+
+                json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+            if ctx.console:
+                ctx.console.print(f"[green]✓ Set {key} = {value}[/green]")
+            else:
+                print(f"✓ Set {key} = {value}")
+
+            return Success(f"Configuration '{key}' set to '{value}'")
+        except Exception as e:
+            return Failure(f"Failed to set config: {str(e)}")
 
     async def _get_config(self, ctx: CommandContext) -> Result[str, str]:
         """설정 값 조회"""
-        return Success("Config get not implemented yet")
+        try:
+            args = ctx.args.get("positional", [])
+            if len(args) < 2:  # get key 형태
+                return Failure("Usage: config get <key>")
+
+            key = args[1]
+
+            # 설정 파일에서 값 조회
+            config_file = (
+                ctx.project_root / "rfs.json" if ctx.project_root else Path("rfs.json")
+            )
+
+            if not config_file.exists():
+                return Failure(f"Configuration file not found: {config_file}")
+
+            import json
+
+            with open(config_file, "r", encoding="utf-8") as f:
+                config_data = json.load(f)
+
+            if key not in config_data:
+                return Failure(f"Configuration key '{key}' not found")
+
+            value = config_data[key]
+
+            if ctx.console:
+                ctx.console.print(f"[cyan]{key}[/cyan] = [yellow]{value}[/yellow]")
+            else:
+                print(f"{key} = {value}")
+
+            return Success(f"Configuration '{key}' = '{value}'")
+        except Exception as e:
+            return Failure(f"Failed to get config: {str(e)}")
 
     async def _list_config(self, ctx: CommandContext) -> Result[str, str]:
         """설정 목록 표시"""
-        return Success("Config list not implemented yet")
+        try:
+            # 설정 파일에서 모든 설정 조회
+            config_file = (
+                ctx.project_root / "rfs.json" if ctx.project_root else Path("rfs.json")
+            )
+
+            if not config_file.exists():
+                if ctx.console:
+                    ctx.console.print("[yellow]No configuration file found[/yellow]")
+                else:
+                    print("No configuration file found")
+                return Success("No configuration file found")
+
+            import json
+
+            with open(config_file, "r", encoding="utf-8") as f:
+                config_data = json.load(f)
+
+            if not config_data:
+                if ctx.console:
+                    ctx.console.print("[yellow]Configuration file is empty[/yellow]")
+                else:
+                    print("Configuration file is empty")
+                return Success("Configuration file is empty")
+
+            if ctx.console:
+                from rich.table import Table
+
+                table = Table(title="RFS Configuration")
+                table.add_column("Key", style="cyan", no_wrap=True)
+                table.add_column("Value", style="yellow")
+
+                for key, value in config_data.items():
+                    table.add_row(key, str(value))
+
+                ctx.console.print(table)
+            else:
+                print("RFS Configuration:")
+                for key, value in config_data.items():
+                    print(f"  {key} = {value}")
+
+            return Success(f"Listed {len(config_data)} configuration items")
+        except Exception as e:
+            return Failure(f"Failed to list config: {str(e)}")
 
 
 class HelpCommand(Command):

@@ -125,21 +125,21 @@ class Chart(ABC):
 
     def prepare_data(self, raw_data: List[Dict[str, Any]]) -> Result[ChartData, str]:
         """원시 데이터를 차트 데이터로 변환
-        
+
         Args:
             raw_data: 원시 데이터 리스트
-            
+
         Returns:
             Result[ChartData, str]: 변환된 차트 데이터 또는 오류
         """
         try:
             if not raw_data:
                 return Success(ChartData(labels=[], datasets=[]))
-                
+
             # 기본 데이터 변환 로직
             labels = []
             values = []
-            
+
             for item in raw_data:
                 if isinstance(item, dict):
                     # 딕셔너리 형태의 데이터
@@ -165,25 +165,33 @@ class Chart(ABC):
                         values.append(float(item))
                     except (ValueError, TypeError):
                         values.append(0)
-                        
+
             # 기본 데이터셋 생성
             dataset = {
                 "label": "Data",
                 "data": values,
-                "backgroundColor": self._get_default_colors()[:len(values)],
-                "borderColor": self._get_default_colors()[:len(values)],
+                "backgroundColor": self._get_default_colors()[: len(values)],
+                "borderColor": self._get_default_colors()[: len(values)],
                 "borderWidth": 1,
             }
-            
+
             return Success(ChartData(labels=labels, datasets=[dataset]))
         except Exception as e:
             return Failure(f"Failed to prepare chart data: {str(e)}")
-            
+
     def _get_default_colors(self) -> List[str]:
         """기본 색상 팔레트 반환"""
         return [
-            "#007bff", "#28a745", "#dc3545", "#ffc107", "#6f42c1",
-            "#20c997", "#fd7e14", "#e83e8c", "#6c757d", "#17a2b8"
+            "#007bff",
+            "#28a745",
+            "#dc3545",
+            "#ffc107",
+            "#6f42c1",
+            "#20c997",
+            "#fd7e14",
+            "#e83e8c",
+            "#6c757d",
+            "#17a2b8",
         ]
 
     def set_data(self, raw_data: List[Dict[str, Any]]) -> Result["Chart", str]:

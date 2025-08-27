@@ -35,7 +35,9 @@ from rfs.core.result import Failure, Result, Success
 @pytest.fixture
 def mock_gcp_monitoring_client():
     """Google Cloud Monitoring 클라이언트 모킹"""
-    with patch('rfs.cloud_run.autoscaling.monitoring_v3.MetricServiceClient') as mock_client_class:
+    with patch(
+        "rfs.cloud_run.autoscaling.monitoring_v3.MetricServiceClient"
+    ) as mock_client_class:
         mock_client = Mock()
         # CPU 사용률 메트릭 모킹
         mock_metric_cpu = Mock()
@@ -44,23 +46,25 @@ def mock_gcp_monitoring_client():
         mock_metric_cpu.points = [
             Mock(value=Mock(double_value=0.6), interval=Mock(end_time=Mock()))
         ]
-        
+
         # 메모리 사용률 메트릭 모킹
         mock_metric_memory = Mock()
         mock_metric_memory.resource.labels = {"service_name": "test-service"}
         mock_metric_memory.points = [
             Mock(value=Mock(double_value=0.7), interval=Mock(end_time=Mock()))
         ]
-        
+
         # Request count 메트릭 모킹
         mock_metric_requests = Mock()
         mock_metric_requests.resource.labels = {"service_name": "test-service"}
         mock_metric_requests.points = [
             Mock(value=Mock(int64_value=1000), interval=Mock(end_time=Mock()))
         ]
-        
+
         mock_client.list_time_series.return_value = [
-            mock_metric_cpu, mock_metric_memory, mock_metric_requests
+            mock_metric_cpu,
+            mock_metric_memory,
+            mock_metric_requests,
         ]
         mock_client_class.return_value = mock_client
         yield mock_client
@@ -69,7 +73,7 @@ def mock_gcp_monitoring_client():
 @pytest.fixture
 def mock_cloud_run_client():
     """Google Cloud Run 클라이언트 모킹"""
-    with patch('rfs.cloud_run.autoscaling.run_v2.ServicesClient') as mock_client_class:
+    with patch("rfs.cloud_run.autoscaling.run_v2.ServicesClient") as mock_client_class:
         mock_client = Mock()
         mock_service = Mock()
         mock_service.spec.template.spec.container_concurrency = 80
@@ -90,7 +94,7 @@ class TestScalingConfiguration:
     def test_cloud_run_default_configuration(self):
         """Cloud Run 기본 스케일링 설정 테스트"""
         config = ScalingConfiguration()
-        
+
         # Google Cloud Run 기본값
         assert config.min_instances == 0
         assert config.max_instances == 100
@@ -111,7 +115,7 @@ class TestScalingConfiguration:
             scale_down_threshold=0.2,  # 보수적 스케일 다운
             policy=ScalingPolicy.PREDICTIVE,
         )
-        
+
         assert config.min_instances == 1
         assert config.max_instances == 50
         assert config.target_concurrency == 100
@@ -144,7 +148,7 @@ class TestScalingConfiguration:
         assert conservative_config.scale_up_threshold == 0.8  # 기본값
         assert conservative_config.scale_down_cooldown == 300  # 기본값
 
-        # Aggressive 정책 - 기본값 확인 (소스코드와 일치) 
+        # Aggressive 정책 - 기본값 확인 (소스코드와 일치)
         aggressive_config = ScalingConfiguration(policy=ScalingPolicy.AGGRESSIVE)
         assert aggressive_config.policy == ScalingPolicy.AGGRESSIVE
         assert aggressive_config.scale_up_threshold == 0.8  # 기본값 (정책과 무관하게)
@@ -179,9 +183,9 @@ class TestAutoScalingOptimizer:
             "max_instances": 20,
             "target_concurrency": 50,
         }
-        
+
         optimizer.configure(**new_config)
-        
+
         assert optimizer.config.min_instances == 2
         assert optimizer.config.max_instances == 20
         assert optimizer.config.target_concurrency == 50
@@ -191,15 +195,15 @@ class TestAutoScalingOptimizer:
         self, optimizer, mock_gcp_monitoring_client
     ):
         """Cloud Monitoring에서 메트릭 수집 테스트"""
-        with patch('rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE', True):
+        with patch("rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE", True):
             optimizer.monitoring_client = mock_gcp_monitoring_client
-            
+
             metrics = await optimizer._collect_metrics()
-            
+
             assert metrics is not None
-            assert hasattr(metrics, 'cpu_utilization')
-            assert hasattr(metrics, 'memory_utilization')
-            assert hasattr(metrics, 'request_count')
+            assert hasattr(metrics, "cpu_utilization")
+            assert hasattr(metrics, "memory_utilization")
+            assert hasattr(metrics, "request_count")
             # _collect_metrics returns MetricSnapshot with random values
             assert 0.2 <= metrics.cpu_utilization <= 0.9
             assert 0.3 <= metrics.memory_utilization <= 0.8
@@ -217,9 +221,9 @@ class TestAutoScalingOptimizer:
             "instance_count": 3,
             "timestamp": datetime.now(),
         }
-        
+
         result = optimizer.analyze_metrics(high_cpu_metrics)
-        
+
         assert result.should_scale_up is True
         assert result.should_scale_down is False
         assert result.current_instances == 3
@@ -234,9 +238,9 @@ class TestAutoScalingOptimizer:
             "instance_count": 5,
             "timestamp": datetime.now(),
         }
-        
+
         result = optimizer.analyze_metrics(low_cpu_metrics)
-        
+
         assert result.should_scale_up is False
         assert result.should_scale_down is True
         assert result.current_instances == 5
@@ -245,28 +249,32 @@ class TestAutoScalingOptimizer:
     def test_scaling_recommendations_generation(self, optimizer):
         """스케일링 권장사항 생성 테스트"""
         # CPU 기반 스케일 업 권장
-        optimizer.metrics = [{
-            "cpu_utilization": 0.9,
-            "memory_utilization": 0.8,
-            "instance_count": 2,
-            "timestamp": datetime.now(),
-        }]
-        
+        optimizer.metrics = [
+            {
+                "cpu_utilization": 0.9,
+                "memory_utilization": 0.8,
+                "instance_count": 2,
+                "timestamp": datetime.now(),
+            }
+        ]
+
         recommendations = optimizer.get_recommendations()
-        
+
         assert len(recommendations) > 0
         assert any("Scale up" in rec for rec in recommendations)
 
         # CPU 기반 스케일 다운 권장
-        optimizer.metrics = [{
-            "cpu_utilization": 0.1,
-            "memory_utilization": 0.15,
-            "instance_count": 5,
-            "timestamp": datetime.now(),
-        }]
-        
+        optimizer.metrics = [
+            {
+                "cpu_utilization": 0.1,
+                "memory_utilization": 0.15,
+                "instance_count": 5,
+                "timestamp": datetime.now(),
+            }
+        ]
+
         recommendations = optimizer.get_recommendations()
-        
+
         assert len(recommendations) > 0
         assert any("Scale down" in rec for rec in recommendations)
 
@@ -280,13 +288,15 @@ class TestAutoScalingOptimizer:
             "estimated_cost_per_hour": 20.0,
             "timestamp": datetime.now(),
         }
-        
+
         cost_analysis = optimizer._analyze_cost_efficiency(expensive_metrics)
-        
+
         assert cost_analysis["is_cost_efficient"] is False
         assert cost_analysis["potential_savings"] > 0
         assert "recommended_instances" in cost_analysis
-        assert cost_analysis["recommended_instances"] < expensive_metrics["instance_count"]
+        assert (
+            cost_analysis["recommended_instances"] < expensive_metrics["instance_count"]
+        )
 
     def test_traffic_pattern_detection(self, optimizer):
         """트래픽 패턴 감지 테스트"""
@@ -301,17 +311,24 @@ class TestAutoScalingOptimizer:
                 else:
                     cpu_util = 0.2 + hour * 0.01  # 낮은 기본 사용률
                     request_count = 100 + hour * 10
-                
-                periodic_metrics.append({
-                    "cpu_utilization": cpu_util,
-                    "request_count": request_count,
-                    "timestamp": datetime.now() - timedelta(days=3-day, hours=24-hour),
-                })
-        
+
+                periodic_metrics.append(
+                    {
+                        "cpu_utilization": cpu_util,
+                        "request_count": request_count,
+                        "timestamp": datetime.now()
+                        - timedelta(days=3 - day, hours=24 - hour),
+                    }
+                )
+
         pattern = optimizer._detect_traffic_pattern(periodic_metrics)
-        
+
         # 72개 데이터 포인트로 패턴 감지 가능
-        assert pattern in [TrafficPattern.PERIODIC, TrafficPattern.BURST, TrafficPattern.STEADY]
+        assert pattern in [
+            TrafficPattern.PERIODIC,
+            TrafficPattern.BURST,
+            TrafficPattern.STEADY,
+        ]
 
     @pytest.mark.asyncio
     async def test_predictive_scaling_with_historical_data(self, optimizer):
@@ -325,15 +342,18 @@ class TestAutoScalingOptimizer:
                     base_cpu = 0.6 if 9 <= hour <= 18 else 0.3
                 else:  # 주말
                     base_cpu = 0.2
-                
-                historical_data.append({
-                    "cpu_utilization": base_cpu + (hour % 3) * 0.1,  # 약간의 변동
-                    "request_count": int(base_cpu * 3000),
-                    "timestamp": datetime.now() - timedelta(days=7-day, hours=24-hour),
-                })
-        
+
+                historical_data.append(
+                    {
+                        "cpu_utilization": base_cpu + (hour % 3) * 0.1,  # 약간의 변동
+                        "request_count": int(base_cpu * 3000),
+                        "timestamp": datetime.now()
+                        - timedelta(days=7 - day, hours=24 - hour),
+                    }
+                )
+
         optimizer.metrics = historical_data
-        
+
         # pattern_analyzer에도 데이터 추가 (predict_next_hour_traffic을 위해 필요)
         for data in historical_data:
             snapshot = MetricSnapshot(
@@ -343,13 +363,13 @@ class TestAutoScalingOptimizer:
                 request_count=data.get("request_count", 0),
                 active_instances=1,  # 기본값
                 avg_response_time=200,  # 기본값
-                error_rate=0.0  # 기본값
+                error_rate=0.0,  # 기본값
             )
             optimizer.pattern_analyzer.add_snapshot(snapshot)
-        
+
         # 다음 2시간 예측
         prediction = await optimizer._predict_future_load(hours_ahead=2)
-        
+
         assert prediction is not None
         assert "predicted_cpu_utilization" in prediction
         assert "predicted_instance_count" in prediction
@@ -359,15 +379,15 @@ class TestAutoScalingOptimizer:
         """스케일링 제약 조건 강제 적용 테스트"""
         optimizer.config.min_instances = 2
         optimizer.config.max_instances = 10
-        
+
         # 최소 인스턴스 미만으로 스케일 다운 시도
         constrained_down = optimizer._apply_scaling_constraints(target_instances=1)
         assert constrained_down == 2  # 최소값으로 제한
-        
+
         # 최대 인스턴스 초과로 스케일 업 시도
         constrained_up = optimizer._apply_scaling_constraints(target_instances=15)
         assert constrained_up == 10  # 최대값으로 제한
-        
+
         # 정상 범위 내 스케일링
         normal_scaling = optimizer._apply_scaling_constraints(target_instances=5)
         assert normal_scaling == 5  # 그대로 유지
@@ -377,19 +397,19 @@ class TestAutoScalingOptimizer:
         # 최근 스케일링 기록
         optimizer.last_scale_up_time = datetime.now() - timedelta(seconds=30)
         optimizer.last_scale_down_time = datetime.now() - timedelta(seconds=120)
-        
+
         # 스케일 업 쿨다운 확인 (60초)
         can_scale_up = optimizer._can_scale_up()
         assert can_scale_up is False  # 30초 전에 스케일 업했으므로 불가능
-        
+
         # 스케일 다운 쿨다운 확인 (300초)
         can_scale_down = optimizer._can_scale_down()
         assert can_scale_down is False  # 120초 전에 스케일 다운했으므로 불가능
-        
+
         # 충분한 시간 경과 후
         optimizer.last_scale_up_time = datetime.now() - timedelta(seconds=70)
         optimizer.last_scale_down_time = datetime.now() - timedelta(seconds=350)
-        
+
         assert optimizer._can_scale_up() is True
         assert optimizer._can_scale_down() is True
 
@@ -406,27 +426,42 @@ class TestAutoScalingOptimizer:
             "instance_count": 2,
             "timestamp": datetime.now(),
         }
-        
+
         # 쿨다운 기간 중이라도 긴급 상황에서는 스케일링 허용
         optimizer.last_scale_up_time = datetime.now() - timedelta(seconds=10)
-        
+
         emergency_scaling = optimizer._should_emergency_scale(emergency_metrics)
-        
+
         assert emergency_scaling is True
 
     def test_scaling_metrics_and_statistics(self, optimizer):
         """스케일링 메트릭 및 통계 테스트"""
         # 다양한 스케일링 이벤트 시뮬레이션
         scaling_events = [
-            {"action": "scale_up", "from_instances": 1, "to_instances": 3, "timestamp": datetime.now() - timedelta(hours=2)},
-            {"action": "scale_down", "from_instances": 3, "to_instances": 2, "timestamp": datetime.now() - timedelta(hours=1)},
-            {"action": "scale_up", "from_instances": 2, "to_instances": 4, "timestamp": datetime.now()},
+            {
+                "action": "scale_up",
+                "from_instances": 1,
+                "to_instances": 3,
+                "timestamp": datetime.now() - timedelta(hours=2),
+            },
+            {
+                "action": "scale_down",
+                "from_instances": 3,
+                "to_instances": 2,
+                "timestamp": datetime.now() - timedelta(hours=1),
+            },
+            {
+                "action": "scale_up",
+                "from_instances": 2,
+                "to_instances": 4,
+                "timestamp": datetime.now(),
+            },
         ]
-        
+
         optimizer.scaling_history = scaling_events
-        
+
         stats = optimizer.get_scaling_statistics()
-        
+
         assert stats["total_scaling_events"] == 3
         assert stats["scale_up_events"] == 2
         assert stats["scale_down_events"] == 1
@@ -448,14 +483,16 @@ class TestTrafficPatternAnalyzer:
         # 일정한 트래픽 패턴 데이터 (60개 이상 필요)
         steady_metrics = []
         for i in range(72):  # 3일간 데이터
-            steady_metrics.append({
-                "request_count": 1000 + i * 2,  # 약간씩 증가하는 안정적 트래픽
-                "cpu_utilization": 0.5 + i * 0.001,  # 안정적 CPU
-                "timestamp": datetime.now() - timedelta(hours=72-i),
-            })
-        
+            steady_metrics.append(
+                {
+                    "request_count": 1000 + i * 2,  # 약간씩 증가하는 안정적 트래픽
+                    "cpu_utilization": 0.5 + i * 0.001,  # 안정적 CPU
+                    "timestamp": datetime.now() - timedelta(hours=72 - i),
+                }
+            )
+
         pattern = analyzer.analyze_pattern(steady_metrics)
-        
+
         assert pattern == TrafficPattern.STEADY
 
     def test_burst_traffic_pattern_detection(self, analyzer):
@@ -471,24 +508,26 @@ class TestTrafficPatternAnalyzer:
             else:
                 request_count = 200  # 낮은 기본 요청 수
                 cpu_util = 0.1
-            
-            burst_metrics.append({
-                "request_count": request_count,
-                "cpu_utilization": cpu_util,
-                "timestamp": datetime.now() - timedelta(hours=72-i),
-            })
-        
+
+            burst_metrics.append(
+                {
+                    "request_count": request_count,
+                    "cpu_utilization": cpu_util,
+                    "timestamp": datetime.now() - timedelta(hours=72 - i),
+                }
+            )
+
         pattern = analyzer.analyze_pattern(burst_metrics)
-        
+
         assert pattern == TrafficPattern.BURST
 
     def test_periodic_traffic_pattern_detection(self, analyzer):
         """주기적 트래픽 패턴 감지 테스트"""
         # 더 명확한 주기적 패턴으로 충분한 데이터 생성
         periodic_metrics = []
-        
+
         # 3일간의 매우 규칙적인 패턴 (같은 시간대에 같은 트래픽)
-        for day in range(3):  
+        for day in range(3):
             for hour in range(24):
                 for minute in range(60, 0, -10):  # 시간당 6개 포인트
                     # 일관된 업무시간 패턴
@@ -496,17 +535,20 @@ class TestTrafficPatternAnalyzer:
                         request_count = 1200  # 일정한 업무시간 트래픽
                         cpu_util = 0.6
                     else:
-                        request_count = 400   # 일정한 야간 트래픽
+                        request_count = 400  # 일정한 야간 트래픽
                         cpu_util = 0.2
-                    
-                    periodic_metrics.append({
-                        "request_count": request_count,
-                        "cpu_utilization": cpu_util,
-                        "timestamp": datetime.now() - timedelta(days=3-day, hours=24-hour, minutes=minute),
-                    })
-        
+
+                    periodic_metrics.append(
+                        {
+                            "request_count": request_count,
+                            "cpu_utilization": cpu_util,
+                            "timestamp": datetime.now()
+                            - timedelta(days=3 - day, hours=24 - hour, minutes=minute),
+                        }
+                    )
+
         pattern = analyzer.analyze_pattern(periodic_metrics)
-        
+
         # 현재 구현에서는 STEADY나 PERIODIC가 가능하므로 둘 다 허용
         # 추후 주기성 감지 알고리즘 개선 시 PERIODIC만 허용하도록 변경
         assert pattern in [TrafficPattern.STEADY, TrafficPattern.PERIODIC]
@@ -525,15 +567,22 @@ class TestTrafficPatternAnalyzer:
                     else:
                         request_count = 600  # 적당한 값
                         cpu_util = 0.25
-                    
-                    clear_pattern_metrics.append({
-                        "request_count": request_count,
-                        "cpu_utilization": cpu_util,
-                        "timestamp": datetime.now() - timedelta(days=5-day, hours=24-hour, minutes=minute_group*10),
-                    })
-        
-        confidence = analyzer.calculate_pattern_confidence(clear_pattern_metrics, TrafficPattern.STEADY)
-        
+
+                    clear_pattern_metrics.append(
+                        {
+                            "request_count": request_count,
+                            "cpu_utilization": cpu_util,
+                            "timestamp": datetime.now()
+                            - timedelta(
+                                days=5 - day, hours=24 - hour, minutes=minute_group * 10
+                            ),
+                        }
+                    )
+
+        confidence = analyzer.calculate_pattern_confidence(
+            clear_pattern_metrics, TrafficPattern.STEADY
+        )
+
         # 현재 구현에서는 STEADY 패턴으로 감지되므로 STEADY에 대한 신뢰도 측정
         assert confidence > 0.8  # 높은 신뢰도
 
@@ -548,15 +597,18 @@ class TestTrafficPatternAnalyzer:
                     base_requests = 1500 if 9 <= hour <= 18 else 400
                 else:  # 주말
                     base_requests = 600
-                
-                historical_data.append({
-                    "request_count": base_requests + hour * 20,
-                    "cpu_utilization": base_requests / 3000,  # 요청 수에 비례
-                    "timestamp": datetime.now() - timedelta(days=7-day, hours=24-hour),
-                })
-        
+
+                historical_data.append(
+                    {
+                        "request_count": base_requests + hour * 20,
+                        "cpu_utilization": base_requests / 3000,  # 요청 수에 비례
+                        "timestamp": datetime.now()
+                        - timedelta(days=7 - day, hours=24 - hour),
+                    }
+                )
+
         forecast = analyzer.generate_forecast(historical_data, hours_ahead=24)
-        
+
         assert len(forecast) == 24  # 24시간 예측
         assert all("predicted_request_count" in f for f in forecast)
         assert all("predicted_cpu_utilization" in f for f in forecast)
@@ -573,15 +625,18 @@ class TestTrafficPatternAnalyzer:
                         request_count = 2000 - week * 100  # 주별 감소 트렌드
                     else:  # 주말
                         request_count = 800 - week * 50
-                    
-                    weekly_pattern.append({
-                        "request_count": request_count,
-                        "cpu_utilization": request_count / 3000,
-                        "timestamp": datetime.now() - timedelta(weeks=4-week, days=7-day, hours=24-hour),
-                    })
-        
+
+                    weekly_pattern.append(
+                        {
+                            "request_count": request_count,
+                            "cpu_utilization": request_count / 3000,
+                            "timestamp": datetime.now()
+                            - timedelta(weeks=4 - week, days=7 - day, hours=24 - hour),
+                        }
+                    )
+
         seasonal_analysis = analyzer.analyze_seasonal_patterns(weekly_pattern)
-        
+
         assert "weekly_pattern" in seasonal_analysis
         assert "trend_direction" in seasonal_analysis
         assert seasonal_analysis["trend_direction"] == "decreasing"  # 감소 트렌드
@@ -593,12 +648,15 @@ class TestAutoScalingHelpers:
     @pytest.mark.asyncio
     async def test_get_autoscaling_optimizer_helper(self):
         """get_autoscaling_optimizer 헬퍼 함수 테스트"""
-        with patch.dict(os.environ, {
-            "GOOGLE_CLOUD_PROJECT": "helper-test-project",
-            "K_SERVICE": "helper-test-service"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "GOOGLE_CLOUD_PROJECT": "helper-test-project",
+                "K_SERVICE": "helper-test-service",
+            },
+        ):
             optimizer = get_autoscaling_optimizer()
-            
+
             assert optimizer is not None
             assert optimizer.project_id == "helper-test-project"
             assert optimizer.service_name == "helper-test-service"
@@ -610,33 +668,39 @@ class TestAutoScalingHelpers:
             "max_instances": 20,
             "target_concurrency": 100,
         }
-        
-        with patch('rfs.cloud_run.autoscaling.get_autoscaling_optimizer') as mock_get_optimizer:
+
+        with patch(
+            "rfs.cloud_run.autoscaling.get_autoscaling_optimizer"
+        ) as mock_get_optimizer:
             mock_optimizer = Mock()
             mock_optimizer.configure = Mock()
             mock_get_optimizer.return_value = mock_optimizer
-            
+
             optimize_scaling(**scaling_config)
-            
+
             mock_optimizer.configure.assert_called_once_with(**scaling_config)
             # optimize_scaling 함수는 configure만 호출하므로 get_recommendations 검증 제거
 
     def test_get_scaling_stats_helper(self):
         """get_scaling_stats 헬퍼 함수 테스트"""
-        with patch('rfs.cloud_run.autoscaling.get_autoscaling_optimizer') as mock_get_optimizer:
+        with patch(
+            "rfs.cloud_run.autoscaling.get_autoscaling_optimizer"
+        ) as mock_get_optimizer:
             mock_optimizer = Mock()
-            mock_optimizer.analyze_metrics = Mock(return_value={
-                "should_scale_up": False,
-                "should_scale_down": False,
-                "current_instances": 2,
-                "recommended_instances": 2,
-                "cpu_utilization": 0.45,
-                "memory_utilization": 0.50,
-            })
+            mock_optimizer.analyze_metrics = Mock(
+                return_value={
+                    "should_scale_up": False,
+                    "should_scale_down": False,
+                    "current_instances": 2,
+                    "recommended_instances": 2,
+                    "cpu_utilization": 0.45,
+                    "memory_utilization": 0.50,
+                }
+            )
             mock_get_optimizer.return_value = mock_optimizer
-            
+
             stats = get_scaling_stats()
-            
+
             assert stats is not None
             assert stats["current_instances"] == 2
             assert stats["recommended_instances"] == 2
@@ -657,14 +721,14 @@ class TestGoogleCloudRunIntegration:
             service_name="integration-test-service",
             region="us-central1",
         )
-        
-        with patch('rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE', True):
+
+        with patch("rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE", True):
             optimizer.client = mock_cloud_run_client
             optimizer.monitoring_client = mock_gcp_monitoring_client
-            
+
             # 최대 인스턴스 수 업데이트
             result = await optimizer._update_max_instances(50)
-            
+
             assert result.is_success()
             # _update_max_instances는 로깅만 하고 실제 update_service는 호출하지 않음 (line 931)
 
@@ -677,12 +741,12 @@ class TestGoogleCloudRunIntegration:
             project_id="integration-test-project",
             service_name="integration-test-service",
         )
-        
-        with patch('rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE', True):
+
+        with patch("rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE", True):
             optimizer.monitoring_client = mock_gcp_monitoring_client
-            
+
             metrics = await optimizer._collect_current_metrics()
-            
+
             assert metrics is not None
             assert "cpu_utilization" in metrics
             assert "memory_utilization" in metrics
@@ -699,27 +763,29 @@ class TestGoogleCloudRunIntegration:
             service_name="e2e-test-service",
             region="us-central1",
         )
-        
+
         # 높은 CPU 사용률 상황 모킹
         mock_high_cpu_metrics = [
             Mock(
                 resource=Mock(labels={"service_name": "e2e-test-service"}),
-                points=[Mock(value=Mock(double_value=0.85), interval=Mock(end_time=Mock()))]
+                points=[
+                    Mock(value=Mock(double_value=0.85), interval=Mock(end_time=Mock()))
+                ],
             )
         ]
         mock_gcp_monitoring_client.list_time_series.return_value = mock_high_cpu_metrics
-        
-        with patch('rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE', True):
+
+        with patch("rfs.cloud_run.autoscaling.GOOGLE_CLOUD_AVAILABLE", True):
             optimizer.client = mock_cloud_run_client
             optimizer.monitoring_client = mock_gcp_monitoring_client
-            
+
             # 1. 메트릭 수집 (실제 구현은 랜덤값 반환)
             current_metrics = await optimizer._collect_current_metrics()
             assert current_metrics is not None
             assert "cpu_utilization" in current_metrics
             # 실제 메트릭은 랜덤이므로 값 범위만 확인
             assert 0.2 <= current_metrics["cpu_utilization"] <= 0.9
-            
+
             # 2. 높은 CPU 사용률로 강제 설정하여 스케일링 분석
             high_cpu_metrics = {
                 "cpu_utilization": 0.85,  # scale_up_threshold (0.8) 이상
@@ -731,10 +797,12 @@ class TestGoogleCloudRunIntegration:
             }
             analysis = optimizer.analyze_metrics(high_cpu_metrics)
             assert analysis.should_scale_up is True
-            
+
             # 3. 스케일링 권장사항 적용
             if analysis.should_scale_up:
-                result = await optimizer._update_max_instances(analysis.recommended_instances)
+                result = await optimizer._update_max_instances(
+                    analysis.recommended_instances
+                )
                 assert result.is_success()
 
     def test_cloud_run_environment_detection(self):
@@ -746,11 +814,11 @@ class TestGoogleCloudRunIntegration:
             "GOOGLE_CLOUD_PROJECT": "test-project-12345",
             "PORT": "8080",
         }
-        
+
         with patch.dict(os.environ, cloud_run_env):
             # AutoScalingOptimizer는 project_id와 service_name이 필수 매개변수
             optimizer = AutoScalingOptimizer("test-project-12345", "test-service")
-            
+
             # 직접 전달된 설정값 확인
             assert optimizer.project_id == "test-project-12345"
             assert optimizer.service_name == "test-service"
@@ -764,10 +832,10 @@ class TestGoogleCloudRunIntegration:
             "autoscaling.knative.dev/target": "80",
             "run.googleapis.com/cpu-throttling": "false",
         }
-        
+
         optimizer = AutoScalingOptimizer("test-project", "test-service")
         parsed_config = optimizer._parse_scaling_annotations(mock_annotations)
-        
+
         assert parsed_config["min_instances"] == 2
         assert parsed_config["max_instances"] == 100
         assert parsed_config["target_concurrency"] == 80
@@ -780,7 +848,7 @@ class TestGoogleCloudRunIntegration:
             project_id="cost-test-project",
             service_name="cost-test-service",
         )
-        
+
         # 비효율적인 리소스 사용 시뮬레이션
         inefficient_metrics = {
             "cpu_utilization": 0.15,  # 매우 낮은 CPU 사용률
@@ -790,11 +858,13 @@ class TestGoogleCloudRunIntegration:
             "avg_response_time": 80,  # 빠른 응답 시간
             "cost_per_hour": 15.0,  # 시간당 비용
         }
-        
-        cost_recommendations = await optimizer.generate_cost_optimization_recommendations(
-            inefficient_metrics
+
+        cost_recommendations = (
+            await optimizer.generate_cost_optimization_recommendations(
+                inefficient_metrics
+            )
         )
-        
+
         assert len(cost_recommendations) > 0
         assert any("reduce instances" in rec.lower() for rec in cost_recommendations)
         assert any("cost saving" in rec.lower() for rec in cost_recommendations)
@@ -813,7 +883,7 @@ class TestCloudRunScalingScenarios:
         )
         optimizer.config.max_instances = 20  # 스파이크 대비 높은 최대값
         optimizer.config.scale_up_threshold = 0.7
-        
+
         # 트래픽 스파이크 시뮬레이션
         spike_progression = [
             {"cpu": 0.4, "requests": 1000, "instances": 2},  # 정상 상태
@@ -822,7 +892,7 @@ class TestCloudRunScalingScenarios:
             {"cpu": 0.7, "requests": 3000, "instances": 8},  # 스케일 업 후
             {"cpu": 0.2, "requests": 1500, "instances": 8},  # 트래픽 감소
         ]
-        
+
         scaling_decisions = []
         for stage in spike_progression:
             metrics = {
@@ -831,15 +901,17 @@ class TestCloudRunScalingScenarios:
                 "instance_count": stage["instances"],
                 "timestamp": datetime.now(),
             }
-            
+
             analysis = optimizer.analyze_metrics(metrics)
-            scaling_decisions.append({
-                "stage": stage,
-                "should_scale_up": analysis.should_scale_up,
-                "should_scale_down": analysis.should_scale_down,
-                "recommended_instances": analysis.recommended_instances,
-            })
-        
+            scaling_decisions.append(
+                {
+                    "stage": stage,
+                    "should_scale_up": analysis.should_scale_up,
+                    "should_scale_down": analysis.should_scale_down,
+                    "recommended_instances": analysis.recommended_instances,
+                }
+            )
+
         # 첫 번째 스파이크에서 스케일 업 결정
         assert scaling_decisions[1]["should_scale_up"] is True
         # 트래픽 감소 후 스케일 다운 고려
@@ -852,26 +924,28 @@ class TestCloudRunScalingScenarios:
             project_id="gradual-test-project",
             service_name="gradual-test-service",
         )
-        
+
         # 8시간에 걸친 점진적 부하 증가
         gradual_load = []
         for hour in range(8):
             cpu_util = 0.3 + (hour * 0.08)  # 30%에서 86%까지 증가
             request_count = 500 + (hour * 300)  # 500에서 2600까지 증가
-            
-            gradual_load.append({
-                "cpu_utilization": cpu_util,
-                "request_count": request_count,
-                "instance_count": 1 + (hour // 2),  # 2시간마다 인스턴스 증가
-                "timestamp": datetime.now() - timedelta(hours=8-hour),
-            })
-        
+
+            gradual_load.append(
+                {
+                    "cpu_utilization": cpu_util,
+                    "request_count": request_count,
+                    "instance_count": 1 + (hour // 2),  # 2시간마다 인스턴스 증가
+                    "timestamp": datetime.now() - timedelta(hours=8 - hour),
+                }
+            )
+
         # 각 시점에서의 스케일링 결정 분석
         scaling_timeline = []
         for metrics in gradual_load:
             analysis = optimizer.analyze_metrics(metrics)
             scaling_timeline.append(analysis)
-        
+
         # 부하 증가에 따른 적절한 스케일링 권장 확인
         assert scaling_timeline[0].recommended_instances <= 2  # 초기 낮은 부하
         assert scaling_timeline[-1].recommended_instances >= 4  # 최종 높은 부하
@@ -884,7 +958,7 @@ class TestCloudRunScalingScenarios:
             project_id="pattern-test-project",
             service_name="pattern-test-service",
         )
-        
+
         # 충분한 데이터로 주간 트래픽 패턴 시뮬레이션 (3주간)
         weekly_metrics = []
         for week in range(3):  # 3주간
@@ -901,28 +975,43 @@ class TestCloudRunScalingScenarios:
                         else:  # 주말
                             cpu_util = 0.2  # 낮은 사용률
                             request_count = 400
-                        
-                        weekly_metrics.append({
-                            "cpu_utilization": cpu_util,
-                            "request_count": request_count,
-                            "timestamp": datetime.now() - timedelta(weeks=3-week, days=7-day, hours=24-hour, minutes=minute_group*10),
-                            "day_of_week": day,
-                            "hour_of_day": hour,
-                        })
-        
+
+                        weekly_metrics.append(
+                            {
+                                "cpu_utilization": cpu_util,
+                                "request_count": request_count,
+                                "timestamp": datetime.now()
+                                - timedelta(
+                                    weeks=3 - week,
+                                    days=7 - day,
+                                    hours=24 - hour,
+                                    minutes=minute_group * 10,
+                                ),
+                                "day_of_week": day,
+                                "hour_of_day": hour,
+                            }
+                        )
+
         # 패턴 분석 및 예측적 스케일링 설정
         pattern = analyzer.analyze_pattern(weekly_metrics)
         # 현재 구현에서는 STEADY나 PERIODIC가 가능하므로 둘 다 허용
         assert pattern in [TrafficPattern.STEADY, TrafficPattern.PERIODIC]
-        
+
         # 주말과 평일의 권장 인스턴스 수 비교
-        weekday_metrics = [m for m in weekly_metrics if m["day_of_week"] < 5 and 9 <= m["hour_of_day"] <= 18]
+        weekday_metrics = [
+            m
+            for m in weekly_metrics
+            if m["day_of_week"] < 5 and 9 <= m["hour_of_day"] <= 18
+        ]
         weekend_metrics = [m for m in weekly_metrics if m["day_of_week"] >= 5]
-        
+
         weekday_analysis = optimizer.analyze_metrics(weekday_metrics[0])
         weekend_analysis = optimizer.analyze_metrics(weekend_metrics[0])
-        
-        assert weekday_analysis.recommended_instances > weekend_analysis.recommended_instances
+
+        assert (
+            weekday_analysis.recommended_instances
+            > weekend_analysis.recommended_instances
+        )
 
     def test_cold_start_optimization_scenario(self):
         """콜드 스타트 최적화 시나리오 테스트"""
@@ -932,7 +1021,7 @@ class TestCloudRunScalingScenarios:
             service_name="coldstart-test-service",
         )
         optimizer.config.min_instances = 1  # 최소 1개 인스턴스 유지
-        
+
         # 매우 낮은 트래픽 상황
         low_traffic_metrics = {
             "cpu_utilization": 0.05,
@@ -941,9 +1030,9 @@ class TestCloudRunScalingScenarios:
             "instance_count": 3,
             "timestamp": datetime.now(),
         }
-        
+
         analysis = optimizer.analyze_metrics(low_traffic_metrics)
-        
+
         # 최소 인스턴스 설정으로 인해 0으로 스케일 다운되지 않음
         assert analysis.recommended_instances >= optimizer.config.min_instances
 
@@ -960,23 +1049,35 @@ class TestCloudRunScalingScenarios:
             )
             for region in regions
         }
-        
+
         # 각 리전별 다른 트래픽 패턴
         regional_metrics = {
-            "us-central1": {"cpu_utilization": 0.85, "memory_utilization": 0.7, "request_count": 3000},  # 높은 부하
-            "europe-west1": {"cpu_utilization": 0.4, "memory_utilization": 0.5, "request_count": 1000},  # 중간 부하
-            "asia-northeast1": {"cpu_utilization": 0.2, "memory_utilization": 0.1, "request_count": 400},  # 낮은 부하
+            "us-central1": {
+                "cpu_utilization": 0.85,
+                "memory_utilization": 0.7,
+                "request_count": 3000,
+            },  # 높은 부하
+            "europe-west1": {
+                "cpu_utilization": 0.4,
+                "memory_utilization": 0.5,
+                "request_count": 1000,
+            },  # 중간 부하
+            "asia-northeast1": {
+                "cpu_utilization": 0.2,
+                "memory_utilization": 0.1,
+                "request_count": 400,
+            },  # 낮은 부하
         }
-        
+
         # 각 리전별 스케일링 분석
         regional_analysis = {}
         for region, metrics in regional_metrics.items():
             metrics["timestamp"] = datetime.now()
             metrics["instance_count"] = 2
-            
+
             analysis = optimizers[region].analyze_metrics(metrics)
             regional_analysis[region] = analysis
-        
+
         # 리전별 다른 스케일링 권장사항 확인
         assert regional_analysis["us-central1"].should_scale_up is True
         assert regional_analysis["europe-west1"].should_scale_up is False

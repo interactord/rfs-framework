@@ -454,9 +454,11 @@ async def create_message_broker(
         match config.broker_type:
             case BrokerType.REDIS:
                 from .redis_broker import RedisMessageBroker
+
                 broker = RedisMessageBroker(config)
             case BrokerType.MEMORY:
                 from .memory_broker import MemoryMessageBroker
+
                 broker = MemoryMessageBroker(config)
             case BrokerType.RABBITMQ:
                 # RabbitMQ 구현 (향후 추가)

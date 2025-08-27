@@ -377,9 +377,7 @@ class SessionManager(metaclass=SingletonMeta):
             result = await session.close()
             if result.is_success():
                 self._sessions = {
-                    k: v
-                    for k, v in self._sessions.items()
-                    if k != session.session_id
+                    k: v for k, v in self._sessions.items() if k != session.session_id
                 }
                 logger.info(f"세션 종료: {session.session_id}")
 

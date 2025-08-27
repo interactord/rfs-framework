@@ -110,7 +110,11 @@ if PYDANTIC_AVAILABLE:
                         return Environment.PRODUCTION
                     case _:
                         return Environment.DEVELOPMENT
-                        return v if type(v).__name__ == "Environment" else Environment.DEVELOPMENT
+                        return (
+                            v
+                            if type(v).__name__ == "Environment"
+                            else Environment.DEVELOPMENT
+                        )
 
     @field_validator("cloud_run_cpu_limit")
     @classmethod

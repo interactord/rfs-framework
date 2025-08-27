@@ -196,10 +196,10 @@ class MetricsCollector:
                 "uptime_seconds": 0.0,
                 "custom_metrics": {},
             }
-            
+
             # 기본값과 수집된 메트릭 병합
             merged_metrics = {**default_values, **metrics_data}
-            
+
             # ProductionMetrics 생성
             metrics = ProductionMetrics(
                 **{
@@ -667,7 +667,7 @@ class ProductionMonitor:
     async def collect_metrics(self) -> Result[ProductionMetrics, str]:
         """메트릭 수집 - MetricsCollector에 위임"""
         return await self.metrics_collector.collect_metrics()
-    
+
     async def start_monitoring(self) -> Result[bool, str]:
         """모니터링 시작"""
         if self.is_running:

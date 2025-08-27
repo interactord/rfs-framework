@@ -13,7 +13,17 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Union, TypeVar, Generic
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from ..core.result import Failure, Result, ResultAsync, Success
 
@@ -63,7 +73,7 @@ class DataSource(ABC):
     @abstractmethod
     async def connect(self) -> Result[bool, str]:
         """데이터 소스 연결
-        
+
         Returns:
             Result[bool, str]: 연결 성공 여부 또는 오류
         """
@@ -72,7 +82,7 @@ class DataSource(ABC):
     @abstractmethod
     async def disconnect(self) -> Result[bool, str]:
         """데이터 소스 연결 해제
-        
+
         Returns:
             Result[bool, str]: 연결 해제 성공 여부 또는 오류
         """
@@ -83,10 +93,10 @@ class DataSource(ABC):
         self, query: DataQuery
     ) -> Result[List[Dict[str, Any]], str]:
         """쿼리 실행
-        
+
         Args:
             query: 실행할 쿼리
-            
+
         Returns:
             Result[List[Dict[str, Any]], str]: 쿼리 결과 또는 오류
         """
@@ -95,7 +105,7 @@ class DataSource(ABC):
     @abstractmethod
     async def get_schema(self) -> Result[DataSchema, str]:
         """스키마 조회
-        
+
         Returns:
             Result[DataSchema, str]: 데이터 스키마 또는 오류
         """
@@ -114,7 +124,7 @@ class DataSource(ABC):
 
     def _get_test_query(self) -> str:
         """연결 테스트용 쿼리
-        
+
         Returns:
             str: 테스트 쿼리 문자열
         """
@@ -141,18 +151,21 @@ class DatabaseDataSource(DataSource):
             match self.driver:
                 case "postgresql":
                     import asyncpg
+
                     self._connection = await asyncpg.connect(self.connection_string)
                 case "mysql":
                     import aiomysql
+
                     self._connection = await aiomysql.connect(
-                    host=self.config.get("host"),
-                    port=self.config.get("port", 3306),
-                    user=self.config.get("user"),
-                    password=self.config.get("password"),
-                    db=self.config.get("database"),
-                )
+                        host=self.config.get("host"),
+                        port=self.config.get("port", 3306),
+                        user=self.config.get("user"),
+                        password=self.config.get("password"),
+                        db=self.config.get("database"),
+                    )
                 case "sqlite":
                     import aiosqlite
+
                     self._connection = await aiosqlite.connect(
                         self.config.get("database", ":memory:")
                     )
@@ -481,7 +494,7 @@ class MetricsDataSource(DataSource):
     def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
         super().__init__(source_id, name, config)
         self.metrics_config: Dict[str, Any] = config.get("metrics", {})
-        self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}  
+        self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}
         self.collector: Optional[Any] = None
 
     async def connect(self) -> Result[bool, str]:

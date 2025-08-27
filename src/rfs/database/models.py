@@ -137,7 +137,7 @@ class SQLAlchemyModel(BaseModel):
     """SQLAlchemy 모델 베이스"""
 
     __abstract__ = True
-    
+
     # SQLAlchemy Base를 컴포지션으로 사용
     if SQLALCHEMY_AVAILABLE:
         _sa_base = SQLAlchemy_Base
@@ -268,7 +268,7 @@ class TortoiseModel(BaseModel):
 
     class Meta:
         abstract = True
-    
+
     # Tortoise Base를 컴포지션으로 사용
     if TORTOISE_AVAILABLE:
         _tortoise_base = TortoiseBaseModel

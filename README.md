@@ -123,6 +123,28 @@ Infrastructure Layer
 
 ## 🛠️ Development
 
+### RFS Framework 규칙 준수 🔴
+
+**필수**: 개발 전 [규칙 문서](./rules/README.md) 숙지 필요
+
+```bash
+# 규칙 검증 (필수)
+python scripts/validate_rfs_rules.py
+
+# 한글 주석 및 Result 패턴 자동 검증
+python scripts/validate_rfs_rules.py --strict
+
+# pre-commit 훅 설정 (권장)
+pip install pre-commit
+pre-commit install
+```
+
+**핵심 준수 사항**:
+- ✅ 모든 주석은 한글로 작성
+- ✅ 예외 대신 Result 패턴 사용
+- ✅ RFS Framework 기능 우선 사용
+- ✅ 불변성 유지 (frozen dataclass 등)
+
 ### Commands
 
 ```bash
@@ -205,12 +227,16 @@ git clone https://github.com/interactord/rfs-framework
 cd rfs-framework
 pip install -e ".[dev]"
 
+# 규칙 검증 및 준수 (필수)
+python scripts/validate_rfs_rules.py
+
 # 테스트 실행
 pytest
 
-# PR 제출
+# PR 제출 전 최종 검증
+python scripts/validate_rfs_rules.py --strict
 git checkout -b feature/your-feature
-git commit -m "feat: add feature"
+git commit -m "feat: 새로운 기능 추가"  # 한글 커밋 메시지
 git push origin feature/your-feature
 ```
 

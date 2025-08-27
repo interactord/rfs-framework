@@ -282,14 +282,14 @@ class ProfileManager:
                 "log_level": config_overrides.get("log_level"),
                 "max_concurrency": config_overrides.get("max_concurrency"),
                 "cold_start_optimization": config_overrides.get(
-                "enable_cold_start_optimization"
+                    "enable_cold_start_optimization"
                 ),
                 "performance_monitoring": config_overrides.get(
-                "enable_performance_monitoring"
+                    "enable_performance_monitoring"
                 ),
-                },
-                "validation_status": self.validate_profile(environment),
-                }
+            },
+            "validation_status": self.validate_profile(environment),
+        }
 
 
 profile_manager = ProfileManager()

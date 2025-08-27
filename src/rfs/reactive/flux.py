@@ -66,9 +66,11 @@ class Flux(Generic[T]):
     @staticmethod
     def empty() -> "Flux[T]":
         """빈 Flux 생성"""
+
         async def generator():
             return
             yield  # Make it a generator
+
         return Flux(generator)
 
     @staticmethod
@@ -192,6 +194,7 @@ class Flux(Generic[T]):
     @staticmethod
     def zip(*fluxes: "Flux") -> "Flux[tuple]":
         """여러 Flux를 zip으로 결합"""
+
         async def generator():
             iterators = [flux.source() for flux in fluxes]
             try:
@@ -202,27 +205,29 @@ class Flux(Generic[T]):
                     yield tuple(items)
             except StopAsyncIteration:
                 pass
+
         return Flux(generator)
 
     @staticmethod
     def merge(*fluxes: "Flux") -> "Flux":
         """여러 Flux를 병합"""
+
         async def generator():
             tasks = []
             queues = []
-            
+
             for flux in fluxes:
                 queue = asyncio.Queue()
                 queues.append(queue)
-                
+
                 async def consume(flux, queue):
                     async for item in flux.source():
                         await queue.put(item)
                     await queue.put(None)  # End marker
-                
+
                 task = asyncio.create_task(consume(flux, queue))
                 tasks.append(task)
-            
+
             active_queues = len(queues)
             while active_queues > 0:
                 for queue in queues:
@@ -234,16 +239,18 @@ class Flux(Generic[T]):
                             yield item
                     except asyncio.QueueEmpty:
                         await asyncio.sleep(0.01)
-                        
+
         return Flux(generator)
 
     @staticmethod
     def concat(*fluxes: "Flux") -> "Flux":
         """여러 Flux를 순차적으로 연결"""
+
         async def generator():
             for flux in fluxes:
                 async for item in flux.source():
                     yield item
+
         return Flux(generator)
 
     @staticmethod

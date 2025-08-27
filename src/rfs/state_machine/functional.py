@@ -11,11 +11,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
-# Import from HOF library
-from ..hof.core import compose, partial
+from rfs.core.result import Failure, Result, Success
+
 from ..hof.collections import fold_left
 
-from rfs.core.result import Failure, Result, Success
+# Import from HOF library
+from ..hof.core import compose, partial
 
 
 class StateType(Enum):

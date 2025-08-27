@@ -266,7 +266,7 @@ class TransactionRollback(TransactionError):
 @dataclass
 class TransactionConfig:
     """트랜잭션 설정"""
-    
+
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
     timeout_seconds: int = 30
     retry_count: int = 3
@@ -279,7 +279,7 @@ class TransactionConfig:
 @dataclass
 class RedisTransactionConfig(TransactionConfig):
     """Redis 트랜잭션 설정"""
-    
+
     ttl_seconds: int = 3600
     prefix: str = "tx"
 
@@ -287,7 +287,7 @@ class RedisTransactionConfig(TransactionConfig):
 @dataclass
 class DistributedTransactionConfig(TransactionConfig):
     """분산 트랜잭션 설정"""
-    
+
     participant_timeout: int = 60
     coordinator_timeout: int = 120
     max_participants: int = 10

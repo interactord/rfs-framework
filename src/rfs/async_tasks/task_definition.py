@@ -211,8 +211,14 @@ class TaskDefinition:
             ) + timedelta(hours=1)
             return next_hour
 
-        # 매일 자정 (0 0 * * *)
-        if parts[0] == "0" and parts[1] == "0":
+        # 매일 자정 (0 0 * * *) - 모든 필드가 정확히 맞는 경우만
+        if (
+            parts[0] == "0"
+            and parts[1] == "0"
+            and parts[2] == "*"
+            and parts[3] == "*"
+            and parts[4] == "*"
+        ):
             next_day = from_time.replace(
                 hour=0, minute=0, second=0, microsecond=0
             ) + timedelta(days=1)

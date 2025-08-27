@@ -4,22 +4,22 @@ Railway Oriented Programming을 위한 Result 타입
 Success/Failure를 명시적으로 처리하는 함수형 에러 처리 패턴
 """
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from functools import singledispatch
 from typing import (
     Any,
+    Awaitable,
     Callable,
+    Coroutine,
     Generic,
     Iterator,
+    List,
     Optional,
     TypeVar,
-    List,
-    Awaitable,
-    Coroutine,
 )
-from collections.abc import Sequence
-import asyncio
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
@@ -85,11 +85,11 @@ class Success(Result[T, E]):
 
     def unwrap_or(self, default: T) -> T:
         return self.value
-    
+
     def get(self) -> T:
         """값 추출 (unwrap의 별칭)"""
         return self.value
-    
+
     def get_error(self) -> None:
         """에러 값 추출 - Success는 None 반환"""
         return None
@@ -158,14 +158,18 @@ class Failure(Result[T, E]):
     def unwrap_error(self) -> E:
         """에러 값 추출"""
         return self.error
-    
+
+    def unwrap_err(self) -> E:
+        """에러 값 추출 (unwrap_error의 별칭)"""
+        return self.error
+
     def get_error(self) -> E:
         """에러 값 추출 (unwrap_error의 별칭)"""
         return self.error
 
     def unwrap_or(self, default: T) -> T:
         return default
-    
+
     def get(self) -> None:
         """값 추출 - Failure는 None 반환"""
         return None

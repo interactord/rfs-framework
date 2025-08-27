@@ -4,46 +4,6 @@ RFS API Gateway (RFS v4.1)
 API 게이트웨이 - REST/GraphQL 지원
 """
 
-from .graphql import (  # GraphQL 게이트웨이; GraphQL 타입; GraphQL 실행
-    GraphQLField,
-    GraphQLGateway,
-    GraphQLMutation,
-    GraphQLQuery,
-    GraphQLResolver,
-    GraphQLSchema,
-    GraphQLType,
-    create_graphql_gateway,
-    execute_graphql,
-)
-from .middleware import (  # 미들웨어; 미들웨어 체인
-    AuthMiddleware,
-    CorsMiddleware,
-    GatewayMiddleware,
-    LoggingMiddleware,
-    MiddlewareChain,
-    RateLimitMiddleware,
-    create_middleware_chain,
-)
-from .monitoring import (  # 게이트웨이 모니터링; 모니터링 미들웨어; 메트릭스 수집
-    GatewayMonitor,
-    MonitoringMiddleware,
-    RequestMetrics,
-    ResponseMetrics,
-    collect_request_metrics,
-    collect_response_metrics,
-)
-from .proxy import (  # 프록시 게이트웨이; 로드 밸런싱; 프록시 설정
-    BalancingStrategy,
-    HealthBasedBalancer,
-    LoadBalancer,
-    ProxyConfig,
-    ProxyGateway,
-    ProxyRule,
-    RoundRobinBalancer,
-    UpstreamServer,
-    WeightedBalancer,
-    create_proxy_gateway,
-)
 from .rest import (  # REST API 게이트웨이; REST 핸들러; REST 요청/응답; REST 라우팅
     JsonHandler,
     RestGateway,
@@ -56,15 +16,185 @@ from .rest import (  # REST API 게이트웨이; REST 핸들러; REST 요청/응
     RouterConfig,
     create_rest_gateway,
 )
-from .security import (  # 보안 미들웨어; 보안 정책; 보안 헬퍼
-    ApiKeySecurityMiddleware,
-    CorsPolicy,
-    JwtSecurityMiddleware,
-    RateLimitPolicy,
-    SecurityMiddleware,
-    SecurityPolicy,
-    create_security_middleware,
-)
+
+
+# 향후 구현 예정 모듈들 - 임시 클래스 정의
+# GraphQL Gateway (계획됨)
+class GraphQLGateway:
+    pass
+
+
+class GraphQLSchema:
+    pass
+
+
+class GraphQLResolver:
+    pass
+
+
+class GraphQLType:
+    pass
+
+
+class GraphQLField:
+    pass
+
+
+class GraphQLQuery:
+    pass
+
+
+class GraphQLMutation:
+    pass
+
+
+def create_graphql_gateway(*args, **kwargs):
+    pass
+
+
+def execute_graphql(*args, **kwargs):
+    pass
+
+
+# Middleware (계획됨)
+class GatewayMiddleware:
+    pass
+
+
+class AuthMiddleware:
+    pass
+
+
+class RateLimitMiddleware:
+    pass
+
+
+class CorsMiddleware:
+    pass
+
+
+class LoggingMiddleware:
+    pass
+
+
+class MiddlewareChain:
+    pass
+
+
+def create_middleware_chain(*args, **kwargs):
+    pass
+
+
+# Monitoring (계획됨)
+class GatewayMonitor:
+    pass
+
+
+class RequestMetrics:
+    pass
+
+
+class ResponseMetrics:
+    pass
+
+
+class MonitoringMiddleware:
+    pass
+
+
+def collect_request_metrics(*args, **kwargs):
+    pass
+
+
+def collect_response_metrics(*args, **kwargs):
+    pass
+
+
+# Proxy Gateway (계획됨)
+class ProxyGateway:
+    pass
+
+
+class ProxyRule:
+    pass
+
+
+class LoadBalancer:
+    pass
+
+
+class BalancingStrategy:
+    pass
+
+
+class RoundRobinBalancer:
+    pass
+
+
+class WeightedBalancer:
+    pass
+
+
+class HealthBasedBalancer:
+    pass
+
+
+class ProxyConfig:
+    pass
+
+
+class UpstreamServer:
+    pass
+
+
+def create_proxy_gateway(*args, **kwargs):
+    pass
+
+
+# Security (계획됨)
+class SecurityMiddleware:
+    pass
+
+
+class JwtSecurityMiddleware:
+    pass
+
+
+class ApiKeySecurityMiddleware:
+    pass
+
+
+class SecurityPolicy:
+    pass
+
+
+class RateLimitPolicy:
+    pass
+
+
+class CorsPolicy:
+    pass
+
+
+def create_security_middleware(*args, **kwargs):
+    pass
+
+
+def create_gateway_app(title: str = "RFS Gateway", version: str = "1.0.0", **kwargs):
+    """
+    간단한 게이트웨이 앱 생성 함수
+    FastAPI가 설치된 경우 FastAPI 앱을 반환하고, 그렇지 않으면 None 반환
+    """
+    try:
+        from fastapi import FastAPI
+
+        app = FastAPI(title=title, version=version, **kwargs)
+        return app
+    except ImportError:
+        # FastAPI가 설치되지 않은 경우 대안 제공
+        print(f"FastAPI not installed. Install with: pip install fastapi[all]")
+        return None
+
 
 __all__ = [
     # REST Gateway
@@ -122,4 +252,6 @@ __all__ = [
     "MonitoringMiddleware",
     "collect_request_metrics",
     "collect_response_metrics",
+    # Helper Functions
+    "create_gateway_app",
 ]

@@ -282,28 +282,30 @@ class TrafficPatternAnalyzer:
                 request_count=metrics.get("request_count", 0),
                 active_instances=metrics.get("instance_count", 1),
                 avg_response_time=metrics.get("response_time", 200),
-                error_rate=metrics.get("error_rate", 0.0)
+                error_rate=metrics.get("error_rate", 0.0),
             )
             self.add_snapshot(snapshot)
-        
+
         return self.detect_pattern()
 
-    def calculate_pattern_confidence(self, metrics_list: List[Dict[str, Any]], 
-                                   expected_pattern: TrafficPattern) -> float:
+    def calculate_pattern_confidence(
+        self, metrics_list: List[Dict[str, Any]], expected_pattern: TrafficPattern
+    ) -> float:
         """패턴 신뢰도 계산 (테스트 호환성)"""
         detected_pattern = self.analyze_pattern(metrics_list)
-        
+
         # Simple confidence based on pattern match
         if detected_pattern == expected_pattern:
             return 0.85 + len(metrics_list) * 0.001  # Higher confidence with more data
         else:
             return 0.3  # Low confidence for mismatch
 
-    def generate_forecast(self, historical_data: List[Dict[str, Any]], 
-                         hours_ahead: int = 24) -> List[Dict[str, Any]]:
+    def generate_forecast(
+        self, historical_data: List[Dict[str, Any]], hours_ahead: int = 24
+    ) -> List[Dict[str, Any]]:
         """트래픽 예측 생성 (테스트 호환성)"""
         forecast = []
-        
+
         if len(historical_data) < 24:
             # Not enough data, return simple flat forecast
             base_requests = 1000
@@ -311,48 +313,57 @@ class TrafficPatternAnalyzer:
         else:
             # Use recent averages
             recent_data = historical_data[-24:]
-            base_requests = sum(m.get("request_count", 0) for m in recent_data) / len(recent_data)
-            base_cpu = sum(m.get("cpu_utilization", 0.0) for m in recent_data) / len(recent_data)
-        
+            base_requests = sum(m.get("request_count", 0) for m in recent_data) / len(
+                recent_data
+            )
+            base_cpu = sum(m.get("cpu_utilization", 0.0) for m in recent_data) / len(
+                recent_data
+            )
+
         for hour in range(hours_ahead):
             # Simple cyclical pattern
             time_factor = 1.0 + 0.3 * math.sin(hour * math.pi / 12)  # 24-hour cycle
-            
-            forecast.append({
-                "hour": hour,
-                "predicted_request_count": int(base_requests * time_factor),
-                "predicted_cpu_utilization": min(0.9, base_cpu * time_factor),
-                "confidence": 0.7 if len(historical_data) > 48 else 0.5
-            })
-        
+
+            forecast.append(
+                {
+                    "hour": hour,
+                    "predicted_request_count": int(base_requests * time_factor),
+                    "predicted_cpu_utilization": min(0.9, base_cpu * time_factor),
+                    "confidence": 0.7 if len(historical_data) > 48 else 0.5,
+                }
+            )
+
         return forecast
 
-    def analyze_seasonal_patterns(self, weekly_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def analyze_seasonal_patterns(
+        self, weekly_data: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """계절적 패턴 분석 (테스트 호환성)"""
         if len(weekly_data) < 14:  # Need at least 2 weeks
-            return {
-                "weekly_pattern": "insufficient_data",
-                "trend_direction": "unknown"
-            }
-        
+            return {"weekly_pattern": "insufficient_data", "trend_direction": "unknown"}
+
         # Calculate trend
-        first_half = weekly_data[:len(weekly_data)//2]
-        second_half = weekly_data[len(weekly_data)//2:]
-        
+        first_half = weekly_data[: len(weekly_data) // 2]
+        second_half = weekly_data[len(weekly_data) // 2 :]
+
         first_avg = sum(m.get("request_count", 0) for m in first_half) / len(first_half)
-        second_avg = sum(m.get("request_count", 0) for m in second_half) / len(second_half)
-        
+        second_avg = sum(m.get("request_count", 0) for m in second_half) / len(
+            second_half
+        )
+
         if second_avg > first_avg * 1.1:
             trend = "increasing"
         elif second_avg < first_avg * 0.9:
             trend = "decreasing"
         else:
             trend = "stable"
-        
+
         return {
             "weekly_pattern": "detected",
             "trend_direction": trend,
-            "trend_magnitude": abs(second_avg - first_avg) / first_avg if first_avg > 0 else 0
+            "trend_magnitude": (
+                abs(second_avg - first_avg) / first_avg if first_avg > 0 else 0
+            ),
         }
 
 
@@ -376,7 +387,7 @@ class AutoScalingOptimizer:
         self.last_scale_direction: Optional[ScalingDirection] = None
         self.monitoring_task: Optional[asyncio.Task] = None
         self._running = False
-        
+
         # Test compatibility properties
         self.metrics: List[Dict[str, Any]] = []
         self.current_instances = 1
@@ -492,7 +503,7 @@ class AutoScalingOptimizer:
             scale_up_score += 1
         if snapshot.avg_response_time > 1000:
             scale_up_score += 1
-        
+
         scale_down_score = 0
         if snapshot.cpu_utilization < self.config.scale_down_threshold:
             scale_down_score += 1
@@ -502,7 +513,7 @@ class AutoScalingOptimizer:
             scale_down_score += 1
         if snapshot.avg_response_time < 200:
             scale_down_score += 1
-        
+
         if scale_up_score >= 2:
             can_scale, reason = self.config.can_scale_up(current_instances)
             if can_scale:
@@ -713,18 +724,18 @@ class AutoScalingOptimizer:
 
     def configure(self, **kwargs):
         """옵티마이저 설정 업데이트 (테스트 호환성)"""
-        if 'min_instances' in kwargs:
-            self.config.min_instances = kwargs['min_instances']
-        if 'max_instances' in kwargs:
-            self.config.max_instances = kwargs['max_instances']
-        if 'target_concurrency' in kwargs:
-            self.config.target_concurrency = kwargs['target_concurrency']
-        if 'scale_up_threshold' in kwargs:
-            self.config.scale_up_threshold = kwargs['scale_up_threshold']
-        if 'scale_down_threshold' in kwargs:
-            self.config.scale_down_threshold = kwargs['scale_down_threshold']
-        if 'policy' in kwargs:
-            self.config.policy = kwargs['policy']
+        if "min_instances" in kwargs:
+            self.config.min_instances = kwargs["min_instances"]
+        if "max_instances" in kwargs:
+            self.config.max_instances = kwargs["max_instances"]
+        if "target_concurrency" in kwargs:
+            self.config.target_concurrency = kwargs["target_concurrency"]
+        if "scale_up_threshold" in kwargs:
+            self.config.scale_up_threshold = kwargs["scale_up_threshold"]
+        if "scale_down_threshold" in kwargs:
+            self.config.scale_down_threshold = kwargs["scale_down_threshold"]
+        if "policy" in kwargs:
+            self.config.policy = kwargs["policy"]
 
     def analyze_metrics(self, metrics_dict: Dict[str, Any]):
         """메트릭 분석 (테스트 호환성)"""
@@ -735,59 +746,74 @@ class AutoScalingOptimizer:
             memory_utilization=metrics_dict.get("memory_utilization", 0.0),
             request_count=metrics_dict.get("request_count", 0),
             active_instances=metrics_dict.get("instance_count", self.current_instances),
-            avg_response_time=metrics_dict.get("response_time", metrics_dict.get("avg_response_time", 200)),
+            avg_response_time=metrics_dict.get(
+                "response_time", metrics_dict.get("avg_response_time", 200)
+            ),
             error_rate=metrics_dict.get("error_rate", 0.0),
-            queue_depth=metrics_dict.get("queue_depth", 0)
+            queue_depth=metrics_dict.get("queue_depth", 0),
         )
-        
+
         # Update current_instances for test compatibility
         self.current_instances = snapshot.active_instances
-        
+
         # Create result object compatible with tests
         class AnalysisResult:
-            def __init__(self, should_scale_up=False, should_scale_down=False, 
-                        current_instances=1, recommended_instances=1):
+            def __init__(
+                self,
+                should_scale_up=False,
+                should_scale_down=False,
+                current_instances=1,
+                recommended_instances=1,
+            ):
                 self.should_scale_up = should_scale_up
                 self.should_scale_down = should_scale_down
                 self.current_instances = current_instances
                 self.recommended_instances = recommended_instances
-        
+
         # Logic for scaling decision
-        scale_up = (snapshot.cpu_utilization > self.config.scale_up_threshold or
-                   snapshot.memory_utilization > self.config.scale_up_threshold)
-        scale_down = (snapshot.cpu_utilization < self.config.scale_down_threshold and
-                     snapshot.memory_utilization < self.config.scale_down_threshold and
-                     snapshot.active_instances > self.config.min_instances)
-        
+        scale_up = (
+            snapshot.cpu_utilization > self.config.scale_up_threshold
+            or snapshot.memory_utilization > self.config.scale_up_threshold
+        )
+        scale_down = (
+            snapshot.cpu_utilization < self.config.scale_down_threshold
+            and snapshot.memory_utilization < self.config.scale_down_threshold
+            and snapshot.active_instances > self.config.min_instances
+        )
+
         recommended = snapshot.active_instances
         if scale_up:
             recommended = min(snapshot.active_instances + 1, self.config.max_instances)
         elif scale_down:
             recommended = max(snapshot.active_instances - 1, self.config.min_instances)
-            
+
         return AnalysisResult(
             should_scale_up=scale_up,
             should_scale_down=scale_down,
             current_instances=snapshot.active_instances,
-            recommended_instances=recommended
+            recommended_instances=recommended,
         )
 
     def get_recommendations(self) -> List[str]:
         """스케일링 권장사항 생성 (테스트 호환성)"""
         if not self.metrics:
             return ["No metrics available for recommendations"]
-            
+
         latest_metrics = self.metrics[-1]
         analysis = self.analyze_metrics(latest_metrics)
-        
+
         recommendations = []
         if analysis.should_scale_up:
-            recommendations.append(f"Scale up to {analysis.recommended_instances} instances")
+            recommendations.append(
+                f"Scale up to {analysis.recommended_instances} instances"
+            )
         elif analysis.should_scale_down:
-            recommendations.append(f"Scale down to {analysis.recommended_instances} instances") 
+            recommendations.append(
+                f"Scale down to {analysis.recommended_instances} instances"
+            )
         else:
             recommendations.append("Current scaling is optimal")
-            
+
         return recommendations
 
     def _analyze_cost_efficiency(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
@@ -795,71 +821,85 @@ class AutoScalingOptimizer:
         instance_count = metrics.get("instance_count", 1)
         cpu_util = metrics.get("cpu_utilization", 0.0)
         current_cost = self.config.get_cost_per_hour(instance_count)
-        
+
         # Simple cost efficiency logic
-        is_efficient = cpu_util > 0.3  # At least 30% utilization is considered efficient
+        is_efficient = (
+            cpu_util > 0.3
+        )  # At least 30% utilization is considered efficient
         potential_savings = 0.0
         recommended_instances = instance_count
-        
+
         if not is_efficient and instance_count > self.config.min_instances:
             recommended_instances = max(self.config.min_instances, instance_count - 1)
-            potential_savings = current_cost - self.config.get_cost_per_hour(recommended_instances)
-            
+            potential_savings = current_cost - self.config.get_cost_per_hour(
+                recommended_instances
+            )
+
         return {
             "is_cost_efficient": is_efficient,
             "potential_savings": potential_savings,
             "recommended_instances": recommended_instances,
-            "current_cost_per_hour": current_cost
+            "current_cost_per_hour": current_cost,
         }
 
-    def _detect_traffic_pattern(self, metrics_list: List[Dict[str, Any]]) -> TrafficPattern:
+    def _detect_traffic_pattern(
+        self, metrics_list: List[Dict[str, Any]]
+    ) -> TrafficPattern:
         """트래픽 패턴 감지 (테스트 호환성)"""
         if len(metrics_list) < 10:
             return TrafficPattern.UNKNOWN
-            
+
         # Convert dict metrics to MetricSnapshot objects
         snapshots = []
         for m in metrics_list:
-            snapshots.append(MetricSnapshot(
-                timestamp=m.get("timestamp", datetime.now()),
-                cpu_utilization=m.get("cpu_utilization", 0.0),
-                memory_utilization=m.get("memory_utilization", 0.0),
-                request_count=m.get("request_count", 0),
-                active_instances=m.get("instance_count", 1),
-                avg_response_time=m.get("response_time", 200),
-                error_rate=m.get("error_rate", 0.0)
-            ))
-        
+            snapshots.append(
+                MetricSnapshot(
+                    timestamp=m.get("timestamp", datetime.now()),
+                    cpu_utilization=m.get("cpu_utilization", 0.0),
+                    memory_utilization=m.get("memory_utilization", 0.0),
+                    request_count=m.get("request_count", 0),
+                    active_instances=m.get("instance_count", 1),
+                    avg_response_time=m.get("response_time", 200),
+                    error_rate=m.get("error_rate", 0.0),
+                )
+            )
+
         # Add to pattern analyzer and detect
         for snapshot in snapshots:
             self.pattern_analyzer.add_snapshot(snapshot)
-            
+
         return self.pattern_analyzer.detect_pattern()
 
-    async def _predict_future_load(self, hours_ahead: int = 2) -> Optional[Dict[str, Any]]:
+    async def _predict_future_load(
+        self, hours_ahead: int = 2
+    ) -> Optional[Dict[str, Any]]:
         """미래 부하 예측 (테스트 호환성)"""
         if len(self.metrics) < 24:  # Need at least 24 hours of data
             return None
-            
+
         predicted_traffic = self.pattern_analyzer.predict_next_hour_traffic()
         if predicted_traffic is None:
             return None
-            
+
         # Simple prediction logic
-        current_avg_cpu = sum(m.get("cpu_utilization", 0.0) for m in self.metrics[-24:]) / 24
+        current_avg_cpu = (
+            sum(m.get("cpu_utilization", 0.0) for m in self.metrics[-24:]) / 24
+        )
         predicted_cpu = min(0.9, current_avg_cpu * 1.1)  # 10% increase prediction
         predicted_instances = math.ceil(predicted_cpu / 0.7)  # Target 70% utilization
-        
+
         return {
             "predicted_cpu_utilization": predicted_cpu,
             "predicted_instance_count": predicted_instances,
             "confidence_score": 0.75,
-            "predicted_request_count": predicted_traffic
+            "predicted_request_count": predicted_traffic,
         }
 
     def _apply_scaling_constraints(self, target_instances: int) -> int:
         """스케일링 제약 조건 적용 (테스트 호환성)"""
-        return max(self.config.min_instances, min(target_instances, self.config.max_instances))
+        return max(
+            self.config.min_instances, min(target_instances, self.config.max_instances)
+        )
 
     def _can_scale_up(self) -> bool:
         """스케일 업 가능 여부 확인 (테스트 호환성)"""
@@ -881,24 +921,32 @@ class AutoScalingOptimizer:
         memory_util = metrics.get("memory_utilization", 0.0)
         error_rate = metrics.get("error_rate", 0.0)
         response_time = metrics.get("response_time", 0.0)
-        
+
         # Emergency conditions
-        return (cpu_util > 0.9 or memory_util > 0.85 or 
-                error_rate > 0.05 or response_time > 1500)
+        return (
+            cpu_util > 0.9
+            or memory_util > 0.85
+            or error_rate > 0.05
+            or response_time > 1500
+        )
 
     def get_scaling_statistics(self) -> Dict[str, Any]:
         """스케일링 통계 조회 (테스트 호환성)"""
         total_events = len(self.scaling_history)
-        scale_ups = sum(1 for event in self.scaling_history if event.get("action") == "scale_up")
+        scale_ups = sum(
+            1 for event in self.scaling_history if event.get("action") == "scale_up"
+        )
         scale_downs = total_events - scale_ups
-        
+
         return {
             "total_scaling_events": total_events,
             "scale_up_events": scale_ups,
             "scale_down_events": scale_downs,
             "current_instances": self.current_instances,
-            "avg_scaling_frequency": total_events / max(1, len(self.metrics)) if self.metrics else 0,
-            "scaling_efficiency": 0.8  # Mock efficiency score
+            "avg_scaling_frequency": (
+                total_events / max(1, len(self.metrics)) if self.metrics else 0
+            ),
+            "scaling_efficiency": 0.8,  # Mock efficiency score
         }
 
     def get_scaling_stats(self) -> Dict[str, Any]:
@@ -932,7 +980,7 @@ class AutoScalingOptimizer:
             return Success(None)
         except Exception as e:
             return Failure(str(e))
-    
+
     async def _collect_current_metrics(self) -> Optional[Dict[str, Any]]:
         """현재 메트릭 수집 (테스트 호환성)"""
         snapshot = await self._collect_metrics()
@@ -944,29 +992,44 @@ class AutoScalingOptimizer:
                 "instance_count": snapshot.active_instances,
                 "response_time": snapshot.avg_response_time,
                 "error_rate": snapshot.error_rate,
-                "timestamp": snapshot.timestamp
+                "timestamp": snapshot.timestamp,
             }
         return None
 
     def _parse_scaling_annotations(self, annotations: Dict[str, str]) -> Dict[str, Any]:
         """Cloud Run 스케일링 어노테이션 파싱 (테스트 호환성)"""
         return {
-            "min_instances": int(annotations.get("autoscaling.knative.dev/minScale", "0")),
-            "max_instances": int(annotations.get("autoscaling.knative.dev/maxScale", "100")),
-            "target_concurrency": int(annotations.get("autoscaling.knative.dev/target", "80")),
-            "cpu_throttling": annotations.get("run.googleapis.com/cpu-throttling", "true").lower() != "false"
+            "min_instances": int(
+                annotations.get("autoscaling.knative.dev/minScale", "0")
+            ),
+            "max_instances": int(
+                annotations.get("autoscaling.knative.dev/maxScale", "100")
+            ),
+            "target_concurrency": int(
+                annotations.get("autoscaling.knative.dev/target", "80")
+            ),
+            "cpu_throttling": annotations.get(
+                "run.googleapis.com/cpu-throttling", "true"
+            ).lower()
+            != "false",
         }
 
-    async def generate_cost_optimization_recommendations(self, metrics: Dict[str, Any]) -> List[str]:
+    async def generate_cost_optimization_recommendations(
+        self, metrics: Dict[str, Any]
+    ) -> List[str]:
         """비용 최적화 권장사항 생성 (테스트 호환성)"""
         analysis = self._analyze_cost_efficiency(metrics)
         recommendations = []
-        
+
         if not analysis["is_cost_efficient"]:
-            recommendations.append(f"Reduce instances to {analysis['recommended_instances']} for cost saving")
+            recommendations.append(
+                f"Reduce instances to {analysis['recommended_instances']} for cost saving"
+            )
             if analysis["potential_savings"] > 0:
-                recommendations.append(f"Potential cost saving: ${analysis['potential_savings']:.2f}/hour")
-                
+                recommendations.append(
+                    f"Potential cost saving: ${analysis['potential_savings']:.2f}/hour"
+                )
+
         return recommendations
 
 
@@ -988,6 +1051,7 @@ def get_autoscaling_optimizer(
         _autoscaling_optimizer = AutoScalingOptimizer(project_id, service_name)
     return _autoscaling_optimizer
 
+
 async def get_autoscaling_optimizer_async(
     project_id: str = None, service_name: str = None
 ) -> AutoScalingOptimizer:
@@ -1001,6 +1065,7 @@ def optimize_scaling(**config) -> None:
     """스케일링 최적화 시작 (테스트 호환성)"""
     optimizer = get_autoscaling_optimizer()
     optimizer.configure(**config)
+
 
 async def optimize_scaling_async(
     policy: ScalingPolicy = ScalingPolicy.BALANCED,
@@ -1018,9 +1083,12 @@ def get_scaling_stats() -> Dict[str, Any]:
     """스케일링 통계 조회 (테스트 호환성)"""
     try:
         optimizer = get_autoscaling_optimizer()
-        return optimizer.analyze_metrics({"cpu_utilization": 0.45, "memory_utilization": 0.50, "instance_count": 2})
+        return optimizer.analyze_metrics(
+            {"cpu_utilization": 0.45, "memory_utilization": 0.50, "instance_count": 2}
+        )
     except Exception as e:
         return {"error": str(e)}
+
 
 async def get_scaling_stats_async() -> Dict[str, Any]:
     """스케일링 통계 조회 (비동기)"""

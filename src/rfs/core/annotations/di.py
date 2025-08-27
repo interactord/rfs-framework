@@ -17,6 +17,7 @@ from .base import (
     ServiceScope,
     create_annotation_decorator,
     extract_dependencies,
+    get_annotation_metadata,
     get_component_metadata,
     set_annotation_metadata,
     set_component_metadata,
@@ -27,7 +28,7 @@ from .base import (
 # ============================================================================
 
 
-def Port(name: Optional[str] = None):
+def Port(name: Optional[str] = None, dependencies: Optional[List[str]] = None):
     """
     도메인 포트 정의 (인터페이스)
 
@@ -44,21 +45,21 @@ def Port(name: Optional[str] = None):
 
         # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=f"port:{port_name}",
-            component_type=cls,
+            name=port_name,
             scope=ServiceScope.SINGLETON,
-            metadata={"port_name": port_name, "type": "port"},
         )
 
         # 애노테이션 메타데이터 추가
+        from .base import AnnotationType
+
         annotation = AnnotationMetadata(
-            annotation_type="Port",
-            parameters={"name": port_name},
-            target=cls,
-            target_type="class",
+            name=port_name,
+            annotation_type=AnnotationType.PORT,
+            scope=ServiceScope.SINGLETON,
+            target_class=cls,
+            dependencies=dependencies or [],
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
@@ -76,6 +77,7 @@ def Adapter(
     scope: ServiceScope = ServiceScope.SINGLETON,
     profile: Optional[str] = None,
     primary: bool = False,
+    name: Optional[str] = None,
 ):
     """
     인프라스트럭처 어댑터 정의 (구현체)
@@ -90,46 +92,32 @@ def Adapter(
 
     def decorator(cls):
         # 포트 이름 추출
-        if type(port).__name__ == "str":
+        if isinstance(port, str):
             port_name = port
         else:
             port_name = getattr(port, "_port_name", port.__name__)
 
-        adapter_name = cls.__name__
+        adapter_name = name or cls.__name__
 
         # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=f"adapter:{adapter_name}",
-            component_type=cls,
+            name=adapter_name,
             scope=scope,
             primary=primary,
-            profile=profile,
-            metadata={
-                "adapter_name": adapter_name,
-                "port_name": port_name,
-                "type": "adapter",
-            },
         )
-
-        # 의존성 추출
-        dependencies = extract_dependencies(cls)
-        for dep in dependencies:
-            metadata.add_dependency(dep)
 
         # 애노테이션 메타데이터 추가
+        from .base import AnnotationType
+
         annotation = AnnotationMetadata(
-            annotation_type="Adapter",
-            parameters={
-                "port": port_name,
-                "scope": scope,
-                "profile": profile,
-                "primary": primary,
-            },
-            target=cls,
-            target_type="class",
+            name=adapter_name,
+            annotation_type=AnnotationType.ADAPTER,
+            scope=scope,
+            target_class=cls,
+            profile=profile,
+            port_name=port_name,
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
@@ -168,34 +156,21 @@ def UseCase(
 
         # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=f"use_case:{use_case_name}",
-            component_type=cls,
+            name=use_case_name,
             scope=scope,
-            metadata={
-                "use_case_name": use_case_name,
-                "type": "use_case",
-                "dependencies": dependencies or [],
-            },
         )
-
-        # 의존성 추출
-        deps = extract_dependencies(cls)
-        for dep in deps:
-            metadata.add_dependency(dep)
 
         # 애노테이션 메타데이터 추가
+        from .base import AnnotationType
+
         annotation = AnnotationMetadata(
-            annotation_type="UseCase",
-            parameters={
-                "name": use_case_name,
-                "dependencies": dependencies,
-                "scope": scope,
-            },
-            target=cls,
-            target_type="class",
+            name=use_case_name,
+            annotation_type=AnnotationType.USE_CASE,
+            scope=scope,
+            target_class=cls,
+            dependencies=dependencies or [],
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
@@ -212,6 +187,7 @@ def Controller(
     route: Optional[str] = None,
     method: Union[str, List[str]] = "GET",
     name: Optional[str] = None,
+    dependencies: Optional[List[str]] = None,
 ):
     """
     프레젠테이션 레이어 컨트롤러 정의
@@ -233,31 +209,21 @@ def Controller(
 
         # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=f"controller:{controller_name}",
-            component_type=cls,
-            scope=ServiceScope.SINGLETON,
-            metadata={
-                "controller_name": controller_name,
-                "route": route,
-                "methods": methods,
-                "type": "controller",
-            },
+            name=controller_name,
+            scope=ServiceScope.REQUEST,  # Controller는 REQUEST 스코프가 기본
         )
-
-        # 의존성 추출
-        dependencies = extract_dependencies(cls)
-        for dep in dependencies:
-            metadata.add_dependency(dep)
 
         # 애노테이션 메타데이터 추가
+        from .base import AnnotationType
+
         annotation = AnnotationMetadata(
-            annotation_type="Controller",
-            parameters={"route": route, "method": methods, "name": controller_name},
-            target=cls,
-            target_type="class",
+            name=controller_name,
+            annotation_type=AnnotationType.CONTROLLER,
+            scope=ServiceScope.REQUEST,  # Controller는 REQUEST 스코프가 기본
+            target_class=cls,
+            dependencies=dependencies or [],
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
@@ -278,9 +244,13 @@ def Controller(
 
 
 def Component(
-    name: Optional[str] = None,
+    name: str,
     scope: ServiceScope = ServiceScope.SINGLETON,
     lazy: bool = False,
+    dependencies: Optional[List[str]] = None,
+    profile: Optional[str] = None,
+    primary: bool = False,
+    qualifier: Optional[str] = None,
 ):
     """
     일반 컴포넌트 정의
@@ -295,41 +265,70 @@ def Component(
     def decorator(cls):
         component_name = name or cls.__name__
 
+        # 스코프 타입 검증
+        if not isinstance(scope, ServiceScope):
+            raise AttributeError(
+                f"scope must be a ServiceScope enum, not {type(scope)}"
+            )
+
+        # 기존 더 구체적인 애노테이션이 있는지 확인
+        from .base import AnnotationType
+
+        existing_annotation = get_annotation_metadata(cls)
+        if (
+            existing_annotation
+            and existing_annotation.annotation_type != AnnotationType.COMPONENT
+        ):
+            # 더 구체적인 데코레이터가 이미 적용된 경우, Component는 오버라이드하지 않음
+            # 단, 펜딩 속성들만 정리
+            for attr in ["_pending_scope", "_pending_lazy", "_pending_primary"]:
+                if hasattr(cls, attr):
+                    delattr(cls, attr)
+            return cls
+
+        # 다른 데코레이터에서 설정된 값들 확인
+        pending_scope = getattr(cls, "_pending_scope", scope)
+        pending_lazy = getattr(cls, "_pending_lazy", lazy)
+        pending_primary = getattr(cls, "_pending_primary", primary)
+
         # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=component_name,
-            component_type=cls,
-            scope=scope,
-            lazy_init=lazy,
-            metadata={"type": "component"},
+            name=component_name,
+            scope=pending_scope,
+            lazy=pending_lazy,
+            dependencies=dependencies or [],
+            primary=pending_primary,
+            qualifier=qualifier,
         )
 
-        # 의존성 추출
-        dependencies = extract_dependencies(cls)
-        for dep in dependencies:
-            metadata.add_dependency(dep)
-
-        # 애노테이션 메타데이터 추가
+        # 애노테이션 메타데이터 생성
         annotation = AnnotationMetadata(
-            annotation_type="Component",
-            parameters={"name": component_name, "scope": scope, "lazy": lazy},
-            target=cls,
-            target_type="class",
+            name=component_name,
+            annotation_type=AnnotationType.COMPONENT,
+            scope=pending_scope,
+            target_class=cls,
+            dependencies=dependencies or [],
+            lazy=pending_lazy,
+            profile=profile,
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
         cls._is_component = True
         cls._component_name = component_name
 
+        # 펜딩 속성들 정리
+        for attr in ["_pending_scope", "_pending_lazy", "_pending_primary"]:
+            if hasattr(cls, attr):
+                delattr(cls, attr)
+
         return cls
 
     return decorator
 
 
-def Service(name: Optional[str] = None, scope: ServiceScope = ServiceScope.SINGLETON):
+def Service(name: str, scope: ServiceScope = ServiceScope.SINGLETON):
     """
     서비스 레이어 컴포넌트
 
@@ -343,33 +342,39 @@ def Service(name: Optional[str] = None, scope: ServiceScope = ServiceScope.SINGL
     def decorator(cls):
         service_name = name or cls.__name__
 
+        # 다른 데코레이터에서 설정된 값들 확인
+        pending_scope = getattr(cls, "_pending_scope", scope)
+        pending_lazy = getattr(cls, "_pending_lazy", False)
+        pending_primary = getattr(cls, "_pending_primary", False)
+
         # Component와 동일하지만 타입이 다름
         metadata = ComponentMetadata(
-            component_id=f"service:{service_name}",
-            component_type=cls,
-            scope=scope,
-            metadata={"type": "service", "service_name": service_name},
+            name=service_name,
+            scope=pending_scope,
+            lazy=pending_lazy,
+            primary=pending_primary,
         )
-
-        # 의존성 추출
-        dependencies = extract_dependencies(cls)
-        for dep in dependencies:
-            metadata.add_dependency(dep)
 
         # 애노테이션 메타데이터 추가
-        annotation = AnnotationMetadata(
-            annotation_type="Service",
-            parameters={"name": service_name, "scope": scope},
-            target=cls,
-            target_type="class",
-        )
+        from .base import AnnotationType
 
-        metadata.add_annotation(annotation)
+        annotation = AnnotationMetadata(
+            name=service_name,
+            annotation_type=AnnotationType.SERVICE,
+            scope=pending_scope,
+            target_class=cls,
+            lazy=pending_lazy,
+        )
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
         cls._is_service = True
         cls._service_name = service_name
+
+        # 펜딩 속성들 정리
+        for attr in ["_pending_scope", "_pending_lazy", "_pending_primary"]:
+            if hasattr(cls, attr):
+                delattr(cls, attr)
 
         return cls
 
@@ -377,7 +382,9 @@ def Service(name: Optional[str] = None, scope: ServiceScope = ServiceScope.SINGL
 
 
 def Repository(
-    name: Optional[str] = None, scope: ServiceScope = ServiceScope.SINGLETON
+    name: Optional[str] = None,
+    scope: ServiceScope = ServiceScope.SINGLETON,
+    dependencies: Optional[List[str]] = None,
 ):
     """
     리포지토리 컴포넌트
@@ -392,27 +399,23 @@ def Repository(
     def decorator(cls):
         repo_name = name or cls.__name__
 
+        # 컴포넌트 메타데이터 생성
         metadata = ComponentMetadata(
-            component_id=f"repository:{repo_name}",
-            component_type=cls,
+            name=repo_name,
             scope=scope,
-            metadata={"type": "repository", "repository_name": repo_name},
         )
-
-        # 의존성 추출
-        dependencies = extract_dependencies(cls)
-        for dep in dependencies:
-            metadata.add_dependency(dep)
 
         # 애노테이션 메타데이터 추가
+        from .base import AnnotationType
+
         annotation = AnnotationMetadata(
-            annotation_type="Repository",
-            parameters={"name": repo_name, "scope": scope},
-            target=cls,
-            target_type="class",
+            name=repo_name,
+            annotation_type=AnnotationType.REPOSITORY,
+            scope=scope,
+            target_class=cls,
+            dependencies=dependencies or [],
         )
 
-        metadata.add_annotation(annotation)
         set_component_metadata(cls, metadata)
         set_annotation_metadata(cls, annotation)
 
@@ -429,7 +432,7 @@ def Repository(
 # ============================================================================
 
 
-def Injectable(cls):
+def Injectable(cls=None, *, name: Optional[str] = None):
     """
     주입 가능한 클래스 표시
 
@@ -437,9 +440,22 @@ def Injectable(cls):
         @Injectable
         class DatabaseClient:
             pass
+
+        @Injectable(name="custom_service")
+        class CustomService:
+            pass
     """
-    # Component와 유사하지만 이름 자동 생성
-    return Component()(cls)
+
+    def decorator(target_cls):
+        component_name = name or target_cls.__name__
+        return Component(name=component_name)(target_cls)
+
+    # 파라미터 없이 사용된 경우 (@Injectable)
+    if cls is not None:
+        return decorator(cls)
+
+    # 파라미터와 함께 사용된 경우 (@Injectable(name="..."))
+    return decorator
 
 
 def Autowired(
@@ -504,9 +520,19 @@ def Scope(scope: ServiceScope):
     """
 
     def decorator(cls):
+        # ComponentMetadata 업데이트 (이미 있는 경우)
         metadata = get_component_metadata(cls)
         if metadata:
             metadata.scope = scope
+
+        # AnnotationMetadata 업데이트 (이미 있는 경우)
+        annotation = get_annotation_metadata(cls)
+        if annotation:
+            annotation.scope = scope
+
+        # 메타데이터가 없는 경우 펜딩 속성으로 저장
+        if not metadata and not annotation:
+            cls._pending_scope = scope
 
         cls._scope = scope
         return cls
@@ -524,10 +550,16 @@ def Primary(cls):
         class DefaultUserRepository(UserRepository):
             pass
     """
+    # ComponentMetadata 업데이트 (이미 있는 경우)
     metadata = get_component_metadata(cls)
     if metadata:
         metadata.primary = True
 
+    # 메타데이터가 없는 경우 펜딩 속성으로 저장
+    if not metadata:
+        cls._pending_primary = True
+
+    # Primary 속성은 AnnotationMetadata에는 없음, ComponentMetadata에만 있음
     cls._primary = True
     return cls
 
@@ -542,9 +574,19 @@ def Lazy(cls):
         class ExpensiveService:
             pass
     """
+    # ComponentMetadata 업데이트 (이미 있는 경우)
     metadata = get_component_metadata(cls)
     if metadata:
-        metadata.lazy_init = True
+        metadata.lazy = True
+
+    # AnnotationMetadata 업데이트 (이미 있는 경우)
+    annotation = get_annotation_metadata(cls)
+    if annotation:
+        annotation.lazy = True
+
+    # 메타데이터가 없는 경우 펜딩 속성으로 저장
+    if not metadata and not annotation:
+        cls._pending_lazy = True
 
     cls._lazy_init = True
     return cls
@@ -571,24 +613,24 @@ def Value(key: str, default: Any = None):
     return decorator
 
 
-def ConfigProperty(prefix: str = ""):
+def ConfigProperty(key: str, default: Any = None):
     """
-    설정 프로퍼티 클래스
+    설정 프로퍼티 데코레이터
 
     Usage:
-        @ConfigProperty(prefix="database")
         class DatabaseConfig:
-            host: str = "localhost"
-            port: int = 5432
-            username: str
-            password: str
+            @ConfigProperty("database.host")
+            def db_host(self):
+                pass
+
+            @ConfigProperty("database.port", default=5432)
+            def db_port(self):
+                pass
     """
 
-    def decorator(cls):
-        cls._config_prefix = prefix
-        cls._is_config_property = True
-
-        # Component로도 등록
-        return Component(name=f"config:{prefix or cls.__name__}")(cls)
+    def decorator(field):
+        field._config_key = key
+        field._config_default = default
+        return field
 
     return decorator

@@ -101,37 +101,40 @@ class CloudRunConfig:
         match self.strategy:
             case OptimizationStrategy.PERFORMANCE:
                 return ResourceProfile(
-                cpu_allocation=2.0,
-                memory_mb=2048,
-                max_instances=100,
-                min_instances=1,
-                concurrency=80,
-                timeout_seconds=300,
-            )
-            case OptimizationStrategy.COST_EFFICIENT:            return ResourceProfile(
-                cpu_allocation=1.0,
-                memory_mb=512,
-                max_instances=20,
-                min_instances=0,
-                concurrency=1000,
-                timeout_seconds=540,
-            )
-            case OptimizationStrategy.LATENCY_OPTIMIZED:            return ResourceProfile(
-                cpu_allocation=2.0,
-                memory_mb=1024,
-                max_instances=50,
-                min_instances=2,
-                concurrency=10,
-                timeout_seconds=60,
-            )
-            case _:            return ResourceProfile(
-                cpu_allocation=1.0,
-                memory_mb=1024,
-                max_instances=50,
-                min_instances=0,
-                concurrency=100,
-                timeout_seconds=300,
-            )
+                    cpu_allocation=2.0,
+                    memory_mb=2048,
+                    max_instances=100,
+                    min_instances=1,
+                    concurrency=80,
+                    timeout_seconds=300,
+                )
+            case OptimizationStrategy.COST_EFFICIENT:
+                return ResourceProfile(
+                    cpu_allocation=1.0,
+                    memory_mb=512,
+                    max_instances=20,
+                    min_instances=0,
+                    concurrency=1000,
+                    timeout_seconds=540,
+                )
+            case OptimizationStrategy.LATENCY_OPTIMIZED:
+                return ResourceProfile(
+                    cpu_allocation=2.0,
+                    memory_mb=1024,
+                    max_instances=50,
+                    min_instances=2,
+                    concurrency=10,
+                    timeout_seconds=60,
+                )
+            case _:
+                return ResourceProfile(
+                    cpu_allocation=1.0,
+                    memory_mb=1024,
+                    max_instances=50,
+                    min_instances=0,
+                    concurrency=100,
+                    timeout_seconds=300,
+                )
 
 
 @dataclass
@@ -594,17 +597,22 @@ class CloudRunOptimizer:
         match self.config.strategy:
             case OptimizationStrategy.LATENCY_OPTIMIZED:
                 return 10
-            case OptimizationStrategy.PERFORMANCE:            return 80
-            case OptimizationStrategy.COST_EFFICIENT:            return 1000
-            case _:            return 100
+            case OptimizationStrategy.PERFORMANCE:
+                return 80
+            case OptimizationStrategy.COST_EFFICIENT:
+                return 1000
+            case _:
+                return 100
 
     def _calculate_optimal_min_instances(self) -> int:
         """최적 최소 인스턴스 수 계산"""
         match self.config.strategy:
             case OptimizationStrategy.LATENCY_OPTIMIZED:
                 return 2
-            case OptimizationStrategy.COST_EFFICIENT:            return 0
-            case _:            return 1
+            case OptimizationStrategy.COST_EFFICIENT:
+                return 0
+            case _:
+                return 1
 
     async def _generate_recommendations(self) -> List[str]:
         """최적화 권장사항 생성"""

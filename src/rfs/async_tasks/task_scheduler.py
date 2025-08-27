@@ -112,7 +112,7 @@ class ScheduleConfig:
             if minute == "0" and hour.isdigit():
                 target_hour = int(hour)
                 next_run = from_time.replace(
-                hour=target_hour, minute=0, second=0, microsecond=0
+                    hour=target_hour, minute=0, second=0, microsecond=0
                 )
                 if next_run <= from_time:
                     next_run = next_run + timedelta(days=1)
@@ -122,8 +122,8 @@ class ScheduleConfig:
         return None
 
     def increment_run_count(self) -> None:
-                """실행 횟수 증가"""
-                run_count = run_count + 1
+        """실행 횟수 증가"""
+        run_count = run_count + 1
 
 
 @dataclass
@@ -137,7 +137,6 @@ class ScheduledTask:
     def __lt__(self, other: "ScheduledTask") -> bool:
         """우선순위 큐를 위한 비교"""
         return self.next_run_time < other.next_run_time
-
 
 
 class TaskScheduler:
@@ -197,7 +196,7 @@ class TaskScheduler:
         try:
             task_def = get_task_definition(task_name)
             if not task_def:
-                    return Failure(f"Task definition not found: {task_name}")
+                return Failure(f"Task definition not found: {task_name}")
             config = ScheduleConfig(
                 task_name=task_name, schedule_type=schedule_type, **schedule_kwargs
             )

@@ -259,10 +259,14 @@ class AuditLogger:
             match level:
                 case AuditLevel.DEBUG:
                     await logger.log_debug(log_message)
-                case AuditLevel.INFO:                await logger.log_info(log_message)
-                case AuditLevel.WARNING:                await logger.log_warning(log_message)
-                case AuditLevel.ERROR:                await logger.log_error(log_message)
-                case AuditLevel.CRITICAL:                await logger.log_error(f"CRITICAL: {log_message}")
+                case AuditLevel.INFO:
+                    await logger.log_info(log_message)
+                case AuditLevel.WARNING:
+                    await logger.log_warning(log_message)
+                case AuditLevel.ERROR:
+                    await logger.log_error(log_message)
+                case AuditLevel.CRITICAL:
+                    await logger.log_error(f"CRITICAL: {log_message}")
             return Success(event)
         except Exception as e:
             return Failure(f"감사 이벤트 로그 실패: {str(e)}")

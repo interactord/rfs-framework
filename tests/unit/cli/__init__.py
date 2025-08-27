@@ -1,0 +1,3 @@
+"""
+CLI module unit tests
+"""

@@ -174,7 +174,9 @@ class AsyncTaskManager:
         logger.info(f"Task {task_id} cancelled")
         return Success(None)
 
-    async def wait_for(self, task_id: str, timeout: Optional[float] = None) -> TaskResult:
+    async def wait_for(
+        self, task_id: str, timeout: Optional[float] = None
+    ) -> TaskResult:
         """작업 완료 대기"""
         if task_id not in self.task_futures:
             raise TaskError(f"Task {task_id} not found")

@@ -10,10 +10,10 @@ RFS Framework - Enterprise-Grade Reactive Functional Serverless
 - 지능형 Auto Scaling & Monitoring
 - 환경별 자동 설정 프로파일
 
-Version: 4.3.0 (Production Ready)
+Version: 4.3.1 (Production Ready)
 """
 
-__version__ = "4.3.0"
+__version__ = "4.3.1"
 __author__ = "RFS Framework Team"
 __phase__ = "Production Ready"
 
@@ -79,7 +79,6 @@ from .core import (  # Helper functions; Annotation System (NEW v4.1); Transacti
     AnnotationRegistry,
     AnnotationType,
     Component,
-    ServiceScope,
     ConfigManager,
     Controller,
     DependencyGraph,
@@ -100,6 +99,7 @@ from .core import (  # Helper functions; Annotation System (NEW v4.1); Transacti
     RFSConfig,
     Service,
     ServiceRegistry,
+    ServiceScope,
     StatelessRegistry,
     Success,
     Transactional,
@@ -115,9 +115,9 @@ from .core import (  # Helper functions; Annotation System (NEW v4.1); Transacti
     get_annotation_metadata,
     get_annotation_registry,
     get_config,
-    get_transaction_manager,
     get_enhanced_logger,
     get_event_bus,
+    get_transaction_manager,
     has_annotation,
     log_debug,
     log_error,
@@ -164,6 +164,14 @@ from .core.enhanced_logging import log_warning as enhanced_log_warning
 from .core.enhanced_logging import (
     set_log_context,
     with_log_context,
+)
+
+# === Database Helpers ===
+from .database.helpers import (
+    close_test_connection,
+    create_test_connection,
+    get_database_config,
+    get_tortoise_url,
 )
 
 # === Events System ===
@@ -437,6 +445,11 @@ __all__ = [
     "get_enhanced_logger",
     "log_with_context",
     "monitor_performance",
+    # === Database Helpers ===
+    "get_tortoise_url",
+    "create_test_connection",
+    "get_database_config",
+    "close_test_connection",
     # Auto Scaling
     "AutoScalingOptimizer",
     "ScalingConfiguration",

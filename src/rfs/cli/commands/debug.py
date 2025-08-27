@@ -241,13 +241,10 @@ class StatusCommand(Command):
                         "environment": getattr(config, "environment", "Unknown"),
                         "debug": getattr(config, "debug", False),
                         "log_level": getattr(config, "log_level", "INFO"),
-                    }
+                    },
                 }
             except Exception:
-                status = {
-                    **status,
-                    "rfs_config": {"error": "RFS 설정 로드 실패"}
-                }
+                status = {**status, "rfs_config": {"error": "RFS 설정 로드 실패"}}
             status = {
                 **status,
                 "project": {
@@ -256,7 +253,7 @@ class StatusCommand(Command):
                     "requirements_exists": Path("requirements.txt").exists(),
                     "docker_exists": Path("Dockerfile").exists(),
                     "rfs_config_exists": Path("rfs.yaml").exists(),
-                }
+                },
             }
             status = {
                 **status,
@@ -279,7 +276,7 @@ class StatusCommand(Command):
                     deps[package] = {"version": version, "status": "installed"}
                 except pkg_resources.DistributionNotFound:
                     deps[package] = {"version": None, "status": "missing"}
-            
+
             # Docker 체크
             try:
                 process = await asyncio.create_subprocess_exec(
@@ -296,7 +293,7 @@ class StatusCommand(Command):
                     deps["docker"] = {"version": None, "status": "unavailable"}
             except:
                 deps["docker"] = {"version": None, "status": "unavailable"}
-            
+
             # GCloud 체크
             try:
                 process = await asyncio.create_subprocess_exec(
@@ -308,7 +305,7 @@ class StatusCommand(Command):
                 await process.communicate()
                 deps["gcloud"] = {
                     "version": "installed" if process.returncode == 0 else None,
-                    "status": "available" if process.returncode == 0 else "unavailable"
+                    "status": "available" if process.returncode == 0 else "unavailable",
                 }
             except:
                 deps["gcloud"] = {"version": None, "status": "unavailable"}
@@ -327,7 +324,7 @@ class StatusCommand(Command):
                 else:
                     print(f"  {data}")
             return
-        
+
         if "system" in status:
             system_table = Table(title="시스템 정보", show_header=False)
             system_table.add_column("항목", style="cyan")
@@ -335,7 +332,7 @@ class StatusCommand(Command):
             for key, value in status.get("system", {}).items():
                 system_table.add_row(key.replace("_", " ").title(), str(value))
             console.print(system_table)
-        
+
         if "resources" in status:
             resource_table = Table(title="시스템 리소스", show_header=False)
             resource_table.add_column("리소스", style="cyan")
@@ -343,7 +340,7 @@ class StatusCommand(Command):
             for key, value in status.get("resources", {}).items():
                 resource_table.add_row(key.replace("_", " ").title(), str(value))
             console.print(resource_table)
-        
+
         if "dependencies" in status and isinstance(status.get("dependencies"), dict):
             deps_table = Table(
                 title="의존성 상태", show_header=True, header_style="bold magenta"
@@ -367,7 +364,6 @@ class StatusCommand(Command):
                         f"[{status_style}]{status_text}[/{status_style}]",
                     )
             console.print(deps_table)
-
 
 
 class HealthCommand(Command):
@@ -457,8 +453,8 @@ class HealthCommand(Command):
                 results[check] = result
             except Exception as e:
                 results[check] = {
-                    "status": "fail", 
-                    "message": f"Check failed: {str(e)}"
+                    "status": "fail",
+                    "message": f"Check failed: {str(e)}",
                 }
         return results
 

@@ -1,0 +1,48 @@
+# RFS Framework 영구 규칙 설정
+# 이 파일은 프로젝트의 절대 규칙을 정의합니다
+
+[mandatory]
+# RFS Framework 우선 사용
+framework_first = true
+search_before_implement = true
+
+# 한글 주석 필수
+korean_comments = true
+korean_docstrings = true
+korean_commit_messages = true
+
+# Result 패턴 필수
+use_result_pattern = true
+no_exceptions_in_business_logic = true
+
+# 불변성 필수
+immutable_data_structures = true
+functional_updates_only = true
+
+# 타입 안정성
+complete_type_hints = true
+use_protocols_for_interfaces = true
+
+[code_style]
+# 패턴 매칭 우선
+prefer_match_over_if = true
+
+# 함수형 프로그래밍
+use_pure_functions = true
+use_function_composition = true
+use_higher_order_functions = true
+
+[testing]
+minimum_coverage = 80
+use_result_in_tests = true
+use_given_when_then = true
+
+[git]
+commit_style = "conventional"
+commit_language = "korean"
+remove_ai_signatures = true
+
+[validation]
+# 모든 규칙 위반 시 빌드 실패
+strict_mode = true
+fail_on_violation = true

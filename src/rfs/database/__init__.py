@@ -8,6 +8,9 @@ RFS Database Abstraction (RFS v4.1)
 - Cloud SQL 통합
 """
 
+# ORM 타입에 따라 조건부 import
+import os
+
 from .base import (
     ConnectionPool,
     Database,
@@ -37,27 +40,25 @@ from .migration import (
 from .models_refactored import (
     BaseModel,
     Field,
-    Table,
     ModelRegistry,
+    Table,
     create_model,
     get_model_registry,
     register_model,
 )
 
-# ORM 타입에 따라 조건부 import
-import os
-ORM_TYPE = os.environ.get('RFS_ORM_TYPE', 'SQLALCHEMY').upper()
+ORM_TYPE = os.environ.get("RFS_ORM_TYPE", "SQLALCHEMY").upper()
 
-if ORM_TYPE == 'SQLALCHEMY':
+if ORM_TYPE == "SQLALCHEMY":
     try:
-        from .models_refactored import SQLAlchemyModel, Model
+        from .models_refactored import Model, SQLAlchemyModel
     except ImportError:
         SQLAlchemyModel = None
         Model = BaseModel
     TortoiseModel = None
-elif ORM_TYPE == 'TORTOISE':
+elif ORM_TYPE == "TORTOISE":
     try:
-        from .models_refactored import TortoiseModel, Model
+        from .models_refactored import Model, TortoiseModel
     except ImportError:
         TortoiseModel = None
         Model = BaseModel

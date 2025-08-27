@@ -8,6 +8,7 @@ RFS v4.1 Performance Monitoring Decorators
 - @RateLimited: 요청 속도 제한
 - @Profiled: 프로파일링
 """
+
 import asyncio
 import functools
 import hashlib
@@ -28,19 +29,23 @@ from ..cloud_run.monitoring import CloudMonitoringClient, MetricType
 from ..core.result import Failure, Result, Success
 
 logger = logging.getLogger(__name__)
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class PerformanceLevel(Enum):
     """성능 레벨"""
-    EXCELLENT = 'excellent'
-    GOOD = 'good'
-    ACCEPTABLE = 'acceptable'
-    SLOW = 'slow'
-    CRITICAL = 'critical'
+
+    EXCELLENT = "excellent"
+    GOOD = "good"
+    ACCEPTABLE = "acceptable"
+    SLOW = "slow"
+    CRITICAL = "critical"
+
 
 @dataclass
 class PerformanceMetrics:
     """성능 메트릭"""
+
     function_name: str
     start_time: datetime
     end_time: Optional[datetime] = None
@@ -71,10 +76,11 @@ class PerformanceMetrics:
         else:
             return PerformanceLevel.CRITICAL
 
+
 class PerformanceMonitor:
     """성능 모니터"""
 
-    def __init__(self, project_id: Optional[str]=None):
+    def __init__(self, project_id: Optional[str] = None):
         self.metrics_history: deque = deque(maxlen=1000)
         self.aggregated_metrics: Dict[str, List[PerformanceMetrics]] = defaultdict(list)
         self.monitoring_client: Optional[CloudMonitoringClient] = None
@@ -82,16 +88,23 @@ class PerformanceMonitor:
             try:
                 self.monitoring_client = CloudMonitoringClient(project_id)
             except Exception as e:
-                logger.warning(f'Failed to initialize CloudMonitoringClient: {e}')
+                logger.warning(f"Failed to initialize CloudMonitoringClient: {e}")
         self.total_calls = 0
         self.total_errors = 0
         self.total_duration_ms = 0.0
-        self.alert_thresholds = {'duration_ms': 3000, 'memory_delta_mb': 100, 'cpu_delta': 50, 'error_rate': 0.05}
+        self.alert_thresholds = {
+            "duration_ms": 3000,
+            "memory_delta_mb": 100,
+            "cpu_delta": 50,
+            "error_rate": 0.05,
+        }
 
     def record(self, metrics: PerformanceMetrics) -> None:
         """메트릭 기록"""
         self.metrics_history = self.metrics_history + [metrics]
-        self.aggregated_metrics[metrics.function_name] = self.aggregated_metrics[metrics.function_name] + [metrics]
+        self.aggregated_metrics[metrics.function_name] = self.aggregated_metrics[
+            metrics.function_name
+        ] + [metrics]
         total_calls = total_calls + 1
         total_duration_ms = total_duration_ms + metrics.duration_ms
         if not metrics.success:
@@ -103,27 +116,43 @@ class PerformanceMonitor:
     async def _send_to_monitoring(self, metrics: PerformanceMetrics) -> None:
         """Cloud Monitoring으로 메트릭 전송"""
         try:
-            await self.monitoring_client.send_metric(metric_name=f'function_duration/{metrics.function_name}', value=metrics.duration_ms, metric_type=MetricType.GAUGE, labels={'function': metrics.function_name, 'performance_level': metrics.performance_level.value, 'success': str(metrics.success)})
-            await self.monitoring_client.send_metric(metric_name=f'function_memory/{metrics.function_name}', value=metrics.memory_delta_mb, metric_type=MetricType.GAUGE, labels={'function': metrics.function_name})
+            await self.monitoring_client.send_metric(
+                metric_name=f"function_duration/{metrics.function_name}",
+                value=metrics.duration_ms,
+                metric_type=MetricType.GAUGE,
+                labels={
+                    "function": metrics.function_name,
+                    "performance_level": metrics.performance_level.value,
+                    "success": str(metrics.success),
+                },
+            )
+            await self.monitoring_client.send_metric(
+                metric_name=f"function_memory/{metrics.function_name}",
+                value=metrics.memory_delta_mb,
+                metric_type=MetricType.GAUGE,
+                labels={"function": metrics.function_name},
+            )
         except Exception as e:
-            logger.debug(f'Failed to send metrics to monitoring: {e}')
+            logger.debug(f"Failed to send metrics to monitoring: {e}")
 
     def _check_alerts(self, metrics: PerformanceMetrics) -> None:
         """알림 체크"""
         alerts = []
-        if metrics.duration_ms > self.alert_thresholds['duration_ms']:
-            alerts = alerts + [f'Slow performance: {metrics.duration_ms:.2f}ms']
-        if metrics.memory_delta_mb > self.alert_thresholds['memory_delta_mb']:
-            alerts = alerts + [f'High memory usage: {metrics.memory_delta_mb:.2f}MB']
-        if metrics.cpu_delta > self.alert_thresholds['cpu_delta']:
-            alerts = alerts + [f'High CPU usage: {metrics.cpu_delta:.1f}%']
+        if metrics.duration_ms > self.alert_thresholds["duration_ms"]:
+            alerts = alerts + [f"Slow performance: {metrics.duration_ms:.2f}ms"]
+        if metrics.memory_delta_mb > self.alert_thresholds["memory_delta_mb"]:
+            alerts = alerts + [f"High memory usage: {metrics.memory_delta_mb:.2f}MB"]
+        if metrics.cpu_delta > self.alert_thresholds["cpu_delta"]:
+            alerts = alerts + [f"High CPU usage: {metrics.cpu_delta:.1f}%"]
         error_rate = self.total_errors / max(self.total_calls, 1)
-        if error_rate > self.alert_thresholds['error_rate']:
-            alerts = alerts + [f'High error rate: {error_rate:.2%}']
+        if error_rate > self.alert_thresholds["error_rate"]:
+            alerts = alerts + [f"High error rate: {error_rate:.2%}"]
         if alerts:
-            logger.warning(f'Performance alerts for {metrics.function_name}: {', '.join(alerts)}')
+            logger.warning(
+                f"Performance alerts for {metrics.function_name}: {', '.join(alerts)}"
+            )
 
-    def get_statistics(self, function_name: Optional[str]=None) -> Dict[str, Any]:
+    def get_statistics(self, function_name: Optional[str] = None) -> Dict[str, Any]:
         """통계 조회"""
         if function_name:
             metrics_list = self.aggregated_metrics.get(function_name, [])
@@ -135,13 +164,34 @@ class PerformanceMonitor:
         memory_deltas = [m.memory_delta_mb for m in metrics_list]
         cpu_deltas = [m.cpu_delta for m in metrics_list]
         errors = sum((1 for m in metrics_list if not m.success))
-        return {'total_calls': len(metrics_list), 'total_errors': errors, 'error_rate': errors / len(metrics_list), 'avg_duration_ms': sum(durations) / len(durations), 'min_duration_ms': min(durations), 'max_duration_ms': max(durations), 'avg_memory_delta_mb': sum(memory_deltas) / len(memory_deltas), 'max_memory_delta_mb': max(memory_deltas), 'avg_cpu_delta': sum(cpu_deltas) / len(cpu_deltas), 'max_cpu_delta': max(cpu_deltas)}
+        return {
+            "total_calls": len(metrics_list),
+            "total_errors": errors,
+            "error_rate": errors / len(metrics_list),
+            "avg_duration_ms": sum(durations) / len(durations),
+            "min_duration_ms": min(durations),
+            "max_duration_ms": max(durations),
+            "avg_memory_delta_mb": sum(memory_deltas) / len(memory_deltas),
+            "max_memory_delta_mb": max(memory_deltas),
+            "avg_cpu_delta": sum(cpu_deltas) / len(cpu_deltas),
+            "max_cpu_delta": max(cpu_deltas),
+        }
+
+
 _performance_monitor = PerformanceMonitor()
 
-def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io: bool=False, alert_on_slow: bool=True, threshold_ms: float=1000, tags: Optional[Dict[str, Any]]=None):
+
+def PerformanceMonitored(
+    track_memory: bool = True,
+    track_cpu: bool = True,
+    track_io: bool = False,
+    alert_on_slow: bool = True,
+    threshold_ms: float = 1000,
+    tags: Optional[Dict[str, Any]] = None,
+):
     """
     성능 모니터링 데코레이터
-    
+
     Args:
         track_memory: 메모리 사용량 추적
         track_cpu: CPU 사용량 추적
@@ -155,7 +205,11 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            metrics = PerformanceMetrics(function_name=f'{func.__module__}.{func.__name__}', start_time=datetime.now(), tags=tags or {})
+            metrics = PerformanceMetrics(
+                function_name=f"{func.__module__}.{func.__name__}",
+                start_time=datetime.now(),
+                tags=tags or {},
+            )
             process = psutil.Process()
             if track_memory:
                 memory_info = process.memory_info()
@@ -163,7 +217,9 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
             if track_cpu:
                 metrics.cpu_percent_before = process.cpu_percent()
             if track_io:
-                io_counters_before = process.io_counters() if hasattr(process, 'io_counters') else None
+                io_counters_before = (
+                    process.io_counters() if hasattr(process, "io_counters") else None
+                )
             try:
                 start_time = time.perf_counter()
                 result = await func(*args, **kwargs)
@@ -174,17 +230,27 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
                 if track_memory:
                     memory_info = process.memory_info()
                     metrics.memory_mb_after = memory_info.rss / 1024 / 1024
-                    metrics.memory_delta_mb = metrics.memory_mb_after - metrics.memory_mb_before
+                    metrics.memory_delta_mb = (
+                        metrics.memory_mb_after - metrics.memory_mb_before
+                    )
                 if track_cpu:
                     metrics.cpu_percent_after = process.cpu_percent()
-                    metrics.cpu_delta = metrics.cpu_percent_after - metrics.cpu_percent_before
+                    metrics.cpu_delta = (
+                        metrics.cpu_percent_after - metrics.cpu_percent_before
+                    )
                 if track_io and io_counters_before:
                     io_counters_after = process.io_counters()
-                    metrics.io_read_bytes = io_counters_after.read_bytes - io_counters_before.read_bytes
-                    metrics.io_write_bytes = io_counters_after.write_bytes - io_counters_before.write_bytes
+                    metrics.io_read_bytes = (
+                        io_counters_after.read_bytes - io_counters_before.read_bytes
+                    )
+                    metrics.io_write_bytes = (
+                        io_counters_after.write_bytes - io_counters_before.write_bytes
+                    )
                 metrics.performance_level = metrics.calculate_performance_level()
                 if alert_on_slow and execution_time > threshold_ms:
-                    logger.warning(f'Slow execution detected: {metrics.function_name} took {execution_time:.2f}ms (threshold: {threshold_ms}ms)')
+                    logger.warning(
+                        f"Slow execution detected: {metrics.function_name} took {execution_time:.2f}ms (threshold: {threshold_ms}ms)"
+                    )
                 _performance_monitor.record(metrics)
                 return result
             except Exception as e:
@@ -197,7 +263,11 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            metrics = PerformanceMetrics(function_name=f'{func.__module__}.{func.__name__}', start_time=datetime.now(), tags=tags or {})
+            metrics = PerformanceMetrics(
+                function_name=f"{func.__module__}.{func.__name__}",
+                start_time=datetime.now(),
+                tags=tags or {},
+            )
             process = psutil.Process()
             if track_memory:
                 memory_info = process.memory_info()
@@ -205,7 +275,9 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
             if track_cpu:
                 metrics.cpu_percent_before = process.cpu_percent()
             if track_io:
-                io_counters_before = process.io_counters() if hasattr(process, 'io_counters') else None
+                io_counters_before = (
+                    process.io_counters() if hasattr(process, "io_counters") else None
+                )
             try:
                 start_time = time.perf_counter()
                 result = func(*args, **kwargs)
@@ -216,17 +288,27 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
                 if track_memory:
                     memory_info = process.memory_info()
                     metrics.memory_mb_after = memory_info.rss / 1024 / 1024
-                    metrics.memory_delta_mb = metrics.memory_mb_after - metrics.memory_mb_before
+                    metrics.memory_delta_mb = (
+                        metrics.memory_mb_after - metrics.memory_mb_before
+                    )
                 if track_cpu:
                     metrics.cpu_percent_after = process.cpu_percent()
-                    metrics.cpu_delta = metrics.cpu_percent_after - metrics.cpu_percent_before
+                    metrics.cpu_delta = (
+                        metrics.cpu_percent_after - metrics.cpu_percent_before
+                    )
                 if track_io and io_counters_before:
                     io_counters_after = process.io_counters()
-                    metrics.io_read_bytes = io_counters_after.read_bytes - io_counters_before.read_bytes
-                    metrics.io_write_bytes = io_counters_after.write_bytes - io_counters_before.write_bytes
+                    metrics.io_read_bytes = (
+                        io_counters_after.read_bytes - io_counters_before.read_bytes
+                    )
+                    metrics.io_write_bytes = (
+                        io_counters_after.write_bytes - io_counters_before.write_bytes
+                    )
                 metrics.performance_level = metrics.calculate_performance_level()
                 if alert_on_slow and execution_time > threshold_ms:
-                    logger.warning(f'Slow execution detected: {metrics.function_name} took {execution_time:.2f}ms (threshold: {threshold_ms}ms)')
+                    logger.warning(
+                        f"Slow execution detected: {metrics.function_name} took {execution_time:.2f}ms (threshold: {threshold_ms}ms)"
+                    )
                 _performance_monitor.record(metrics)
                 return result
             except Exception as e:
@@ -236,16 +318,19 @@ def PerformanceMonitored(track_memory: bool=True, track_cpu: bool=True, track_io
                 metrics.error_message = str(e)
                 _performance_monitor.record(metrics)
                 raise
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper
+
     return decorator
+
 
 class SimpleCache:
     """간단한 캐시 구현"""
 
-    def __init__(self, max_size: int=100, ttl_seconds: int=300):
+    def __init__(self, max_size: int = 100, ttl_seconds: int = 300):
         self.cache: Dict[str, Any] = {}
         self.timestamps: Dict[str, datetime] = {}
         self.max_size = max_size
@@ -258,7 +343,9 @@ class SimpleCache:
         """캐시에서 값 가져오기"""
         with self.lock:
             if key in self.cache:
-                if datetime.now() - self.timestamps[key] < timedelta(seconds=self.ttl_seconds):
+                if datetime.now() - self.timestamps[key] < timedelta(
+                    seconds=self.ttl_seconds
+                ):
                     hits = hits + 1
                     return self.cache[key]
                 else:
@@ -286,12 +373,20 @@ class SimpleCache:
     def get_stats(self) -> Dict[str, Any]:
         """캐시 통계"""
         total = self.hits + self.misses
-        return {'size': len(self.cache), 'hits': self.hits, 'misses': self.misses, 'hit_rate': self.hits / total if total > 0 else 0}
+        return {
+            "size": len(self.cache),
+            "hits": self.hits,
+            "misses": self.misses,
+            "hit_rate": self.hits / total if total > 0 else 0,
+        }
 
-def Cached(ttl_seconds: int=300, max_size: int=100, key_func: Optional[Callable]=None):
+
+def Cached(
+    ttl_seconds: int = 300, max_size: int = 100, key_func: Optional[Callable] = None
+):
     """
     결과 캐싱 데코레이터
-    
+
     Args:
         ttl_seconds: 캐시 유효 시간 (초)
         max_size: 최대 캐시 크기
@@ -310,7 +405,7 @@ def Cached(ttl_seconds: int=300, max_size: int=100, key_func: Optional[Callable]
                 cache_key = hashlib.md5(pickle.dumps(key_data)).hexdigest()
             cached_result = cache.get(cache_key)
             if cached_result is not None:
-                logger.debug(f'Cache hit for {func.__name__}')
+                logger.debug(f"Cache hit for {func.__name__}")
                 return cached_result
             result = await func(*args, **kwargs)
             cache.set(cache_key, result)
@@ -325,24 +420,29 @@ def Cached(ttl_seconds: int=300, max_size: int=100, key_func: Optional[Callable]
                 cache_key = hashlib.md5(pickle.dumps(key_data)).hexdigest()
             cached_result = cache.get(cache_key)
             if cached_result is not None:
-                logger.debug(f'Cache hit for {func.__name__}')
+                logger.debug(f"Cache hit for {func.__name__}")
                 return cached_result
             result = func(*args, **kwargs)
             cache.set(cache_key, result)
             return result
+
         wrapper = async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
         wrapper.cache_stats = cache.get_stats
         wrapper.cache_clear = cache.clear
         return wrapper
+
     return decorator
+
 
 def get_performance_monitor() -> PerformanceMonitor:
     """글로벌 성능 모니터 반환"""
     return _performance_monitor
 
-def get_performance_statistics(function_name: Optional[str]=None) -> Dict[str, Any]:
+
+def get_performance_statistics(function_name: Optional[str] = None) -> Dict[str, Any]:
     """성능 통계 조회"""
     return _performance_monitor.get_statistics(function_name)
+
 
 def set_alert_thresholds(thresholds: Dict[str, float]) -> None:
     """알림 임계값 설정"""

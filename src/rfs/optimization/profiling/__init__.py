@@ -55,8 +55,6 @@ def get_io_profiler() -> IOProfiler:
     return _io_profiler
 
 
-
-
 # 편의 함수들
 async def start_profiling():
     """모든 프로파일러 시작"""
@@ -72,8 +70,6 @@ async def stop_profiling():
     await get_memory_profiler().stop()
     await get_cpu_profiler().stop()
     await get_io_profiler().stop()
-
-
 
 
 __all__ = [

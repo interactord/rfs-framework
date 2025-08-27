@@ -7,29 +7,31 @@ Google Cloud Run의 헬스체크 시스템과 서비스 상태 관리 테스트
 import asyncio
 import os
 from datetime import datetime, timedelta
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from rfs.cloud_run.helpers import (
-    ServiceEndpoint, 
-    CloudRunServiceDiscovery,
-    get_service_discovery,
-    discover_services,
-    call_service,
-    is_cloud_run_environment,
-    get_cloud_run_service_name,
-    get_cloud_run_revision,
-    get_cloud_run_region,
-    get_cloud_run_status
+from rfs.cloud_run import (
+    get_cloud_run_metadata,
 )
+from rfs.cloud_run import get_cloud_run_status as get_module_status
 from rfs.cloud_run import (
     initialize_cloud_run_services,
     shutdown_cloud_run_services,
-    get_cloud_run_status as get_module_status,
-    get_cloud_run_metadata,
 )
-from rfs.core.result import Success, Failure
+from rfs.cloud_run.helpers import (
+    CloudRunServiceDiscovery,
+    ServiceEndpoint,
+    call_service,
+    discover_services,
+    get_cloud_run_region,
+    get_cloud_run_revision,
+    get_cloud_run_service_name,
+    get_cloud_run_status,
+    get_service_discovery,
+    is_cloud_run_environment,
+)
+from rfs.core.result import Failure, Success
 
 
 class TestServiceEndpoint:
@@ -38,7 +40,7 @@ class TestServiceEndpoint:
     def test_service_endpoint_creation(self):
         """서비스 엔드포인트 생성 테스트"""
         endpoint = ServiceEndpoint("test-service", "https://test.example.com")
-        
+
         assert endpoint.name == "test-service"
         assert endpoint.url == "https://test.example.com"
         assert endpoint.health_check_url == "https://test.example.com/health"
@@ -49,20 +51,18 @@ class TestServiceEndpoint:
     def test_service_endpoint_with_custom_region(self):
         """커스텀 리전으로 서비스 엔드포인트 생성"""
         endpoint = ServiceEndpoint(
-            "test-service", 
-            "https://test.example.com",
-            region="us-central1"
+            "test-service", "https://test.example.com", region="us-central1"
         )
-        
+
         assert endpoint.region == "us-central1"
 
     @pytest.mark.asyncio
     async def test_health_check_success(self):
         """헬스체크 성공 테스트"""
         endpoint = ServiceEndpoint("test-service", "https://test.example.com")
-        
+
         result = await endpoint.check_health()
-        
+
         assert result is True
         assert endpoint.last_health_check is not None
         assert isinstance(endpoint.last_health_check, datetime)
@@ -73,18 +73,18 @@ class TestServiceEndpoint:
     async def test_health_check_timing(self):
         """헬스체크 타이밍 검증"""
         endpoint = ServiceEndpoint("test-service", "https://test.example.com")
-        
+
         before = datetime.now()
         await endpoint.check_health()
         after = datetime.now()
-        
+
         assert before <= endpoint.last_health_check <= after
 
     def test_unhealthy_endpoint_behavior(self):
         """비정상 상태 엔드포인트 동작 확인"""
         endpoint = ServiceEndpoint("test-service", "https://test.example.com")
         endpoint.is_healthy = False
-        
+
         assert endpoint.is_healthy is False
         # 헬스체크 URL은 그대로 유지
         assert endpoint.health_check_url == "https://test.example.com/health"
@@ -97,13 +97,13 @@ class TestCloudRunServiceDiscovery:
         """서비스 디스커버리 싱글톤 패턴 확인"""
         discovery1 = CloudRunServiceDiscovery()
         discovery2 = CloudRunServiceDiscovery()
-        
+
         assert discovery1 is discovery2
 
     def test_initial_state(self):
         """초기 상태 확인"""
         discovery = CloudRunServiceDiscovery()
-        
+
         assert discovery._services == {}
         assert discovery._initialized is False
         assert discovery.list_services() == []
@@ -112,12 +112,12 @@ class TestCloudRunServiceDiscovery:
     async def test_initialization(self):
         """서비스 디스커버리 초기화 테스트"""
         discovery = CloudRunServiceDiscovery()
-        
+
         # 초기에는 초기화되지 않음
         assert discovery._initialized is False
-        
+
         await discovery.initialize()
-        
+
         # 초기화 완료
         assert discovery._initialized is True
 
@@ -125,10 +125,10 @@ class TestCloudRunServiceDiscovery:
     async def test_multiple_initialization(self):
         """중복 초기화 시도 테스트"""
         discovery = CloudRunServiceDiscovery()
-        
+
         await discovery.initialize()
         assert discovery._initialized is True
-        
+
         # 재초기화 시도
         await discovery.initialize()
         assert discovery._initialized is True
@@ -137,22 +137,22 @@ class TestCloudRunServiceDiscovery:
         """서비스 등록 테스트"""
         discovery = CloudRunServiceDiscovery()
         endpoint = ServiceEndpoint("auth-service", "https://auth.example.com")
-        
+
         discovery.register_service("auth-service", endpoint)
-        
+
         assert "auth-service" in discovery.list_services()
         assert discovery.get_service("auth-service") is endpoint
 
     def test_multiple_service_registration(self):
         """여러 서비스 등록 테스트"""
         discovery = CloudRunServiceDiscovery()
-        
+
         auth_endpoint = ServiceEndpoint("auth-service", "https://auth.example.com")
         user_endpoint = ServiceEndpoint("user-service", "https://user.example.com")
-        
+
         discovery.register_service("auth-service", auth_endpoint)
         discovery.register_service("user-service", user_endpoint)
-        
+
         services = discovery.list_services()
         assert len(services) == 2
         assert "auth-service" in services
@@ -162,12 +162,12 @@ class TestCloudRunServiceDiscovery:
         """서비스 조회 테스트"""
         discovery = CloudRunServiceDiscovery()
         endpoint = ServiceEndpoint("test-service", "https://test.example.com")
-        
+
         discovery.register_service("test-service", endpoint)
-        
+
         retrieved = discovery.get_service("test-service")
         assert retrieved is endpoint
-        
+
         # 존재하지 않는 서비스
         non_existent = discovery.get_service("non-existent")
         assert non_existent is None
@@ -175,13 +175,13 @@ class TestCloudRunServiceDiscovery:
     def test_service_override(self):
         """서비스 등록 덮어쓰기 테스트"""
         discovery = CloudRunServiceDiscovery()
-        
+
         endpoint1 = ServiceEndpoint("test-service", "https://test1.example.com")
         endpoint2 = ServiceEndpoint("test-service", "https://test2.example.com")
-        
+
         discovery.register_service("test-service", endpoint1)
         discovery.register_service("test-service", endpoint2)
-        
+
         # 최신 등록된 서비스가 우선
         retrieved = discovery.get_service("test-service")
         assert retrieved is endpoint2
@@ -195,7 +195,7 @@ class TestServiceDiscoveryFunctions:
         """글로벌 서비스 디스커버리 인스턴스 반환 확인"""
         discovery1 = get_service_discovery()
         discovery2 = get_service_discovery()
-        
+
         assert discovery1 is discovery2
         assert isinstance(discovery1, CloudRunServiceDiscovery)
 
@@ -203,36 +203,38 @@ class TestServiceDiscoveryFunctions:
     async def test_discover_services_empty(self):
         """빈 서비스 디스커버리에서 서비스 탐색"""
         # 새로운 인스턴스 생성 (테스트 격리)
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = CloudRunServiceDiscovery()
             mock_discovery._services = {}  # 명시적으로 비우기
             mock_get.return_value = mock_discovery
-            
+
             services = await discover_services()
-            
+
             assert services == []
 
     @pytest.mark.asyncio
     async def test_discover_services_with_pattern(self):
         """패턴을 사용한 서비스 탐색"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = CloudRunServiceDiscovery()
-            
+
             # 테스트용 서비스들 등록
             auth_endpoint = ServiceEndpoint("auth-service", "https://auth.example.com")
             user_endpoint = ServiceEndpoint("user-service", "https://user.example.com")
-            payment_endpoint = ServiceEndpoint("payment-api", "https://payment.example.com")
-            
+            payment_endpoint = ServiceEndpoint(
+                "payment-api", "https://payment.example.com"
+            )
+
             mock_discovery.register_service("auth-service", auth_endpoint)
             mock_discovery.register_service("user-service", user_endpoint)
             mock_discovery.register_service("payment-api", payment_endpoint)
-            
+
             mock_get.return_value = mock_discovery
-            
+
             # 모든 서비스 탐색
             all_services = await discover_services("*")
             assert len(all_services) == 3
-            
+
             # 패턴 매칭 서비스 탐색
             service_pattern = await discover_services("service")
             service_names = [s.name for s in service_pattern]
@@ -243,13 +245,13 @@ class TestServiceDiscoveryFunctions:
     @pytest.mark.asyncio
     async def test_discover_services_initialization(self):
         """서비스 탐색 시 자동 초기화 확인"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = AsyncMock(spec=CloudRunServiceDiscovery)
             mock_discovery.list_services.return_value = []
             mock_get.return_value = mock_discovery
-            
+
             await discover_services()
-            
+
             # 초기화 메서드가 호출되었는지 확인
             mock_discovery.initialize.assert_called_once()
 
@@ -260,20 +262,17 @@ class TestServiceCalls:
     @pytest.mark.asyncio
     async def test_call_service_success(self):
         """정상 서비스 호출 테스트"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = MagicMock(spec=CloudRunServiceDiscovery)
             endpoint = ServiceEndpoint("test-service", "https://test.example.com")
             endpoint.is_healthy = True
             mock_discovery.get_service.return_value = endpoint
             mock_get.return_value = mock_discovery
-            
+
             result = await call_service(
-                "test-service",
-                "/api/users",
-                method="GET",
-                data={"user_id": "123"}
+                "test-service", "/api/users", method="GET", data={"user_id": "123"}
             )
-            
+
             assert isinstance(result, Success)
             response_data = result.value
             assert response_data["status"] == "success"
@@ -283,50 +282,53 @@ class TestServiceCalls:
     @pytest.mark.asyncio
     async def test_call_service_not_found(self):
         """존재하지 않는 서비스 호출 테스트"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = MagicMock(spec=CloudRunServiceDiscovery)
             mock_discovery.get_service.return_value = None
             mock_get.return_value = mock_discovery
-            
+
             result = await call_service("non-existent-service", "/api/test")
-            
+
             assert isinstance(result, Failure)
             assert "Service not found: non-existent-service" in result.error
 
     @pytest.mark.asyncio
     async def test_call_service_unhealthy(self):
         """비정상 서비스 호출 테스트"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = MagicMock(spec=CloudRunServiceDiscovery)
             endpoint = ServiceEndpoint("test-service", "https://test.example.com")
             endpoint.is_healthy = False
             mock_discovery.get_service.return_value = endpoint
             mock_get.return_value = mock_discovery
-            
+
             result = await call_service("test-service", "/api/test")
-            
+
             assert isinstance(result, Failure)
             assert "Service unhealthy: test-service" in result.error
 
     @pytest.mark.asyncio
     async def test_call_service_with_headers(self):
         """헤더를 포함한 서비스 호출 테스트"""
-        with patch('rfs.cloud_run.helpers.get_service_discovery') as mock_get:
+        with patch("rfs.cloud_run.helpers.get_service_discovery") as mock_get:
             mock_discovery = MagicMock(spec=CloudRunServiceDiscovery)
             endpoint = ServiceEndpoint("test-service", "https://test.example.com")
             endpoint.is_healthy = True
             mock_discovery.get_service.return_value = endpoint
             mock_get.return_value = mock_discovery
-            
-            headers = {"Authorization": "Bearer token123", "Content-Type": "application/json"}
+
+            headers = {
+                "Authorization": "Bearer token123",
+                "Content-Type": "application/json",
+            }
             result = await call_service(
                 "test-service",
                 "/api/protected",
                 method="POST",
                 data={"action": "update"},
-                headers=headers
+                headers=headers,
             )
-            
+
             assert isinstance(result, Success)
 
 
@@ -360,11 +362,14 @@ class TestEnvironmentDetection:
 
     def test_cloud_run_multiple_env_vars(self):
         """여러 환경변수가 설정된 경우"""
-        with patch.dict(os.environ, {
-            "K_SERVICE": "test-service",
-            "K_REVISION": "test-revision-001",
-            "GOOGLE_CLOUD_PROJECT": "test-project"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "K_SERVICE": "test-service",
+                "K_REVISION": "test-revision-001",
+                "GOOGLE_CLOUD_PROJECT": "test-project",
+            },
+        ):
             assert is_cloud_run_environment() is True
 
     def test_get_cloud_run_service_name(self):
@@ -405,7 +410,7 @@ class TestCloudRunStatus:
         """로컬 환경에서의 상태 조회"""
         with patch.dict(os.environ, {}, clear=True):
             status = get_cloud_run_status()
-            
+
             assert status["is_cloud_run"] is False
             assert status["service_name"] is None
             assert status["revision"] is None
@@ -416,12 +421,12 @@ class TestCloudRunStatus:
         env_vars = {
             "K_SERVICE": "test-service",
             "K_REVISION": "test-service-00001-abc",
-            "CLOUD_RUN_REGION": "us-central1"
+            "CLOUD_RUN_REGION": "us-central1",
         }
-        
+
         with patch.dict(os.environ, env_vars):
             status = get_cloud_run_status()
-            
+
             assert status["is_cloud_run"] is True
             assert status["service_name"] == "test-service"
             assert status["revision"] == "test-service-00001-abc"
@@ -435,15 +440,19 @@ class TestCloudRunModuleFunctions:
         """로컬 환경에서 메타데이터 조회"""
         with patch.dict(os.environ, {}, clear=True):
             metadata = get_cloud_run_metadata()
-            
+
             expected_keys = [
-                "service_name", "revision", "configuration", 
-                "project_id", "region", "port"
+                "service_name",
+                "revision",
+                "configuration",
+                "project_id",
+                "region",
+                "port",
             ]
-            
+
             for key in expected_keys:
                 assert key in metadata
-            
+
             # 기본값 확인
             assert metadata["service_name"] == "unknown"
             assert metadata["revision"] == "unknown"
@@ -458,12 +467,12 @@ class TestCloudRunModuleFunctions:
             "K_CONFIGURATION": "my-service",
             "GOOGLE_CLOUD_PROJECT": "my-project-123",
             "GOOGLE_CLOUD_REGION": "asia-northeast1",
-            "PORT": "8080"
+            "PORT": "8080",
         }
-        
+
         with patch.dict(os.environ, env_vars):
             metadata = get_cloud_run_metadata()
-            
+
             assert metadata["service_name"] == "my-service"
             assert metadata["revision"] == "my-service-00001-abc"
             assert metadata["configuration"] == "my-service"
@@ -474,26 +483,25 @@ class TestCloudRunModuleFunctions:
     @pytest.mark.asyncio
     async def test_initialize_cloud_run_services_success(self):
         """Cloud Run 서비스 초기화 성공 테스트"""
-        env_vars = {
-            "GOOGLE_CLOUD_PROJECT": "test-project",
-            "K_SERVICE": "test-service"
-        }
-        
+        env_vars = {"GOOGLE_CLOUD_PROJECT": "test-project", "K_SERVICE": "test-service"}
+
         with patch.dict(os.environ, env_vars):
-            with patch('rfs.cloud_run.get_service_discovery') as mock_sd, \
-                 patch('rfs.cloud_run.get_task_queue') as mock_tq, \
-                 patch('rfs.cloud_run.get_monitoring_client') as mock_mc, \
-                 patch('rfs.cloud_run.get_autoscaling_optimizer') as mock_ao, \
-                 patch('rfs.cloud_run.log_info') as mock_log:
-                
+            with (
+                patch("rfs.cloud_run.get_service_discovery") as mock_sd,
+                patch("rfs.cloud_run.get_task_queue") as mock_tq,
+                patch("rfs.cloud_run.get_monitoring_client") as mock_mc,
+                patch("rfs.cloud_run.get_autoscaling_optimizer") as mock_ao,
+                patch("rfs.cloud_run.log_info") as mock_log,
+            ):
+
                 # Mock 반환값들
                 mock_sd.return_value = "mocked_service_discovery"
-                mock_tq.return_value = "mocked_task_queue"  
+                mock_tq.return_value = "mocked_task_queue"
                 mock_mc.return_value = "mocked_monitoring"
                 mock_ao.return_value = "mocked_autoscaling"
-                
+
                 result = await initialize_cloud_run_services()
-                
+
                 assert result["success"] is True
                 assert result["project_id"] == "test-project"
                 assert result["service_name"] == "test-service"
@@ -508,23 +516,26 @@ class TestCloudRunModuleFunctions:
         """프로젝트 ID가 없는 경우 초기화 실패"""
         with patch.dict(os.environ, {}, clear=True):
             result = await initialize_cloud_run_services()
-            
-            assert result["success"] is False
-            assert "GOOGLE_CLOUD_PROJECT 환경 변수가 설정되지 않았습니다" in result["error"]
 
-    @pytest.mark.asyncio 
+            assert result["success"] is False
+            assert (
+                "GOOGLE_CLOUD_PROJECT 환경 변수가 설정되지 않았습니다"
+                in result["error"]
+            )
+
+    @pytest.mark.asyncio
     async def test_initialize_cloud_run_services_partial(self):
         """부분적 서비스 초기화"""
         env_vars = {"GOOGLE_CLOUD_PROJECT": "test-project"}
-        
+
         with patch.dict(os.environ, env_vars):
             result = await initialize_cloud_run_services(
                 enable_service_discovery=True,
                 enable_task_queue=False,
                 enable_monitoring=False,
-                enable_autoscaling=False
+                enable_autoscaling=False,
             )
-            
+
             assert result["success"] is True
             assert "service_discovery" in result["initialized_services"]
             assert "task_queue" not in result["initialized_services"]
@@ -534,17 +545,19 @@ class TestCloudRunModuleFunctions:
     @pytest.mark.asyncio
     async def test_get_module_status(self):
         """모듈 상태 조회 테스트"""
-        with patch('rfs.cloud_run.is_cloud_run_environment') as mock_env:
-            with patch('rfs.cloud_run.get_cloud_run_metadata') as mock_metadata:
+        with patch("rfs.cloud_run.is_cloud_run_environment") as mock_env:
+            with patch("rfs.cloud_run.get_cloud_run_metadata") as mock_metadata:
                 mock_env.return_value = True
                 mock_metadata.return_value = {"service_name": "test-service"}
-                
+
                 status = await get_module_status()
-                
+
                 assert "environment" in status
                 assert "services" in status
                 assert status["environment"]["is_cloud_run"] is True
-                assert status["environment"]["metadata"]["service_name"] == "test-service"
+                assert (
+                    status["environment"]["metadata"]["service_name"] == "test-service"
+                )
 
     @pytest.mark.asyncio
     async def test_shutdown_cloud_run_services(self):

@@ -28,6 +28,22 @@ Pydantic 기반 환경별 설정 관리
 - 설정 검증
 - 동적 설정 로딩
 
+#### 15. [Configuration Injection](15-configuration-injection.md) 🆕
+설정 값을 구현체에 주입하는 다양한 패턴과 방법
+- 직접 가져오기 패턴
+- 헬퍼 함수 패턴
+- 생성자 주입 패턴
+- 의존성 주입 패턴
+- 레지스트리 기반 주입
+
+#### 16. [HOF Usage Guide](16-hof-usage-guide.md) ⭐ **필수**
+Higher-Order Functions 라이브러리 활용 가이드
+- **내장 HOF 우선 사용 원칙**
+- 함수 합성 (pipe, compose, curry)
+- Swift 스타일 컬렉션 연산 (first, compact_map, flat_map)
+- 모나드 패턴 (Maybe, Result, Either)
+- 비동기 HOF 및 실전 예제
+
 #### 4. [Transactions](04-transactions.md)
 분산 트랜잭션과 데이터 일관성 관리
 - 트랜잭션 데코레이터

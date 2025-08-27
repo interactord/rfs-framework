@@ -1,0 +1,93 @@
+# RFS Framework Pre-commit 설정
+# 모든 커밋 전에 RFS Framework 규칙을 자동 검증합니다.
+
+repos:
+  - repo: local
+    hooks:
+      - id: rfs-rules-validation
+        name: RFS Framework 규칙 검증
+        entry: python scripts/validate_rfs_rules.py --no-warnings
+        language: system
+        files: \.py$
+        fail_fast: true
+        verbose: true
+        
+      - id: korean-comments-check
+        name: 한글 주석 검증
+        entry: python scripts/validate_rfs_rules.py --strict
+        language: system
+        files: \.py$
+        fail_fast: true
+        
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        name: 코드 포맷팅 (black)
+        language_version: python3.10
+        
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Import 정렬 (isort)
+        language_version: python3.10
+        
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        name: 타입 검사 (mypy)
+        language_version: python3.10
+        additional_dependencies: [types-all]
+        exclude: ^(tests/|examples/)
+        
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: 보안 검사 (bandit)
+        exclude: ^tests/
+        args: [--skip, "B101"]  # assert 문 테스트에서 허용
+        
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: 코드 품질 (flake8)
+        additional_dependencies:
+          - flake8-docstrings
+          - flake8-import-order
+        exclude: ^(migrations/|__pycache__|\.git)
+        
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: 후행 공백 제거
+        
+      - id: end-of-file-fixer
+        name: 파일 끝 줄바꿈 추가
+        
+      - id: check-yaml
+        name: YAML 파일 검증
+        
+      - id: check-toml
+        name: TOML 파일 검증
+        
+      - id: check-json
+        name: JSON 파일 검증
+        
+      - id: check-merge-conflict
+        name: 병합 충돌 검사
+        
+      - id: check-case-conflict
+        name: 대소문자 충돌 검사
+        
+      - id: fix-byte-order-marker
+        name: BOM 제거
+        
+ci:
+  autofix_commit_msg: "style: pre-commit 자동 수정"
+  autofix_prs: true
+  autoupdate_commit_msg: "ci: pre-commit 훅 자동 업데이트"

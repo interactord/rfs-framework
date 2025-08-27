@@ -19,6 +19,10 @@ class ServiceScope(Enum):
     REQUEST = "request"
     SESSION = "session"
 
+    def to_service_scope(self) -> "ServiceScope":
+        """ServiceScope로 변환 (이미 ServiceScope인 경우 자기 자신 반환)"""
+        return self
+
 
 class InjectionType(Enum):
     """주입 타입"""
@@ -31,31 +35,30 @@ class InjectionType(Enum):
 class AnnotationType(Enum):
     """어노테이션 타입"""
 
+    COMPONENT = "component"
     PORT = "port"
     ADAPTER = "adapter"
     USE_CASE = "use_case"
     CONTROLLER = "controller"
     SERVICE = "service"
     REPOSITORY = "repository"
-    COMPONENT = "component"
+    VALUE = "value"
+    CONFIG = "config"
 
 
 @dataclass
 class AnnotationMetadata:
     """애노테이션 메타데이터"""
 
-    annotation_type: str
-    parameters: Dict[str, Any]
-    target: Any
-    target_type: str
-
-    def get_param(self, key: str, default: Any = None) -> Any:
-        """파라미터 조회"""
-        return self.parameters.get(key, default)
-
-    def has_param(self, key: str) -> bool:
-        """파라미터 존재 여부"""
-        return key in self.parameters
+    name: str
+    annotation_type: AnnotationType
+    scope: ServiceScope
+    target_class: Any
+    dependencies: List[str] = field(default_factory=list)
+    lazy: bool = False
+    profile: Optional[str] = None
+    port_name: Optional[str] = None
+    config_key: Optional[str] = None
 
 
 @dataclass
@@ -75,57 +78,16 @@ class DependencyMetadata:
 class ComponentMetadata:
     """컴포넌트 메타데이터"""
 
-    component_id: str
-    component_type: Type
-    scope: ServiceScope = ServiceScope.SINGLETON
+    name: str
+    scope: ServiceScope
+    dependencies: List[str] = field(default_factory=list)
+    lazy: bool = False
     primary: bool = False
-    lazy_init: bool = False
-    profile: Optional[str] = None
-    annotations: List[AnnotationMetadata] = field(default_factory=list)
-    dependencies: List[DependencyMetadata] = field(default_factory=list)
-    constructor_dependencies: List[DependencyMetadata] = field(default_factory=list)
-    field_dependencies: Dict[str, DependencyMetadata] = field(default_factory=dict)
-    setter_dependencies: Dict[str, DependencyMetadata] = field(default_factory=dict)
-    post_construct: Optional[Callable] = None
-    pre_destroy: Optional[Callable] = None
-    tags: Set[str] = field(default_factory=set)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    qualifier: Optional[str] = None
 
-    def add_annotation(self, annotation: AnnotationMetadata):
-        """애노테이션 추가"""
-        self.annotations = self.annotations + [annotation]
-
-    def add_dependency(self, dependency: DependencyMetadata):
-        """의존성 추가"""
-        self.dependencies = self.dependencies + [dependency]
-        match dependency.injection_type:
-            case InjectionType.CONSTRUCTOR:
-                self.constructor_dependencies = self.constructor_dependencies + [
-                    dependency
-                ]
-            case InjectionType.FIELD:
-                self.field_dependencies = {
-                    **self.field_dependencies,
-                    dependency.name: dependency,
-                }
-            case InjectionType.SETTER:
-                self.setter_dependencies = {
-                    **self.setter_dependencies,
-                    dependency.name: dependency,
-                }
-
-    def get_dependencies_by_type(
-        self, injection_type: InjectionType
-    ) -> List[DependencyMetadata]:
-        """주입 타입별 의존성 조회"""
-        match injection_type:
-            case InjectionType.CONSTRUCTOR:
-                return self.constructor_dependencies
-            case InjectionType.FIELD:
-                return list(self.field_dependencies.values())
-            case InjectionType.SETTER:
-                return list(self.setter_dependencies.values())
-        return []
+    def to_service_scope(self) -> ServiceScope:
+        """ServiceScope 반환"""
+        return self.scope
 
 
 _component_metadata: Dict[Type, ComponentMetadata] = {}
@@ -143,36 +105,65 @@ def set_component_metadata(component_type: Type, metadata: ComponentMetadata):
     _component_metadata[component_type] = metadata
 
 
-def get_annotation_metadata(target: Any) -> List[AnnotationMetadata]:
+def get_annotation_metadata(target: Any) -> Optional[AnnotationMetadata]:
     """애노테이션 메타데이터 조회"""
-    return _annotation_metadata.get(target, [])
+    if target is None:
+        raise AttributeError("Cannot get annotation metadata from None")
+    metadata_list = _annotation_metadata.get(target, [])
+    return metadata_list[0] if metadata_list else None
 
 
 def has_annotation(target: Any) -> bool:
     """애노테이션 존재 여부 확인"""
+    if target is None:
+        raise AttributeError("Cannot check annotation on None")
     return target in _annotation_metadata and len(_annotation_metadata[target]) > 0
 
 
 def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
     """헥사고날 아키텍처 검증
-    
+
     Returns:
         List[str]: 검증 오류 메시지들
     """
-    # 간단한 구현 - 실제로는 더 복잡한 검증이 필요함
-    return []
+    errors = []
+
+    for cls in classes:
+        metadata = get_annotation_metadata(cls)
+        if not metadata:
+            continue
+
+        # 어댑터는 포트 이름이 있어야 함
+        if metadata.annotation_type == AnnotationType.ADAPTER:
+            if not metadata.port_name:
+                errors.append(f"Adapter {metadata.name} must specify a port_name")
+
+        # 유스케이스는 포트에만 의존해야 함 (어댑터, 리포지토리 직접 의존 금지)
+        if metadata.annotation_type == AnnotationType.USE_CASE:
+            for dependency in metadata.dependencies:
+                if (
+                    "adapter" in dependency.lower()
+                    or "repository" in dependency.lower()
+                ):
+                    errors.append(
+                        f"UseCase {metadata.name} should depend on ports, not {dependency}"
+                    )
+
+    return errors
 
 
 def set_annotation_metadata(target: Any, metadata: AnnotationMetadata):
     """애노테이션 메타데이터 저장"""
+    if target is None:
+        raise AttributeError("Cannot set annotation metadata on None")
     global _annotation_metadata
     if target not in _annotation_metadata:
         _annotation_metadata[target] = []
-    _annotation_metadata[target].append(metadata)
+    _annotation_metadata[target] = [metadata]  # 리스트로 저장하지만 하나만
 
 
 def create_annotation_decorator(
-    annotation_type: str, target_types: List[str] = None
+    annotation_type: AnnotationType, target_types: List[str] = None
 ) -> Callable:
     """애노테이션 데코레이터 생성 헬퍼"""
     if target_types is None:
@@ -189,25 +180,34 @@ def create_annotation_decorator(
                 target_type = "field"
             if target_type not in target_types:
                 raise ValueError(
-                    f"@{annotation_type} cannot be applied to {target_type}"
+                    f"@{annotation_type.value} cannot be applied to {target_type}"
                 )
+
             metadata = AnnotationMetadata(
+                name=params.get("name", target.__name__),
                 annotation_type=annotation_type,
-                parameters=params,
-                target=target,
-                target_type=target_type,
+                scope=params.get("scope", ServiceScope.SINGLETON),
+                target_class=target,
+                dependencies=params.get("dependencies", []),
+                lazy=params.get("lazy", False),
+                profile=params.get("profile"),
+                port_name=params.get("port_name"),
+                config_key=params.get("config_key"),
             )
             set_annotation_metadata(target, metadata)
+
             if target_type == "class":
                 component_metadata = get_component_metadata(target)
                 if not component_metadata:
                     component_metadata = ComponentMetadata(
-                        component_id=params.get("name", target.__name__),
-                        component_type=target,
+                        name=params.get("name", target.__name__),
                         scope=params.get("scope", ServiceScope.SINGLETON),
+                        dependencies=params.get("dependencies", []),
+                        lazy=params.get("lazy", False),
+                        primary=params.get("primary", False),
+                        qualifier=params.get("qualifier"),
                     )
                     set_component_metadata(target, component_metadata)
-                component_metadata.add_annotation(metadata)
             return target
 
         return wrapper

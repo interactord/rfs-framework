@@ -198,7 +198,9 @@ class RedisTransactionManager:
         manager = get_transaction_manager()
         manager.register_resource("redis", self.resource)
 
-    def pipeline(self, transaction: bool = True) -> Any:  # Pipeline when redis is available
+    def pipeline(
+        self, transaction: bool = True
+    ) -> Any:  # Pipeline when redis is available
         """파이프라인 생성"""
         pipeline = self.redis.pipeline(transaction=transaction)
         self.current_pipeline = pipeline

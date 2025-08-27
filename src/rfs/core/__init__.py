@@ -31,11 +31,11 @@ from .annotations import (
     AnnotationMetadata,
     AnnotationType,
     Component,
-    ServiceScope,
     Controller,
     Port,
     Repository,
     Service,
+    ServiceScope,
     UseCase,
     get_annotation_metadata,
     has_annotation,
@@ -148,10 +148,10 @@ from .transaction_decorators import (
 
 # Transaction Management System (NEW v4.1)
 from .transactions import (
+    DistributedTransaction,
+    RedisTransactionManager,
     TransactionManager,
     get_transaction_manager,
-    RedisTransactionManager,
-    DistributedTransaction,
 )
 
 # v4 핵심 exports

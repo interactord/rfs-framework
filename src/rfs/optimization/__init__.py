@@ -50,25 +50,34 @@ NetworkOptimizer = None
 CloudRunOptimizer = None
 ScalingOptimizer = None
 
+
 # Helper functions for backward compatibility
 def get_cloud_run_optimizer():
     """Get Cloud Run optimizer instance"""
     from .optimizers.cloud_run_optimizer import LegacyCloudRunOptimizer
+
     return LegacyCloudRunOptimizer()
+
 
 def get_memory_optimizer():
     """Get memory optimizer instance"""
     from .optimizers.memory_optimizer import LegacyMemoryOptimizer
+
     return LegacyMemoryOptimizer()
+
 
 def get_cpu_optimizer():
     """Get CPU optimizer instance"""
     from .optimizers.cpu_optimizer import LegacyCPUOptimizer
+
     return LegacyCPUOptimizer()
+
 
 class OptimizationStrategy:
     """Optimization strategy base class"""
+
     pass
+
 
 __all__ = [
     # 핵심 최적화 시스템

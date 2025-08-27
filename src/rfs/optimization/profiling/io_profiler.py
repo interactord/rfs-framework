@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False

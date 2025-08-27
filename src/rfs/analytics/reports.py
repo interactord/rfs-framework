@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Union, ClassVar
+from typing import Any, BinaryIO, ClassVar, Dict, List, Optional, Union
 from weakref import WeakKeyDictionary
 
 from ..core.result import Failure, Result, Success
@@ -120,7 +120,7 @@ class Report(ABC):
     @abstractmethod
     async def generate(self) -> Result[bytes, str]:
         """리포트 생성
-        
+
         Returns:
             Result[bytes, str]: 생성된 리포트 바이트 또는 오류
         """
@@ -129,7 +129,7 @@ class Report(ABC):
     @abstractmethod
     def get_mime_type(self) -> str:
         """MIME 타입 반환
-        
+
         Returns:
             str: MIME 타입 문자열
         """
@@ -142,7 +142,7 @@ class Report(ABC):
             existing_ids = {s.section_id for s in self.sections}
             if section.section_id in existing_ids:
                 return Failure(f"Section '{section.section_id}' already exists")
-                
+
             self.sections.append(section)
             # 캐시 무효화
             self._cache.clear()
@@ -182,15 +182,15 @@ class Report(ABC):
         if self._cache_timestamp is None:
             return False
         return (datetime.now() - self._cache_timestamp).seconds < self._cache_ttl
-    
+
     async def _process_sections(self) -> Result[List[ReportSection], str]:
         """섹션 처리 (조건부 표시, 변수 치환 등) - 캐시 지원"""
         cache_key = "processed_sections"
-        
+
         # 캐시 확인
         if self._is_cache_valid() and cache_key in self._cache:
             return Success(self._cache[cache_key])
-            
+
         try:
             processed_sections = []
             for section in self.sections:
@@ -201,11 +201,11 @@ class Report(ABC):
                     continue
                 processed_section = await self._substitute_variables(section)
                 processed_sections.append(processed_section)
-                
+
             # 결과 캐시 저장
             self._cache[cache_key] = processed_sections
             self._cache_timestamp = datetime.now()
-            
+
             return Success(processed_sections)
         except Exception as e:
             return Failure(f"Section processing failed: {str(e)}")
@@ -317,8 +317,8 @@ class PDFReport(Report):
                 match section.content_type:
                     case "text":
                         story = story + [
-                        Paragraph(str(section.content), styles.get("Normal"))
-                    ]
+                            Paragraph(str(section.content), styles.get("Normal"))
+                        ]
                     case "table":
                         if (
                             hasattr(section.content, "__class__")
@@ -341,7 +341,12 @@ class PDFReport(Report):
                                 TableStyle(
                                     [
                                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                                        (
+                                            "TEXTCOLOR",
+                                            (0, 0),
+                                            (-1, 0),
+                                            colors.whitesmoke,
+                                        ),
                                         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                                         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                                         ("FONTSIZE", (0, 0), (-1, 0), 14),
@@ -357,7 +362,9 @@ class PDFReport(Report):
                             hasattr(section.content, "__class__")
                             and section.content.__class__.__name__ == "dict"
                         ) and "image_base64" in section.content:
-                            image_data = base64.b64decode(section.content["image_base64"])
+                            image_data = base64.b64decode(
+                                section.content["image_base64"]
+                            )
                             img_buffer = io.BytesIO(image_data)
                             from reportlab.lib.utils import ImageReader
                             from reportlab.platypus import Image
@@ -609,9 +616,12 @@ class ReportBuilder:
             match self._format:
                 case ReportFormat.PDF:
                     report = PDFReport(report_id, self._template, self._config)
-                case ReportFormat.HTML:                report = HTMLReport(report_id, self._template, self._config)
-                case ReportFormat.EXCEL:                report = ExcelReport(report_id, self._template, self._config)
-                case _:                return Failure(f"Unsupported format: {self._format}")
+                case ReportFormat.HTML:
+                    report = HTMLReport(report_id, self._template, self._config)
+                case ReportFormat.EXCEL:
+                    report = ExcelReport(report_id, self._template, self._config)
+                case _:
+                    return Failure(f"Unsupported format: {self._format}")
             for template_section in self._template.sections:
                 report.add_section(template_section)
             for key, value in self._template.variables.items():

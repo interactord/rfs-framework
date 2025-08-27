@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, ClassVar
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Union
 from weakref import WeakKeyDictionary
 
 from ..core.result import Failure, Result, Success
@@ -139,35 +139,37 @@ class KPI(ABC):
         if self._cache_timestamp is None:
             return False
         return (datetime.now() - self._cache_timestamp).seconds < self._cache_ttl
-    
+
     def _get_cache_key(self, operation: str, **kwargs) -> str:
         """캐시 키 생성"""
         params = "_".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
         return f"{self.kpi_id}_{operation}_{params}"
-    
-    async def _execute_query(self, query: DataQuery, cache_key: Optional[str] = None) -> Result[Any, str]:
+
+    async def _execute_query(
+        self, query: DataQuery, cache_key: Optional[str] = None
+    ) -> Result[Any, str]:
         """데이터 쿼리 실행 (캐싱 지원)
-        
+
         Args:
             query: 실행할 쿼리
             cache_key: 캐시 키 (옵션)
-            
+
         Returns:
             Result[Any, str]: 쿼리 결과 또는 오류
         """
         # 캐시 확인
         if cache_key and self._is_cache_valid() and cache_key in self._cache:
             return Success(self._cache[cache_key])
-            
+
         if not self.data_source:
             return Failure("Data source not configured")
-            
+
         try:
             from ..analytics.data_source import DataSourceManager
-            
+
             # 데이터 소스 매니저 사용
             manager = DataSourceManager()
-            
+
             # 데이터 소스가 문자열인 경우 ID로 찾기
             if isinstance(self.data_source, str):
                 source_result = manager.get_source(self.data_source)
@@ -176,29 +178,29 @@ class KPI(ABC):
                 data_source = source_result.value
             else:
                 data_source = self.data_source
-                
+
             # 쿼리 실행 (테스트 호환성을 위해 execute 메서드 사용)
-            if hasattr(data_source, 'execute'):
+            if hasattr(data_source, "execute"):
                 result = await data_source.execute(query)
             else:
                 result = await data_source.execute_query(query)
-            
+
             # 결과 캐시 저장
             if result.is_success() and cache_key:
                 self._cache[cache_key] = result.value
                 self._cache_timestamp = datetime.now()
-                
+
             return result
         except Exception as e:
             return Failure(f"Query execution failed: {str(e)}")
-    
+
     @abstractmethod
     async def calculate(self, **kwargs) -> Result[float, str]:
         """KPI 값 계산
-        
+
         Args:
             **kwargs: 계산에 필요한 추가 매개변수
-            
+
         Returns:
             Result[float, str]: 계산된 KPI 값 또는 오류
         """
@@ -211,7 +213,7 @@ class KPI(ABC):
             existing_ids = {t.threshold_id for t in self.thresholds}
             if threshold.threshold_id in existing_ids:
                 return Failure(f"Threshold '{threshold.threshold_id}' already exists")
-                
+
             self.thresholds.append(threshold)
             self.thresholds.sort(
                 key=lambda t: {
@@ -270,9 +272,11 @@ class KPI(ABC):
     @lru_cache(maxsize=32)
     def _get_cached_history(self, days: int, cache_timestamp: str) -> List[KPIValue]:
         """히스토리 캐시 (내부 사용)"""
-        cutoff_date = datetime.strptime(cache_timestamp, "%Y%m%d%H") - timedelta(days=days)
+        cutoff_date = datetime.strptime(cache_timestamp, "%Y%m%d%H") - timedelta(
+            days=days
+        )
         return [v for v in self.history if v.timestamp >= cutoff_date]
-        
+
     def get_history(self, days: int = 30) -> List[KPIValue]:
         """히스토리 조회 (캐시 지원)"""
         # 1시간 단위로 캐시
@@ -301,13 +305,15 @@ class KPI(ABC):
             return "decreasing"
         else:
             return "stable"
-            
+
     def get_trend(self, days: int = 7) -> Optional[str]:
         """트렌드 분석 (캐시 지원)"""
         recent_values = self.get_history(days)
         if len(recent_values) < 2:
             return None
-        values_hash = hash(tuple(v.value for v in recent_values[-20:]))  # 최근 20개 값만 사용
+        values_hash = hash(
+            tuple(v.value for v in recent_values[-20:])
+        )  # 최근 20개 값만 사용
         return self._calculate_trend(values_hash, days)
 
 
@@ -322,19 +328,19 @@ class CountKPI(KPI):
         """카운트 계산 (캐싱 지원)"""
         try:
             from ..analytics.data_source import DataQuery
-            
+
             # 캐시 키 생성
             cache_key = self._get_cache_key("count", **kwargs)
-            
+
             data_query = DataQuery(query=self.query, parameters=kwargs)
             result = await self._execute_query(data_query, cache_key)
             if result.is_failure():
                 return Failure(f"Failed to calculate count: {result.error}")
-            
+
             data = result.value
             if not data:
                 return Success(0.0)
-                
+
             # 카운트 계산 로직 최적화
             if isinstance(data, list):
                 count = float(len(data))
@@ -353,7 +359,7 @@ class CountKPI(KPI):
                         count = float(data[0])
                 else:
                     count = 0.0
-                    
+
             return Success(count)
         except Exception as e:
             return Failure(f"Failed to calculate count: {str(e)}")
@@ -370,18 +376,19 @@ class AverageKPI(KPI):
     async def calculate(self, **kwargs) -> Result[float, str]:
         """평균 계산"""
         try:
-            from ..analytics.data_source import DataQuery
             import statistics
-            
+
+            from ..analytics.data_source import DataQuery
+
             data_query = DataQuery(query=self.query, parameters=kwargs)
             result = await self._execute_query(data_query)
             if result.is_failure():
                 return Failure(f"Failed to calculate average: {result.error}")
-                
+
             data = result.value
             if not data:
                 return Success(0.0)
-                
+
             values = []
             if isinstance(data, list):
                 for row in data:
@@ -402,16 +409,16 @@ class AverageKPI(KPI):
                     values = [float(data[self.column])]
                 except (ValueError, TypeError):
                     pass
-                    
+
             if not values:
                 return Success(0.0)
-                
+
             # None 값 제거
             values = [v for v in values if v is not None]
-            
+
             if not values:
                 return Success(0.0)
-                
+
             average = statistics.mean(values)
             return Success(float(average))
         except Exception as e:

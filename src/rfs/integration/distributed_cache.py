@@ -248,7 +248,9 @@ class LocalCache:
                 key_to_remove = next(iter(self.access_order))
             case EvictionPolicy.LFU:
                 if self.frequency_count:
-                    key_to_remove = min(self.frequency_count, key=self.frequency_count.get)
+                    key_to_remove = min(
+                        self.frequency_count, key=self.frequency_count.get
+                    )
             case EvictionPolicy.FIFO:
                 oldest_key = None
                 oldest_time = float("inf")
@@ -259,6 +261,7 @@ class LocalCache:
                 key_to_remove = oldest_key
             case EvictionPolicy.RANDOM:
                 import random
+
                 key_to_remove = random.choice(list(self.entries.keys()))
         if key_to_remove:
             await self._remove_entry(key_to_remove)

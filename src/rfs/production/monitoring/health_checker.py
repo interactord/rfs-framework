@@ -135,19 +135,20 @@ class EndpointCheck:
                         content = await response.text()
                         return await self._evaluate_response(
                             response,
-                        content,
-                        response_time_ms,
-                        expected_status,
-                        expected_content,
+                            content,
+                            response_time_ms,
+                            expected_status,
+                            expected_content,
+                        )
+                case _:
+                    return HealthCheckResult(
+                        check_name=self.config.name,
+                        status=HealthStatus.UNHEALTHY,
+                        response_time_ms=0,
+                        timestamp=datetime.now(),
+                        message=f"Unsupported method: {method}",
+                        error=f"Method {method} not implemented",
                     )
-                case _:                return HealthCheckResult(
-                    check_name=self.config.name,
-                    status=HealthStatus.UNHEALTHY,
-                    response_time_ms=0,
-                    timestamp=datetime.now(),
-                    message=f"Unsupported method: {method}",
-                    error=f"Method {method} not implemented",
-                )
         except asyncio.TimeoutError:
             response_time_ms = (time.time() - start_time) * 1000
             return HealthCheckResult(
@@ -251,23 +252,27 @@ class DatabaseCheck:
             match db_type:
                 case "postgresql":
                     return await self._check_postgresql(
-                    connection_string, test_query, start_time
-                )
-                case "mysql":                return await self._check_mysql(
-                    connection_string, test_query, start_time
-                )
-                case "sqlite":                return await self._check_sqlite(
-                    connection_string, test_query, start_time
-                )
-                case "redis":                return await self._check_redis(connection_string, start_time)
-                case _:                return HealthCheckResult(
-                    check_name=self.config.name,
-                    status=HealthStatus.UNHEALTHY,
-                    response_time_ms=0,
-                    timestamp=datetime.now(),
-                    message=f"Unsupported database type: {db_type}",
-                    error=f"Database type {db_type} not supported",
-                )
+                        connection_string, test_query, start_time
+                    )
+                case "mysql":
+                    return await self._check_mysql(
+                        connection_string, test_query, start_time
+                    )
+                case "sqlite":
+                    return await self._check_sqlite(
+                        connection_string, test_query, start_time
+                    )
+                case "redis":
+                    return await self._check_redis(connection_string, start_time)
+                case _:
+                    return HealthCheckResult(
+                        check_name=self.config.name,
+                        status=HealthStatus.UNHEALTHY,
+                        response_time_ms=0,
+                        timestamp=datetime.now(),
+                        message=f"Unsupported database type: {db_type}",
+                        error=f"Database type {db_type} not supported",
+                    )
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
             return HealthCheckResult(
@@ -429,17 +434,21 @@ class ServiceCheck:
             match service_type:
                 case "tcp":
                     return await self._check_tcp_port(start_time)
-                case "udp":                return await self._check_udp_port(start_time)
-                case "dns":                return await self._check_dns(start_time)
-                case "ssl":                return await self._check_ssl_certificate(start_time)
-                case _:                return HealthCheckResult(
-                    check_name=self.config.name,
-                    status=HealthStatus.UNHEALTHY,
-                    response_time_ms=0,
-                    timestamp=datetime.now(),
-                    message=f"Unsupported service type: {service_type}",
-                    error=f"Service type {service_type} not supported",
-                )
+                case "udp":
+                    return await self._check_udp_port(start_time)
+                case "dns":
+                    return await self._check_dns(start_time)
+                case "ssl":
+                    return await self._check_ssl_certificate(start_time)
+                case _:
+                    return HealthCheckResult(
+                        check_name=self.config.name,
+                        status=HealthStatus.UNHEALTHY,
+                        response_time_ms=0,
+                        timestamp=datetime.now(),
+                        message=f"Unsupported service type: {service_type}",
+                        error=f"Service type {service_type} not supported",
+                    )
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
             return HealthCheckResult(
@@ -611,17 +620,21 @@ class ResourceCheck:
             match resource_type:
                 case "cpu":
                     return await self._check_cpu_usage(start_time)
-                case "memory":                return await self._check_memory_usage(start_time)
-                case "disk":                return await self._check_disk_usage(start_time)
-                case "load":                return await self._check_system_load(start_time)
-                case _:                return HealthCheckResult(
-                    check_name=self.config.name,
-                    status=HealthStatus.UNHEALTHY,
-                    response_time_ms=0,
-                    timestamp=datetime.now(),
-                    message=f"Unsupported resource type: {resource_type}",
-                    error=f"Resource type {resource_type} not supported",
-                )
+                case "memory":
+                    return await self._check_memory_usage(start_time)
+                case "disk":
+                    return await self._check_disk_usage(start_time)
+                case "load":
+                    return await self._check_system_load(start_time)
+                case _:
+                    return HealthCheckResult(
+                        check_name=self.config.name,
+                        status=HealthStatus.UNHEALTHY,
+                        response_time_ms=0,
+                        timestamp=datetime.now(),
+                        message=f"Unsupported resource type: {resource_type}",
+                        error=f"Resource type {resource_type} not supported",
+                    )
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
             return HealthCheckResult(
@@ -863,21 +876,24 @@ class HealthChecker:
             match check.check_type:
                 case CheckType.HTTP:
                     self.check_handlers = {
-                    **self.check_handlers,
-                    check.name: EndpointCheck(check),
-                }
-                case CheckType.DATABASE:                self.check_handlers = {
-                    **self.check_handlers,
-                    check.name: DatabaseCheck(check),
-                }
-                case CheckType.SERVICE:                self.check_handlers = {
-                    **self.check_handlers,
-                    check.name: ServiceCheck(check),
-                }
-                case CheckType.RESOURCE:                self.check_handlers = {
-                    **self.check_handlers,
-                    check.name: ResourceCheck(check),
-                }
+                        **self.check_handlers,
+                        check.name: EndpointCheck(check),
+                    }
+                case CheckType.DATABASE:
+                    self.check_handlers = {
+                        **self.check_handlers,
+                        check.name: DatabaseCheck(check),
+                    }
+                case CheckType.SERVICE:
+                    self.check_handlers = {
+                        **self.check_handlers,
+                        check.name: ServiceCheck(check),
+                    }
+                case CheckType.RESOURCE:
+                    self.check_handlers = {
+                        **self.check_handlers,
+                        check.name: ResourceCheck(check),
+                    }
                 case CheckType.CUSTOM:
                     if check.name in self.custom_functions:
                         self.check_handlers = {

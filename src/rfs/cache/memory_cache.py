@@ -255,12 +255,14 @@ class MemoryCache(CacheBackend):
         try:
             cache_key = self._make_key(key)
             # TTL=0일 때는 validate하지 않음 (즉시 만료용)
-            validated_ttl = self._validate_ttl(ttl) if ttl is not None and ttl != 0 else ttl
+            validated_ttl = (
+                self._validate_ttl(ttl) if ttl is not None and ttl != 0 else ttl
+            )
             with self._lock:
                 item = self._data.get(cache_key)
                 if item is None:
                     return Failure("키가 존재하지 않음")
-                
+
                 # TTL이 지정되지 않은 경우, 원래 TTL을 사용
                 if validated_ttl is None:
                     if item.expires_at is None:
@@ -268,19 +270,21 @@ class MemoryCache(CacheBackend):
                     # 원래 TTL 계산
                     original_ttl = int(item.expires_at - item.created_at)
                     validated_ttl = original_ttl
-                
+
                 # TTL 갱신
                 if validated_ttl is not None and validated_ttl >= 0:
                     if validated_ttl == 0:
                         # TTL=0: 즉시 만료
-                        item.expires_at = time.time() - 1  # 과거 시간으로 설정하여 즉시 만료
+                        item.expires_at = (
+                            time.time() - 1
+                        )  # 과거 시간으로 설정하여 즉시 만료
                     else:
                         # TTL>0: 지정된 시간 후 만료
                         item.expires_at = time.time() + validated_ttl
                     heapq.heappush(self._ttl_heap, (item.expires_at, cache_key))
                 else:
                     item.expires_at = None  # TTL 제거
-                
+
                 return Success(None)
         except Exception as e:
             self._stats = {**self._stats, "errors": self._stats["errors"] + 1}
@@ -296,7 +300,7 @@ class MemoryCache(CacheBackend):
                 item = self._data.get(cache_key)
                 if item is None:
                     return Failure("키가 존재하지 않음")
-                
+
                 item.expires_at = None  # TTL 제거
                 return Success(None)
         except Exception as e:
@@ -468,7 +472,7 @@ class MemoryCache(CacheBackend):
                 "current_memory": self._current_memory,
                 "max_memory": self.config.memory_limit,
                 "eviction_policy": self.config.eviction_policy,
-                }
+            }
             return {**base_stats, **memory_stats}
 
 

@@ -55,7 +55,7 @@ class ValidationResult:
     message: str
     current_value: Any = None
     suggested_value: Any = None
-    fix_hint: str = ""
+    fix_hint=""
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -74,12 +74,12 @@ class ConfigValidator:
 
     def __init__(self, validation_level: ValidationLevel = ValidationLevel.STANDARD):
         self.validation_level = validation_level
-        self.results = []
+        self.results=[]
         self.profile_manager = profile_manager
 
     def validate_config(self, config: RFSConfig) -> List[ValidationResult]:
         """전체 설정 검증"""
-        results = {}
+        results={}
         self._validate_types(config)
         self._validate_environment_specific(config)
         self._validate_security(config)
@@ -376,7 +376,7 @@ class ConfigValidator:
 
     def get_validation_summary(self) -> Dict[str, Any]:
         """검증 요약 정보"""
-        severity_counts = {}
+        severity_counts={}
         for severity in ValidationSeverity:
             severity_counts = {
                 **severity_counts,
@@ -407,7 +407,7 @@ class SecurityValidator:
     @staticmethod
     def validate_sensitive_data(config: RFSConfig) -> List[ValidationResult]:
         """민감한 데이터 검증"""
-        results = []
+        results=[]
         if hasattr(config, "redis_url") and config.redis_url:
             if re.search("redis://[^:]+:[^@]+@", config.redis_url):
                 results = results + [
@@ -441,7 +441,7 @@ class SecurityValidator:
     @staticmethod
     def check_environment_exposure() -> List[ValidationResult]:
         """환경 변수 노출 위험 검사"""
-        results = []
+        results=[]
         sensitive_patterns = [
             ("password", "PASSWORD found in environment"),
             ("secret", "SECRET found in environment"),

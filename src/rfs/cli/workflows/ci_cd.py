@@ -67,7 +67,7 @@ class PipelineConfig:
 class CICDManager:
     """CI/CD 파이프라인 매니저"""
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
         self.github_actions_path = self.project_path / ".github" / "workflows"
         self.cloudbuild_path = self.project_path / "cloudbuild.yaml"
@@ -243,7 +243,7 @@ class CICDManager:
 
     def _generate_cloudbuild_config(self, config: PipelineConfig) -> Dict[str, Any]:
         """Cloud Build 설정 생성"""
-        steps = []
+        steps=[]
         if PipelineStage.BUILD in config.stages:
             steps = steps + [
                 {

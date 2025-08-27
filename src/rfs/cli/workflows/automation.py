@@ -61,7 +61,7 @@ class WorkflowTrigger:
     name: str
     trigger_type: TriggerType
     conditions: Dict[str, Any]
-    enabled: bool = True
+    enabled=True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def matches(self, event: Dict[str, Any]) -> bool:
@@ -92,9 +92,9 @@ class ActionRunner:
     name: str
     action_type: ActionType
     config: Dict[str, Any]
-    timeout: int = 300
-    retry_count: int = 0
-    on_failure: Optional[str] = None
+    timeout=300
+    retry_count=0
+    on_failure=None
 
     async def execute(self, context: Dict[str, Any]) -> Result[Dict[str, Any], str]:
         """액션 실행"""
@@ -196,9 +196,9 @@ class ActionRunner:
 class AutomationEngine:
     """워크플로우 자동화 엔진"""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path=None):
         self.config_path = config_path or "rfs-workflows.yaml"
-        self.triggers: List[WorkflowTrigger] = []
+        self.triggers=[]
         self.workflows: Dict[str, List[ActionRunner]] = {}
         self.running = False
         self.event_queue: asyncio.Queue = asyncio.Queue()
@@ -233,7 +233,7 @@ class AutomationEngine:
             )
             self.triggers = self.triggers + [trigger]
         for workflow_name, actions_config in config.get("workflows", {}).items():
-            actions = []
+            actions=[]
             for action_config in actions_config:
                 action = ActionRunner(
                     name=action_config["name"],

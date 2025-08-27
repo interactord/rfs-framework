@@ -20,7 +20,7 @@ from rfs.messaging.memory_broker import MemoryMessageBroker, MemoryMessageConfig
 
 
 async def create_memory_broker(
-    config: Optional[MemoryMessageConfig] = None,
+    config=None,
 ) -> MemoryMessageBroker:
     """
     메모리 메시지 브로커를 생성하고 연결합니다.
@@ -50,7 +50,7 @@ async def create_memory_broker(
 
 @asynccontextmanager
 async def broker_context(
-    config: Optional[MemoryMessageConfig] = None,
+    config=None,
 ) -> AsyncGenerator[MemoryMessageBroker, None]:
     """
     메시지 브로커 컨텍스트 매니저.
@@ -80,7 +80,7 @@ async def broker_context(
 
 
 async def create_memory_cache(
-    config: Optional[MemoryCacheConfig] = None,
+    config=None,
 ) -> MemoryCache:
     """
     메모리 캐시를 생성하고 연결합니다.
@@ -114,7 +114,7 @@ async def create_memory_cache(
 
 @asynccontextmanager
 async def cache_context(
-    config: Optional[MemoryCacheConfig] = None,
+    config=None,
 ) -> AsyncGenerator[MemoryCache, None]:
     """
     캐시 컨텍스트 매니저.
@@ -220,7 +220,7 @@ class AsyncResourceManager:
         self.resources = []
         self.cleanup_funcs = []
 
-    def add_resource(self, resource: Any, cleanup_func: Optional[Callable] = None):
+    def add_resource(self, resource: Any, cleanup_func=None):
         """
         관리할 리소스를 추가합니다.
 
@@ -259,7 +259,7 @@ class AsyncResourceManager:
 # ============================================================================
 
 
-def create_test_message(topic: str = "test_topic", data: Any = None) -> dict:
+def create_test_message(topic="test_topic", data: Any = None) -> dict:
     """
     테스트용 메시지 데이터를 생성합니다.
 
@@ -282,7 +282,7 @@ def create_test_message(topic: str = "test_topic", data: Any = None) -> dict:
     }
 
 
-def create_test_cache_data(count: int = 10) -> dict:
+def create_test_cache_data(count=10) -> dict:
     """
     테스트용 캐시 데이터를 생성합니다.
 

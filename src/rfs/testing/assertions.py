@@ -19,7 +19,7 @@ class AssertionError(Exception):
 
 
 def _format_assertion_message(
-    expected: Any, actual: Any, message: Optional[str] = None
+    expected: Any, actual: Any, message=None
 ) -> str:
     """어설션 메시지 포맷팅"""
     base_message = f"Expected: {expected}, but was: {actual}"
@@ -29,13 +29,13 @@ def _format_assertion_message(
 
 
 # 기본 어설션들
-def assert_equal(expected: Any, actual: Any, message: Optional[str] = None):
+def assert_equal(expected: Any, actual: Any, message=None):
     """값이 같은지 확인"""
     if expected != actual:
         raise AssertionError(_format_assertion_message(expected, actual, message))
 
 
-def assert_not_equal(expected: Any, actual: Any, message: Optional[str] = None):
+def assert_not_equal(expected: Any, actual: Any, message=None):
     """값이 다른지 확인"""
     if expected == actual:
         raise AssertionError(
@@ -44,7 +44,7 @@ def assert_not_equal(expected: Any, actual: Any, message: Optional[str] = None):
         )
 
 
-def assert_true(value: Any, message: Optional[str] = None):
+def assert_true(value: Any, message=None):
     """값이 True인지 확인"""
     if not value:
         raise AssertionError(
@@ -52,7 +52,7 @@ def assert_true(value: Any, message: Optional[str] = None):
         )
 
 
-def assert_false(value: Any, message: Optional[str] = None):
+def assert_false(value: Any, message=None):
     """값이 False인지 확인"""
     if value:
         raise AssertionError(
@@ -60,7 +60,7 @@ def assert_false(value: Any, message: Optional[str] = None):
         )
 
 
-def assert_none(value: Any, message: Optional[str] = None):
+def assert_none(value: Any, message=None):
     """값이 None인지 확인"""
     if value is not None:
         raise AssertionError(
@@ -68,7 +68,7 @@ def assert_none(value: Any, message: Optional[str] = None):
         )
 
 
-def assert_not_none(value: Any, message: Optional[str] = None):
+def assert_not_none(value: Any, message=None):
     """값이 None이 아닌지 확인"""
     if value is None:
         raise AssertionError(
@@ -77,7 +77,7 @@ def assert_not_none(value: Any, message: Optional[str] = None):
 
 
 # 컬렉션 어설션들
-def assert_in(item: Any, collection: Collection, message: Optional[str] = None):
+def assert_in(item: Any, collection: Collection, message=None):
     """아이템이 컬렉션에 있는지 확인"""
     if item not in collection:
         raise AssertionError(
@@ -86,7 +86,7 @@ def assert_in(item: Any, collection: Collection, message: Optional[str] = None):
         )
 
 
-def assert_not_in(item: Any, collection: Collection, message: Optional[str] = None):
+def assert_not_in(item: Any, collection: Collection, message=None):
     """아이템이 컬렉션에 없는지 확인"""
     if item in collection:
         raise AssertionError(
@@ -95,7 +95,7 @@ def assert_not_in(item: Any, collection: Collection, message: Optional[str] = No
         )
 
 
-def assert_empty(collection: Collection, message: Optional[str] = None):
+def assert_empty(collection: Collection, message=None):
     """컬렉션이 비어있는지 확인"""
     if len(collection) != 0:
         raise AssertionError(
@@ -104,7 +104,7 @@ def assert_empty(collection: Collection, message: Optional[str] = None):
         )
 
 
-def assert_not_empty(collection: Collection, message: Optional[str] = None):
+def assert_not_empty(collection: Collection, message=None):
     """컬렉션이 비어있지 않은지 확인"""
     if len(collection) == 0:
         raise AssertionError(
@@ -114,7 +114,7 @@ def assert_not_empty(collection: Collection, message: Optional[str] = None):
 
 
 def assert_length(
-    collection: Collection, expected_length: int, message: Optional[str] = None
+    collection: Collection, expected_length: int, message=None
 ):
     """컬렉션의 길이 확인"""
     actual_length = len(collection)
@@ -130,7 +130,7 @@ def assert_raises(
     expected_exception: Type[Exception],
     callable_obj: Callable,
     *args,
-    message: Optional[str] = None,
+    message=None,
 ):
     """예외가 발생하는지 확인"""
     try:
@@ -152,7 +152,7 @@ def assert_not_raises(
     unexpected_exception: Type[Exception],
     callable_obj: Callable,
     *args,
-    message: Optional[str] = None,
+    message=None,
     **kwargs,
 ):
     """특정 예외가 발생하지 않는지 확인"""
@@ -167,7 +167,7 @@ def assert_not_raises(
 
 
 # Result 패턴 어설션들
-def assert_success(result: Result, message: Optional[str] = None):
+def assert_success(result: Result, message=None):
     """Result가 성공인지 확인"""
     if result.is_failure():
         raise AssertionError(
@@ -176,7 +176,7 @@ def assert_success(result: Result, message: Optional[str] = None):
         )
 
 
-def assert_failure(result: Result, message: Optional[str] = None):
+def assert_failure(result: Result, message=None):
     """Result가 실패인지 확인"""
     if result.is_success():
         raise AssertionError(
@@ -186,7 +186,7 @@ def assert_failure(result: Result, message: Optional[str] = None):
 
 
 def assert_result_value(
-    result: Result, expected_value: Any, message: Optional[str] = None
+    result: Result, expected_value: Any, message=None
 ):
     """Result의 성공 값 확인"""
     assert_success(result, message)
@@ -198,7 +198,7 @@ def assert_result_value(
 
 
 def assert_result_error(
-    result: Result, expected_error: Any, message: Optional[str] = None
+    result: Result, expected_error: Any, message=None
 ):
     """Result의 오류 값 확인"""
     assert_failure(result, message)
@@ -214,7 +214,7 @@ async def assert_eventually(
     condition: Callable[[], bool],
     timeout: float = 5.0,
     interval: float = 0.1,
-    message: Optional[str] = None,
+    message=None,
 ):
     """조건이 결국 True가 되는지 확인"""
     start_time = time.time()
@@ -237,7 +237,7 @@ async def assert_eventually(
 async def assert_timeout(
     coro_or_callable: Union[Callable, Any],
     timeout: float,
-    message: Optional[str] = None,
+    message=None,
 ):
     """함수/코루틴이 타임아웃 내에 완료되는지 확인"""
     try:
@@ -266,7 +266,7 @@ async def assert_timeout(
 def assert_greater(
     value: Union[int, float],
     threshold: Union[int, float],
-    message: Optional[str] = None,
+    message=None,
 ):
     """값이 임계값보다 큰지 확인"""
     if value <= threshold:
@@ -278,7 +278,7 @@ def assert_greater(
 def assert_greater_equal(
     value: Union[int, float],
     threshold: Union[int, float],
-    message: Optional[str] = None,
+    message=None,
 ):
     """값이 임계값보다 크거나 같은지 확인"""
     if value < threshold:
@@ -290,7 +290,7 @@ def assert_greater_equal(
 def assert_less(
     value: Union[int, float],
     threshold: Union[int, float],
-    message: Optional[str] = None,
+    message=None,
 ):
     """값이 임계값보다 작은지 확인"""
     if value >= threshold:
@@ -302,7 +302,7 @@ def assert_less(
 def assert_less_equal(
     value: Union[int, float],
     threshold: Union[int, float],
-    message: Optional[str] = None,
+    message=None,
 ):
     """값이 임계값보다 작거나 같은지 확인"""
     if value > threshold:
@@ -312,7 +312,7 @@ def assert_less_equal(
 
 
 def assert_almost_equal(
-    first: float, second: float, places: int = 7, message: Optional[str] = None
+    first: float, second: float, places=7, message=None
 ):
     """부동소수점 근사 비교"""
     if round(abs(second - first), places) != 0:
@@ -323,7 +323,7 @@ def assert_almost_equal(
 
 
 # 문자열 어설션들
-def assert_starts_with(string: str, prefix: str, message: Optional[str] = None):
+def assert_starts_with(string: str, prefix: str, message=None):
     """문자열이 특정 접두사로 시작하는지 확인"""
     if not string.startswith(prefix):
         raise AssertionError(
@@ -332,7 +332,7 @@ def assert_starts_with(string: str, prefix: str, message: Optional[str] = None):
         )
 
 
-def assert_ends_with(string: str, suffix: str, message: Optional[str] = None):
+def assert_ends_with(string: str, suffix: str, message=None):
     """문자열이 특정 접미사로 끝나는지 확인"""
     if not string.endswith(suffix):
         raise AssertionError(
@@ -341,7 +341,7 @@ def assert_ends_with(string: str, suffix: str, message: Optional[str] = None):
         )
 
 
-def assert_contains(string: str, substring: str, message: Optional[str] = None):
+def assert_contains(string: str, substring: str, message=None):
     """문자열에 부분 문자열이 포함되어 있는지 확인"""
     if substring not in string:
         raise AssertionError(
@@ -350,7 +350,7 @@ def assert_contains(string: str, substring: str, message: Optional[str] = None):
         )
 
 
-def assert_matches_regex(string: str, pattern: str, message: Optional[str] = None):
+def assert_matches_regex(string: str, pattern: str, message=None):
     """문자열이 정규식 패턴과 일치하는지 확인"""
     import re
 
@@ -369,7 +369,7 @@ def create_assertion(
 ):
     """커스텀 어설션 생성"""
 
-    def assertion(value: Any, message: Optional[str] = None):
+    def assertion(value: Any, message=None):
         if not condition_func(value):
             error_msg = error_message_func(value)
             raise AssertionError(error_msg + (f": {message}" if message else ""))
@@ -383,7 +383,7 @@ class assert_raises_context:
     """예외 발생 확인을 위한 컨텍스트 매니저"""
 
     def __init__(
-        self, expected_exception: Type[Exception], message: Optional[str] = None
+        self, expected_exception: Type[Exception], message=None
     ):
         self.expected_exception = expected_exception
         self.message = message
@@ -408,7 +408,7 @@ class assert_raises_context:
 
 
 # 성능 어설션들
-def assert_execution_time(max_time: float, message: Optional[str] = None):
+def assert_execution_time(max_time: float, message=None):
     """실행 시간 확인을 위한 데코레이터"""
 
     def decorator(func: Callable):

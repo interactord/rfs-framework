@@ -60,7 +60,7 @@ class Role:
 
     name: str
     permissions: Set[Permission]
-    description: Optional[str] = None
+    description=None
 
     def has_permission(self, permission: Permission) -> bool:
         return permission in self.permissions
@@ -80,10 +80,10 @@ class User:
     username: str
     email: str
     roles: Set[Role]
-    is_active: bool = True
-    is_verified: bool = False
-    created_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    is_active=True
+    is_verified=False
+    created_at=None
+    last_login=None
 
     def has_role(self, role_name: str) -> bool:
         return any((role.name == role_name for role in self.roles))
@@ -103,9 +103,9 @@ class UserSession:
     user_id: str
     created_at: datetime
     expires_at: datetime
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    is_active: bool = True
+    ip_address=None
+    user_agent=None
+    is_active=True
 
     def is_expired(self) -> bool:
         return datetime.now() > self.expires_at
@@ -131,7 +131,7 @@ class RefreshToken:
     token: str
     user_id: str
     expires_at: datetime
-    is_used: bool = False
+    is_used=False
 
     def is_expired(self) -> bool:
         return datetime.now() > self.expires_at
@@ -154,7 +154,7 @@ class AuthProvider(ABC):
 class JWTAuthProvider(AuthProvider):
     """JWT 인증 제공자"""
 
-    def __init__(self, secret_key: str, algorithm: str = "HS256"):
+    def __init__(self, secret_key: str, algorithm="HS256"):
         self.secret_key = secret_key
         self.algorithm = algorithm
 
@@ -216,7 +216,7 @@ class JWTAuthProvider(AuthProvider):
         email = payload.get("email")
         if not user_id:
             return Failure("JWT에 사용자 ID가 없음")
-        roles = set()
+        roles: Set[Any] = set()
         role_names = payload.get("roles", [])
         for role_name in role_names:
             permissions = set(
@@ -233,7 +233,7 @@ class JWTAuthProvider(AuthProvider):
         )
         return Success(user)
 
-    def generate_token(self, user: User, expires_in: int = 3600) -> JWTToken:
+    def generate_token(self, user: User, expires_in=3600) -> JWTToken:
         """JWT 토큰 생성"""
         now = datetime.now()
         expires_at = now + timedelta(seconds=expires_in)
@@ -284,14 +284,14 @@ class TokenManager:
 
     def __init__(self, jwt_provider: JWTAuthProvider):
         self.jwt_provider = jwt_provider
-        self.refresh_tokens: Dict[str, RefreshToken] = {}
+        self.refresh_tokens={}
 
-    def generate_access_token(self, user: User, expires_in: int = 3600) -> JWTToken:
+    def generate_access_token(self, user: User, expires_in=3600) -> JWTToken:
         """액세스 토큰 생성"""
         return self.jwt_provider.generate_token(user, expires_in)
 
     def generate_refresh_token(
-        self, user: User, expires_in: int = 86400 * 30
+        self, user: User, expires_in=86400 * 30
     ) -> RefreshToken:
         """리프레시 토큰 생성"""
         token = secrets.token_urlsafe(32)
@@ -333,9 +333,9 @@ class AuthenticationManager:
     """인증 관리자"""
 
     def __init__(self):
-        self.providers: Dict[AuthMethod, AuthProvider] = {}
-        self.sessions: Dict[str, UserSession] = {}
-        self.token_manager: Optional[TokenManager] = None
+        self.providers={}
+        self.sessions={}
+        self.token_manager=None
 
     def register_provider(self, method: AuthMethod, provider: AuthProvider):
         """인증 제공자 등록"""
@@ -369,9 +369,9 @@ class AuthenticationManager:
     def create_session(
         self,
         user: User,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        expires_in: int = 3600,
+        ip_address=None,
+        user_agent=None,
+        expires_in=3600,
     ) -> UserSession:
         """사용자 세션 생성"""
         session_id = secrets.token_urlsafe(32)
@@ -472,7 +472,7 @@ async def authorize(user: User, resource: str, action: str) -> Result[bool, str]
     return Failure(f"권한 부족: {resource}:{action}")
 
 
-def hash_password(password: str, salt: Optional[str] = None) -> str:
+def hash_password(password: str, salt=None) -> str:
     """비밀번호 해싱"""
     if salt is None:
         salt = secrets.token_hex(16)

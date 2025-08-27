@@ -4,4 +4,5 @@
 
 | Phase | 날짜 | 총 오류 | 주요 카테고리 | 상태 |
 |-------|------|---------|--------------|------|
-| 1 | 2025-08-27 09:30 | 2665 | attr-defined(516), assignment(492), var-annotated(390) | 진행중 |
+| 1 | 2025-08-27 09:30 | 2665 | attr-defined(516), assignment(492), var-annotated(390) | 완료 |
+| 2 | 2025-08-27 09:45 | 2967 | var-annotated(490), assignment(478), call-arg(478) | 완료 |

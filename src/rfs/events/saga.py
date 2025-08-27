@@ -52,13 +52,13 @@ class SagaStep:
     step_id: str
     action: Callable[[Dict[str, Any]], Any]
     compensation: Optional[Callable[[Dict[str, Any]], Any]] = None
-    retry_count: int = 3
-    timeout_seconds: int = 30
+    retry_count=3
+    timeout_seconds=30
     status: StepStatus = StepStatus.PENDING
-    attempts: int = 0
-    error: Optional[Exception] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    attempts=0
+    error=None
+    started_at=None
+    completed_at=None
     result: Any = None
     compensation_result: Any = None
 
@@ -70,9 +70,9 @@ class SagaContext:
     saga_id: str
     correlation_id: str
     data: Dict[str, Any] = field(default_factory=dict)
-    current_step: int = 0
+    current_step=0
     completed_steps: List[str] = field(default_factory=list)
-    failed_step: Optional[str] = None
+    failed_step=None
 
     def with_data(self, **data) -> "SagaContext":
         """데이터 추가"""
@@ -93,12 +93,12 @@ class Saga:
     def __init__(self, saga_id: str, name: str = None):
         self.saga_id = saga_id
         self.name = name or saga_id
-        self.steps: List[SagaStep] = []
+        self.steps=[]
         self.status = SagaStatus.PENDING
         self.created_at = datetime.now()
-        self.started_at: Optional[datetime] = None
-        self.completed_at: Optional[datetime] = None
-        self.total_duration: Optional[float] = None
+        self.started_at=None
+        self.completed_at=None
+        self.total_duration=None
         self.execution_count = 0
         self.success_count = 0
         self.failure_count = 0
@@ -220,10 +220,10 @@ class Saga:
 class SagaManager:
     """사가 관리자"""
 
-    def __init__(self, event_bus: Optional[EventBus] = None):
+    def __init__(self, event_bus=None):
         self.event_bus = event_bus
-        self.sagas: Dict[str, Saga] = {}
-        self.running_sagas: Dict[str, asyncio.Task] = {}
+        self.sagas={}
+        self.running_sagas={}
         self.total_executions = 0
         self.total_successes = 0
         self.total_failures = 0
@@ -354,8 +354,8 @@ def compensation_for(step_id: str):
 def build_saga_from_functions(saga_id: str, functions: List[Callable]) -> Saga:
     """함수들로부터 사가 빌드"""
     saga = create_saga(saga_id)
-    steps = {}
-    compensations = {}
+    steps={}
+    compensations={}
     for func in functions:
         if hasattr(func, "_saga_step_id"):
             steps[func._saga_step_id] = {func._saga_step_id: func}
@@ -381,7 +381,7 @@ class ReactiveSaga:
         return Mono.from_callable(lambda: self.saga.execute(context))
 
     def execute_with_retry(
-        self, context: SagaContext, max_retries: int = 3
+        self, context: SagaContext, max_retries=3
     ) -> Mono[SagaContext]:
         """재시도와 함께 실행"""
         return (
@@ -391,7 +391,7 @@ class ReactiveSaga:
         )
 
 
-_saga_manager: Optional[SagaManager] = None
+_saga_manager=None
 
 
 async def get_saga_manager() -> SagaManager:

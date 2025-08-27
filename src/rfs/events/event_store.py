@@ -36,10 +36,10 @@ class EventStreamMetadata:
     """이벤트 스트림 메타데이터"""
 
     stream_id: str
-    version: int = 0
+    version=0
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    event_count: int = 0
+    event_count=0
 
 
 class EventStoreProtocol(Protocol):
@@ -52,13 +52,13 @@ class EventStoreProtocol(Protocol):
         ...
 
     async def read_events(
-        self, stream_id: str, from_version: int = 0, max_count: int = None
+        self, stream_id: str, from_version=0, max_count: int = None
     ) -> List[Event]:
         """이벤트 읽기"""
         ...
 
     async def read_all_events(
-        self, from_position: int = 0, max_count: int = None
+        self, from_position=0, max_count: int = None
     ) -> List[Event]:
         """모든 이벤트 읽기"""
         ...
@@ -75,8 +75,8 @@ class MemoryEventStore:
 
     def __init__(self):
         self.streams: Dict[str, List[Event]] = {}
-        self.metadata: Dict[str, EventStreamMetadata] = {}
-        self.all_events: List[Event] = []
+        self.metadata={}
+        self.all_events=[]
 
     async def append_events(
         self, stream_id: str, events: List[Event], expected_version: int = -1
@@ -111,7 +111,7 @@ class MemoryEventStore:
         return updated_metadata.version
 
     async def read_events(
-        self, stream_id: str, from_version: int = 0, max_count: int = None
+        self, stream_id: str, from_version=0, max_count: int = None
     ) -> List[Event]:
         """이벤트 읽기"""
         if stream_id not in self.streams:
@@ -123,7 +123,7 @@ class MemoryEventStore:
         return stream[from_version:end_index]
 
     async def read_all_events(
-        self, from_position: int = 0, max_count: int = None
+        self, from_position=0, max_count: int = None
     ) -> List[Event]:
         """모든 이벤트 읽기"""
         end_index = len(self.all_events)
@@ -155,7 +155,7 @@ class MemoryEventStore:
 class FileEventStore:
     """파일 기반 이벤트 스토어"""
 
-    def __init__(self, base_path: str = "./event_store"):
+    def __init__(self, base_path="./event_store"):
         import os
 
         self.base_path = base_path
@@ -177,7 +177,7 @@ class FileEventStore:
         import aiofiles
 
         stream_file = self._get_stream_file(stream_id)
-        events = []
+        events=[]
         try:
             async with aiofiles.open(stream_file, "r", encoding="utf-8") as f:
                 async for line in f:
@@ -231,14 +231,14 @@ class FileEventStore:
         return version
 
     async def read_events(
-        self, stream_id: str, from_version: int = 0, max_count: int = None
+        self, stream_id: str, from_version=0, max_count: int = None
     ) -> List[Event]:
         """이벤트 읽기"""
         await self._load_stream(stream_id)
         return await self._cache.read_events(stream_id, from_version, max_count)
 
     async def read_all_events(
-        self, from_position: int = 0, max_count: int = None
+        self, from_position=0, max_count: int = None
     ) -> List[Event]:
         """모든 이벤트 읽기"""
         import os
@@ -272,7 +272,7 @@ class EventStream:
         )
         return version
 
-    async def read(self, from_version: int = 0, max_count: int = None) -> List[Event]:
+    async def read(self, from_version=0, max_count: int = None) -> List[Event]:
         """이벤트 읽기"""
         return await self.store.read_events(self.stream_id, from_version, max_count)
 
@@ -281,7 +281,7 @@ class EventStream:
         return await self.read()
 
     async def stream_events(
-        self, from_version: int = 0, batch_size: int = 10
+        self, from_version=0, batch_size=10
     ) -> AsyncGenerator[Event, None]:
         """이벤트 스트리밍"""
         current_version = from_version
@@ -300,7 +300,7 @@ class EventStream:
         metadata = await self.store.get_stream_metadata(self.stream_id)
         return metadata.version if metadata else -1
 
-    def to_flux(self, from_version: int = 0) -> Flux[Event]:
+    def to_flux(self, from_version=0) -> Flux[Event]:
         """Flux로 변환"""
 
         async def event_generator():
@@ -363,12 +363,12 @@ async def append_to_stream(stream: EventStream, *events: Event) -> int:
     return await stream.append(*events)
 
 
-async def read_from_stream(stream: EventStream, from_version: int = 0) -> List[Event]:
+async def read_from_stream(stream: EventStream, from_version=0) -> List[Event]:
     """스트림에서 이벤트 읽기"""
     return await stream.read(from_version)
 
 
-_event_store: Optional[EventStore] = None
+_event_store=None
 
 
 def get_event_store(

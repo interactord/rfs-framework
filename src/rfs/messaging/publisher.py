@@ -43,10 +43,10 @@ class Publisher:
         data: Any,
         topic: str = None,
         priority: MessagePriority = MessagePriority.NORMAL,
-        ttl: Optional[int] = None,
+        ttl=None,
         headers: Dict[str, Any] = None,
-        correlation_id: Optional[str] = None,
-        reply_to: Optional[str] = None,
+        correlation_id=None,
+        reply_to=None,
     ) -> Result[str, str]:
         """메시지 발행"""
         try:
@@ -147,15 +147,15 @@ class BatchPublisher(Publisher):
         self,
         broker_name: str = None,
         topic: str = None,
-        batch_size: int = 100,
+        batch_size=100,
         flush_interval: float = 1.0,
     ):
         super().__init__(broker_name, topic)
         self.batch_size = batch_size
         self.flush_interval = flush_interval
-        self._message_batch: List[Message] = []
+        self._message_batch=[]
         self._batch_lock = asyncio.Lock()
-        self._flush_task: Optional[asyncio.Task] = None
+        self._flush_task=None
         self._start_flush_timer()
 
     async def publish(
@@ -163,10 +163,10 @@ class BatchPublisher(Publisher):
         data: Any,
         topic: str = None,
         priority: MessagePriority = MessagePriority.NORMAL,
-        ttl: Optional[int] = None,
+        ttl=None,
         headers: Dict[str, Any] = None,
-        correlation_id: Optional[str] = None,
-        reply_to: Optional[str] = None,
+        correlation_id=None,
+        reply_to=None,
     ) -> Result[str, str]:
         """배치에 메시지 추가"""
         try:
@@ -232,7 +232,7 @@ class BatchPublisher(Publisher):
                         "publish_errors": self._stats["publish_errors"] + len(messages),
                     }
                     logger.error(f"배치 발행 실패 ({topic}): {result.unwrap_error()}")
-            _message_batch = {}
+            _message_batch={}
             self._stats = {**self._stats, "last_publish_time": datetime.now()}
             if total_published > 0:
                 logger.debug(f"배치 플러시 완료: {total_published}개 메시지")
@@ -282,10 +282,10 @@ async def publish_message(
     data: Any,
     broker_name: str = None,
     priority: MessagePriority = MessagePriority.NORMAL,
-    ttl: Optional[int] = None,
+    ttl=None,
     headers: Dict[str, Any] = None,
-    correlation_id: Optional[str] = None,
-    reply_to: Optional[str] = None,
+    correlation_id=None,
+    reply_to=None,
 ) -> Result[str, str]:
     """간편 메시지 발행"""
     publisher = Publisher(broker_name)
@@ -308,7 +308,7 @@ async def publish_batch(
         broker = get_message_broker(broker_name)
         if not broker:
             return Failure("메시지 브로커를 찾을 수 없습니다")
-        message_objects = []
+        message_objects=[]
         for msg_data in messages:
             message = Message(
                 topic=topic,
@@ -338,7 +338,7 @@ class ScheduledPublisher(Publisher):
 
     def __init__(self, broker_name: str = None, topic: str = None):
         super().__init__(broker_name, topic)
-        self._scheduled_tasks: Dict[str, asyncio.Task] = {}
+        self._scheduled_tasks={}
 
     async def schedule_message(
         self,
@@ -435,7 +435,7 @@ class PriorityPublisher(Publisher):
             MessagePriority.LOW: asyncio.Queue(),
         }
         self._processing = False
-        self._process_task: Optional[asyncio.Task] = None
+        self._process_task=None
 
     async def start_processing(self):
         """우선순위 처리 시작"""

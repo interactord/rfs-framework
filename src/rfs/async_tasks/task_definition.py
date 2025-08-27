@@ -39,9 +39,9 @@ class TaskContext:
     task_name: str
     task_type: TaskType
     execution_time: datetime = field(default_factory=datetime.now)
-    retry_count: int = 0
-    max_retries: int = 3
-    timeout_seconds: Optional[int] = None
+    retry_count=0
+    max_retries=3
+    timeout_seconds=None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def with_retry(self) -> "TaskContext":
@@ -77,19 +77,19 @@ class TaskDefinition:
     name: str
     task_type: TaskType
     handler: Callable
-    description: Optional[str] = None
-    priority: int = 5  # 1-10, 높을수록 우선순위
-    timeout_seconds: Optional[int] = None
-    max_retries: int = 3
-    retry_delay_seconds: int = 1
-    retry_exponential_backoff: bool = False
+    description=None
+    priority=5  # 1-10, 높을수록 우선순위
+    timeout_seconds=None
+    max_retries=3
+    retry_delay_seconds=1
+    retry_exponential_backoff=False
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     # 스케줄링 관련
-    schedule_cron: Optional[str] = None
-    schedule_interval: Optional[timedelta] = None
-    schedule_at: Optional[datetime] = None
+    schedule_cron=None
+    schedule_interval=None
+    schedule_at=None
 
     # 의존성
     dependencies: List[str] = field(default_factory=list)
@@ -177,7 +177,7 @@ class TaskDefinition:
             return Failure(f"Task execution error: {e}")
 
     def get_next_run_time(
-        self, from_time: Optional[datetime] = None
+        self, from_time=None
     ) -> Optional[datetime]:
         """다음 실행 시간 계산"""
         if not from_time:
@@ -263,8 +263,8 @@ class TaskRegistry:
     """작업 정의 레지스트리"""
 
     def __init__(self):
-        self._tasks: Dict[str, TaskDefinition] = {}
-        self._handlers: Dict[str, Callable] = {}
+        self._tasks={}
+        self._handlers={}
 
     def register(self, task_def: TaskDefinition) -> None:
         """작업 정의 등록"""
@@ -313,16 +313,16 @@ _task_registry = TaskRegistry()
 def task_handler(
     name: str,
     task_type: TaskType = TaskType.BACKGROUND,
-    description: Optional[str] = None,
-    priority: int = 5,
-    timeout_seconds: Optional[int] = None,
-    max_retries: int = 3,
-    retry_delay_seconds: int = 1,
-    retry_exponential_backoff: bool = False,
+    description=None,
+    priority=5,
+    timeout_seconds=None,
+    max_retries=3,
+    retry_delay_seconds=1,
+    retry_exponential_backoff=False,
     tags: Optional[List[str]] = None,
-    schedule_cron: Optional[str] = None,
-    schedule_interval: Optional[timedelta] = None,
-    schedule_at: Optional[datetime] = None,
+    schedule_cron=None,
+    schedule_interval=None,
+    schedule_at=None,
     dependencies: Optional[List[str]] = None,
     conditions: Optional[List[Callable]] = None,
     **metadata,
@@ -394,6 +394,6 @@ def realtime_task(name: str, **kwargs):
     return task_handler(name, TaskType.REALTIME, **kwargs)
 
 
-def priority_task(name: str, priority: int = 8, **kwargs):
+def priority_task(name: str, priority=8, **kwargs):
     """우선순위 작업 데코레이터"""
     return task_handler(name, TaskType.PRIORITY, priority=priority, **kwargs)

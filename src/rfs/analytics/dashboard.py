@@ -58,14 +58,14 @@ class WidgetPosition:
 class WidgetStyle:
     """위젯 스타일"""
 
-    background_color: Optional[str] = None
-    border_color: Optional[str] = None
-    border_width: Optional[int] = None
-    border_radius: Optional[int] = None
-    padding: Optional[int] = None
-    margin: Optional[int] = None
-    font_size: Optional[int] = None
-    font_color: Optional[str] = None
+    background_color=None
+    border_color=None
+    border_width=None
+    border_radius=None
+    padding=None
+    margin=None
+    font_size=None
+    font_color=None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -92,18 +92,17 @@ class Widget(ABC):
         widget_id: str,
         title: str,
         widget_type: WidgetType,
-        position: WidgetPosition,
-        style: Optional[WidgetStyle] = None,
+        position: WidgetPosition, style=None,
     ):
         self.widget_id = widget_id
         self.title = title
         self.widget_type = widget_type
         self.position = position
         self.style = style or WidgetStyle()
-        self.config = {}
+        self.config={}
         self.data_source = None
-        self.refresh_interval: Optional[int] = None
-        self.last_updated: Optional[datetime] = None
+        self.refresh_interval=None
+        self.last_updated=None
 
     @abstractmethod
     async def render(self) -> Result[Dict[str, Any], str]:
@@ -153,8 +152,7 @@ class ChartWidget(Widget):
         self,
         widget_id: str,
         title: str,
-        position: WidgetPosition,
-        chart_type: str = "line",
+        position: WidgetPosition, chart_type="line",
         **config,
     ):
         super().__init__(widget_id, title, WidgetType.CHART, position)
@@ -196,9 +194,7 @@ class MetricWidget(Widget):
         self,
         widget_id: str,
         title: str,
-        position: WidgetPosition,
-        metric_type: str = "number",
-        format_string: str = "{value}",
+        position: WidgetPosition, metric_type="number", format_string="{value}",
         **config,
     ):
         super().__init__(widget_id, title, WidgetType.METRIC, position)
@@ -261,8 +257,7 @@ class TableWidget(Widget):
         self,
         widget_id: str,
         title: str,
-        position: WidgetPosition,
-        columns: List[Dict[str, str]] = None,
+        position: WidgetPosition, columns=None,
         **config,
     ):
         super().__init__(widget_id, title, WidgetType.TABLE, position)
@@ -304,9 +299,7 @@ class TextWidget(Widget):
         self,
         widget_id: str,
         title: str,
-        position: WidgetPosition,
-        content: str = "",
-        markdown: bool = False,
+        position: WidgetPosition, content="", markdown=False,
         **config,
     ):
         super().__init__(widget_id, title, WidgetType.TEXT, position)
@@ -333,12 +326,12 @@ class DashboardConfig:
     """대시보드 설정"""
 
     layout: DashboardLayout = DashboardLayout.GRID
-    grid_columns: int = 12
-    grid_row_height: int = 100
-    auto_refresh: bool = False
-    refresh_interval: int = 30
-    theme: str = "default"
-    background_color: str = "#ffffff"
+    grid_columns=12
+    grid_row_height=100
+    auto_refresh=False
+    refresh_interval=30
+    theme="default"
+    background_color="#ffffff"
 
 
 class Dashboard:
@@ -347,20 +340,18 @@ class Dashboard:
     def __init__(
         self,
         dashboard_id: str,
-        title: str,
-        description: str = "",
-        config: Optional[DashboardConfig] = None,
+        title: str, description="", config=None,
     ):
         self.dashboard_id = dashboard_id
         self.title = title
         self.description = description
         self.config = config or DashboardConfig()
-        self.widgets: Dict[str, Widget] = {}
+        self.widgets={}
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
-        self.tags: List[str] = []
+        self.tags=[]
         self.is_public = False
-        self._refresh_tasks: Dict[str, asyncio.Task] = {}
+        self._refresh_tasks={}
 
     def add_widget(self, widget: Widget) -> "Dashboard":
         """위젯 추가"""
@@ -416,7 +407,7 @@ class Dashboard:
     async def render(self) -> Result[Dict[str, Any], str]:
         """대시보드 렌더링"""
         try:
-            rendered_widgets = {}
+            rendered_widgets={}
             for widget_id, widget in self.widgets.items():
                 widget_result = await widget.render()
                 if widget_result.is_success():
@@ -461,7 +452,7 @@ class Dashboard:
         """대시보드 정리 (새로고침 태스크 취소)"""
         for task in self._refresh_tasks.values():
             task.cancel()
-        self._refresh_tasks = {}
+        self._refresh_tasks={}
 
 
 class DashboardBuilder:
@@ -481,7 +472,7 @@ class DashboardBuilder:
         return self
 
     def grid_config(
-        self, columns: int = 12, row_height: int = 100
+        self, columns=12, row_height=100
     ) -> "DashboardBuilder":
         """그리드 설정"""
         self.dashboard.config.grid_columns = columns
@@ -489,7 +480,7 @@ class DashboardBuilder:
         return self
 
     def auto_refresh(
-        self, enabled: bool = True, interval: int = 30
+        self, enabled=True, interval=30
     ) -> "DashboardBuilder":
         """자동 새로고침 설정"""
         self.dashboard.config.auto_refresh = enabled
@@ -497,7 +488,7 @@ class DashboardBuilder:
         return self
 
     def theme(
-        self, theme: str, background_color: str = "#ffffff"
+        self, theme: str, background_color="#ffffff"
     ) -> "DashboardBuilder":
         """테마 설정"""
         self.dashboard.config.theme = theme
@@ -511,8 +502,7 @@ class DashboardBuilder:
         x: int,
         y: int,
         width: int,
-        height: int,
-        chart_type: str = "line",
+        height: int, chart_type="line",
         **config,
     ) -> "DashboardBuilder":
         """차트 위젯 추가"""
@@ -528,9 +518,7 @@ class DashboardBuilder:
         x: int,
         y: int,
         width: int,
-        height: int,
-        metric_type: str = "number",
-        format_string: str = "{value}",
+        height: int, metric_type="number", format_string="{value}",
         **config,
     ) -> "DashboardBuilder":
         """메트릭 위젯 추가"""
@@ -548,8 +536,7 @@ class DashboardBuilder:
         x: int,
         y: int,
         width: int,
-        height: int,
-        columns: List[Dict[str, str]] = None,
+        height: int, columns=None,
         **config,
     ) -> "DashboardBuilder":
         """테이블 위젯 추가"""
@@ -565,9 +552,7 @@ class DashboardBuilder:
         x: int,
         y: int,
         width: int,
-        height: int,
-        content: str = "",
-        markdown: bool = False,
+        height: int, content="", markdown=False,
         **config,
     ) -> "DashboardBuilder":
         """텍스트 위젯 추가"""
@@ -581,7 +566,7 @@ class DashboardBuilder:
         self.dashboard.set_tags(list(tags))
         return self
 
-    def public(self, is_public: bool = True) -> "DashboardBuilder":
+    def public(self, is_public=True) -> "DashboardBuilder":
         """공개 설정"""
         self.dashboard.set_public(is_public)
         return self
@@ -595,14 +580,12 @@ class DashboardManager:
     """대시보드 관리자"""
 
     def __init__(self):
-        self.dashboards: Dict[str, Dashboard] = {}
+        self.dashboards={}
 
     def create_dashboard(
         self,
         dashboard_id: str,
-        title: str,
-        description: str = "",
-        config: Optional[DashboardConfig] = None,
+        title: str, description="", config=None,
     ) -> Dashboard:
         """대시보드 생성"""
         dashboard = Dashboard(dashboard_id, title, description, config)
@@ -614,7 +597,7 @@ class DashboardManager:
         return self.dashboards.get(dashboard_id)
 
     def list_dashboards(
-        self, tags: Optional[List[str]] = None, public_only: bool = False
+        self, tags=None, public_only=False
     ) -> List[Dashboard]:
         """대시보드 목록"""
         dashboards = list(self.dashboards.values())
@@ -641,7 +624,7 @@ class DashboardManager:
         return await dashboard.render()
 
 
-_dashboard_manager: Optional[DashboardManager] = None
+_dashboard_manager=None
 
 
 def get_dashboard_manager() -> DashboardManager:

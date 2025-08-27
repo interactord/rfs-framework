@@ -60,13 +60,13 @@ class AnnotationRegistry(ServiceRegistry):
     - 프로파일 기반 구성
     """
 
-    def __init__(self, current_profile: str = "default"):
+    def __init__(self, current_profile="default"):
         super().__init__()
         self.current_profile = current_profile
-        self._annotation_metadata: Dict[str, AnnotationMetadata] = {}
-        self._ports: Dict[str, Type] = {}
+        self._annotation_metadata={}
+        self._ports={}
         self._adapters_by_port: Dict[str, List[str]] = {}
-        self._registration_order: List[str] = []
+        self._registration_order=[]
         self._registration_stats = {
             "total_registered": 0,
             "by_type": {},
@@ -367,9 +367,9 @@ class AnnotationRegistry(ServiceRegistry):
         self, edges: Dict[str, List[str]]
     ) -> List[List[str]]:
         """순환 의존성 검출"""
-        visited = set()
-        rec_stack = set()
-        cycles = []
+        visited: Set[Any] = set()
+        rec_stack: Set[Any] = set()
+        cycles=[]
 
         def dfs(node: str, path: List[str]):
             nonlocal cycles  # cycles를 외부 스코프에서 수정
@@ -484,10 +484,10 @@ class AnnotationRegistry(ServiceRegistry):
 class RegistryManager:
     """레지스트리 관리자 - 함수형 싱글톤 패턴"""
 
-    _instances: Dict[str, AnnotationRegistry] = {}
+    _instances={}
 
     @classmethod
-    def get_registry(cls, profile: str = "default") -> AnnotationRegistry:
+    def get_registry(cls, profile="default") -> AnnotationRegistry:
         """프로파일별 레지스트리 조회 또는 생성"""
         if profile not in cls._instances:
             cls._instances[profile] = AnnotationRegistry(current_profile=profile)
@@ -502,7 +502,7 @@ class RegistryManager:
             cls._instances.clear()
 
 
-def get_annotation_registry(profile: str = "default") -> AnnotationRegistry:
+def get_annotation_registry(profile="default") -> AnnotationRegistry:
     """전역 어노테이션 레지스트리 조회"""
     return RegistryManager.get_registry(profile)
 

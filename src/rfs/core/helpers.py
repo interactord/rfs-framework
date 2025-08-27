@@ -23,7 +23,7 @@ T = TypeVar("T")
 
 # ============= Configuration Helpers =============
 
-_config_instance: Optional[RFSConfig] = None
+_config_instance=None
 
 
 def get_config() -> RFSConfig:
@@ -141,7 +141,7 @@ async def publish_event(event_type: str, data: Dict[str, Any] = None, **kwargs) 
 
 
 def setup_logging(
-    level: str = "INFO", format: str = None, handlers: list = None
+    level="INFO", format: str = None, handlers: list = None
 ) -> None:
     """
     로깅 설정

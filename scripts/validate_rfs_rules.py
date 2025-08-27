@@ -26,7 +26,7 @@ class Violation(NamedTuple):
 @dataclass
 class ValidationResult:
     """검증 결과"""
-    total_files: int = 0
+    total_files=0
     violations: List[Violation] = None
     
     def __post_init__(self):
@@ -418,7 +418,7 @@ class RFSRuleValidator:
         return 'src' in str(file_path)
 
 
-def format_violations(result: ValidationResult, show_warnings: bool = True, show_info: bool = False) -> str:
+def format_violations(result: ValidationResult, show_warnings=True, show_info=False) -> str:
     """위반 사항을 포맷팅합니다."""
     if not result.violations:
         return "✅ 모든 RFS Framework 규칙을 준수합니다!"

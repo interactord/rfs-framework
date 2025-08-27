@@ -49,9 +49,9 @@ class TaskStatus(Enum):
 class RetryConfig:
     """재시도 설정"""
 
-    max_attempts: int = 3
-    min_backoff: int = 1
-    max_backoff: int = 300
+    max_attempts=3
+    min_backoff=1
+    max_backoff=300
     backoff_multiplier: float = 2.0
 
 
@@ -63,13 +63,13 @@ class Task:
     handler: str
     payload: Dict[str, Any] = field(default_factory=dict)
     priority: TaskPriority = TaskPriority.NORMAL
-    schedule_time: Optional[datetime] = None
+    schedule_time=None
     retry_config: RetryConfig = field(default_factory=RetryConfig)
     created_at: datetime = field(default_factory=datetime.now)
     status: TaskStatus = TaskStatus.PENDING
-    attempts: int = 0
-    last_attempt: Optional[datetime] = None
-    error_message: Optional[str] = None
+    attempts=0
+    last_attempt=None
+    error_message=None
 
 
 @dataclass
@@ -77,19 +77,19 @@ class QueueConfig:
     """큐 설정"""
 
     name: str
-    location: str = "asia-northeast3"
+    location="asia-northeast3"
     max_dispatches_per_second: float = 100.0
-    max_concurrent_dispatches: int = 100
-    max_retry_duration: int = 3600
-    target_uri: str = ""
-    service_account_email: str = ""
+    max_concurrent_dispatches=100
+    max_retry_duration=3600
+    target_uri=""
+    service_account_email=""
 
 
 class TaskHandler:
     """작업 핸들러 관리자"""
 
     def __init__(self):
-        self._handlers: Dict[str, Callable] = {}
+        self._handlers={}
 
     def register(self, name: str, handler: Callable):
         """핸들러 등록"""
@@ -108,12 +108,12 @@ class TaskHandler:
 class CloudTasksClient:
     """Cloud Tasks 클라이언트"""
 
-    def __init__(self, project_id: str, location: str = "asia-northeast3"):
+    def __init__(self, project_id: str, location="asia-northeast3"):
         self.project_id = project_id
         self.location = location
         self.handler_registry = TaskHandler()
         self._client = None
-        self._local_queue: List[Task] = []
+        self._local_queue=[]
         self._processing = False
 
     async def initialize(self):
@@ -312,7 +312,7 @@ class CloudTasksClient:
     async def purge_queue(self, queue_name: str) -> bool:
         """큐 비우기"""
         if not self._client:
-            self._local_queue = {}
+            self._local_queue={}
             logger.info(f"Local queue purged: {queue_name}")
             return True
         try:
@@ -332,7 +332,7 @@ def create_task(
     handler: str,
     payload: Dict[str, Any] = None,
     priority: TaskPriority = TaskPriority.NORMAL,
-    schedule_time: Optional[datetime] = None,
+    schedule_time=None,
 ) -> Task:
     """순수 함수: 작업 생성"""
     return Task(
@@ -345,7 +345,7 @@ def create_task(
 
 
 def with_retry(
-    max_attempts: int = 3, min_backoff: int = 1, max_backoff: int = 300
+    max_attempts=3, min_backoff=1, max_backoff=300
 ) -> RetryConfig:
     """순수 함수: 재시도 설정 생성"""
     return RetryConfig(
@@ -368,11 +368,11 @@ def status_filter(status: TaskStatus) -> Callable[[Task], bool]:
     return lambda task: task.status == status
 
 
-_client: Optional[CloudTasksClient] = None
+_client=None
 
 
 async def get_client(
-    project_id: str = None, location: str = "asia-northeast3"
+    project_id: str = None, location="asia-northeast3"
 ) -> CloudTasksClient:
     """클라이언트 인스턴스 획득"""
     # global _client - removed for functional programming
@@ -408,7 +408,7 @@ def task_queue(queue_name: str):
     return decorator
 
 
-def schedule_task(queue_name: str, delay_seconds: int = 0):
+def schedule_task(queue_name: str, delay_seconds=0):
     """작업 스케줄링 데코레이터"""
 
     def decorator(func: Callable) -> Callable:

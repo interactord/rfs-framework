@@ -50,29 +50,29 @@ class AsyncTaskManager:
 
     def __init__(
         self,
-        max_workers: int = 10,
-        use_priority_queue: bool = True,
-        default_retry_policy: Optional[RetryPolicy] = None,
-        default_timeout: Optional[timedelta] = None,
+        max_workers=10,
+        use_priority_queue=True,
+        default_retry_policy=None,
+        default_timeout=None,
     ):
         self.max_workers = max_workers
         self.default_retry_policy = default_retry_policy or RetryPolicy()
         self.default_timeout = default_timeout
-        self.tasks: Dict[str, TaskMetadata] = {}
-        self.task_instances: Dict[str, Task] = {}
-        self.task_futures: Dict[str, asyncio.Future] = {}
+        self.tasks={}
+        self.task_instances={}
+        self.task_futures={}
         if use_priority_queue:
             self.queue = PriorityTaskQueue()
         else:
             self.queue = TaskQueue()
         self.executor = AsyncIOExecutor(max_workers=max_workers)
-        self.callbacks: List[TaskCallback] = []
+        self.callbacks=[]
         self.hooks: List[TaskHook] = [LoggingHook(), MetricsHook()]
         self.dependency_graph: Dict[str, Set[str]] = defaultdict(set)
         self.reverse_dependencies: Dict[str, Set[str]] = defaultdict(set)
         self.running_tasks: Set[str] = set()
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self._worker_task: Optional[asyncio.Task] = None
+        self._loop=None
+        self._worker_task=None
         self._shutdown = False
         self._lock = asyncio.Lock()
 
@@ -86,7 +86,7 @@ class AsyncTaskManager:
         await self.executor.start()
         logger.info("AsyncTaskManager started")
 
-    async def stop(self, wait: bool = True):
+    async def stop(self, wait=True):
         """매니저 중지"""
         self._shutdown = True
         if wait and self._worker_task:
@@ -98,10 +98,10 @@ class AsyncTaskManager:
         self,
         func: Union[Callable, Task],
         *args,
-        name: Optional[str] = None,
+        name=None,
         priority: TaskPriority = TaskPriority.NORMAL,
-        retry_policy: Optional[RetryPolicy] = None,
-        timeout: Optional[timedelta] = None,
+        retry_policy=None,
+        timeout=None,
         depends_on: Optional[List[str]] = None,
         context: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
@@ -175,7 +175,7 @@ class AsyncTaskManager:
         return Success(None)
 
     async def wait_for(
-        self, task_id: str, timeout: Optional[float] = None
+        self, task_id: str, timeout=None
     ) -> TaskResult:
         """작업 완료 대기"""
         if task_id not in self.task_futures:
@@ -217,7 +217,7 @@ class AsyncTaskManager:
     async def wait_for_all(
         self,
         task_ids: List[str],
-        timeout: Optional[float] = None,
+        timeout=None,
         return_when: str = asyncio.ALL_COMPLETED,
     ) -> List[TaskResult]:
         """여러 작업 완료 대기"""
@@ -231,7 +231,7 @@ class AsyncTaskManager:
         done, pending = await asyncio.wait(
             futures, timeout=timeout, return_when=return_when
         )
-        results = []
+        results=[]
         for task_id in task_ids:
             if task_id in self.task_futures:
                 future = self.task_futures[task_id]
@@ -284,7 +284,7 @@ class AsyncTaskManager:
         )
 
     def list_tasks(
-        self, status: Optional[TaskStatus] = None, tags: Optional[List[str]] = None
+        self, status=None, tags: Optional[List[str]] = None
     ) -> List[TaskMetadata]:
         """작업 목록 조회"""
         tasks = list(self.tasks.values())
@@ -454,7 +454,7 @@ class AsyncTaskManager:
         await self._handle_dependent_tasks(task_id, failed=True)
 
     async def _handle_dependent_tasks(
-        self, task_id: str, failed: bool = False, cancelled: bool = False
+        self, task_id: str, failed=False, cancelled=False
     ):
         """의존 작업 처리"""
         dependent_tasks = self.reverse_dependencies.get(task_id, set())
@@ -500,7 +500,7 @@ class AsyncTaskManager:
         return metrics
 
 
-_global_manager: Optional[AsyncTaskManager] = None
+_global_manager=None
 
 
 async def get_task_manager() -> AsyncTaskManager:
@@ -547,14 +547,14 @@ async def get_task_result(task_id: str) -> Optional[TaskResult]:
     return manager.get_result(task_id)
 
 
-async def wait_for_task(task_id: str, timeout: Optional[float] = None) -> TaskResult:
+async def wait_for_task(task_id: str, timeout=None) -> TaskResult:
     """작업 완료 대기"""
     manager = await get_task_manager()
     return await manager.wait_for(task_id, timeout)
 
 
 async def wait_for_tasks(
-    task_ids: List[str], timeout: Optional[float] = None
+    task_ids: List[str], timeout=None
 ) -> List[TaskResult]:
     """여러 작업 완료 대기"""
     manager = await get_task_manager()

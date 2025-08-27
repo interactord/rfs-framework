@@ -139,7 +139,7 @@ class InitCommand(Command):
     ) -> Result[Dict[str, Any], str]:
         """프로젝트 설정 수집 (인터랙티브)"""
         try:
-            config = {}
+            config={}
             if args and len(args) > 0:
                 config["name"] = {"name": args[0]}
             else:

@@ -40,7 +40,7 @@ class CPUCoreUsage:
 
     core_id: int
     usage_percent: float
-    frequency: Optional[float] = None
+    frequency=None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -79,8 +79,8 @@ class CPUSnapshot:
     loadavg: Optional[List[float]]
     core_usage: List[CPUCoreUsage]
     top_processes: List[ProcessCPUInfo]
-    context_switches: Optional[int] = None
-    interrupts: Optional[int] = None
+    context_switches=None
+    interrupts=None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -132,14 +132,14 @@ class CPUMetrics:
         if len(self.snapshots) > 1000:
             self.snapshots = self.snapshots[-1000:]
 
-    def get_recent_snapshots(self, minutes: int = 10) -> List[CPUSnapshot]:
+    def get_recent_snapshots(self, minutes=10) -> List[CPUSnapshot]:
         """최근 N분간의 스냅샷 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
             snapshot for snapshot in self.snapshots if snapshot.timestamp >= cutoff_time
         ]
 
-    def get_average_cpu_usage(self, minutes: int = 10) -> float:
+    def get_average_cpu_usage(self, minutes=10) -> float:
         """최근 N분간의 평균 CPU 사용률"""
         recent = self.get_recent_snapshots(minutes)
         if not recent:
@@ -150,19 +150,19 @@ class CPUMetrics:
 class CPUProfiler:
     """CPU 프로파일러"""
 
-    def __init__(self, collection_interval: float = 1.0, top_processes_count: int = 10):
+    def __init__(self, collection_interval=1.0, top_processes_count=10):
         self.collection_interval = collection_interval
         self.top_processes_count = top_processes_count
         self.metrics = CPUMetrics()
         self.is_running = False
-        self.collection_task: Optional[asyncio.Task] = None
+        self.collection_task=None
         self.start_time = datetime.now()
         self.cpu_bound_threshold = 80.0
         self.cpu_bound_duration = 5.0
         self.profiling_enabled = False
-        self.current_profiler: Optional[cProfile.Profile] = None
-        self.profiling_results: List[ProfileResult] = []
-        self.alert_callbacks: List[callable] = []
+        self.current_profiler=None
+        self.profiling_results=[]
+        self.alert_callbacks=[]
         self.cpu_count = psutil.cpu_count() if PSUTIL_AVAILABLE else 1
         self.cpu_freq_base = None
         if PSUTIL_AVAILABLE:
@@ -244,7 +244,7 @@ class CPUProfiler:
                 except (OSError, AttributeError):
                     pass
             core_percentages = psutil.cpu_percent(percpu=True, interval=0.1)
-            core_usage = []
+            core_usage=[]
             cpu_freq = None
             try:
                 cpu_freq = psutil.cpu_freq(percpu=True)
@@ -257,9 +257,9 @@ class CPUProfiler:
                 core_usage = core_usage + [
                     CPUCoreUsage(core_id=i, usage_percent=usage, frequency=freq)
                 ]
-            top_processes = []
+            top_processes=[]
             try:
-                processes = []
+                processes=[]
                 for proc in psutil.process_iter(
                     ["pid", "name", "cpu_percent", "cpu_times", "num_threads"]
                 ):
@@ -271,7 +271,7 @@ class CPUProfiler:
                         continue
                 processes.sort(key=lambda x: x["cpu_percent"], reverse=True)
                 for proc_info in processes[: self.top_processes_count]:
-                    cpu_times_dict = {}
+                    cpu_times_dict={}
                     if proc_info.get("cpu_times"):
                         cpu_times_dict = proc_info["cpu_times"]._asdict()
                     top_processes = top_processes + [
@@ -351,7 +351,7 @@ class CPUProfiler:
     async def _check_cpu_alerts(self, snapshot: CPUSnapshot):
         """CPU 알림 확인"""
         try:
-            alerts = []
+            alerts=[]
             if snapshot.overall_cpu_percent > 85.0:
                 alerts = alerts + [
                     f"High CPU usage: {snapshot.overall_cpu_percent:.1f}%"
@@ -420,7 +420,7 @@ class CPUProfiler:
             s = io.StringIO()
             stats = pstats.Stats(self.current_profiler, stream=s)
             stats.sort_stats("cumulative")
-            results = []
+            results=[]
             for func_info, (
                 total_calls,
                 _,
@@ -466,7 +466,7 @@ class CPUProfiler:
         """CPU 메트릭 반환"""
         return self.metrics
 
-    async def analyze_cpu_patterns(self, minutes: int = 10) -> Dict[str, Any]:
+    async def analyze_cpu_patterns(self, minutes=10) -> Dict[str, Any]:
         """CPU 사용 패턴 분석"""
         try:
             recent = self.metrics.get_recent_snapshots(minutes)
@@ -486,7 +486,7 @@ class CPUProfiler:
             if recent[0].core_usage:
                 core_count = len(recent[0].core_usage)
                 for core_id in range(core_count):
-                    core_values = []
+                    core_values=[]
                     for snapshot in recent:
                         if core_id < len(snapshot.core_usage):
                             core_values = core_values + [
@@ -517,7 +517,7 @@ class CPUProfiler:
         variance = sum(((x - mean) ** 2 for x in values)) / (len(values) - 1)
         return variance
 
-    async def get_top_cpu_consumers(self, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_top_cpu_consumers(self, limit=10) -> List[Dict[str, Any]]:
         """CPU 사용량이 높은 함수들 반환 (프로파일링 결과 기반)"""
         try:
             if not self.profiling_results:
@@ -529,7 +529,7 @@ class CPUProfiler:
 
 
 def create_cpu_profiler(
-    collection_interval: float = 1.0, top_processes_count: int = 10
+    collection_interval: float = 1.0, top_processes_count=10
 ) -> CPUProfiler:
     """CPU 프로파일러 생성"""
     return CPUProfiler(

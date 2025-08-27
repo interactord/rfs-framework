@@ -114,7 +114,7 @@ class ResponseHandler:
 
     @staticmethod
     async def create_success_response(
-        data: Any, status_code: int = 200, headers: Dict[str, str] = None
+        data: Any, status_code=200, headers: Dict[str, str] = None
     ) -> Dict[str, Any]:
         """성공 응답 생성"""
         response = {"success": True, "data": data, "status_code": status_code}
@@ -125,8 +125,8 @@ class ResponseHandler:
     @staticmethod
     async def create_error_response(
         error_message: str,
-        error_code: str = "INTERNAL_ERROR",
-        status_code: int = 500,
+        error_code="INTERNAL_ERROR",
+        status_code=500,
         details: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
         """에러 응답 생성"""
@@ -160,7 +160,7 @@ class ErrorHandler:
 
     def __init__(self):
         self.error_handlers: Dict[Type[Exception], Callable] = {}
-        self.global_error_handler: Optional[Callable] = None
+        self.global_error_handler=None
 
     def register_handler(self, exception_type: Type[Exception], handler: Callable):
         """특정 예외 타입에 대한 핸들러 등록"""
@@ -225,14 +225,14 @@ class ErrorHandler:
         """요청 정보 추출"""
         if not request:
             return {}
-        info = {}
+        info={}
         try:
             if hasattr(request, "method"):
                 info["method"] = {"method": request.method}
             if hasattr(request, "url"):
                 info["url"] = {"url": str(request.url)}
             if hasattr(request, "headers"):
-                safe_headers = {}
+                safe_headers={}
                 for key, value in request.headers.items():
                     if key.lower() not in ["authorization", "cookie", "x-api-key"]:
                         safe_headers[key] = {key: value}
@@ -242,7 +242,7 @@ class ErrorHandler:
         return info
 
 
-_global_error_handler: Optional[ErrorHandler] = None
+_global_error_handler=None
 
 
 def get_error_handler() -> ErrorHandler:

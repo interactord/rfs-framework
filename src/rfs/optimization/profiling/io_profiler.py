@@ -196,14 +196,14 @@ class IOMetrics:
         if len(self.snapshots) > 1000:
             self.snapshots = self.snapshots[-1000:]
 
-    def get_recent_snapshots(self, minutes: int = 10) -> List[IOSnapshot]:
+    def get_recent_snapshots(self, minutes=10) -> List[IOSnapshot]:
         """최근 N분간의 스냅샷 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
             snapshot for snapshot in self.snapshots if snapshot.timestamp >= cutoff_time
         ]
 
-    def calculate_io_rates(self, minutes: int = 1) -> Dict[str, float]:
+    def calculate_io_rates(self, minutes=1) -> Dict[str, float]:
         """I/O 속도 계산 (초당)"""
         recent = self.get_recent_snapshots(minutes)
         if len(recent) < 2:
@@ -236,12 +236,12 @@ class IOMetrics:
 class IOProfiler:
     """I/O 프로파일러"""
 
-    def __init__(self, collection_interval: float = 2.0, top_processes_count: int = 10):
+    def __init__(self, collection_interval=2.0, top_processes_count=10):
         self.collection_interval = collection_interval
         self.top_processes_count = top_processes_count
         self.metrics = IOMetrics()
         self.is_running = False
-        self.collection_task: Optional[asyncio.Task] = None
+        self.collection_task=None
         self.start_time = datetime.now()
         self.bottleneck_thresholds = {
             "disk_usage_percent": 90.0,
@@ -249,7 +249,7 @@ class IOProfiler:
             "network_error_rate": 0.01,
             "filesystem_usage_percent": 95.0,
         }
-        self.alert_callbacks: List[callable] = []
+        self.alert_callbacks=[]
         self.prev_disk_counters: Optional[Dict[str, Any]] = None
         self.prev_network_counters: Optional[Dict[str, Any]] = None
 
@@ -302,7 +302,7 @@ class IOProfiler:
     async def _collect_io_snapshot(self) -> Optional[IOSnapshot]:
         """I/O 스냅샷 수집"""
         try:
-            disk_io_stats = []
+            disk_io_stats=[]
             total_disk_reads = 0
             total_disk_writes = 0
             try:
@@ -324,7 +324,7 @@ class IOProfiler:
                         total_disk_writes = total_disk_writes + stats.write_bytes
             except Exception as e:
                 logger.warning(f"Failed to collect disk I/O stats: {e}")
-            network_io_stats = []
+            network_io_stats=[]
             total_network_sent = 0
             total_network_recv = 0
             try:
@@ -347,7 +347,7 @@ class IOProfiler:
                         total_network_recv = total_network_recv + stats.bytes_recv
             except Exception as e:
                 logger.warning(f"Failed to collect network I/O stats: {e}")
-            filesystem_usage = []
+            filesystem_usage=[]
             try:
                 partitions = psutil.disk_partitions()
                 for partition in partitions:
@@ -367,9 +367,9 @@ class IOProfiler:
                         continue
             except Exception as e:
                 logger.warning(f"Failed to collect filesystem usage: {e}")
-            top_io_processes = []
+            top_io_processes=[]
             try:
-                processes = []
+                processes=[]
                 for proc in psutil.process_iter(["pid", "name"]):
                     try:
                         io_info = proc.io_counters()
@@ -421,7 +421,7 @@ class IOProfiler:
     async def _detect_io_bottlenecks(self, snapshot: IOSnapshot):
         """I/O 병목 탐지"""
         try:
-            bottlenecks = []
+            bottlenecks=[]
             for fs in snapshot.filesystem_usage:
                 if fs.percent > self.bottleneck_thresholds["filesystem_usage_percent"]:
                     bottleneck = IOBottleneck(
@@ -492,7 +492,7 @@ class IOProfiler:
     async def _check_io_alerts(self, snapshot: IOSnapshot):
         """I/O 알림 확인"""
         try:
-            alerts = []
+            alerts=[]
             for fs in snapshot.filesystem_usage:
                 if fs.percent > 90.0:
                     alerts = alerts + [
@@ -574,7 +574,7 @@ class IOProfiler:
         """I/O 메트릭 반환"""
         return self.metrics
 
-    def get_detected_bottlenecks(self, minutes: int = 60) -> List[IOBottleneck]:
+    def get_detected_bottlenecks(self, minutes=60) -> List[IOBottleneck]:
         """최근 N분간 탐지된 병목들 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
@@ -583,7 +583,7 @@ class IOProfiler:
             if bottleneck.detection_time >= cutoff_time
         ]
 
-    async def analyze_io_patterns(self, minutes: int = 10) -> Dict[str, Any]:
+    async def analyze_io_patterns(self, minutes=10) -> Dict[str, Any]:
         """I/O 패턴 분석"""
         try:
             recent = self.metrics.get_recent_snapshots(minutes)
@@ -640,7 +640,7 @@ class IOProfiler:
 
 
 def create_io_profiler(
-    collection_interval: float = 2.0, top_processes_count: int = 10
+    collection_interval: float = 2.0, top_processes_count=10
 ) -> IOProfiler:
     """I/O 프로파일러 생성"""
     return IOProfiler(

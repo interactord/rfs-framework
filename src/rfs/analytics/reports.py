@@ -51,12 +51,12 @@ class ReportSection:
     content_type: str
     content: Any
     metadata: Dict[str, Any] = field(default_factory=dict)
-    width: Optional[str] = None
-    height: Optional[str] = None
-    padding: str = "10px"
-    margin: str = "5px"
-    condition: Optional[str] = None
-    visible: bool = True
+    width=None
+    height=None
+    padding="10px"
+    margin="5px"
+    condition=None
+    visible=True
 
 
 @dataclass
@@ -69,11 +69,11 @@ class ReportTemplate:
     sections: List[ReportSection] = field(default_factory=list)
     variables: Dict[str, Any] = field(default_factory=dict)
     styles: Dict[str, Any] = field(default_factory=dict)
-    header_template: Optional[str] = None
-    footer_template: Optional[str] = None
+    header_template=None
+    footer_template=None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    version: str = "1.0"
+    version="1.0"
     _cached_sections: Optional[List[ReportSection]] = field(default=None, init=False)
 
 
@@ -82,25 +82,25 @@ class ReportConfig:
     """리포트 생성 설정"""
 
     title: str
-    subtitle: str = ""
-    author: str = ""
-    organization: str = ""
-    page_size: str = "A4"
-    orientation: str = "portrait"
-    margin_top: str = "2cm"
-    margin_bottom: str = "2cm"
-    margin_left: str = "2cm"
-    margin_right: str = "2cm"
-    font_family: str = "Arial, sans-serif"
-    font_size: str = "12pt"
-    line_height: str = "1.5"
-    include_header: bool = True
-    include_footer: bool = True
-    include_page_numbers: bool = True
-    include_date: bool = True
-    include_toc: bool = False
-    include_summary: bool = False
-    compress: bool = False
+    subtitle=""
+    author=""
+    organization=""
+    page_size="A4"
+    orientation="portrait"
+    margin_top="2cm"
+    margin_bottom="2cm"
+    margin_left="2cm"
+    margin_right="2cm"
+    font_family="Arial, sans-serif"
+    font_size="12pt"
+    line_height="1.5"
+    include_header=True
+    include_footer=True
+    include_page_numbers=True
+    include_date=True
+    include_toc=False
+    include_summary=False
+    compress=False
 
 
 class Report(ABC):
@@ -110,12 +110,12 @@ class Report(ABC):
         self.report_id = report_id
         self.template = template
         self.config = config
-        self.sections: List[ReportSection] = []
-        self.variables: Dict[str, Any] = {}
-        self.generated_at: Optional[datetime] = None
-        self._cache: Dict[str, Any] = {}
-        self._cache_timestamp: Optional[datetime] = None
-        self._cache_ttl: int = 600  # 10분 캐시
+        self.sections=[]
+        self.variables={}
+        self.generated_at=None
+        self._cache={}
+        self._cache_timestamp=None
+        self._cache_ttl=600  # 10분 캐시
 
     @abstractmethod
     async def generate(self) -> Result[bytes, str]:
@@ -173,7 +173,7 @@ class Report(ABC):
         except Exception as e:
             return Failure(f"Failed to set variable: {str(e)}")
 
-    def get_variable(self, key: str, default: Any = None) -> Any:
+    def get_variable(self, key: str, default=None) -> Any:
         """변수 조회"""
         return self.variables.get(key, default)
 
@@ -192,7 +192,7 @@ class Report(ABC):
             return Success(self._cache[cache_key])
 
         try:
-            processed_sections = []
+            processed_sections=[]
             for section in self.sections:
                 if section.condition:
                     if not self._evaluate_condition(section.condition):
@@ -281,7 +281,7 @@ class PDFReport(Report):
                 spaceAfter=30,
                 alignment=1,
             )
-            story = []
+            story=[]
             if self.config.title:
                 story = story + [Paragraph(self.config.title, title_style)]
                 story = story + [Spacer(1, 20)]
@@ -291,7 +291,7 @@ class PDFReport(Report):
                 ]
                 story = story + [Spacer(1, 20)]
             if self.config.author or self.config.organization:
-                meta_text = []
+                meta_text=[]
                 if self.config.author:
                     meta_text = meta_text + [f"Author: {self.config.author}"]
                 if self.config.organization:
@@ -390,7 +390,7 @@ class HTMLReport(Report):
     async def generate(self) -> Result[bytes, str]:
         """HTML 리포트 생성"""
         try:
-            html_parts = []
+            html_parts=[]
             html_parts = html_parts + [self._generate_html_header()]
             html_parts = html_parts + [self._generate_title_section()]
             sections_result = await self._process_sections()
@@ -414,12 +414,12 @@ class HTMLReport(Report):
 
     def _generate_title_section(self) -> str:
         """제목 섹션 생성"""
-        parts = []
+        parts=[]
         if self.config.title:
             parts = parts + [f'<h1 class="report-title">{self.config.title}</h1>']
         if self.config.subtitle:
             parts = parts + [f'<h2 class="report-subtitle">{self.config.subtitle}</h2>']
-        meta_parts = []
+        meta_parts=[]
         if self.config.author:
             meta_parts = meta_parts + [f"Author: {self.config.author}"]
         if self.config.organization:
@@ -580,10 +580,10 @@ class ReportBuilder:
     """리포트 빌더"""
 
     def __init__(self):
-        self._template: Optional[ReportTemplate] = None
-        self._config: Optional[ReportConfig] = None
+        self._template=None
+        self._config=None
         self._format: ReportFormat = ReportFormat.HTML
-        self._data_sources: Dict[str, DataSource] = {}
+        self._data_sources={}
 
     def template(self, template: ReportTemplate) -> "ReportBuilder":
         """템플릿 설정"""
@@ -633,9 +633,7 @@ class ReportBuilder:
 
 async def generate_report(
     template: ReportTemplate,
-    config: ReportConfig,
-    format: ReportFormat = ReportFormat.HTML,
-    variables: Optional[Dict[str, Any]] = None,
+    config: ReportConfig, format=ReportFormat.HTML, variables=None,
 ) -> Result[bytes, str]:
     """리포트 생성 헬퍼 함수"""
     builder = ReportBuilder()
@@ -653,9 +651,7 @@ async def generate_report(
 async def schedule_report(
     template: ReportTemplate,
     config: ReportConfig,
-    schedule: ReportSchedule,
-    format: ReportFormat = ReportFormat.HTML,
-    output_path: Optional[str] = None,
+    schedule: ReportSchedule, format=ReportFormat.HTML, output_path=None,
 ) -> Result[str, str]:
     """리포트 스케줄링 (간단한 구현)"""
     try:
@@ -712,7 +708,7 @@ def _calculate_next_run(schedule: ReportSchedule) -> datetime:
 
 
 def create_report_template(
-    template_id: str, name: str, description: str = ""
+    template_id: str, name: str, description=""
 ) -> ReportTemplate:
     """리포트 템플릿 생성 헬퍼 함수"""
     return ReportTemplate(

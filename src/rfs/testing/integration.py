@@ -17,10 +17,10 @@ from ..core.result import Failure, Result, Success
 class TestEnvironment:
     """테스트 환경 설정"""
 
-    name: str = "test"
+    name="test"
     config: Dict[str, Any] = field(default_factory=dict)
     services: Dict[str, Any] = field(default_factory=dict)
-    temp_dir: Optional[Path] = None
+    temp_dir=None
 
     def setup(self) -> Result[None, str]:
         """환경 설정"""
@@ -60,7 +60,7 @@ class TestEnvironment:
 class IntegrationTest(ABC):
     """통합 테스트 베이스 클래스"""
 
-    def __init__(self, environment: Optional[TestEnvironment] = None):
+    def __init__(self, environment=None):
         """초기화"""
         self.environment = environment or TestEnvironment()
         self.is_setup = False
@@ -138,7 +138,7 @@ class DatabaseIntegrationTest(IntegrationTest):
 class WebIntegrationTest(IntegrationTest):
     """웹 통합 테스트"""
 
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url="http://localhost:8000"):
         """초기화"""
         super().__init__()
         self.base_url = base_url
@@ -225,7 +225,7 @@ class TestDataFactory:
 
 
 # 글로벌 테스트 환경
-_test_environment: Optional[TestEnvironment] = None
+_test_environment=None
 
 
 def setup_test_environment(

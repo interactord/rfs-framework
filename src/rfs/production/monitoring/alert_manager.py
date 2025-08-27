@@ -82,7 +82,7 @@ class AlertCondition:
     operator: str
     threshold: float
     duration_minutes: float = 5.0
-    comparison_type: str = "absolute"
+    comparison_type="absolute"
 
 
 @dataclass
@@ -94,9 +94,9 @@ class AlertRule:
     description: str
     conditions: List[AlertCondition]
     severity: AlertSeverity
-    enabled: bool = True
+    enabled=True
     tags: Dict[str, Any] = field(default_factory=dict)
-    runbook_url: Optional[str] = None
+    runbook_url=None
     silence_duration_minutes: float = 60.0
 
 
@@ -108,7 +108,7 @@ class NotificationChannel:
     name: str
     channel_type: ChannelType
     config: Dict[str, Any]
-    enabled: bool = True
+    enabled=True
     severity_filter: List[str] = field(default_factory=list)
     tags_filter: Dict[str, Any] = field(default_factory=dict)
 
@@ -143,9 +143,9 @@ class Alert:
     source: str
     labels: Dict[str, Any] = field(default_factory=dict)
     annotations: Dict[str, Any] = field(default_factory=dict)
-    resolved_at: Optional[datetime] = None
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
+    resolved_at=None
+    acknowledged_at=None
+    acknowledged_by=None
     escalation_level: EscalationLevel = EscalationLevel.L1
 
 
@@ -156,7 +156,7 @@ class AlertChannel:
         self.config = channel_config
 
     async def send_alert(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Result[bool, str]:
         """알림 전송 (서브클래스에서 구현)"""
         raise NotImplementedError
@@ -166,7 +166,7 @@ class EmailChannel(AlertChannel):
     """이메일 알림 채널"""
 
     async def send_alert(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Result[bool, str]:
         """이메일 알림 전송"""
         try:
@@ -196,7 +196,7 @@ class EmailChannel(AlertChannel):
         except Exception as e:
             return Failure(f"Email sending failed: {e}")
 
-    def _format_email_body(self, alert: Alert, context: Dict[str, Any] = None) -> str:
+    def _format_email_body(self, alert: Alert, context=None) -> str:
         """이메일 본문 포맷"""
         severity_color = {
             AlertSeverity.CRITICAL: "#FF0000",
@@ -233,7 +233,7 @@ class SlackChannel(AlertChannel):
     """슬랙 알림 채널"""
 
     async def send_alert(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Result[bool, str]:
         """슬랙 알림 전송"""
         try:
@@ -252,7 +252,7 @@ class SlackChannel(AlertChannel):
             return Failure(f"Slack sending failed: {e}")
 
     def _format_slack_message(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Dict[str, Any]:
         """슬랙 메시지 포맷"""
         severity_emoji = {
@@ -299,7 +299,7 @@ class WebhookChannel(AlertChannel):
     """웹훅 알림 채널"""
 
     async def send_alert(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Result[bool, str]:
         """웹훅 알림 전송"""
         try:
@@ -331,7 +331,7 @@ class WebhookChannel(AlertChannel):
             return Failure(f"Webhook sending failed: {e}")
 
     def _format_webhook_payload(
-        self, alert: Alert, context: Dict[str, Any] = None
+        self, alert: Alert, context=None
     ) -> Dict[str, Any]:
         """웹훅 페이로드 포맷"""
         payload = {
@@ -380,7 +380,7 @@ class AlertGrouping:
 
     def __init__(self):
         self.groups: Dict[str, List[Alert]] = defaultdict(list)
-        self.group_timers: Dict[str, datetime] = {}
+        self.group_timers={}
 
     def add_alert(self, alert: Alert, group_by: List[str]) -> str:
         """알림을 그룹에 추가"""
@@ -394,7 +394,7 @@ class AlertGrouping:
         """그룹 키 생성"""
         if not group_by:
             return alert.rule_id
-        key_parts = []
+        key_parts=[]
         for field in group_by:
             if field in alert.labels:
                 key_parts = key_parts + [f"{field}={alert.labels[field]}"]
@@ -404,7 +404,7 @@ class AlertGrouping:
 
     def get_ready_groups(self, wait_minutes: float) -> Dict[str, List[Alert]]:
         """전송 준비된 그룹 조회"""
-        ready_groups = {}
+        ready_groups={}
         current_time = datetime.now()
         for group_key, timer in list(self.group_timers.items()):
             if (current_time - timer).total_seconds() >= wait_minutes * 60:
@@ -421,8 +421,8 @@ class EscalationManager:
     """에스컬레이션 관리"""
 
     def __init__(self):
-        self.escalation_timers: Dict[str, datetime] = {}
-        self.escalated_alerts: Dict[str, EscalationLevel] = {}
+        self.escalation_timers={}
+        self.escalated_alerts={}
 
     def start_escalation(
         self, alert: Alert, escalation_rules: List[Dict[str, Any]]
@@ -435,7 +435,7 @@ class EscalationManager:
         self, escalation_rules: List[Dict[str, Any]]
     ) -> List[Tuple[str, EscalationLevel]]:
         """에스컬레이션 확인"""
-        escalations = []
+        escalations=[]
         current_time = datetime.now()
         for alert_id, start_time in list(self.escalation_timers.items()):
             current_level = self.escalated_alerts.get(alert_id, EscalationLevel.L1)
@@ -468,12 +468,12 @@ class AlertManager:
     """알림 관리자"""
 
     def __init__(self):
-        self.rules: Dict[str, AlertRule] = {}
-        self.channels: Dict[str, NotificationChannel] = {}
-        self.policies: Dict[str, AlertPolicy] = {}
-        self.active_alerts: Dict[str, Alert] = {}
+        self.rules={}
+        self.channels={}
+        self.policies={}
+        self.active_alerts={}
         self.alert_history: deque = deque(maxlen=10000)
-        self.channel_handlers: Dict[ChannelType, type] = {}
+        self.channel_handlers={}
         self.alert_grouping = AlertGrouping()
         self.escalation_manager = EscalationManager()
         self.total_alerts_sent = 0
@@ -482,7 +482,7 @@ class AlertManager:
         self.channel_stats: Dict[str, Dict[str, int]] = defaultdict(
             lambda: {"sent": 0, "failed": 0}
         )
-        self.background_task: Optional[asyncio.Task] = None
+        self.background_task=None
         self.is_running = False
 
     async def initialize(self) -> Result[bool, str]:
@@ -536,10 +536,7 @@ class AlertManager:
         self,
         rule_id: str,
         title: str,
-        message: str,
-        source: str = "system",
-        labels: Dict[str, str] = None,
-        annotations: Dict[str, str] = None,
+        message: str, source="system", labels=None, annotations=None,
     ) -> Result[Alert, str]:
         """알림 생성"""
         try:
@@ -616,7 +613,7 @@ class AlertManager:
             return Failure(f"Failed to acknowledge alert: {e}")
 
     async def resolve_alert(
-        self, alert_id: str, resolved_by: str = "system"
+        self, alert_id: str, resolved_by="system"
     ) -> Result[bool, str]:
         """알림 해결"""
         try:
@@ -759,7 +756,7 @@ class AlertManager:
     async def _cleanup_expired_alerts(self) -> None:
         """만료된 알림 정리"""
         current_time = datetime.now()
-        expired_alerts = []
+        expired_alerts=[]
         for alert_id, alert in list(self.active_alerts.items()):
             if (current_time - alert.created_at).total_seconds() > 24 * 3600:
                 alert.status = AlertStatus.EXPIRED
@@ -819,7 +816,7 @@ class AlertManager:
             return Failure(f"Cleanup failed: {e}")
 
 
-_alert_manager: Optional[AlertManager] = None
+_alert_manager=None
 
 
 def get_alert_manager() -> AlertManager:

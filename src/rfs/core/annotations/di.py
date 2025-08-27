@@ -28,7 +28,7 @@ from .base import (
 # ============================================================================
 
 
-def Port(name: Optional[str] = None, dependencies: Optional[List[str]] = None):
+def Port(name=None, dependencies: Optional[List[str]] = None):
     """
     도메인 포트 정의 (인터페이스)
 
@@ -75,9 +75,9 @@ def Port(name: Optional[str] = None, dependencies: Optional[List[str]] = None):
 def Adapter(
     port: Union[str, Type],
     scope: ServiceScope = ServiceScope.SINGLETON,
-    profile: Optional[str] = None,
-    primary: bool = False,
-    name: Optional[str] = None,
+    profile=None,
+    primary=False,
+    name=None,
 ):
     """
     인프라스트럭처 어댑터 정의 (구현체)
@@ -132,7 +132,7 @@ def Adapter(
 
 
 def UseCase(
-    name: Optional[str] = None,
+    name=None,
     dependencies: Optional[List[str]] = None,
     scope: ServiceScope = ServiceScope.PROTOTYPE,
 ):
@@ -184,9 +184,9 @@ def UseCase(
 
 
 def Controller(
-    route: Optional[str] = None,
+    route=None,
     method: Union[str, List[str]] = "GET",
-    name: Optional[str] = None,
+    name=None,
     dependencies: Optional[List[str]] = None,
 ):
     """
@@ -246,11 +246,11 @@ def Controller(
 def Component(
     name: str,
     scope: ServiceScope = ServiceScope.SINGLETON,
-    lazy: bool = False,
+    lazy=False,
     dependencies: Optional[List[str]] = None,
-    profile: Optional[str] = None,
-    primary: bool = False,
-    qualifier: Optional[str] = None,
+    profile=None,
+    primary=False,
+    qualifier=None,
 ):
     """
     일반 컴포넌트 정의
@@ -382,7 +382,7 @@ def Service(name: str, scope: ServiceScope = ServiceScope.SINGLETON):
 
 
 def Repository(
-    name: Optional[str] = None,
+    name=None,
     scope: ServiceScope = ServiceScope.SINGLETON,
     dependencies: Optional[List[str]] = None,
 ):
@@ -432,7 +432,7 @@ def Repository(
 # ============================================================================
 
 
-def Injectable(cls=None, *, name: Optional[str] = None):
+def Injectable(cls=None, *, name=None):
     """
     주입 가능한 클래스 표시
 
@@ -459,7 +459,7 @@ def Injectable(cls=None, *, name: Optional[str] = None):
 
 
 def Autowired(
-    qualifier: Optional[str] = None, lazy: bool = False, required: bool = True
+    qualifier=None, lazy=False, required=True
 ):
     """
     자동 주입 필드

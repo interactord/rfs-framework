@@ -52,9 +52,9 @@ class TaskExecutor(ABC):
 class ThreadPoolExecutor(TaskExecutor):
     """스레드 풀 실행자"""
 
-    def __init__(self, max_workers: int = 10):
+    def __init__(self, max_workers=10):
         self.max_workers = max_workers
-        self.executor: Optional[concurrent.futures.ThreadPoolExecutor] = None
+        self.executor=None
         self.active_tasks = 0
         self.completed_tasks = 0
         self.failed_tasks = 0
@@ -133,9 +133,9 @@ class ThreadPoolExecutor(TaskExecutor):
 class ProcessPoolExecutor(TaskExecutor):
     """프로세스 풀 실행자"""
 
-    def __init__(self, max_workers: Optional[int] = None):
+    def __init__(self, max_workers=None):
         self.max_workers = max_workers or multiprocessing.cpu_count()
-        self.executor: Optional[concurrent.futures.ProcessPoolExecutor] = None
+        self.executor=None
         self.active_tasks = 0
         self.completed_tasks = 0
         self.failed_tasks = 0
@@ -221,10 +221,10 @@ class ProcessPoolExecutor(TaskExecutor):
 class AsyncIOExecutor(TaskExecutor):
     """AsyncIO 실행자"""
 
-    def __init__(self, max_workers: int = 10):
+    def __init__(self, max_workers=10):
         self.max_workers = max_workers
         self.semaphore = asyncio.Semaphore(max_workers)
-        self.active_tasks: List[asyncio.Task] = []
+        self.active_tasks=[]
         self.completed_tasks = 0
         self.failed_tasks = 0
         self._lock = asyncio.Lock()
@@ -245,7 +245,7 @@ class AsyncIOExecutor(TaskExecutor):
             if self.active_tasks:
                 await asyncio.gather(*self.active_tasks, return_exceptions=True)
 
-            self.active_tasks = []
+            self.active_tasks=[]
 
         logger.info("AsyncIOExecutor stopped")
 
@@ -322,9 +322,9 @@ class HybridExecutor(TaskExecutor):
 
     def __init__(
         self,
-        async_workers: int = 10,
-        process_workers: Optional[int] = None,
-        thread_workers: int = 5,
+        async_workers=10,
+        process_workers=None,
+        thread_workers=5,
     ):
         self.async_executor = AsyncIOExecutor(async_workers)
         self.process_executor = ProcessPoolExecutor(process_workers)
@@ -383,7 +383,7 @@ class HybridExecutor(TaskExecutor):
 
 
 # 전역 실행자
-_global_executor: Optional[TaskExecutor] = None
+_global_executor=None
 
 
 def get_executor() -> TaskExecutor:

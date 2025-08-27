@@ -43,7 +43,7 @@ class Maybe(Monad[T]):
     Represents a value that might be present (Just) or absent (Nothing).
     """
 
-    def __init__(self, value: Optional[T] = None):
+    def __init__(self, value=None):
         self._value = value
 
     @staticmethod
@@ -140,7 +140,7 @@ class Either(Monad[R], Generic[L, R]):
     Represents a value that is either Left (typically error) or Right (success).
     """
 
-    def __init__(self, left: Optional[L] = None, right: Optional[R] = None):
+    def __init__(self, left=None, right=None):
         if (left is None) == (right is None):
             raise ValueError("Either must have exactly one value (left or right)")
         self._left = left
@@ -241,7 +241,7 @@ class Result(Generic[T, E]):
     A specialized Either where Right is Success and Left is Failure.
     """
 
-    def __init__(self, value: Optional[T] = None, error: Optional[E] = None):
+    def __init__(self, value=None, error=None):
         if (value is None) == (error is None):
             raise ValueError("Result must have exactly one value (success or error)")
         self._value = value
@@ -382,7 +382,7 @@ def sequence(monads: List[Maybe[T]]) -> Maybe[List[T]]:
         >>> sequence([Maybe.just(1), Maybe.nothing(), Maybe.just(3)])
         Maybe(None)
     """
-    result = []
+    result=[]
     for monad in monads:
         if monad.is_nothing():
             return Maybe.nothing()
@@ -401,7 +401,7 @@ def traverse(func: Callable[[T], Maybe[U]], items: List[T]) -> Maybe[List[U]]:
         >>> traverse(safe_div, [2, 0, 10])
         Maybe(None)
     """
-    result = []
+    result=[]
     for item in items:
         maybe_result = func(item)
         if maybe_result.is_nothing():

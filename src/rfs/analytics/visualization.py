@@ -48,27 +48,27 @@ class ColorScheme(Enum):
 class PlotConfig:
     """플롯 설정"""
 
-    title: str = ""
-    subtitle: str = ""
-    width: int = 800
-    height: int = 600
-    background_color: str = "white"
-    grid: bool = True
-    legend: bool = True
-    responsive: bool = True
-    animation: bool = True
-    interactive: bool = True
-    x_label: str = ""
-    y_label: str = ""
-    x_axis_type: str = "linear"
-    y_axis_type: str = "linear"
+    title=""
+    subtitle=""
+    width=800
+    height=600
+    background_color="white"
+    grid=True
+    legend=True
+    responsive=True
+    animation=True
+    interactive=True
+    x_label=""
+    y_label=""
+    x_axis_type="linear"
+    y_axis_type="linear"
     color_scheme: ColorScheme = ColorScheme.DEFAULT
-    font_family: str = "Arial, sans-serif"
-    font_size: int = 12
-    margin_top: int = 50
-    margin_right: int = 50
-    margin_bottom: int = 80
-    margin_left: int = 80
+    font_family="Arial, sans-serif"
+    font_size=12
+    margin_top=50
+    margin_right=50
+    margin_bottom=80
+    margin_left=80
 
 
 @dataclass
@@ -198,7 +198,7 @@ class BusinessTheme(Theme):
 class VisualizationEngine:
     """시각화 엔진"""
 
-    def __init__(self, backend: str = "plotly"):
+    def __init__(self, backend="plotly"):
         self.backend = backend
         self.current_theme: Theme = DefaultTheme()
         self._backend_module = None
@@ -239,7 +239,7 @@ class VisualizationEngine:
             return Failure(f"Theme setting failed: {str(e)}")
 
     async def generate_plot(
-        self, plot_type: PlotType, data: PlotData, config: Optional[PlotConfig] = None
+        self, plot_type: PlotType, data: PlotData, config=None
     ) -> Result[Dict[str, Any], str]:
         """플롯 생성"""
         if not self._backend_module:
@@ -449,10 +449,7 @@ class VisualizationEngine:
 async def generate_plot(
     plot_type: PlotType,
     x_data: List[Any],
-    y_data: List[Any],
-    config: Optional[PlotConfig] = None,
-    backend: str = "plotly",
-    theme: Optional[Theme] = None,
+    y_data: List[Any], config=None, backend="plotly", theme=None,
 ) -> Result[Dict[str, Any], str]:
     """플롯 생성 헬퍼 함수"""
     engine = VisualizationEngine(backend)
@@ -465,7 +462,7 @@ async def generate_plot(
 
 
 async def export_chart(
-    plot_result: Dict[str, Any], file_path: str, format: str = "html"
+    plot_result: Dict[str, Any], file_path: str, format="html"
 ) -> Result[bool, str]:
     """차트 내보내기"""
     try:
@@ -492,9 +489,7 @@ async def export_chart(
 async def create_interactive_plot(
     plot_type: PlotType,
     x_data: List[Any],
-    y_data: List[Any],
-    config: Optional[PlotConfig] = None,
-    callbacks: Optional[Dict[str, Callable]] = None,
+    y_data: List[Any], config=None, callbacks=None,
 ) -> Result[Dict[str, Any], str]:
     """인터랙티브 플롯 생성"""
     if config is None:
@@ -523,11 +518,11 @@ class PlotBuilder:
     """플롯 빌더 (Fluent API)"""
 
     def __init__(self):
-        self._plot_type: Optional[PlotType] = None
-        self._x_data: List[Any] = []
-        self._y_data: List[Any] = []
+        self._plot_type=None
+        self._x_data=[]
+        self._y_data=[]
         self._config = PlotConfig()
-        self._theme: Optional[Theme] = None
+        self._theme=None
         self._backend = "plotly"
 
     def plot_type(self, plot_type: PlotType) -> "PlotBuilder":
@@ -573,12 +568,12 @@ class PlotBuilder:
         self._config.color_scheme = color_scheme
         return self
 
-    def interactive(self, interactive: bool = True) -> "PlotBuilder":
+    def interactive(self, interactive=True) -> "PlotBuilder":
         """인터랙티브 모드 설정"""
         self._config.interactive = interactive
         return self
 
-    def grid(self, show_grid: bool = True) -> "PlotBuilder":
+    def grid(self, show_grid=True) -> "PlotBuilder":
         """그리드 표시 설정"""
         self._config.grid = show_grid
         return self
@@ -605,7 +600,7 @@ def create_plot() -> PlotBuilder:
 
 
 def generate_sample_data(
-    data_type: str = "line", size: int = 50
+    data_type="line", size=50
 ) -> Tuple[List[Any], List[Any]]:
     """샘플 데이터 생성"""
     import math
@@ -633,7 +628,7 @@ def generate_sample_data(
 _global_visualization_engine = None
 
 
-def get_visualization_engine(backend: str = "plotly") -> VisualizationEngine:
+def get_visualization_engine(backend="plotly") -> VisualizationEngine:
     """전역 시각화 엔진 가져오기"""
     # global _global_visualization_engine - removed for functional programming
     if _global_visualization_engine is None:

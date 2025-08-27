@@ -61,13 +61,13 @@ class TransactionOptions:
 
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
     propagation_level: PropagationLevel = PropagationLevel.REQUIRED
-    timeout: Optional[timedelta] = None
-    read_only: bool = False
+    timeout=None
+    read_only=False
     rollback_on: List[type[Exception]] = field(default_factory=list)
     no_rollback_on: List[type[Exception]] = field(default_factory=list)
-    retry_attempts: int = 0
+    retry_attempts=0
     retry_delay: timedelta = timedelta(seconds=1)
-    savepoint_enabled: bool = True
+    savepoint_enabled=True
 
 
 @dataclass
@@ -75,9 +75,9 @@ class TransactionMetadata:
     """트랜잭션 메타데이터"""
 
     transaction_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    parent_id: Optional[str] = None
+    parent_id=None
     started_at: datetime = field(default_factory=datetime.now)
-    ended_at: Optional[datetime] = None
+    ended_at=None
     status: TransactionStatus = TransactionStatus.ACTIVE
     options: TransactionOptions = field(default_factory=TransactionOptions)
     savepoints: List[str] = field(default_factory=list)
@@ -111,7 +111,7 @@ class TransactionContext:
 
     def __init__(self):
         self._thread_local = threading.local()
-        self._async_context: Optional[asyncio.ContextVar] = None
+        self._async_context=None
 
         # AsyncIO 환경에서만 ContextVar 생성
         try:
@@ -246,7 +246,7 @@ class TransactionResource(ABC):
 class TransactionError(Exception):
     """트랜잭션 에러"""
 
-    def __init__(self, message: str, transaction_id: Optional[str] = None):
+    def __init__(self, message: str, transaction_id=None):
         super().__init__(message)
         self.transaction_id = transaction_id
 
@@ -268,29 +268,29 @@ class TransactionConfig:
     """트랜잭션 설정"""
 
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
-    timeout_seconds: int = 30
-    retry_count: int = 3
+    timeout_seconds=30
+    retry_count=3
     retry_delay_seconds: float = 1.0
     rollback_for: List[type] = field(default_factory=lambda: [Exception])
     no_rollback_for: List[type] = field(default_factory=list)
-    readonly: bool = False
+    readonly=False
 
 
 @dataclass
 class RedisTransactionConfig(TransactionConfig):
     """Redis 트랜잭션 설정"""
 
-    ttl_seconds: int = 3600
-    prefix: str = "tx"
+    ttl_seconds=3600
+    prefix="tx"
 
 
 @dataclass
 class DistributedTransactionConfig(TransactionConfig):
     """분산 트랜잭션 설정"""
 
-    participant_timeout: int = 60
-    coordinator_timeout: int = 120
-    max_participants: int = 10
+    participant_timeout=60
+    coordinator_timeout=120
+    max_participants=10
 
 
 class TransactionSynchronization:
@@ -301,10 +301,10 @@ class TransactionSynchronization:
     """
 
     def __init__(self):
-        self.before_commit_actions: List[Callable] = []
-        self.after_commit_actions: List[Callable] = []
-        self.after_rollback_actions: List[Callable] = []
-        self.after_completion_actions: List[Callable] = []
+        self.before_commit_actions=[]
+        self.after_commit_actions=[]
+        self.after_rollback_actions=[]
+        self.after_completion_actions=[]
 
     def register_before_commit(self, action: Callable):
         """커밋 전 액션 등록"""
@@ -360,7 +360,7 @@ class TransactionSynchronization:
 
     def clear(self):
         """모든 액션 클리어"""
-        before_commit_actions = {}
-        after_commit_actions = {}
-        after_rollback_actions = {}
-        after_completion_actions = {}
+        before_commit_actions={}
+        after_commit_actions={}
+        after_rollback_actions={}
+        after_completion_actions={}

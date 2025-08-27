@@ -110,75 +110,75 @@ if PYDANTIC_AVAILABLE:
                         return Environment.PRODUCTION
                     case _:
                         return Environment.DEVELOPMENT
-                        return (
-                            v
-                            if type(v).__name__ == "Environment"
-                            else Environment.DEVELOPMENT
-                        )
+            return (
+                v
+                if type(v).__name__ == "Environment"
+                else Environment.DEVELOPMENT
+            )
 
-    @field_validator("cloud_run_cpu_limit")
-    @classmethod
-    def validate_cpu_limit(cls, v: str) -> str:
-        """Cloud Run CPU 제한 검증"""
-        if not (v.endswith("m") or v.endswith("Mi")):
-            raise ValueError("CPU limit must end with 'm' or 'Mi'")
-        return v
+        @field_validator("cloud_run_cpu_limit")
+        @classmethod
+        def validate_cpu_limit(cls, v: str) -> str:
+            """Cloud Run CPU 제한 검증"""
+            if not (v.endswith("m") or v.endswith("Mi")):
+                raise ValueError("CPU limit must end with 'm' or 'Mi'")
+            return v
 
-    @field_validator("cloud_run_memory_limit")
-    @classmethod
-    def validate_memory_limit(cls, v: str) -> str:
-        """Cloud Run 메모리 제한 검증"""
-        if not (v.endswith("Mi") or v.endswith("Gi")):
-            raise ValueError("Memory limit must end with 'Mi' or 'Gi'")
-        return v
+        @field_validator("cloud_run_memory_limit")
+        @classmethod
+        def validate_memory_limit(cls, v: str) -> str:
+            """Cloud Run 메모리 제한 검증"""
+            if not (v.endswith("Mi") or v.endswith("Gi")):
+                raise ValueError("Memory limit must end with 'Mi' or 'Gi'")
+            return v
 
-    @model_validator(mode="after")
-    def validate_config_consistency(self) -> "RFSConfig":
-        """설정 일관성 검증"""
-        if self.environment == Environment.PRODUCTION:
-            if not self.enable_tracing:
-                print("Warning: 운영 환경에서는 추적을 활성화하는 것을 권장합니다.")
-            if (
-                self.enable_performance_monitoring
-                and self.metrics_export_interval > 300
-            ):
-                print(
-                    "Warning: 성능 모니터링 활성화 시 메트릭 간격을 300초 이하로 설정하는 것을 권장합니다."
-                )
-        return self
+        @model_validator(mode="after")
+        def validate_config_consistency(self) -> "RFSConfig":
+            """설정 일관성 검증"""
+            if self.environment == Environment.PRODUCTION:
+                if not self.enable_tracing:
+                    print("Warning: 운영 환경에서는 추적을 활성화하는 것을 권장합니다.")
+                if (
+                    self.enable_performance_monitoring
+                    and self.metrics_export_interval > 300
+                ):
+                    print(
+                        "Warning: 성능 모니터링 활성화 시 메트릭 간격을 300초 이하로 설정하는 것을 권장합니다."
+                    )
+            return self
 
-    def is_development(self) -> bool:
-        """개발 환경 여부"""
-        return self.environment == Environment.DEVELOPMENT
+        def is_development(self) -> bool:
+            """개발 환경 여부"""
+            return self.environment == Environment.DEVELOPMENT
 
-    def is_production(self) -> bool:
-        """운영 환경 여부"""
-        return self.environment == Environment.PRODUCTION
+        def is_production(self) -> bool:
+            """운영 환경 여부"""
+            return self.environment == Environment.PRODUCTION
 
-    def is_test(self) -> bool:
-        """테스트 환경 여부"""
-        return self.environment == Environment.TEST
+        def is_test(self) -> bool:
+            """테스트 환경 여부"""
+            return self.environment == Environment.TEST
 
-    def export_cloud_run_config(self) -> Dict[str, Any]:
-        """Cloud Run 배포용 설정 내보내기 (v4 신규)"""
-        return {
-            "env_vars": {
-                "RFS_ENVIRONMENT": self.environment.value,
-                "RFS_DEFAULT_BUFFER_SIZE": str(self.default_buffer_size),
-                "RFS_MAX_CONCURRENCY": str(self.max_concurrency),
-                "RFS_ENABLE_COLD_START_OPTIMIZATION": str(
-                    self.enable_cold_start_optimization
-                ).lower(),
-                "RFS_REDIS_URL": self.redis_url,
-                "RFS_LOG_LEVEL": self.log_level,
-                "RFS_ENABLE_TRACING": str(self.enable_tracing).lower(),
-            },
-            "resource_limits": {
-                "cpu": self.cloud_run_cpu_limit,
-                "memory": self.cloud_run_memory_limit,
-            },
-            "scaling": {"max_instances": self.cloud_run_max_instances},
-        }
+        def export_cloud_run_config(self) -> Dict[str, Any]:
+            """Cloud Run 배포용 설정 내보내기 (v4 신규)"""
+            return {
+                "env_vars": {
+                    "RFS_ENVIRONMENT": self.environment.value,
+                    "RFS_DEFAULT_BUFFER_SIZE": str(self.default_buffer_size),
+                    "RFS_MAX_CONCURRENCY": str(self.max_concurrency),
+                    "RFS_ENABLE_COLD_START_OPTIMIZATION": str(
+                        self.enable_cold_start_optimization
+                    ).lower(),
+                    "RFS_REDIS_URL": self.redis_url,
+                    "RFS_LOG_LEVEL": self.log_level,
+                    "RFS_ENABLE_TRACING": str(self.enable_tracing).lower(),
+                },
+                "resource_limits": {
+                    "cpu": self.cloud_run_cpu_limit,
+                    "memory": self.cloud_run_memory_limit,
+                },
+                "scaling": {"max_instances": self.cloud_run_max_instances},
+            }
 
 else:
     from dataclasses import dataclass, field
@@ -188,17 +188,17 @@ else:
         """RFS Framework 설정 (Fallback)"""
 
         environment: Environment = Environment.DEVELOPMENT
-        default_buffer_size: int = 100
-        max_concurrency: int = 10
-        enable_cold_start_optimization: bool = True
-        cloud_run_max_instances: int = 100
-        cloud_tasks_queue_name: str = "default-queue"
-        redis_url: str = "redis://localhost:6379"
-        event_store_enabled: bool = True
-        log_level: str = "INFO"
-        log_format: str = "json"
-        enable_tracing: bool = False
-        api_key_header: str = "X-API-Key"
+        default_buffer_size=100
+        max_concurrency=10
+        enable_cold_start_optimization=True
+        cloud_run_max_instances=100
+        cloud_tasks_queue_name="default-queue"
+        redis_url="redis://localhost:6379"
+        event_store_enabled=True
+        log_level="INFO"
+        log_format="json"
+        enable_tracing=False
+        api_key_header="X-API-Key"
         custom: Dict[str, Any] = field(default_factory=dict)
 
         def is_development(self) -> bool:
@@ -220,7 +220,7 @@ class ConfigManager:
         self._config: RFSConfig | None = None
         self._env_prefix = "RFS_"
 
-    def load_config(self, force_reload: bool = False) -> RFSConfig:
+    def load_config(self, force_reload=False) -> RFSConfig:
         """설정 로드 (Pydantic 자동 처리 활용)"""
         if self._config is not None and (not force_reload):
             return self._config
@@ -236,7 +236,7 @@ class ConfigManager:
                 case _:
                     self._config = RFSConfig()
         else:
-            config_dict = {}
+            config_dict={}
             if self.config_path and Path(self.config_path).exists():
                 config_dict = self._load_from_file(self.config_path)
             env_config = self._load_from_env()
@@ -257,7 +257,7 @@ class ConfigManager:
 
     def _load_from_env(self) -> Dict[str, Any]:
         """환경 변수에서 설정 로드"""
-        config = {}
+        config={}
         for key, value in os.environ.items():
             if key.startswith(self._env_prefix):
                 config_key = key[len(self._env_prefix) :].lower()
@@ -395,9 +395,9 @@ def export_cloud_run_yaml() -> str:
 
 def validate_environment() -> tuple[bool, list[str]]:
     """환경 설정 유효성 검증 (v4 신규)"""
-    errors = []
+    errors=[]
     config = get_config()
-    required_vars = []
+    required_vars=[]
     if config.environment == Environment.PRODUCTION:
         required_vars = required_vars + ["REDIS_URL", "GOOGLE_APPLICATION_CREDENTIALS"]
     for var in required_vars:

@@ -86,8 +86,8 @@ class CreateUserRequest:
 @dataclass
 class UpdateUserRequest:
     """사용자 업데이트 요청"""
-    name: Optional[str] = None
-    status: Optional[UserStatus] = None
+    name=None
+    status=None
 
 
 # Domain Layer - Ports (인터페이스)
@@ -155,7 +155,7 @@ class MemoryUserRepository(UserRepository):
     """메모리 기반 사용자 저장소 (개발용)"""
     
     def __init__(self):
-        self._users: Dict[str, User] = {}
+        self._users={}
     
     async def save(self, user: User) -> Result[User, str]:
         """사용자 저장"""

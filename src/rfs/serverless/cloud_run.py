@@ -27,17 +27,17 @@ logger = logging.getLogger(__name__)
 class CloudRunConfig:
     """Cloud Run 설정"""
 
-    cpu: str = "1"
-    memory: str = "512Mi"
-    max_instances: int = 100
-    min_instances: int = 0
-    concurrency: int = 80
-    timeout: int = 300
-    port: int = 8080
-    enable_cold_start_optimization: bool = True
+    cpu="1"
+    memory="512Mi"
+    max_instances=100
+    min_instances=0
+    concurrency=80
+    timeout=300
+    port=8080
+    enable_cold_start_optimization=True
     warm_up_endpoints: List[str] = field(default_factory=list)
-    warm_up_interval: int = 300
-    enable_resource_monitoring: bool = True
+    warm_up_interval=300
+    enable_resource_monitoring=True
     cpu_threshold: float = 0.8
     memory_threshold: float = 0.8
 
@@ -46,13 +46,13 @@ class CloudRunConfig:
 class PerformanceMetrics:
     """성능 메트릭"""
 
-    request_count: int = 0
-    cold_starts: int = 0
-    warm_starts: int = 0
+    request_count=0
+    cold_starts=0
+    warm_starts=0
     avg_response_time: float = 0.0
     memory_usage: float = 0.0
     cpu_usage: float = 0.0
-    last_request: Optional[datetime] = None
+    last_request=None
 
 
 class CloudRunOptimizer:
@@ -62,14 +62,14 @@ class CloudRunOptimizer:
         self.config = config
         self.metrics = PerformanceMetrics()
         self.is_warm = False
-        self.warm_up_task: Optional[asyncio.Task] = None
+        self.warm_up_task=None
         self.startup_time = datetime.now()
         self._instance_id = os.environ.get(
             "INSTANCE_ID", f"instance_{int(time.time())}"
         )
         self._is_first_request = True
-        self._cache: Dict[str, Any] = {}
-        self._cache_ttl: Dict[str, datetime] = {}
+        self._cache={}
+        self._cache_ttl={}
 
     async def initialize(self):
         """인스턴스 초기화"""
@@ -158,7 +158,7 @@ class CloudRunOptimizer:
 
         return wrapper
 
-    def cache_result(self, ttl_seconds: int = 300):
+    def cache_result(self, ttl_seconds=300):
         """결과 캐싱 데코레이터"""
 
         def decorator(func: Callable) -> Callable:
@@ -267,10 +267,10 @@ async def _warm_execute(func: Callable, warm_up_data: Any, *args, **kwargs):
     return await func(*args, **kwargs)
 
 
-def with_caching(ttl_seconds: int = 300):
+def with_caching(ttl_seconds=300):
     """함수형 캐싱"""
-    cache = {}
-    cache_ttl = {}
+    cache={}
+    cache_ttl={}
 
     def decorator(func: Callable) -> Callable:
 
@@ -291,10 +291,10 @@ def with_caching(ttl_seconds: int = 300):
     return decorator
 
 
-_optimizer: Optional[CloudRunOptimizer] = None
+_optimizer=None
 
 
-async def get_optimizer(config: Optional[CloudRunConfig] = None) -> CloudRunOptimizer:
+async def get_optimizer(config=None) -> CloudRunOptimizer:
     """최적화 인스턴스 획득"""
     # global _optimizer - removed for functional programming
     if _optimizer is None:
@@ -315,7 +315,7 @@ def cold_start_optimization(func: Callable) -> Callable:
     return wrapper
 
 
-def cache_response(ttl_seconds: int = 300):
+def cache_response(ttl_seconds=300):
     """응답 캐싱 데코레이터"""
 
     def decorator(func: Callable) -> Callable:
@@ -344,7 +344,7 @@ def monitor_resources(func: Callable) -> Callable:
 
 
 @asynccontextmanager
-async def cloud_run_context(config: Optional[CloudRunConfig] = None):
+async def cloud_run_context(config=None):
     """Cloud Run 컨텍스트 매니저"""
     optimizer = await get_optimizer(config)
     try:

@@ -45,9 +45,9 @@ class CircuitBreaker:
 
     def __init__(
         self,
-        failure_threshold: int = 5,
+        failure_threshold=5,
         recovery_timeout: timedelta = timedelta(seconds=60),
-        success_threshold: int = 2,
+        success_threshold=2,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -55,8 +55,8 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time: Optional[datetime] = None
-        self.last_success_time: Optional[datetime] = None
+        self.last_failure_time=None
+        self.last_success_time=None
 
     def call(self, func: Callable) -> Result[Any, str]:
         """함수 호출"""
@@ -195,14 +195,14 @@ class WeightedBalancer(LoadBalancer):
     """가중치 기반 로드 밸런서"""
 
     def __init__(self):
-        self.weights: Dict[ServiceEndpoint, int] = {}
-        self.failures: Dict[ServiceEndpoint, int] = {}
+        self.weights={}
+        self.failures={}
 
     def select(self, endpoints: List[ServiceEndpoint]) -> Optional[ServiceEndpoint]:
         """엔드포인트 선택"""
         if not endpoints:
             return None
-        weighted_endpoints = []
+        weighted_endpoints=[]
         for endpoint in endpoints:
             weight = self.weights.get(endpoint, 100)
             failures = self.failures.get(endpoint, 0)
@@ -238,11 +238,11 @@ class ServiceClient:
     def __init__(
         self,
         service_name: str,
-        discovery: Optional[ServiceDiscovery] = None,
-        load_balancer: Optional[LoadBalancer] = None,
-        circuit_breaker: Optional[CircuitBreaker] = None,
+        discovery=None,
+        load_balancer=None,
+        circuit_breaker=None,
         retry_strategy: RetryStrategy = RetryStrategy.EXPONENTIAL,
-        max_retries: int = 3,
+        max_retries=3,
         timeout: timedelta = timedelta(seconds=30),
     ):
         self.service_name = service_name
@@ -252,8 +252,8 @@ class ServiceClient:
         self.retry_strategy = retry_strategy
         self.max_retries = max_retries
         self.timeout = timeout
-        self.endpoints: List[ServiceEndpoint] = []
-        self.last_discovery: Optional[datetime] = None
+        self.endpoints=[]
+        self.last_discovery=None
         self.discovery_interval = timedelta(seconds=30)
         self.total_requests = 0
         self.successful_requests = 0
@@ -365,7 +365,7 @@ class ServiceClient:
         }
 
 
-_client_cache: Dict[str, ServiceClient] = {}
+_client_cache={}
 
 
 async def get_service_client(service_name: str) -> ServiceClient:

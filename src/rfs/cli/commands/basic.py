@@ -99,7 +99,7 @@ class StatusCommand(Command):
 
     def _check_dependencies(self) -> Dict[str, bool]:
         """의존성 확인"""
-        deps = {}
+        deps={}
         try:
             import pydantic
 
@@ -191,7 +191,7 @@ class ConfigCommand(Command):
             )
 
             # 기존 설정 로드
-            config_data = {}
+            config_data={}
             if config_file.exists():
                 import json
 

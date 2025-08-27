@@ -78,8 +78,8 @@ class CPUThresholds:
 
     high_usage_percent: float = 80.0
     critical_usage_percent: float = 95.0
-    thread_pool_max: int = 32
-    process_pool_max: int = 8
+    thread_pool_max=32
+    process_pool_max=8
     task_timeout_seconds: float = 300.0
     monitoring_interval: float = 5.0
 
@@ -107,10 +107,10 @@ class CPUOptimizationConfig:
     strategy: CPUOptimizationStrategy = CPUOptimizationStrategy.HYBRID
     concurrency_level: ConcurrencyLevel = ConcurrencyLevel.MEDIUM
     thresholds: CPUThresholds = field(default_factory=CPUThresholds)
-    enable_monitoring: bool = True
-    auto_scaling: bool = True
-    prefer_threads_for_io: bool = True
-    prefer_processes_for_cpu: bool = True
+    enable_monitoring=True
+    auto_scaling=True
+    prefer_threads_for_io=True
+    prefer_processes_for_cpu=True
 
 
 class TaskProfile:
@@ -175,7 +175,7 @@ class TaskProfile:
 class ThreadPoolOptimizer:
     """스레드 풀 최적화"""
 
-    def __init__(self, max_workers: int = None):
+    def __init__(self, max_workers=None):
         self.max_workers = max_workers or min(32, (os.cpu_count() or 1) + 4)
         self.executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=self.max_workers
@@ -223,7 +223,7 @@ class ThreadPoolOptimizer:
             / max(1, self.completed_tasks + self.failed_tasks),
         }
 
-    def shutdown(self, wait: bool = True):
+    def shutdown(self, wait=True):
         """스레드 풀 종료"""
         self.executor.shutdown(wait=wait)
 
@@ -231,7 +231,7 @@ class ThreadPoolOptimizer:
 class ProcessPoolOptimizer:
     """프로세스 풀 최적화"""
 
-    def __init__(self, max_workers: int = None):
+    def __init__(self, max_workers=None):
         self.max_workers = max_workers or os.cpu_count()
         self.executor = concurrent.futures.ProcessPoolExecutor(
             max_workers=self.max_workers
@@ -279,7 +279,7 @@ class ProcessPoolOptimizer:
             / max(1, self.completed_tasks + self.failed_tasks),
         }
 
-    def shutdown(self, wait: bool = True):
+    def shutdown(self, wait=True):
         """프로세스 풀 종료"""
         self.executor.shutdown(wait=wait)
 
@@ -289,13 +289,13 @@ class AsyncOptimizer:
 
     def __init__(self):
         self.semaphore = asyncio.Semaphore(100)
-        self.task_registry: Dict[str, weakref.ref] = {}
+        self.task_registry={}
         self.completed_tasks = 0
         self.failed_tasks = 0
         self.task_times: deque = deque(maxlen=100)
 
     async def execute_with_optimization(
-        self, coro: Coroutine[Any, Any, T], name: str = None
+        self, coro: Coroutine[Any, Any, T], name=None
     ) -> Result[T, str]:
         """최적화된 비동기 실행"""
         async with self.semaphore:
@@ -322,7 +322,7 @@ class AsyncOptimizer:
                     del self.task_registry[task_name]
 
     async def execute_batch(
-        self, coros: List[Coroutine[Any, Any, T]], max_concurrent: int = 10
+        self, coros: List[Coroutine[Any, Any, T]], max_concurrent=10
     ) -> List[Result[T, str]]:
         """배치 실행"""
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -333,7 +333,7 @@ class AsyncOptimizer:
 
         tasks = [execute_single(coro) for coro in coros]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results = []
+        processed_results=[]
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -429,7 +429,7 @@ class ConcurrencyTuner:
 class CPUOptimizer:
     """CPU 최적화 엔진"""
 
-    def __init__(self, config: Optional[CPUOptimizationConfig] = None):
+    def __init__(self, config=None):
         self.config = config or CPUOptimizationConfig()
         self.thread_pool = ThreadPoolOptimizer(self.config.thresholds.thread_pool_max)
         self.process_pool = ProcessPoolOptimizer(
@@ -437,8 +437,8 @@ class CPUOptimizer:
         )
         self.async_optimizer = AsyncOptimizer()
         self.concurrency_tuner = ConcurrencyTuner(self.config)
-        self.task_profiles: Dict[str, TaskProfile] = {}
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.task_profiles={}
+        self.monitoring_task=None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -517,7 +517,7 @@ class CPUOptimizer:
                 + process_stats.get("failed_tasks")
                 + async_stats.get("failed_tasks")
             )
-            all_durations = []
+            all_durations=[]
             if self.thread_pool.task_times:
                 all_durations = all_durations + self.thread_pool.task_times
             if self.process_pool.task_times:
@@ -585,7 +585,7 @@ class CPUOptimizer:
                 )
 
     async def execute_task(
-        self, task: Callable[..., T], *args, task_name: str = None, **kwargs
+        self, task: Callable[..., T], *args, task_name=None, **kwargs
     ) -> Result[T, str]:
         """작업 실행 (최적 전략 선택)"""
         task_name = task_name or task.__name__
@@ -641,14 +641,14 @@ class CPUOptimizer:
         profile.record_execution(duration, cpu_usage, memory_usage, success)
 
     async def execute_batch(
-        self, tasks: List[Callable], max_concurrent: int = None
+        self, tasks: List[Callable], max_concurrent=None
     ) -> List[Result[Any, str]]:
         """배치 작업 실행"""
         if not tasks:
             return []
         max_concurrent = max_concurrent or self.config.concurrency_level.value * 4
-        coros = []
-        funcs = []
+        coros=[]
+        funcs=[]
         for i, task in enumerate(tasks):
             if asyncio.iscoroutinefunction(task):
                 coros = coros + [(i, task)]
@@ -663,7 +663,7 @@ class CPUOptimizer:
             for (i, _), result in zip(coros, coro_results):
                 results[i] = {i: result}
         if funcs:
-            func_tasks = []
+            func_tasks=[]
             for _, func in funcs:
                 func_tasks = func_tasks + [self.thread_pool.submit_async(func)]
             func_results = await asyncio.gather(*func_tasks, return_exceptions=True)
@@ -751,16 +751,16 @@ class CPUOptimizer:
             await self.stop_monitoring()
             self.thread_pool.shutdown(wait=True)
             self.process_pool.shutdown(wait=True)
-            task_profiles = {}
+            task_profiles={}
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_cpu_optimizer: Optional[CPUOptimizer] = None
+_cpu_optimizer=None
 
 
-def get_cpu_optimizer(config: Optional[CPUOptimizationConfig] = None) -> CPUOptimizer:
+def get_cpu_optimizer(config=None) -> CPUOptimizer:
     """CPU optimizer 싱글톤 인스턴스 반환"""
     # global _cpu_optimizer - removed for functional programming
     if _cpu_optimizer is None:

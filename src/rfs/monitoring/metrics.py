@@ -39,7 +39,7 @@ class Metric:
     value: Union[int, float]
     labels: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-    description: Optional[str] = None
+    description=None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -58,7 +58,7 @@ class Counter:
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ):
         self.name = name
@@ -102,7 +102,7 @@ class Gauge:
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ):
         self.name = name
@@ -152,7 +152,7 @@ class Histogram:
         self,
         name: str,
         buckets: Optional[List[float]] = None,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ):
         self.name = name
@@ -243,8 +243,8 @@ class Summary:
         self,
         name: str,
         max_age: float = 600,
-        max_samples: int = 10000,
-        description: Optional[str] = None,
+        max_samples=10000,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ):
         self.name = name
@@ -342,10 +342,10 @@ class MetricsStorage(ABC):
     @abstractmethod
     async def get_metrics(
         self,
-        name_pattern: Optional[str] = None,
+        name_pattern=None,
         labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        start_time=None,
+        end_time=None,
     ) -> Result[List[Metric], str]:
         """메트릭 조회"""
         pass
@@ -354,7 +354,7 @@ class MetricsStorage(ABC):
 class MemoryMetricsStorage(MetricsStorage):
     """메모리 기반 메트릭스 저장소"""
 
-    def __init__(self, max_metrics: int = 100000):
+    def __init__(self, max_metrics=100000):
         self.max_metrics = max_metrics
         self._metrics = deque()
         self._lock = asyncio.Lock()
@@ -369,14 +369,14 @@ class MemoryMetricsStorage(MetricsStorage):
 
     async def get_metrics(
         self,
-        name_pattern: Optional[str] = None,
+        name_pattern=None,
         labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        start_time=None,
+        end_time=None,
     ) -> Result[List[Metric], str]:
         """메트릭 조회"""
         async with self._lock:
-            filtered_metrics = []
+            filtered_metrics=[]
             for metric in self._metrics:
                 if name_pattern and name_pattern not in metric.name:
                     continue
@@ -394,7 +394,7 @@ class MemoryMetricsStorage(MetricsStorage):
 class PrometheusStorage(MetricsStorage):
     """Prometheus 기반 메트릭스 저장소"""
 
-    def __init__(self, push_gateway_url: str, job_name: str = "rfs_app"):
+    def __init__(self, push_gateway_url: str, job_name="rfs_app"):
         self.push_gateway_url = push_gateway_url
         self.job_name = job_name
 
@@ -408,10 +408,10 @@ class PrometheusStorage(MetricsStorage):
 
     async def get_metrics(
         self,
-        name_pattern: Optional[str] = None,
+        name_pattern=None,
         labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        start_time=None,
+        end_time=None,
     ) -> Result[List[Metric], str]:
         """메트릭 조회 (Prometheus API 사용)"""
         return Failure("Prometheus 조회 미구현")
@@ -420,18 +420,18 @@ class PrometheusStorage(MetricsStorage):
 class MetricsCollector:
     """메트릭스 수집기"""
 
-    def __init__(self, storage: Optional[MetricsStorage] = None):
+    def __init__(self, storage=None):
         self.storage = storage or MemoryMetricsStorage()
-        self._counters: Dict[str, Counter] = {}
-        self._gauges: Dict[str, Gauge] = {}
-        self._histograms: Dict[str, Histogram] = {}
-        self._summaries: Dict[str, Summary] = {}
+        self._counters={}
+        self._gauges={}
+        self._histograms={}
+        self._summaries={}
         self._lock = threading.Lock()
 
     def counter(
         self,
         name: str,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ) -> Counter:
         """카운터 메트릭 생성/조회"""
@@ -447,7 +447,7 @@ class MetricsCollector:
     def gauge(
         self,
         name: str,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ) -> Gauge:
         """게이지 메트릭 생성/조회"""
@@ -461,7 +461,7 @@ class MetricsCollector:
         self,
         name: str,
         buckets: Optional[List[float]] = None,
-        description: Optional[str] = None,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ) -> Histogram:
         """히스토그램 메트릭 생성/조회"""
@@ -478,8 +478,8 @@ class MetricsCollector:
         self,
         name: str,
         max_age: float = 600,
-        max_samples: int = 10000,
-        description: Optional[str] = None,
+        max_samples=10000,
+        description=None,
         labels: Optional[Dict[str, str]] = None,
     ) -> Summary:
         """서머리 메트릭 생성/조회"""
@@ -518,7 +518,7 @@ class MetricsCollector:
 
     async def get_all_metrics(self) -> List[Metric]:
         """모든 현재 메트릭 반환"""
-        metrics = []
+        metrics=[]
         for counter in self._counters.values():
             metrics = metrics + [counter.to_metric()]
         for gauge in self._gauges.values():
@@ -530,10 +530,10 @@ class MetricsCollector:
         return metrics
 
 
-_metrics_collector: Optional[MetricsCollector] = None
+_metrics_collector=None
 
 
-def get_metrics_collector(storage: Optional[MetricsStorage] = None) -> MetricsCollector:
+def get_metrics_collector(storage=None) -> MetricsCollector:
     """메트릭스 수집기 가져오기"""
     # global _metrics_collector - removed for functional programming
     if _metrics_collector is None:
@@ -545,7 +545,7 @@ def record_counter(
     name: str,
     amount: Union[int, float] = 1,
     labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    description=None,
 ):
     """카운터 메트릭 기록"""
     collector = get_metrics_collector()
@@ -557,7 +557,7 @@ def record_gauge(
     name: str,
     value: Union[int, float],
     labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    description=None,
 ):
     """게이지 메트릭 기록"""
     collector = get_metrics_collector()
@@ -569,7 +569,7 @@ def record_histogram(
     name: str,
     value: Union[int, float],
     labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    description=None,
 ):
     """히스토그램 메트릭 기록"""
     collector = get_metrics_collector()
@@ -581,7 +581,7 @@ def record_summary(
     name: str,
     value: Union[int, float],
     labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    description=None,
 ):
     """서머리 메트릭 기록"""
     collector = get_metrics_collector()

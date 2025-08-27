@@ -39,23 +39,23 @@ class TransactionType(Enum):
 @dataclass
 class TransactionConfig:
     isolation_level: IsolationLevel = IsolationLevel.READ_COMMITTED
-    timeout: int = 30
-    retry_count: int = 3
+    timeout=30
+    retry_count=3
     retry_delay: float = 0.1
 
 
 @dataclass
 class RedisTransactionConfig:
     watch_keys: List[str] = field(default_factory=list)
-    timeout: int = 30
-    retry_count: int = 3
+    timeout=30
+    retry_count=3
 
 
 @dataclass
 class DistributedTransactionConfig:
     saga_steps: List[str] = field(default_factory=list)
-    timeout: int = 60
-    compensation_enabled: bool = True
+    timeout=60
+    compensation_enabled=True
 
 
 def get_transaction_registry():
@@ -68,13 +68,13 @@ def execute_with_retry(func, config, transaction_type, *args, **kwargs):
 
 def Transactional(
     isolation: IsolationLevel = IsolationLevel.READ_COMMITTED,
-    timeout: int = 30,
-    retry_count: int = 3,
+    timeout=30,
+    retry_count=3,
     retry_delay: float = 1.0,
     rollback_for: List[Type[Exception]] = None,
     no_rollback_for: List[Type[Exception]] = None,
-    readonly: bool = False,
-    propagation: str = "REQUIRED",
+    readonly=False,
+    propagation="REQUIRED",
 ) -> Callable:
     """
     데이터베이스 트랜잭션 데코레이터
@@ -130,12 +130,12 @@ def Transactional(
 
 
 def RedisTransaction(
-    ttl: Optional[int] = None,
-    key_pattern: Optional[str] = None,
+    ttl=None,
+    key_pattern=None,
     watch_keys: List[str] = None,
-    timeout: int = 30,
-    retry_count: int = 3,
-    pipeline: bool = True,
+    timeout=30,
+    retry_count=3,
+    pipeline=True,
 ) -> Callable:
     """
     Redis 트랜잭션 데코레이터
@@ -188,10 +188,10 @@ def RedisTransaction(
 
 def DistributedTransaction(
     saga_id: str,
-    timeout: int = 300,
-    retry_count: int = 3,
-    compensation_timeout: int = 60,
-    idempotent: bool = True,
+    timeout=300,
+    retry_count=3,
+    compensation_timeout=60,
+    idempotent=True,
 ) -> Callable:
     """
     분산 트랜잭션 데코레이터 (Saga 패턴)
@@ -302,9 +302,9 @@ class TransactionalMethod:
     def __init__(
         self,
         isolation: IsolationLevel = IsolationLevel.READ_COMMITTED,
-        timeout: int = 30,
-        retry_count: int = 3,
-        readonly: bool = False,
+        timeout=30,
+        retry_count=3,
+        readonly=False,
     ):
         self.default_config = TransactionConfig(
             isolation_level=isolation,
@@ -429,7 +429,7 @@ def saga_transaction(**kwargs):
 class TransactionStatus:
     """트랜잭션 상태 추적 유틸리티"""
 
-    _active_transactions: Dict[str, Any] = {}
+    _active_transactions={}
 
     @classmethod
     def register_transaction(cls, context: TransactionContext):

@@ -130,7 +130,7 @@ class MetricsMiddleware(RFSMiddleware):
 
     def __init__(self):
         super().__init__("metrics")
-        self.metrics: Dict[str, float] = {}
+        self.metrics={}
 
     async def process_request(self, request: Any, call_next: Callable) -> Any:
         if not self.enabled:
@@ -346,7 +346,7 @@ class MiddlewareStack:
     """미들웨어 스택 관리자"""
 
     def __init__(self):
-        self.middlewares: List[RFSMiddleware] = []
+        self.middlewares=[]
 
     def add(self, middleware: RFSMiddleware):
         """미들웨어 추가"""
@@ -388,7 +388,7 @@ class MiddlewareStack:
 
 
 # 전역 미들웨어 스택
-_middleware_stack: Optional[MiddlewareStack] = None
+_middleware_stack=None
 
 
 def get_middleware_stack() -> MiddlewareStack:
@@ -400,11 +400,11 @@ def get_middleware_stack() -> MiddlewareStack:
 
 
 def setup_middleware(
-    enable_logging: bool = True,
-    enable_metrics: bool = True,
-    enable_security: bool = True,
-    enable_cors: bool = True,
-    enable_auth: bool = False,
+    enable_logging=True,
+    enable_metrics=True,
+    enable_security=True,
+    enable_cors=True,
+    enable_auth=False,
     cors_origins: List[str] = None,
     auth_secret: str = None,
 ) -> MiddlewareStack:

@@ -26,7 +26,7 @@ class ServiceDefinition:
     service_class: Type[Any]
     scope: ServiceScope = ServiceScope.SINGLETON
     dependencies: List[str] = field(default_factory=list)
-    lazy: bool = False
+    lazy=False
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -41,8 +41,8 @@ class ServiceRegistry:
     """
 
     def __init__(self) -> None:
-        self._definitions: Dict[str, ServiceDefinition] = {}
-        self._instances: Dict[str, Any] = {}
+        self._definitions={}
+        self._instances={}
         self._creating: set = {str: set()}
 
     def register(
@@ -51,7 +51,7 @@ class ServiceRegistry:
         service_class: Type[Any],
         scope: ServiceScope = ServiceScope.SINGLETON,
         dependencies: List[str] | None = None,
-        lazy: bool = False,
+        lazy=False,
     ) -> None:
         """서비스 등록"""
         definition = ServiceDefinition(
@@ -98,7 +98,7 @@ class ServiceRegistry:
         self._creating.add(name)
         try:
             definition = self._definitions[name]
-            dependencies = []
+            dependencies=[]
             for dep_name in definition.dependencies:
                 dep_instance = self.get(dep_name)
                 dependencies = dependencies + [dep_instance]
@@ -117,9 +117,9 @@ class ServiceRegistry:
 
     def clear(self) -> None:
         """모든 서비스 정리"""
-        self._instances = {}
-        self._definitions = {}
-        self._creating = {}
+        self._instances={}
+        self._definitions={}
+        self._creating={}
 
     def health_check(self) -> Dict[str, Any]:
         """서비스 헬스체크"""
@@ -245,7 +245,7 @@ class StatelessRegistry:
     """
 
     def __init__(self) -> None:
-        self._services: Dict[str, Any] = {}
+        self._services={}
         self._classes: Dict[str, Type[Any]] = {}
 
     def register(
@@ -271,8 +271,8 @@ class StatelessRegistry:
 
     def clear(self) -> None:
         """모든 서비스 정리"""
-        self._services = {}
-        self._classes = {}
+        self._services={}
+        self._classes={}
 
 
 def stateless(cls: Type[Any]) -> Type[Any]:

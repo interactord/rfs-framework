@@ -44,10 +44,10 @@ class ParticipantInfo:
     participant_id: str
     resource_name: str
     status: ParticipantStatus = ParticipantStatus.UNKNOWN
-    prepared_at: Optional[datetime] = None
-    committed_at: Optional[datetime] = None
-    aborted_at: Optional[datetime] = None
-    vote: Optional[bool] = None
+    prepared_at=None
+    committed_at=None
+    aborted_at=None
+    vote=None
     data: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -78,8 +78,8 @@ class TwoPhaseCommit:
     """
 
     def __init__(self, timeout: timedelta = timedelta(seconds=30)):
-        self.participants: Dict[str, ParticipantInfo] = {}
-        self.coordinators: Dict[str, TransactionCoordinator] = {}
+        self.participants={}
+        self.coordinators={}
         self.timeout = timeout
         self.transaction_id = str(uuid.uuid4())
         self.status = TransactionStatus.ACTIVE
@@ -88,7 +88,7 @@ class TwoPhaseCommit:
         self,
         participant_id: str,
         coordinator: TransactionCoordinator,
-        resource_name: Optional[str] = None,
+        resource_name=None,
     ):
         """참여자 등록"""
         self.participants = {
@@ -125,7 +125,7 @@ class TwoPhaseCommit:
 
     def _prepare_phase(self) -> Result[None, str]:
         """준비 단계 실행"""
-        errors = []
+        errors=[]
         for participant_id, participant in self.participants.items():
             coordinator = self.coordinators[participant_id]
             try:
@@ -148,7 +148,7 @@ class TwoPhaseCommit:
 
     def _commit_phase(self) -> Result[None, str]:
         """커밋 단계 실행"""
-        errors = []
+        errors=[]
         for participant_id, participant in self.participants.items():
             if participant.status != ParticipantStatus.PREPARED:
                 continue
@@ -191,9 +191,9 @@ class SagaStep:
     action: Callable[..., Result[Any, str]]
     compensation: Callable[..., Result[None, str]]
     data: Optional[Dict[str, Any]] = None
-    completed: bool = False
-    compensated: bool = False
-    result: Optional[Any] = None
+    completed=False
+    compensated=False
+    result=None
 
 
 class SagaTransaction:
@@ -203,11 +203,11 @@ class SagaTransaction:
     보상 트랜잭션을 통한 분산 트랜잭션 관리
     """
 
-    def __init__(self, name: str = "saga"):
+    def __init__(self, name="saga"):
         self.name = name
         self.saga_id = str(uuid.uuid4())
-        self.steps: List[SagaStep] = []
-        self.completed_steps: List[SagaStep] = []
+        self.steps=[]
+        self.completed_steps=[]
         self.status = TransactionStatus.ACTIVE
         self.event_bus = get_event_bus()
 
@@ -231,7 +231,7 @@ class SagaTransaction:
         각 단계를 순차적으로 실행하고,
         실패 시 보상 트랜잭션 실행
         """
-        results = []
+        results=[]
         self.event_bus.publish(
             Event(type="saga.started", source=self.name, data={"saga_id": self.saga_id})
         )
@@ -313,7 +313,7 @@ class SagaTransaction:
                 data={"saga_id": self.saga_id},
             )
         )
-        errors = []
+        errors=[]
         for step in reversed(self.completed_steps):
             if step.compensated:
                 continue
@@ -363,7 +363,7 @@ class SagaTransaction:
 
     async def execute_async(self) -> Result[Any, str]:
         """비동기 Saga 실행"""
-        results = []
+        results=[]
         for step in self.steps:
             try:
                 if asyncio.iscoroutinefunction(step.action):
@@ -398,7 +398,7 @@ class SagaTransaction:
 
     async def _compensate_async(self) -> Result[None, str]:
         """비동기 보상 트랜잭션 실행"""
-        errors = []
+        errors=[]
         for step in reversed(self.completed_steps):
             if step.compensated:
                 continue
@@ -437,12 +437,12 @@ class DistributedTransaction:
 
     def __init__(self):
         self.transaction_manager = get_transaction_manager()
-        self.active_2pc: Dict[str, TwoPhaseCommit] = {}
-        self.active_sagas: Dict[str, SagaTransaction] = {}
+        self.active_2pc={}
+        self.active_sagas={}
 
     def create_2pc(
         self,
-        transaction_id: Optional[str] = None,
+        transaction_id=None,
         timeout: timedelta = timedelta(seconds=30),
     ) -> TwoPhaseCommit:
         """2PC 트랜잭션 생성"""
@@ -452,7 +452,7 @@ class DistributedTransaction:
         return tpc
 
     def create_saga(
-        self, name: str = "saga", saga_id: Optional[str] = None
+        self, name="saga", saga_id=None
     ) -> SagaTransaction:
         """Saga 트랜잭션 생성"""
         saga = SagaTransaction(name=name)
@@ -489,7 +489,7 @@ class DistributedTransaction:
             del self.active_sagas[saga_id]
 
 
-def distributed_transaction(use_2pc: bool = False):
+def distributed_transaction(use_2pc=False):
     """
     분산 트랜잭션 데코레이터
 

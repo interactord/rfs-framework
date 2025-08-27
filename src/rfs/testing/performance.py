@@ -45,10 +45,10 @@ class PerformanceMetrics:
 class PerformanceTest:
     """성능 테스트 베이스 클래스"""
 
-    def __init__(self, name: str = "PerformanceTest"):
+    def __init__(self, name="PerformanceTest"):
         """초기화"""
         self.name = name
-        self.metrics: List[PerformanceMetrics] = []
+        self.metrics=[]
         self.process = psutil.Process()
 
     def measure(
@@ -143,7 +143,7 @@ class PerformanceTest:
 class LoadTest(PerformanceTest):
     """부하 테스트"""
 
-    def __init__(self, name: str = "LoadTest", concurrent_users: int = 10):
+    def __init__(self, name="LoadTest", concurrent_users=10):
         """초기화"""
         super().__init__(name)
         self.concurrent_users = concurrent_users
@@ -200,7 +200,7 @@ class LoadTest(PerformanceTest):
 class StressTest(PerformanceTest):
     """스트레스 테스트"""
 
-    def __init__(self, name: str = "StressTest"):
+    def __init__(self, name="StressTest"):
         """초기화"""
         super().__init__(name)
         self.breaking_point = None
@@ -208,9 +208,9 @@ class StressTest(PerformanceTest):
     async def find_breaking_point(
         self,
         func: Callable,
-        initial_load: int = 10,
-        step: int = 10,
-        max_load: int = 1000,
+        initial_load=10,
+        step=10,
+        max_load=1000,
         threshold_ms: float = 1000.0,
     ) -> Result[int, str]:
         """임계점 찾기"""
@@ -240,7 +240,7 @@ class StressTest(PerformanceTest):
 
 
 # 벤치마크 데코레이터
-def benchmark(iterations: int = 100) -> Callable:
+def benchmark(iterations=100) -> Callable:
     """벤치마크 데코레이터"""
 
     def decorator(func: Callable) -> Callable:
@@ -324,8 +324,8 @@ def profile_function(func: Callable) -> Callable:
 # Assertion 함수들
 def assert_performance(
     metrics: PerformanceMetrics,
-    max_execution_time: Optional[float] = None,
-    max_memory_usage: Optional[float] = None,
+    max_execution_time=None,
+    max_memory_usage=None,
 ) -> Result[None, str]:
     """성능 assertion"""
     if max_execution_time and metrics.execution_time > max_execution_time:

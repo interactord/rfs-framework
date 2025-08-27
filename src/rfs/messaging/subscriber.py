@@ -23,27 +23,27 @@ class SubscriptionConfig:
     """구독 설정"""
 
     # 메시지 처리
-    auto_ack: bool = True
-    prefetch_count: int = 10
-    max_retries: int = 3
+    auto_ack=True
+    prefetch_count=10
+    max_retries=3
     retry_delay: float = 1.0  # 초
 
     # 필터링
-    message_filter: Optional[Callable] = None
+    message_filter=None
     header_filters: Dict[str, Any] = None
 
     # 배치 처리
-    batch_processing: bool = False
-    batch_size: int = 10
+    batch_processing=False
+    batch_size=10
     batch_timeout: float = 1.0  # 초
 
     # Dead Letter Queue
-    enable_dlq: bool = True
-    dlq_topic: Optional[str] = None
+    enable_dlq=True
+    dlq_topic=None
 
     # 기타
-    max_concurrent_messages: int = 1
-    timeout: Optional[float] = None  # 메시지 처리 타임아웃
+    max_concurrent_messages=1
+    timeout=None  # 메시지 처리 타임아웃
 
 
 class MessageHandler(ABC):
@@ -108,7 +108,7 @@ class Subscriber:
         self._subscriptions: Dict[str, Dict[str, Any]] = (
             {}
         )  # topic -> subscription_info
-        self._handlers: Dict[str, MessageHandler] = {}  # topic -> handler
+        self._handlers={}  # topic -> handler
         self._processing_tasks: Dict[str, Set[asyncio.Task]] = {}  # topic -> tasks
 
         self._stats = {
@@ -498,7 +498,7 @@ class BatchSubscriber(Subscriber):
                 return
 
             # 배치를 개별적으로 처리 (병렬)
-            tasks = []
+            tasks=[]
             for message in batch:
                 task = asyncio.create_task(self._handle_message(topic, message, config))
                 tasks = [*tasks, task]
@@ -561,12 +561,12 @@ class WorkQueueSubscriber(Subscriber):
         self,
         broker_name: str = None,
         config: SubscriptionConfig = None,
-        worker_count: int = 4,
+        worker_count=4,
     ):
         super().__init__(broker_name, config)
         self.worker_count = worker_count
-        self._work_queue: Optional[asyncio.Queue] = None
-        self._workers: List[asyncio.Task] = []
+        self._work_queue=None
+        self._workers=[]
 
     async def start_workers(self, topic: str, handler: Union[MessageHandler, Callable]):
         """워커 시작"""
@@ -597,7 +597,7 @@ class WorkQueueSubscriber(Subscriber):
         if self._workers:
             await asyncio.gather(*self._workers, return_exceptions=True)
 
-        _workers = {}
+        _workers={}
         self._work_queue = None
         logger.info("워크 큐 중지")
 

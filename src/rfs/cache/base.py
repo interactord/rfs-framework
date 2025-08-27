@@ -44,28 +44,28 @@ class SerializationType(str, Enum):
 class CacheConfig:
     """캐시 설정"""
 
-    host: str = "localhost"
-    port: int = 6379
-    db: int = 0
-    password: Optional[str] = None
+    host="localhost"
+    port=6379
+    db=0
+    password=None
     cache_type: CacheType = CacheType.REDIS
     serialization: SerializationType = SerializationType.JSON
-    default_ttl: int = 3600
-    max_ttl: int = 86400
-    min_ttl: int = 60
-    pool_size: int = 20
-    max_connections: int = 50
-    connection_timeout: int = 5
-    socket_timeout: int = 5
-    max_memory: int = 100 * 1024 * 1024
-    eviction_policy: str = "lru"
+    default_ttl=3600
+    max_ttl=86400
+    min_ttl=60
+    pool_size=20
+    max_connections=50
+    connection_timeout=5
+    socket_timeout=5
+    max_memory=100 * 1024 * 1024
+    eviction_policy="lru"
     cluster_nodes: List[str] = field(default_factory=list)
-    consistent_hashing: bool = True
-    enable_metrics: bool = True
-    metrics_interval: int = 60
-    namespace: str = "rfs"
-    compress_threshold: int = 1024
-    retry_count: int = 3
+    consistent_hashing=True
+    enable_metrics=True
+    metrics_interval=60
+    namespace="rfs"
+    compress_threshold=1024
+    retry_count=3
     retry_delay: float = 0.1
 
 
@@ -126,7 +126,7 @@ class CacheBackend(ABC):
     async def get_many(self, keys: List[str]) -> Result[Dict[str, Any], str]:
         """다중 조회"""
         try:
-            result = {}
+            result={}
             for key in keys:
                 get_result = await self.get(key)
                 if get_result.is_success():
@@ -257,8 +257,8 @@ class CacheManager(metaclass=SingletonMeta):
     """캐시 매니저"""
 
     def __init__(self):
-        self.caches: Dict[str, CacheBackend] = {}
-        self.default_cache: Optional[str] = None
+        self.caches={}
+        self.default_cache=None
 
     async def add_cache(self, name: str, cache: CacheBackend) -> Result[None, str]:
         """캐시 추가"""
@@ -326,7 +326,7 @@ def get_cache(name: str = None) -> Optional[CacheBackend]:
 
 
 async def create_cache(
-    config: CacheConfig, name: str = "default"
+    config: CacheConfig, name="default"
 ) -> Result[CacheBackend, str]:
     """캐시 생성"""
     try:
@@ -405,7 +405,7 @@ class Cache:
         backend = self.backend
         if not backend:
             return False
-        backend = {}
+        backend={}
         return result.is_success()
 
 

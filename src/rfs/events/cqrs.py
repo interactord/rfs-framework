@@ -53,7 +53,7 @@ class CommandResult:
     correlation_id: str
     events: List[Event] = field(default_factory=list)
     data: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    error=None
 
 
 @dataclass
@@ -62,8 +62,8 @@ class QueryResult(Generic[T]):
 
     success: bool
     query_id: str
-    data: Optional[T] = None
-    error: Optional[str] = None
+    data=None
+    error=None
 
 
 class CommandHandler(ABC, Generic[T]):
@@ -99,10 +99,10 @@ class CommandBus:
 
     def __init__(
         self,
-        event_bus: Optional[EventBus] = None,
-        event_store: Optional[EventStore] = None,
+        event_bus=None,
+        event_store=None,
     ):
-        self.handlers: Dict[Type, CommandHandler] = {}
+        self.handlers={}
         self.event_bus = event_bus
         self.event_store = event_store
 
@@ -189,7 +189,7 @@ class QueryBus:
     """쿼리 버스"""
 
     def __init__(self):
-        self.handlers: Dict[Type, QueryHandler] = {}
+        self.handlers={}
         self.middlewares: List[Callable[[Query], Query]] = []
 
         # 통계
@@ -430,7 +430,7 @@ def validation_middleware(item: Any) -> Any:
 
 
 # 전역 CQRS 구성요소
-_mediator: Optional[CQRSMediator] = None
+_mediator=None
 
 
 async def get_mediator() -> CQRSMediator:

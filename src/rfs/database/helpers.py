@@ -54,7 +54,7 @@ async def create_test_connection(config: Dict[str, Any]) -> None:
     await Tortoise.generate_schemas()
 
 
-def get_database_config(env: str = "test") -> Dict[str, Any]:
+def get_database_config(env="test") -> Dict[str, Any]:
     """환경별 데이터베이스 설정 반환
 
     Args:

@@ -46,8 +46,7 @@ class ChartData:
     def add_dataset(
         self,
         label: str,
-        data: List[Union[int, float]],
-        color: Optional[str] = None,
+        data: List[Union[int, float]], color=None,
         **options,
     ) -> "ChartData":
         """데이터셋 추가"""
@@ -72,14 +71,14 @@ class ChartData:
 class ChartOptions:
     """차트 옵션"""
 
-    title: Optional[str] = None
-    width: int = 800
-    height: int = 400
-    responsive: bool = True
-    legend: bool = True
-    grid: bool = True
-    tooltip: bool = True
-    animation: bool = True
+    title=None
+    width=800
+    height=400
+    responsive=True
+    legend=True
+    grid=True
+    tooltip=True
+    animation=True
     color_scheme: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -113,9 +112,7 @@ class Chart(ABC):
     def __init__(
         self,
         chart_id: str,
-        chart_type: ChartType,
-        title: str = "",
-        options: Optional[ChartOptions] = None,
+        chart_type: ChartType, title="", options=None,
     ):
         self.chart_id = chart_id
         self.chart_type = chart_type
@@ -227,7 +224,7 @@ class LineChart(Chart):
     """라인 차트"""
 
     def __init__(
-        self, chart_id: str, title: str = "", options: Optional[ChartOptions] = None
+        self, chart_id: str, title="", options=None
     ):
         super().__init__(chart_id, ChartType.LINE, title, options)
 
@@ -249,8 +246,8 @@ class LineChart(Chart):
                 if key in first_item:
                     y_key = key
                     break
-            series_data = {}
-            labels = set()
+            series_data={}
+            labels: Set[Any] = set()
             for item in raw_data:
                 x_val = str(item.get(x_key, ""))
                 y_val = item.get(y_key, 0)
@@ -277,10 +274,7 @@ class BarChart(Chart):
 
     def __init__(
         self,
-        chart_id: str,
-        title: str = "",
-        horizontal: bool = False,
-        options: Optional[ChartOptions] = None,
+        chart_id: str, title="", horizontal=False, options=None,
     ):
         chart_type = ChartType.BAR if horizontal else ChartType.COLUMN
         super().__init__(chart_id, chart_type, title, options)
@@ -291,8 +285,8 @@ class BarChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            categories = []
-            values = []
+            categories=[]
+            values=[]
             for item in raw_data:
                 category = None
                 for key in ["category", "name", "label", "x"]:
@@ -319,10 +313,7 @@ class PieChart(Chart):
 
     def __init__(
         self,
-        chart_id: str,
-        title: str = "",
-        doughnut: bool = False,
-        options: Optional[ChartOptions] = None,
+        chart_id: str, title="", doughnut=False, options=None,
     ):
         chart_type = ChartType.DOUGHNUT if doughnut else ChartType.PIE
         super().__init__(chart_id, chart_type, title, options)
@@ -333,9 +324,9 @@ class PieChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            labels = []
-            values = []
-            colors = []
+            labels=[]
+            values=[]
+            colors=[]
             for i, item in enumerate(raw_data):
                 label = None
                 for key in ["label", "name", "category", "x"]:
@@ -363,7 +354,7 @@ class ScatterChart(Chart):
     """산점도 차트"""
 
     def __init__(
-        self, chart_id: str, title: str = "", options: Optional[ChartOptions] = None
+        self, chart_id: str, title="", options=None
     ):
         super().__init__(chart_id, ChartType.SCATTER, title, options)
 
@@ -372,7 +363,7 @@ class ScatterChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            scatter_data = []
+            scatter_data=[]
             for item in raw_data:
                 x_val = item.get("x", 0)
                 y_val = item.get("y", 0)
@@ -389,10 +380,7 @@ class HistogramChart(Chart):
 
     def __init__(
         self,
-        chart_id: str,
-        title: str = "",
-        bins: int = 10,
-        options: Optional[ChartOptions] = None,
+        chart_id: str, title="", bins=10, options=None,
     ):
         super().__init__(chart_id, ChartType.HISTOGRAM, title, options)
         self.bins = bins
@@ -402,7 +390,7 @@ class HistogramChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            values = []
+            values=[]
             for item in raw_data:
                 for key in ["value", "data", "amount", "count"]:
                     if key in item:
@@ -413,8 +401,8 @@ class HistogramChart(Chart):
             min_val = min(values)
             max_val = max(values)
             bin_width = (max_val - min_val) / self.bins
-            bins = []
-            counts = []
+            bins=[]
+            counts=[]
             for i in range(self.bins):
                 bin_start = min_val + i * bin_width
                 bin_end = min_val + (i + 1) * bin_width
@@ -435,7 +423,7 @@ class HeatmapChart(Chart):
     """히트맵 차트"""
 
     def __init__(
-        self, chart_id: str, title: str = "", options: Optional[ChartOptions] = None
+        self, chart_id: str, title="", options=None
     ):
         super().__init__(chart_id, ChartType.HEATMAP, title, options)
 
@@ -444,9 +432,9 @@ class HeatmapChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            heatmap_data = []
-            x_labels = set()
-            y_labels = set()
+            heatmap_data=[]
+            x_labels: Set[Any] = set()
+            y_labels: Set[Any] = set()
             for item in raw_data:
                 x = str(item.get("x", ""))
                 y = str(item.get("y", ""))
@@ -504,22 +492,22 @@ class ChartBuilder:
         self.options.color_scheme = list(colors)
         return self
 
-    def legend(self, show: bool = True) -> "ChartBuilder":
+    def legend(self, show=True) -> "ChartBuilder":
         """범례 설정"""
         self.options.legend = show
         return self
 
-    def grid(self, show: bool = True) -> "ChartBuilder":
+    def grid(self, show=True) -> "ChartBuilder":
         """그리드 설정"""
         self.options.grid = show
         return self
 
-    def animation(self, enabled: bool = True) -> "ChartBuilder":
+    def animation(self, enabled=True) -> "ChartBuilder":
         """애니메이션 설정"""
         self.options.animation = enabled
         return self
 
-    def responsive(self, enabled: bool = True) -> "ChartBuilder":
+    def responsive(self, enabled=True) -> "ChartBuilder":
         """반응형 설정"""
         self.options.responsive = enabled
         return self

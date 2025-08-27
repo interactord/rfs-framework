@@ -171,14 +171,14 @@ else:
         handler_path: str
         payload: Dict[str, Any] = field(default_factory=dict)
         priority: TaskPriority = TaskPriority.NORMAL
-        schedule_time: Optional[datetime] = None
-        delay_seconds: int = 0
-        max_retry_count: int = 3
-        retry_min_backoff: int = 1
-        retry_max_backoff: int = 300
-        http_method: str = "POST"
+        schedule_time=None
+        delay_seconds=0
+        max_retry_count=3
+        retry_min_backoff=1
+        retry_max_backoff=300
+        http_method="POST"
         headers: Dict[str, Any] = field(default_factory=dict)
-        queue_name: str = "default"
+        queue_name="default"
         tags: List[str] = field(default_factory=list)
         created_at: datetime = field(default_factory=datetime.now)
 
@@ -195,7 +195,7 @@ class CloudTaskQueue:
     """Cloud Tasks 큐 관리자"""
 
     def __init__(
-        self, project_id: str, location: str = "us-central1", service_url: str = None
+        self, project_id: str, location="us-central1", service_url=None
     ):
         self.project_id = project_id
         self.location = location
@@ -209,8 +209,8 @@ class CloudTaskQueue:
                 self.client = tasks_v2.CloudTasksClient()
             except Exception as e:
                 logger.warning(f"Cloud Tasks 클라이언트 초기화 실패: {e}")
-        self.queues: Dict[str, str] = {}
-        self.task_handlers: Dict[str, Callable] = {}
+        self.queues={}
+        self.task_handlers={}
         self.task_stats = {"submitted": 0, "completed": 0, "failed": 0, "retried": 0}
 
     async def initialize(self):
@@ -222,9 +222,7 @@ class CloudTaskQueue:
 
     async def create_queue(
         self,
-        queue_name: str,
-        max_concurrent_dispatches: int = 100,
-        max_dispatches_per_second: float = 100.0,
+        queue_name: str, max_concurrent_dispatches=100, max_dispatches_per_second=100.0,
     ) -> Result[str, str]:
         """큐 생성"""
         if not GOOGLE_CLOUD_AVAILABLE or not self.client:
@@ -341,8 +339,8 @@ class CloudTaskQueue:
         self, tasks: List[TaskDefinition]
     ) -> Dict[str, Result[str, str]]:
         """배치 작업 제출"""
-        results = {}
-        submit_tasks = []
+        results={}
+        submit_tasks=[]
         for task in tasks:
             submit_task = asyncio.create_task(self.submit_task(task))
             submit_tasks = submit_tasks + [(task.task_id, submit_task)]
@@ -376,7 +374,7 @@ class CloudTaskQueue:
             return Failure(error_msg)
 
     async def _publish_task_event(
-        self, event_type: str, task: TaskDefinition, error: str = None
+        self, event_type: str, task: TaskDefinition, error=None
     ):
         """작업 이벤트 발행"""
         try:
@@ -425,9 +423,7 @@ class TaskScheduler:
         self,
         task_id: str,
         handler_path: str,
-        payload: Dict[str, Any],
-        hour: int = 9,
-        minute: int = 0,
+        payload: Dict[str, Any], hour=9, minute=0,
     ) -> Result[str, str]:
         """매일 반복 작업 스케줄링"""
         from datetime import date
@@ -449,9 +445,7 @@ class TaskScheduler:
         self,
         task_id: str,
         handler_path: str,
-        payload: Dict[str, Any],
-        weekday: int = 0,
-        hour: int = 9,
+        payload: Dict[str, Any], weekday=0, hour=9,
     ) -> Result[str, str]:
         """매주 반복 작업 스케줄링"""
         from datetime import date
@@ -474,7 +468,7 @@ class TaskScheduler:
         return await self.queue.submit_task(task)
 
 
-_task_queue: Optional[CloudTaskQueue] = None
+_task_queue=None
 
 
 async def get_task_queue(project_id: str = None) -> CloudTaskQueue:
@@ -491,7 +485,7 @@ async def get_task_queue(project_id: str = None) -> CloudTaskQueue:
 
 
 async def submit_task(
-    task_id: str, handler_path: str, payload: Dict[str, Any] = None, **kwargs
+    task_id: str, handler_path: str, payload=None, **kwargs
 ) -> Result[str, str]:
     """간단한 작업 제출"""
     queue = await get_task_queue()
@@ -504,8 +498,7 @@ async def submit_task(
 async def schedule_task(
     task_id: str,
     handler_path: str,
-    schedule_time: datetime,
-    payload: Dict[str, Any] = None,
+    schedule_time: datetime, payload=None,
     **kwargs,
 ) -> Result[str, str]:
     """시간 예약 작업 제출"""

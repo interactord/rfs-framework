@@ -137,7 +137,7 @@ async def async_filter(
         >>> await async_filter(is_even, [1, 2, 3, 4, 5])
         [2, 4]
     """
-    results = []
+    results=[]
     for item in iterable:
         if await predicate(item):
             results.append(item)
@@ -172,7 +172,7 @@ async def async_reduce(
 
 
 def async_retry(
-    max_attempts: int = 3,
+    max_attempts=3,
     delay: float = 1.0,
     backoff: float = 2.0,
     exceptions: tuple = (Exception,),
@@ -248,7 +248,7 @@ def async_timeout(seconds: float) -> Callable:
 
 
 async def async_parallel(
-    *coroutines: Coroutine, return_exceptions: bool = False
+    *coroutines: Coroutine, return_exceptions=False
 ) -> List[Any]:
     """
     Execute coroutines in parallel.
@@ -287,7 +287,7 @@ async def async_sequential(
         >>> await async_sequential(task1(), task2())
         [1, 2]
     """
-    results = []
+    results=[]
     for coro in coroutines:
         if callable(coro) and not asyncio.iscoroutine(coro):
             result = await coro()
@@ -298,7 +298,7 @@ async def async_sequential(
 
 
 async def async_chunk_process(
-    func: Callable[[T], Awaitable[U]], items: Iterable[T], chunk_size: int = 10
+    func: Callable[[T], Awaitable[U]], items: Iterable[T], chunk_size=10
 ) -> List[U]:
     """
     Process items in chunks to limit concurrency.
@@ -318,7 +318,7 @@ async def async_chunk_process(
         >>> await async_chunk_process(process, range(100), chunk_size=10)
         # Processes 10 items at a time
     """
-    results = []
+    results=[]
     items_list = list(items)
 
     for i in range(0, len(items_list), chunk_size):
@@ -423,7 +423,7 @@ async def async_throttle(
         # Processes max 3 items per second
     """
     interval = per / rate
-    results = []
+    results=[]
 
     for item in items:
         start = asyncio.get_event_loop().time()
@@ -454,7 +454,7 @@ class AsyncLazy:
 
     def __init__(self, func: Callable[[], Awaitable[T]]):
         self.func = func
-        self.value: Optional[T] = None
+        self.value=None
         self.computed = False
         self.lock = asyncio.Lock()
 
@@ -467,7 +467,7 @@ class AsyncLazy:
 
 
 async def async_memoize(
-    func: Callable[..., Awaitable[T]], maxsize: int = 128
+    func: Callable[..., Awaitable[T]], maxsize=128
 ) -> Callable[..., Awaitable[T]]:
     """
     Async memoization decorator.

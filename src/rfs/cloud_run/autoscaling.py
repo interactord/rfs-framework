@@ -148,19 +148,19 @@ else:
     class ScalingConfiguration:
         """스케일링 설정 (Fallback)"""
 
-        min_instances: int = 0
-        max_instances: int = 100
-        target_concurrency: int = 80
+        min_instances=0
+        max_instances=100
+        target_concurrency=80
         scale_up_threshold: float = 0.8
         scale_down_threshold: float = 0.3
-        scale_up_cooldown: int = 60
-        scale_down_cooldown: int = 300
+        scale_up_cooldown=60
+        scale_down_cooldown=300
         policy: ScalingPolicy = ScalingPolicy.BALANCED
         detected_pattern: TrafficPattern = TrafficPattern.UNKNOWN
-        cost_optimization_enabled: bool = True
+        cost_optimization_enabled=True
         max_hourly_cost: float = 10.0
-        predictive_scaling_enabled: bool = False
-        prediction_window_hours: int = 2
+        predictive_scaling_enabled=False
+        prediction_window_hours=2
 
         def get_cost_per_hour(self, current_instances: int) -> float:
             return current_instances * 0.0265
@@ -186,15 +186,15 @@ class MetricSnapshot:
     active_instances: int
     avg_response_time: float
     error_rate: float
-    queue_depth: int = 0
+    queue_depth=0
 
 
 class TrafficPatternAnalyzer:
     """트래픽 패턴 분석기"""
 
-    def __init__(self, history_size: int = 1440):
+    def __init__(self, history_size=1440):
         self.history_size = history_size
-        self.metric_history: List[MetricSnapshot] = []
+        self.metric_history=[]
 
     def add_snapshot(self, snapshot: MetricSnapshot):
         """메트릭 스냅샷 추가"""
@@ -230,14 +230,14 @@ class TrafficPatternAnalyzer:
         """주기성 감지 (간단한 구현)"""
         if len(values) < 120:
             return False
-        hourly_averages = []
+        hourly_averages=[]
         for i in range(0, len(values) - 60, 60):
             hour_data = values[i : i + 60]
             if hour_data:
                 hourly_averages = hourly_averages + [statistics.mean(hour_data)]
         if len(hourly_averages) < 24:
             return False
-        daily_patterns = []
+        daily_patterns=[]
         for i in range(0, len(hourly_averages) - 24, 24):
             daily_patterns = daily_patterns + [hourly_averages[i : i + 24]]
         if len(daily_patterns) < 2:
@@ -253,7 +253,7 @@ class TrafficPatternAnalyzer:
         if len(self.metric_history) < 168:
             return None
         current_hour = datetime.now().hour
-        same_hour_data = []
+        same_hour_data=[]
         for i in range(len(self.metric_history) - 24, 0, -24):
             if i >= 0 and self.metric_history[i].timestamp.hour == current_hour:
                 same_hour_data = same_hour_data + [self.metric_history[i].request_count]
@@ -301,10 +301,10 @@ class TrafficPatternAnalyzer:
             return 0.3  # Low confidence for mismatch
 
     def generate_forecast(
-        self, historical_data: List[Dict[str, Any]], hours_ahead: int = 24
+        self, historical_data: List[Dict[str, Any]], hours_ahead=24
     ) -> List[Dict[str, Any]]:
         """트래픽 예측 생성 (테스트 호환성)"""
-        forecast = []
+        forecast=[]
 
         if len(historical_data) < 24:
             # Not enough data, return simple flat forecast
@@ -370,7 +370,7 @@ class TrafficPatternAnalyzer:
 class AutoScalingOptimizer:
     """자동 스케일링 최적화기"""
 
-    def __init__(self, project_id: str, service_name: str, region: str = "us-central1"):
+    def __init__(self, project_id: str, service_name: str, region="us-central1"):
         self.project_id = project_id
         self.service_name = service_name
         self.region = region
@@ -383,18 +383,18 @@ class AutoScalingOptimizer:
         self.config = ScalingConfiguration()
         self.pattern_analyzer = TrafficPatternAnalyzer()
         self.scaling_history: List[Dict[str, Any]] = []
-        self.last_scale_action: Optional[datetime] = None
-        self.last_scale_direction: Optional[ScalingDirection] = None
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.last_scale_action=None
+        self.last_scale_direction=None
+        self.monitoring_task=None
         self._running = False
 
         # Test compatibility properties
         self.metrics: List[Dict[str, Any]] = []
         self.current_instances = 1
-        self.last_scale_up_time: Optional[datetime] = None
-        self.last_scale_down_time: Optional[datetime] = None
+        self.last_scale_up_time=None
+        self.last_scale_down_time=None
 
-    async def initialize(self, config: ScalingConfiguration = None):
+    async def initialize(self, config=None):
         """최적화기 초기화"""
         if config:
             self.config = config
@@ -802,7 +802,7 @@ class AutoScalingOptimizer:
         latest_metrics = self.metrics[-1]
         analysis = self.analyze_metrics(latest_metrics)
 
-        recommendations = []
+        recommendations=[]
         if analysis.should_scale_up:
             recommendations.append(
                 f"Scale up to {analysis.recommended_instances} instances"
@@ -850,7 +850,7 @@ class AutoScalingOptimizer:
             return TrafficPattern.UNKNOWN
 
         # Convert dict metrics to MetricSnapshot objects
-        snapshots = []
+        snapshots=[]
         for m in metrics_list:
             snapshots.append(
                 MetricSnapshot(
@@ -871,7 +871,7 @@ class AutoScalingOptimizer:
         return self.pattern_analyzer.detect_pattern()
 
     async def _predict_future_load(
-        self, hours_ahead: int = 2
+        self, hours_ahead=2
     ) -> Optional[Dict[str, Any]]:
         """미래 부하 예측 (테스트 호환성)"""
         if len(self.metrics) < 24:  # Need at least 24 hours of data
@@ -1019,7 +1019,7 @@ class AutoScalingOptimizer:
     ) -> List[str]:
         """비용 최적화 권장사항 생성 (테스트 호환성)"""
         analysis = self._analyze_cost_efficiency(metrics)
-        recommendations = []
+        recommendations=[]
 
         if not analysis["is_cost_efficient"]:
             recommendations.append(
@@ -1033,11 +1033,11 @@ class AutoScalingOptimizer:
         return recommendations
 
 
-_autoscaling_optimizer: Optional[AutoScalingOptimizer] = None
+_autoscaling_optimizer=None
 
 
 def get_autoscaling_optimizer(
-    project_id: str = None, service_name: str = None
+    project_id: str = None, service_name=None
 ) -> AutoScalingOptimizer:
     """자동 스케일링 최적화기 인스턴스 획득 (테스트 호환성 - 동기화)"""
     global _autoscaling_optimizer
@@ -1053,7 +1053,7 @@ def get_autoscaling_optimizer(
 
 
 async def get_autoscaling_optimizer_async(
-    project_id: str = None, service_name: str = None
+    project_id: str = None, service_name=None
 ) -> AutoScalingOptimizer:
     """자동 스케일링 최적화기 인스턴스 획득 (비동기)"""
     optimizer = get_autoscaling_optimizer(project_id, service_name)

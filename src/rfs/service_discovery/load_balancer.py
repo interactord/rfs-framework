@@ -57,16 +57,16 @@ class ServiceInstance:
     id: str
     host: str
     port: int
-    weight: int = 1  # 가중치 (기본 1)
+    weight=1  # 가중치 (기본 1)
 
     # 상태 정보
     health_status: HealthStatus = HealthStatus.UNKNOWN
-    last_health_check: Optional[datetime] = None
-    consecutive_failures: int = 0
+    last_health_check=None
+    consecutive_failures=0
 
     # 성능 메트릭
-    active_connections: int = 0
-    total_requests: int = 0
+    active_connections=0
+    total_requests=0
     total_response_time: float = 0.0
     last_response_time: float = 0.0
 
@@ -97,24 +97,24 @@ class LoadBalancerConfig:
     strategy: LoadBalancingStrategy = LoadBalancingStrategy.ROUND_ROBIN
 
     # 헬스체크 설정
-    health_check_enabled: bool = True
+    health_check_enabled=True
     health_check_interval: float = 30.0  # 초
     health_check_timeout: float = 5.0  # 초
-    health_check_path: str = "/health"
-    max_consecutive_failures: int = 3
+    health_check_path="/health"
+    max_consecutive_failures=3
 
     # 재시도 설정
-    retry_enabled: bool = True
-    max_retries: int = 3
+    retry_enabled=True
+    max_retries=3
     retry_delay: float = 1.0  # 초
 
     # 서킷 브레이커 설정
-    circuit_breaker_enabled: bool = True
-    circuit_breaker_config: Optional[CircuitBreakerConfig] = None
+    circuit_breaker_enabled=True
+    circuit_breaker_config=None
 
     # 기타 설정
-    sticky_sessions: bool = False  # 세션 고정
-    session_cookie_name: str = "LB_SESSION"
+    sticky_sessions=False  # 세션 고정
+    session_cookie_name="LB_SESSION"
 
 
 class LoadBalancingAlgorithm(ABC):
@@ -201,7 +201,7 @@ class WeightedRoundRobinAlgorithm(LoadBalancingAlgorithm):
     """가중치 라운드 로빈 알고리즘"""
 
     def __init__(self):
-        self.current_weights: Dict[str, int] = {}
+        self.current_weights={}
         self.lock = threading.Lock()
 
     def select(
@@ -238,16 +238,16 @@ class WeightedRoundRobinAlgorithm(LoadBalancingAlgorithm):
 
     def reset(self) -> None:
         """가중치 리셋"""
-        current_weights = {}
+        current_weights={}
 
 
 class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
     """일관된 해싱 알고리즘"""
 
-    def __init__(self, virtual_nodes: int = 150):
+    def __init__(self, virtual_nodes=150):
         self.virtual_nodes = virtual_nodes
-        self.ring: Dict[int, ServiceInstance] = {}
-        self.sorted_keys: List[int] = []
+        self.ring={}
+        self.sorted_keys=[]
 
     def _hash(self, key: str) -> int:
         """해시 함수"""
@@ -255,7 +255,7 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
 
     def _build_ring(self, instances: List[ServiceInstance]) -> None:
         """해시 링 구축"""
-        ring = {}
+        ring={}
 
         for instance in instances:
             if instance.is_available():
@@ -305,8 +305,8 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
 
     def reset(self) -> None:
         """링 리셋"""
-        ring = {}
-        sorted_keys = {}
+        ring={}
+        sorted_keys={}
 
 
 class LeastResponseTimeAlgorithm(LoadBalancingAlgorithm):
@@ -335,25 +335,25 @@ class LeastResponseTimeAlgorithm(LoadBalancingAlgorithm):
 class LoadBalancer:
     """로드 밸런서"""
 
-    def __init__(self, service_name: str, config: Optional[LoadBalancerConfig] = None):
+    def __init__(self, service_name: str, config=None):
         self.service_name = service_name
         self.config = config or LoadBalancerConfig()
 
         # 인스턴스 관리
-        self.instances: Dict[str, ServiceInstance] = {}
+        self.instances={}
         self.lock = threading.RLock()
 
         # 알고리즘 선택
         self.algorithm = self._create_algorithm(self.config.strategy)
 
         # 서킷 브레이커
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.circuit_breakers={}
 
         # 헬스체크 태스크
-        self.health_check_task: Optional[asyncio.Task] = None
+        self.health_check_task=None
 
         # 세션 고정
-        self.session_affinity: Dict[str, str] = {}  # session_id -> instance_id
+        self.session_affinity={}  # session_id -> instance_id
 
         # 통계
         self.total_requests = 0

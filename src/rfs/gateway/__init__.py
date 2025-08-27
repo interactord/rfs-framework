@@ -180,7 +180,7 @@ def create_security_middleware(*args, **kwargs):
     pass
 
 
-def create_gateway_app(title: str = "RFS Gateway", version: str = "1.0.0", **kwargs):
+def create_gateway_app(title="RFS Gateway", version="1.0.0", **kwargs):
     """
     간단한 게이트웨이 앱 생성 함수
     FastAPI가 설치된 경우 FastAPI 앱을 반환하고, 그렇지 않으면 None 반환

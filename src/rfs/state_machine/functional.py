@@ -47,13 +47,13 @@ class State:
     state_type: StateType = StateType.NORMAL
     entry_action: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
     exit_action: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
-    parent: Optional[str] = None
+    parent=None
     children: frozenset = field(default_factory=frozenset)
-    enter_count: int = 0
-    exit_count: int = 0
+    enter_count=0
+    exit_count=0
     total_time: float = 0.0
-    last_entered: Optional[datetime] = None
-    last_exited: Optional[datetime] = None
+    last_entered=None
+    last_exited=None
 
 
 @dataclass(frozen=True)
@@ -66,8 +66,8 @@ class Transition:
     guard: Optional[Callable[[Dict[str, Any]], bool]] = None
     action: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
     transition_type: TransitionType = TransitionType.EXTERNAL
-    execution_count: int = 0
-    failure_count: int = 0
+    execution_count=0
+    failure_count=0
     total_duration_ms: float = 0.0
 
 
@@ -87,22 +87,22 @@ class StateMachineState:
     name: str
     states: Dict[str, State] = field(default_factory=dict)
     transitions: Dict[str, List[Transition]] = field(default_factory=dict)
-    current_state: Optional[str] = None
-    initial_state: Optional[str] = None
+    current_state=None
+    initial_state=None
     machine_state: MachineState = MachineState.IDLE
     context: Dict[str, Any] = field(default_factory=dict)
     event_queue: Tuple[MachineEvent, ...] = field(default_factory=tuple)
     event_history: Tuple[MachineEvent, ...] = field(default_factory=tuple)
-    total_transitions: int = 0
-    failed_transitions: int = 0
-    start_time: Optional[datetime] = None
+    total_transitions=0
+    failed_transitions=0
+    start_time=None
 
 
 def create_state(
     name: str,
     state_type: StateType = StateType.NORMAL,
-    entry_action: Optional[Callable] = None,
-    exit_action: Optional[Callable] = None,
+    entry_action=None,
+    exit_action=None,
 ) -> State:
     """순수 함수: 상태 생성"""
     return State(
@@ -154,8 +154,8 @@ def create_transition(
     from_state: str,
     to_state: str,
     event: str,
-    guard: Optional[Callable] = None,
-    action: Optional[Callable] = None,
+    guard=None,
+    action=None,
     transition_type: TransitionType = TransitionType.EXTERNAL,
 ) -> Transition:
     """순수 함수: 전이 생성"""
@@ -453,7 +453,7 @@ def filter_transitions(
     machine: StateMachineState, predicate: Callable[[Transition], bool]
 ) -> StateMachineState:
     """고차 함수: 전이 필터링"""
-    new_transitions = {}
+    new_transitions={}
     for key, transitions in machine.transitions.items():
         filtered = [t for t in transitions if predicate(t)]
         if filtered:

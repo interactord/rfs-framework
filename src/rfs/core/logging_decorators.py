@@ -62,13 +62,13 @@ class OperationContext:
     operation_id: str
     operation_name: str
     start_time: datetime
-    end_time: Optional[datetime] = None
-    duration_ms: Optional[float] = None
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    parent_span_id: Optional[str] = None
+    end_time=None
+    duration_ms=None
+    user_id=None
+    session_id=None
+    trace_id=None
+    span_id=None
+    parent_span_id=None
     tags: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -93,12 +93,12 @@ class AuditLogEntry:
     resource_id: Optional[str]
     action: str
     result: str
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    session_id: Optional[str] = None
+    ip_address=None
+    user_agent=None
+    session_id=None
     changes: Optional[Dict[str, Any]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    error_message: Optional[str] = None
+    error_message=None
 
     def to_json(self) -> str:
         """JSON 문자열로 변환"""
@@ -111,9 +111,9 @@ class AuditLogEntry:
 class AuditLogger:
     """감사 로거"""
 
-    def __init__(self, log_file: Optional[str] = None):
+    def __init__(self, log_file=None):
         self.log_file = log_file
-        self.audit_logs: List[AuditLogEntry] = []
+        self.audit_logs=[]
         self.logger = logging.getLogger("audit")
         if log_file:
             file_handler = logging.FileHandler(log_file)
@@ -133,11 +133,11 @@ class AuditLogger:
 
     def get_logs(
         self,
-        user_id: Optional[str] = None,
-        event_type: Optional[AuditEventType] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        limit: int = 100,
+        user_id=None,
+        event_type=None,
+        start_time=None,
+        end_time=None,
+        limit=100,
     ) -> List[AuditLogEntry]:
         """감사 로그 조회"""
         logs = self.audit_logs
@@ -158,10 +158,10 @@ _audit_logger = AuditLogger()
 
 def LoggedOperation(
     level: LogLevel = LogLevel.INFO,
-    include_args: bool = True,
-    include_result: bool = False,
-    include_timing: bool = True,
-    include_errors: bool = True,
+    include_args=True,
+    include_result=False,
+    include_timing=True,
+    include_errors=True,
     tags: Optional[Dict[str, Any]] = None,
 ):
     """
@@ -279,9 +279,9 @@ def LoggedOperation(
 def AuditLogged(
     event_type: AuditEventType,
     resource_type: str,
-    include_changes: bool = True,
-    include_user_info: bool = True,
-    custom_message: Optional[str] = None,
+    include_changes=True,
+    include_user_info=True,
+    custom_message=None,
 ):
     """
     감사 로그 데코레이터
@@ -309,7 +309,7 @@ def AuditLogged(
             resource_id = kwargs.get("id") or kwargs.get("resource_id")
             before_state = None
             if event_type == AuditEventType.UPDATE and include_changes:
-                before_state = {}
+                before_state={}
             try:
                 result = await func(*args, **kwargs)
                 changes = None
@@ -366,7 +366,7 @@ def AuditLogged(
             resource_id = kwargs.get("id") or kwargs.get("resource_id")
             before_state = None
             if event_type == AuditEventType.UPDATE and include_changes:
-                before_state = {}
+                before_state={}
             try:
                 result = func(*args, **kwargs)
                 changes = None
@@ -419,8 +419,8 @@ def AuditLogged(
 
 
 def ErrorLogged(
-    include_stack_trace: bool = True,
-    notify: bool = False,
+    include_stack_trace=True,
+    notify=False,
     severity: LogLevel = LogLevel.ERROR,
 ):
     """
@@ -475,7 +475,7 @@ def ErrorLogged(
 def _mask_sensitive_data(data: Any) -> Any:
     """민감한 데이터 마스킹"""
     if type(data).__name__ == "dict":
-        masked = {}
+        masked={}
         sensitive_keys = [
             "password",
             "token",

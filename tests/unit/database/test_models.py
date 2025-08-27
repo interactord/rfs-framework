@@ -250,7 +250,7 @@ class TestModel:
             id: int
             username: str
             email: str
-            active: bool = True
+            active=True
 
             class Meta:
                 table_name = "users"
@@ -311,7 +311,7 @@ class TestModel:
         class CategoryModel(TestModelBase):
             id: int
             name: str
-            parent_id: Optional[int] = None
+            parent_id=None
 
             class Meta:
                 table_name = "categories"
@@ -643,7 +643,7 @@ class TestModelIntegration:
             id: int
             customer_id: int
             total: float
-            status: str = "pending"
+            status="pending"
 
             class Meta:
                 table_name = "orders"

@@ -58,21 +58,21 @@ class CommandContext:
     args: Dict[str, Any] = field(default_factory=dict)
     config: Any = None
     console: Any = None
-    project_root: Optional[Path] = None
-    verbose: bool = False
-    dry_run: bool = False
-    environment: str = "development"
+    project_root=None
+    verbose=False
+    dry_run=False
+    environment="development"
 
 
 class Command(ABC):
     """CLI 명령어 기본 클래스"""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__(self, name: str, description=""):
         self.name = name
         self.description = description
-        self.aliases: List[str] = []
-        self.options: Dict[str, Any] = {}
-        self.subcommands: Dict[str, "Command"] = {}
+        self.aliases=[]
+        self.options={}
+        self.subcommands={}
 
     @abstractmethod
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
@@ -100,9 +100,9 @@ class Command(ABC):
 class CommandGroup(Command):
     """명령어 그룹"""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__(self, name: str, description=""):
         super().__init__(name, description)
-        self._commands: Dict[str, Command] = {}
+        self._commands={}
 
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
         """그룹 실행 - 도움말 표시"""
@@ -142,11 +142,11 @@ class RFSCli:
     """RFS CLI 메인 애플리케이션"""
 
     def __init__(self):
-        self.commands: Dict[str, Command] = {}
+        self.commands={}
         self.console = Console() if RICH_AVAILABLE else None
         self.config = None
         self.project_root = self._find_project_root()
-        self.plugins: Dict[str, Any] = {}
+        self.plugins={}
         self.state = {
             "last_command": None,
             "session_start": datetime.now(),
@@ -252,8 +252,8 @@ class RFSCli:
 
     def _parse_global_args(self, args: List[str]) -> tuple[Dict[str, Any], List[str]]:
         """전역 인자 파싱"""
-        global_args = {}
-        command_args = []
+        global_args={}
+        command_args=[]
         i = 0
         while i < len(args):
             arg = args[i]
@@ -280,7 +280,7 @@ class RFSCli:
 
     def _parse_command_args(self, command: Command, args: List[str]) -> Dict[str, Any]:
         """명령어 인자 파싱"""
-        parsed_args = {}
+        parsed_args={}
         i = 0
         while i < len(args):
             arg = args[i]
@@ -397,7 +397,7 @@ class RFSCli:
                 previous_row = current_row
             return previous_row[-1]
 
-        similar = []
+        similar=[]
         for cmd_name in self.commands.keys():
             if cmd_name != command_name:
                 distance = levenshtein_distance(command_name.lower(), cmd_name.lower())
@@ -441,7 +441,7 @@ def prompt_user(message: str, default: str = None) -> str:
         return response or default or ""
 
 
-def confirm_user(message: str, default: bool = False) -> bool:
+def confirm_user(message: str, default=False) -> bool:
     """사용자 확인 받기"""
     if RICH_AVAILABLE:
         return Confirm.ask(message, default=default)

@@ -30,7 +30,7 @@ class Guard:
             # code continues only if condition is True
     """
 
-    def __init__(self, condition: bool, message: str = "Guard condition failed"):
+    def __init__(self, condition: bool, message="Guard condition failed"):
         self.condition = condition
         self.message = message
         self._handled = False
@@ -75,8 +75,8 @@ class _GuardReturn(Exception):
 def guard(
     condition: Union[bool, Callable[[], bool]],
     else_return: Any = None,
-    else_raise: Optional[Exception] = None,
-    message: str = "Guard condition failed",
+    else_raise=None,
+    message="Guard condition failed",
 ) -> Any:
     """
     Functional guard statement for early returns.
@@ -114,7 +114,7 @@ def guard(
 
 
 def guard_let(
-    value: Optional[T], else_return: Any = None, else_raise: Optional[Exception] = None
+    value: Optional[T], else_return: Any = None, else_raise=None
 ) -> T:
     """
     Guard for optional values - unwraps or returns early.
@@ -150,8 +150,8 @@ def guard_let(
 def guarded(
     *conditions: Union[bool, Callable[[], bool]],
     else_return: Any = None,
-    else_raise: Optional[Exception] = None,
-    message: str = "Guard condition failed",
+    else_raise=None,
+    message="Guard condition failed",
 ):
     """
     Decorator for functions with guard conditions.
@@ -204,7 +204,7 @@ def guard_type(
     value: Any,
     expected_type: type,
     else_return: Any = None,
-    else_raise: Optional[Exception] = None,
+    else_raise=None,
 ) -> Any:
     """
     Guard for type checking with early return.
@@ -244,7 +244,7 @@ def guard_range(
     min_val: Optional[Union[int, float]] = None,
     max_val: Optional[Union[int, float]] = None,
     else_return: Any = None,
-    else_raise: Optional[Exception] = None,
+    else_raise=None,
 ) -> Union[int, float]:
     """
     Guard for range checking with early return.
@@ -290,7 +290,7 @@ def guard_range(
 def guard_not_empty(
     collection: Union[list, dict, set, str, tuple],
     else_return: Any = None,
-    else_raise: Optional[Exception] = None,
+    else_raise=None,
 ) -> Union[list, dict, set, str, tuple]:
     """
     Guard for non-empty collections.
@@ -347,21 +347,21 @@ class GuardContext:
             return True
         return False
 
-    def check(self, condition: bool, message: str = "") -> "GuardContext":
+    def check(self, condition: bool, message="") -> "GuardContext":
         """Check a condition."""
         if not condition and not self.failed:
             self.failed = True
             self.failure_message = message
         return self
 
-    def check_not_none(self, value: Optional[T], message: str = "") -> Optional[T]:
+    def check_not_none(self, value: Optional[T], message="") -> Optional[T]:
         """Check that value is not None."""
         if value is None and not self.failed:
             self.failed = True
             self.failure_message = message
         return value
 
-    def check_type(self, value: Any, expected_type: type, message: str = "") -> Any:
+    def check_type(self, value: Any, expected_type: type, message="") -> Any:
         """Check that value has expected type."""
         if not isinstance(value, expected_type) and not self.failed:
             self.failed = True
@@ -376,7 +376,7 @@ class GuardContext:
         if self.failed:
             raise _GuardReturn(value)
 
-    def else_raise(self, exception: Optional[Exception] = None) -> NoReturn:
+    def else_raise(self, exception=None) -> NoReturn:
         """Raise exception if any check failed."""
         if self.failed:
             if exception is None:

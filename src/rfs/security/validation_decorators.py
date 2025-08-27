@@ -58,7 +58,7 @@ class ValidationResult:
     is_valid: bool
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
-    sanitized_data: Optional[Any] = None
+    sanitized_data=None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -132,8 +132,8 @@ class IPAddressValidator(InputValidator):
 
     def __init__(
         self,
-        allow_private: bool = False,
-        allow_ipv6: bool = True,
+        allow_private=False,
+        allow_ipv6=True,
         whitelist: Optional[List[str]] = None,
         blacklist: Optional[List[str]] = None,
     ):
@@ -263,7 +263,7 @@ class InputSanitizer:
 def ValidateInput(
     validators: Optional[List[InputValidator]] = None,
     level: ValidationLevel = ValidationLevel.MODERATE,
-    fail_fast: bool = False,
+    fail_fast=False,
     custom_validators: Optional[Dict[str, Callable]] = None,
 ):
     """
@@ -280,7 +280,7 @@ def ValidateInput(
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            errors = []
+            errors=[]
             if level == ValidationLevel.STRICT:
                 sig = inspect.signature(func)
                 for param_name, param in sig.parameters.items():
@@ -331,7 +331,7 @@ def ValidateInput(
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            errors = []
+            errors=[]
             if level == ValidationLevel.STRICT:
                 import inspect
 
@@ -497,7 +497,7 @@ def SanitizeInput(
 
 
 def ValidateSchema(
-    schema: Type[BaseModel], parameter: str = "data", coerce: bool = False
+    schema: Type[BaseModel], parameter="data", coerce=False
 ):
     """
     Pydantic 스키마 검증 데코레이터
@@ -557,14 +557,14 @@ class RateLimiter:
 
     def __init__(self):
         self.requests: Dict[str, deque] = defaultdict(lambda: deque())
-        self.blocked_until: Dict[str, datetime] = {}
+        self.blocked_until={}
 
     def is_allowed(
         self,
         key: str,
         max_requests: int,
         window_seconds: int,
-        block_duration: Optional[int] = None,
+        block_duration=None,
     ) -> bool:
         """요청 허용 여부 확인"""
         now = datetime.now()
@@ -592,10 +592,10 @@ _rate_limiter = RateLimiter()
 
 
 def RateLimited(
-    max_requests: int = 60,
-    window_seconds: int = 60,
-    key_func: Optional[Callable] = None,
-    block_duration: Optional[int] = None,
+    max_requests=60,
+    window_seconds=60,
+    key_func=None,
+    block_duration=None,
 ):
     """
     요청 속도 제한 데코레이터

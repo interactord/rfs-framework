@@ -68,7 +68,7 @@ class User:
     role: UserRole
     permissions: List[Permission]
     created_at: datetime
-    is_active: bool = True
+    is_active=True
     
     def has_permission(self, permission: Permission) -> bool:
         """권한 확인"""
@@ -87,7 +87,7 @@ class SecurityEvent:
     ip_address: str
     timestamp: datetime
     details: Dict[str, Any]
-    severity: str = "info"
+    severity="info"
 
 
 # ================================================
@@ -189,7 +189,7 @@ class SecureUserService:
     async def register_user(
         self,
         user_data: dict,
-        client_ip: str = "127.0.0.1"
+        client_ip="127.0.0.1"
     ) -> Result[dict, str]:
         """사용자 등록"""
         try:
@@ -251,7 +251,7 @@ class SecureUserService:
     async def authenticate_user(
         self,
         credentials: dict,
-        client_ip: str = "127.0.0.1"
+        client_ip="127.0.0.1"
     ) -> Result[dict, str]:
         """사용자 인증"""
         email = credentials["email"]
@@ -421,7 +421,7 @@ class SecureUserService:
         user_id: Optional[str],
         ip_address: str,
         details: Dict[str, Any],
-        severity: str = "info"
+        severity="info"
     ):
         """보안 이벤트 로깅"""
         event = SecurityEvent(
@@ -622,7 +622,7 @@ class ComprehensiveSecurityScanner:
         self.scanner = SecurityScanner()
         self.validator = SystemValidator()
     
-    async def scan_application_security(self, app_path: str = "./") -> Result[dict, str]:
+    async def scan_application_security(self, app_path="./") -> Result[dict, str]:
         """애플리케이션 보안 스캔"""
         print("🔍 보안 스캔 시작...")
         

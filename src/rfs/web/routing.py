@@ -36,17 +36,17 @@ class Route:
     path: str
     method: HTTPMethod
     handler: Callable
-    name: Optional[str] = None
+    name=None
     tags: List[str] = field(default_factory=list)
-    summary: Optional[str] = None
-    description: Optional[str] = None
+    summary=None
+    description=None
     middleware: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.tags is None:
-            self.tags = []
+            self.tags=[]
         if self.middleware is None:
-            self.middleware = []
+            self.middleware=[]
         if self.name is None:
             self.name = (
                 f"{self.method.lower()}_{self.path.replace('/', '_').strip('_')}"
@@ -57,12 +57,12 @@ class RouteGroup:
     """라우트 그룹"""
 
     def __init__(
-        self, prefix: str = "", tags: List[str] = None, middleware: List[str] = None
+        self, prefix="", tags: List[str] = None, middleware: List[str] = None
     ):
         self.prefix = prefix
         self.tags = tags or []
         self.middleware = middleware or []
-        self.routes: List[Route] = []
+        self.routes=[]
 
     def add_route(
         self, path: str, method: HTTPMethod, handler: Callable, **kwargs
@@ -132,8 +132,8 @@ class Router:
     """메인 라우터"""
 
     def __init__(self):
-        self.routes: List[Route] = []
-        self.groups: List[RouteGroup] = []
+        self.routes=[]
+        self.groups=[]
 
     def add_route(
         self, path: str, method: HTTPMethod, handler: Callable, **kwargs

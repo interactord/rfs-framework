@@ -28,7 +28,7 @@ class ActionResult:
     action_type: ActionType
     action_name: str
     context_changes: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Exception] = None
+    error=None
     duration_ms: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
 
@@ -45,7 +45,7 @@ class Action:
         name: str,
         action_type: ActionType,
         action_func: Callable[[Dict[str, Any]], Any],
-        async_action: bool = False,
+        async_action=False,
     ):
         self.name = name
         self.action_type = action_type
@@ -56,7 +56,7 @@ class Action:
         self.execution_count = 0
         self.failure_count = 0
         self.total_duration_ms = 0.0
-        self.last_executed: Optional[datetime] = None
+        self.last_executed=None
 
     async def execute(self, context: Dict[str, Any] = None) -> ActionResult:
         """액션 실행"""
@@ -65,7 +65,7 @@ class Action:
         start_time = time.time()
 
         if context is None:
-            context = {}
+            context={}
 
         try:
             self.last_executed = datetime.now()
@@ -88,7 +88,7 @@ class Action:
             total_duration_ms = total_duration_ms + duration_ms
 
             # 컨텍스트 변경사항 추출
-            context_changes = {}
+            context_changes={}
             if type(result).__name__ == "dict":
                 context_changes = result
 
@@ -147,7 +147,7 @@ class Guard:
         self,
         name: str,
         guard_func: Callable[[Dict[str, Any]], bool],
-        description: str = "",
+        description="",
     ):
         self.name = name
         self.guard_func = guard_func
@@ -167,7 +167,7 @@ class Guard:
         start_time = time.time()
 
         if context is None:
-            context = {}
+            context={}
 
         try:
             evaluation_count = evaluation_count + 1
@@ -255,7 +255,7 @@ class ActionBuilder:
         self.action_func = action_func
         return self
 
-    def async_mode(self, async_action: bool = True) -> "ActionBuilder":
+    def async_mode(self, async_action=True) -> "ActionBuilder":
         """비동기 모드 설정"""
         self.async_action = async_action
         return self

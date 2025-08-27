@@ -35,7 +35,7 @@ class Scheduler:
                 max_workers=None, thread_name_prefix="rfs-parallel"
             )
 
-    async def schedule(self, task: Callable, delay: Optional[float] = None):
+    async def schedule(self, task: Callable, delay=None):
         """작업 스케줄링"""
         if delay:
             await asyncio.sleep(delay)

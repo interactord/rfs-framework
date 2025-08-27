@@ -146,7 +146,7 @@ class Flux(Generic[T]):
         """중복 제거"""
 
         async def distinct_items():
-            seen = set()
+            seen: Set[Any] = set()
             async for item in self.source():
                 if item not in seen:
                     seen.add(item)
@@ -169,12 +169,12 @@ class Flux(Generic[T]):
         """항목들을 버퍼 크기만큼 묶기"""
 
         async def buffered():
-            buffer = []
+            buffer=[]
             async for item in self.source():
                 buffer = buffer + [item]
                 if len(buffer) >= size:
                     yield buffer
-                    buffer = []
+                    buffer=[]
             if buffer:
                 yield buffer
 
@@ -199,7 +199,7 @@ class Flux(Generic[T]):
             iterators = [flux.source() for flux in fluxes]
             try:
                 while True:
-                    items = []
+                    items=[]
                     for iterator in iterators:
                         items.append(await iterator.__anext__())
                     yield tuple(items)
@@ -213,8 +213,8 @@ class Flux(Generic[T]):
         """여러 Flux를 병합"""
 
         async def generator():
-            tasks = []
-            queues = []
+            tasks=[]
+            queues=[]
 
             for flux in fluxes:
                 queue = asyncio.Queue()
@@ -266,14 +266,14 @@ class Flux(Generic[T]):
 
     async def collect_list(self) -> List[T]:
         """모든 항목을 리스트로 수집"""
-        result = []
+        result=[]
         async for item in self.source():
             result = result + [item]
         return result
 
     async def collect_set(self) -> set[T]:
         """모든 항목을 셋으로 수집"""
-        result = set()
+        result: Set[Any] = set()
         async for item in self.source():
             result.add(item)
         return result
@@ -341,7 +341,7 @@ class Flux(Generic[T]):
             parallelism = min(parallelism, 8)
 
         async def parallel_source():
-            tasks = []
+            tasks=[]
             async for item in self.source():
                 task = asyncio.create_task(self._process_item(item))
                 tasks = tasks + [task]
@@ -349,7 +349,7 @@ class Flux(Generic[T]):
                     results = await asyncio.gather(*tasks)
                     for result in results:
                         yield result
-                    tasks = []
+                    tasks=[]
             if tasks:
                 results = await asyncio.gather(*tasks)
                 for result in results:
@@ -362,7 +362,7 @@ class Flux(Generic[T]):
         return item
 
     def window(
-        self, size: Optional[int] = None, duration: Optional[float] = None
+        self, size=None, duration=None
     ) -> "Flux[Flux[T]]":
         """
         윈도우 처리 - 항목들을 시간 또는 개수 기준으로 묶기
@@ -374,22 +374,22 @@ class Flux(Generic[T]):
 
         async def windowed():
             if size is not None:
-                window_items = []
+                window_items=[]
                 async for item in self.source():
                     window_items = window_items + [item]
                     if len(window_items) >= size:
                         yield Flux.from_iterable(window_items)
-                        window_items = []
+                        window_items=[]
                 if window_items:
                     yield Flux.from_iterable(window_items)
             elif duration is not None:
-                window_items = []
+                window_items=[]
                 start_time = time.time()
                 async for item in self.source():
                     window_items = window_items + [item]
                     if time.time() - start_time >= duration:
                         yield Flux.from_iterable(window_items)
-                        window_items = []
+                        window_items=[]
                         start_time = time.time()
                 if window_items:
                     yield Flux.from_iterable(window_items)
@@ -486,10 +486,10 @@ class Flux(Generic[T]):
         """
 
         async def merged():
-            tasks = []
+            tasks=[]
 
             async def collect_from_source(source):
-                items = []
+                items=[]
                 async for item in source():
                     items = items + [item]
                 return items
@@ -539,7 +539,7 @@ class Flux(Generic[T]):
 
         return Flux(error_handled)
 
-    def retry(self, max_attempts: int = 3) -> "Flux[T]":
+    def retry(self, max_attempts=3) -> "Flux[T]":
         """
         에러 발생 시 재시도
 

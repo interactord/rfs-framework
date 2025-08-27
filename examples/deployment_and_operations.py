@@ -67,9 +67,9 @@ class DeploymentResult:
     strategy: str
     status: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time=None
     success_rate: float = 0.0
-    error_message: Optional[str] = None
+    error_message=None
 
 
 # ================================================
@@ -189,7 +189,7 @@ class AdvancedDeploymentManager:
         service_name: str,
         new_version: str,
         strategy: DeploymentType,
-        instances: int = 3
+        instances=3
     ) -> Result[DeploymentResult, str]:
         """서비스 배포"""
         deployment_id = f"deploy_{int(time.time())}"
@@ -684,7 +684,7 @@ class OperationsDashboard:
         
         print("="*60)
     
-    async def run_load_test(self, service_name: str, request_count: int = 50):
+    async def run_load_test(self, service_name: str, request_count=50):
         """로드 테스트 실행"""
         print(f"\n🚀 로드 테스트 시작: {service_name} ({request_count}회 요청)")
         

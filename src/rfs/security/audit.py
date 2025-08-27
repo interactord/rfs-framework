@@ -59,10 +59,10 @@ class AuditEvent:
     resource: Optional[str]
     outcome: str
     details: Dict[str, Any]
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    request_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    ip_address=None
+    user_agent=None
+    request_id=None
+    correlation_id=None
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -85,7 +85,7 @@ class AuditStorage:
         raise NotImplementedError
 
     async def query_events(
-        self, filters: Dict[str, Any], limit: int = 100, offset: int = 0
+        self, filters: Dict[str, Any], limit=100, offset=0
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         raise NotImplementedError
@@ -94,8 +94,8 @@ class AuditStorage:
 class MemoryAuditStorage(AuditStorage):
     """메모리 기반 감사 로그 저장소"""
 
-    def __init__(self, max_events: int = 10000):
-        self.events: List[AuditEvent] = []
+    def __init__(self, max_events=10000):
+        self.events=[]
         self.max_events = max_events
         self._lock = asyncio.Lock()
 
@@ -108,11 +108,11 @@ class MemoryAuditStorage(AuditStorage):
         return Success(None)
 
     async def query_events(
-        self, filters: Dict[str, Any], limit: int = 100, offset: int = 0
+        self, filters: Dict[str, Any], limit=100, offset=0
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            filtered_events = []
+            filtered_events=[]
             for event in self.events:
                 match = True
                 for key, value in filters.items():
@@ -152,7 +152,7 @@ class FileAuditStorage(AuditStorage):
     """파일 기반 감사 로그 저장소"""
 
     def __init__(
-        self, log_file_path: str = "audit.log", max_file_size: int = 100 * 1024 * 1024
+        self, log_file_path="audit.log", max_file_size=100 * 1024 * 1024
     ):
         self.log_file_path = log_file_path
         self.max_file_size = max_file_size
@@ -182,11 +182,11 @@ class FileAuditStorage(AuditStorage):
             return Failure(f"감사 로그 저장 실패: {str(e)}")
 
     async def query_events(
-        self, filters: Dict[str, Any], limit: int = 100, offset: int = 0
+        self, filters: Dict[str, Any], limit=100, offset=0
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            events = []
+            events=[]
             with open(self.log_file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     try:
@@ -205,7 +205,7 @@ class FileAuditStorage(AuditStorage):
 class AuditLogger:
     """감사 로거"""
 
-    def __init__(self, storage: Optional[AuditStorage] = None):
+    def __init__(self, storage=None):
         self.storage = storage or MemoryAuditStorage()
         self.event_id_counter = 0
         self._lock = asyncio.Lock()
@@ -221,15 +221,15 @@ class AuditLogger:
         event_type: AuditEventType,
         level: AuditLevel,
         action: str,
-        outcome: str = "SUCCESS",
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        resource: Optional[str] = None,
+        outcome="SUCCESS",
+        user_id=None,
+        session_id=None,
+        resource=None,
         details: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        request_id: Optional[str] = None,
-        correlation_id: Optional[str] = None,
+        ip_address=None,
+        user_agent=None,
+        request_id=None,
+        correlation_id=None,
     ) -> Result[AuditEvent, str]:
         """감사 이벤트 로그"""
         try:
@@ -275,9 +275,9 @@ class AuditLogger:
         self,
         user_id: str,
         action: str,
-        outcome: str = "SUCCESS",
-        session_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        outcome="SUCCESS",
+        session_id=None,
+        ip_address=None,
         details: Optional[Dict[str, Any]] = None,
     ) -> Result[AuditEvent, str]:
         """인증 이벤트 로그"""
@@ -298,8 +298,8 @@ class AuditLogger:
         user_id: str,
         resource: str,
         action: str,
-        outcome: str = "SUCCESS",
-        session_id: Optional[str] = None,
+        outcome="SUCCESS",
+        session_id=None,
         details: Optional[Dict[str, Any]] = None,
     ) -> Result[AuditEvent, str]:
         """인가 이벤트 로그"""
@@ -319,9 +319,9 @@ class AuditLogger:
         self,
         user_id: str,
         resource: str,
-        action: str = "READ",
-        outcome: str = "SUCCESS",
-        session_id: Optional[str] = None,
+        action="READ",
+        outcome="SUCCESS",
+        session_id=None,
         details: Optional[Dict[str, Any]] = None,
     ) -> Result[AuditEvent, str]:
         """데이터 접근 이벤트 로그"""
@@ -341,8 +341,8 @@ class AuditLogger:
         user_id: str,
         resource: str,
         action: str,
-        outcome: str = "SUCCESS",
-        session_id: Optional[str] = None,
+        outcome="SUCCESS",
+        session_id=None,
         details: Optional[Dict[str, Any]] = None,
     ) -> Result[AuditEvent, str]:
         """데이터 변경 이벤트 로그"""
@@ -361,9 +361,9 @@ class AuditLogger:
     async def log_security_event(
         self,
         action: str,
-        outcome: str = "DETECTED",
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        outcome="DETECTED",
+        user_id=None,
+        ip_address=None,
         details: Optional[Dict[str, Any]] = None,
     ) -> Result[AuditEvent, str]:
         """보안 이벤트 로그"""
@@ -380,17 +380,17 @@ class AuditLogger:
     async def query_events(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        limit: int = 100,
-        offset: int = 0,
+        limit=100,
+        offset=0,
     ) -> Result[List[AuditEvent], str]:
         """감사 이벤트 조회"""
         return await self.storage.query_events(filters or {}, limit, offset)
 
 
-_audit_logger: Optional[AuditLogger] = None
+_audit_logger=None
 
 
-def get_audit_logger(storage: Optional[AuditStorage] = None) -> AuditLogger:
+def get_audit_logger(storage=None) -> AuditLogger:
     """감사 로거 가져오기"""
     # global _audit_logger - removed for functional programming
     if _audit_logger is None:
@@ -400,8 +400,8 @@ def get_audit_logger(storage: Optional[AuditStorage] = None) -> AuditLogger:
 
 def audit_log(
     event_type: AuditEventType,
-    action: Optional[str] = None,
-    resource: Optional[str] = None,
+    action=None,
+    resource=None,
     level: AuditLevel = AuditLevel.INFO,
 ):
     """감사 로그 데코레이터"""
@@ -468,7 +468,7 @@ def audit_log(
     return decorator
 
 
-def track_access(resource: Optional[str] = None):
+def track_access(resource=None):
     """접근 추적 데코레이터"""
     return audit_log(
         event_type=AuditEventType.DATA_ACCESS,
@@ -478,7 +478,7 @@ def track_access(resource: Optional[str] = None):
     )
 
 
-def monitor_changes(resource: Optional[str] = None):
+def monitor_changes(resource=None):
     """변경 모니터링 데코레이터"""
     return audit_log(
         event_type=AuditEventType.DATA_MODIFICATION,

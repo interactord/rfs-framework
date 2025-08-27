@@ -57,13 +57,13 @@ class AnnotationMetadata:
     target_class: Type[Any]
     dependencies: List[str] = field(default_factory=list)
     scope: ComponentScope = ComponentScope.SINGLETON
-    lazy: bool = False
-    profile: Optional[str] = None
-    port_name: Optional[str] = None
-    route: Optional[str] = None
+    lazy=False
+    profile=None
+    port_name=None
+    route=None
     created_at: datetime = field(default_factory=datetime.now)
-    description: Optional[str] = None
-    version: str = "1.0.0"
+    description=None
+    version="1.0.0"
 
 
 class PortProtocol(Protocol):
@@ -142,7 +142,7 @@ def Component(
     name: str = None,
     scope: ComponentScope = ComponentScope.SINGLETON,
     dependencies: List[str] = None,
-    lazy: bool = False,
+    lazy=False,
     profile: str = None,
 ) -> Callable[[Type], Type]:
     """
@@ -253,7 +253,7 @@ def Service(
     name: str = None,
     scope: ComponentScope = ComponentScope.SINGLETON,
     dependencies: List[str] = None,
-    lazy: bool = False,
+    lazy=False,
 ) -> Callable[[Type], Type]:
     """@Component의 별칭 - 서비스 레이어용"""
     return Component(name=name, scope=scope, dependencies=dependencies, lazy=lazy)
@@ -311,9 +311,9 @@ def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
     Returns:
         List[str]: 검증 오류 메시지들
     """
-    errors = []
-    ports = {}
-    adapters = {}
+    errors=[]
+    ports={}
+    adapters={}
     for cls in classes:
         metadata = get_annotation_metadata(cls)
         if not metadata:

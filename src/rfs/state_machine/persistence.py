@@ -69,7 +69,7 @@ class MemoryStatePersistence:
     """메모리 기반 상태 영속성"""
 
     def __init__(self):
-        self.snapshots = {}
+        self.snapshots={}
 
     async def save_snapshot(self, snapshot: StateMachineSnapshot) -> bool:
         """스냅샷 저장"""
@@ -101,13 +101,13 @@ class MemoryStatePersistence:
 
     def clear_all(self):
         """모든 스냅샷 삭제"""
-        snapshots = {}
+        snapshots={}
 
 
 class FileStatePersistence:
     """파일 기반 상태 영속성"""
 
-    def __init__(self, base_path: str = "./state_snapshots"):
+    def __init__(self, base_path="./state_snapshots"):
         if not HAS_AIOFILES:
             raise ImportError(
                 "aiofiles is required for file persistence. Install with: pip install rfs-framework[eventstore]"
@@ -190,7 +190,7 @@ class FileStatePersistence:
     async def list_snapshots(self) -> List[str]:
         """스냅샷 목록"""
         try:
-            snapshots = []
+            snapshots=[]
             for path in self.base_path.glob("*.json"):
                 snapshots = snapshots + [path.stem]
             return snapshots
@@ -204,8 +204,8 @@ class RedisStatePersistence:
 
     def __init__(
         self,
-        redis_url: str = "redis://localhost:6379",
-        key_prefix: str = "state_machine:",
+        redis_url="redis://localhost:6379",
+        key_prefix="state_machine:",
     ):
         self.redis_url = redis_url
         self.key_prefix = key_prefix
@@ -336,7 +336,7 @@ class PersistenceManager:
 
     async def create_snapshot(self, state_machine) -> StateMachineSnapshot:
         """상태 머신에서 스냅샷 생성"""
-        event_history = []
+        event_history=[]
         for event in state_machine.event_history:
             event_dict = {
                 "name": event.name,
@@ -374,7 +374,7 @@ class PersistenceManager:
         state_machine.start_time = snapshot.start_time
         from .machine import MachineEvent
 
-        state_machine.event_history = []
+        state_machine.event_history=[]
         for event_dict in snapshot.event_history[-100:]:
             event = MachineEvent(
                 name=event_dict["name"],
@@ -410,11 +410,11 @@ def memory_persistence() -> PersistenceManager:
     return PersistenceManager(PersistenceType.MEMORY)
 
 
-def file_persistence(base_path: str = "./state_snapshots") -> PersistenceManager:
+def file_persistence(base_path="./state_snapshots") -> PersistenceManager:
     """파일 영속성 관리자"""
     return PersistenceManager(PersistenceType.FILE, base_path=base_path)
 
 
-def redis_persistence(redis_url: str = "redis://localhost:6379") -> PersistenceManager:
+def redis_persistence(redis_url="redis://localhost:6379") -> PersistenceManager:
     """Redis 영속성 관리자"""
     return PersistenceManager(PersistenceType.REDIS, redis_url=redis_url)

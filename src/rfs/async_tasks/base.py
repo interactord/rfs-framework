@@ -55,7 +55,7 @@ class BackoffStrategy(Enum):
 class RetryPolicy:
     """재시도 정책"""
 
-    max_attempts: int = 3
+    max_attempts=3
     delay: timedelta = timedelta(seconds=1)
     backoff_strategy: BackoffStrategy = BackoffStrategy.EXPONENTIAL
     backoff_multiplier: float = 2.0
@@ -101,24 +101,24 @@ class TaskMetadata:
     """작업 메타데이터"""
 
     task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    name: str = ""
+    name=""
     status: TaskStatus = TaskStatus.PENDING
     priority: TaskPriority = TaskPriority.NORMAL
     created_at: datetime = field(default_factory=datetime.now)
-    scheduled_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    retry_count: int = 0
-    retry_policy: Optional[RetryPolicy] = None
-    timeout: Optional[timedelta] = None
+    scheduled_at=None
+    started_at=None
+    completed_at=None
+    retry_count=0
+    retry_policy=None
+    timeout=None
     depends_on: List[str] = field(default_factory=list)
-    parent_id: Optional[str] = None
+    parent_id=None
     children_ids: List[str] = field(default_factory=list)
     context: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    result: Optional[Any] = None
-    error: Optional[str] = None
-    traceback: Optional[str] = None
+    result=None
+    error=None
+    traceback=None
 
     def duration(self) -> Optional[timedelta]:
         """실행 시간"""
@@ -146,9 +146,9 @@ class TaskResult(Generic[T]):
 
     task_id: str
     status: TaskStatus
-    value: Optional[T] = None
-    error: Optional[str] = None
-    metadata: Optional[TaskMetadata] = None
+    value=None
+    error=None
+    metadata=None
 
     def is_success(self) -> bool:
         """성공 여부"""
@@ -233,7 +233,7 @@ class TaskCallback(ABC):
 class TaskError(Exception):
     """작업 에러"""
 
-    def __init__(self, message: str, task_id: Optional[str] = None):
+    def __init__(self, message: str, task_id=None):
         super().__init__(message)
         self.task_id = task_id
 
@@ -333,11 +333,11 @@ class TaskChain:
     """작업 체인"""
 
     tasks: List[Task]
-    name: str = "chain"
+    name="chain"
 
     async def execute(self, context: Dict[str, Any]) -> List[Any]:
         """체인 실행"""
-        results = []
+        results=[]
         chain_context = context.copy()
         for i, task in enumerate(self.tasks):
             if results:
@@ -361,8 +361,8 @@ class TaskGroup:
     """작업 그룹 (병렬 실행)"""
 
     tasks: List[Task]
-    name: str = "group"
-    fail_fast: bool = False
+    name="group"
+    fail_fast=False
 
     async def execute(self, context: Dict[str, Any]) -> List[Any]:
         """그룹 실행"""
@@ -370,7 +370,7 @@ class TaskGroup:
 
         coroutines = [task.execute(context.copy()) for task in self.tasks]
         if self.fail_fast:
-            results = []
+            results=[]
             tasks = [asyncio.create_task(coro) for coro in coroutines]
             try:
                 for task in asyncio.as_completed(tasks):

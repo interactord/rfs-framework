@@ -24,10 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 def async_task(
-    name: Optional[str] = None,
+    name=None,
     priority: TaskPriority = TaskPriority.NORMAL,
-    retry_policy: Optional[RetryPolicy] = None,
-    timeout: Optional[timedelta] = None,
+    retry_policy=None,
+    timeout=None,
     tags: Optional[List[str]] = None,
 ):
     """
@@ -87,9 +87,9 @@ def background_task(func: Callable) -> Callable:
 
 
 def scheduled_task(
-    cron: Optional[str] = None,
-    interval: Optional[timedelta] = None,
-    start_time: Optional[datetime] = None,
+    cron=None,
+    interval=None,
+    start_time=None,
     **kwargs,
 ):
     """
@@ -138,7 +138,7 @@ def scheduled_task(
 
 
 def retry_task(
-    max_attempts: int = 3,
+    max_attempts=3,
     delay: timedelta = timedelta(seconds=1),
     backoff: BackoffStrategy = BackoffStrategy.EXPONENTIAL,
     retry_on: Optional[List[type[Exception]]] = None,
@@ -234,7 +234,7 @@ def chain_tasks(*funcs: Callable):
     return decorator
 
 
-def parallel_tasks(*funcs: Callable, fail_fast: bool = False):
+def parallel_tasks(*funcs: Callable, fail_fast=False):
     """
     병렬 작업 그룹 생성
 
@@ -290,9 +290,9 @@ def depends_on(*task_ids: str):
 
 
 def task_callback(
-    on_complete: Optional[Callable] = None,
-    on_error: Optional[Callable] = None,
-    on_cancel: Optional[Callable] = None,
+    on_complete=None,
+    on_error=None,
+    on_cancel=None,
 ):
     """
     작업 콜백 데코레이터
@@ -350,7 +350,7 @@ def task_callback(
     return decorator
 
 
-def memoized_task(ttl: Optional[timedelta] = None):
+def memoized_task(ttl=None):
     """
     메모이제이션 작업 데코레이터
 
@@ -361,8 +361,8 @@ def memoized_task(ttl: Optional[timedelta] = None):
         async def expensive_computation(x, y):
             return x ** y
     """
-    cache = {}
-    cache_times = {}
+    cache={}
+    cache_times={}
 
     def decorator(func: Callable) -> Callable:
 
@@ -403,7 +403,7 @@ def rate_limited(max_calls: int, period: timedelta):
         async def api_call():
             pass
     """
-    calls = []
+    calls=[]
 
     def decorator(func: Callable) -> Callable:
 

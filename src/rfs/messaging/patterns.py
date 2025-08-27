@@ -27,8 +27,8 @@ class RequestResponse:
     def __init__(self, broker_name: str = None, timeout: float = 30.0):
         self.broker_name = broker_name
         self.timeout = timeout
-        self._pending_requests: Dict[str, asyncio.Future] = {}
-        self._response_subscriber: Optional[Subscriber] = None
+        self._pending_requests={}
+        self._response_subscriber=None
         self._reply_topic = f"reply.{uuid.uuid4().hex[:8]}"
         asyncio.create_task(self._setup_response_handler())
 
@@ -56,7 +56,7 @@ class RequestResponse:
         self,
         topic: str,
         data: Any,
-        timeout: Optional[float] = None,
+        timeout=None,
         priority: MessagePriority = MessagePriority.NORMAL,
         headers: Dict[str, Any] = None,
     ) -> Result[Message, str]:
@@ -135,7 +135,7 @@ class RequestResponse:
             for future in self._pending_requests.values():
                 if not future.done():
                     future.cancel()
-            self._pending_requests = {}
+            self._pending_requests={}
             if self._response_subscriber:
                 await self._response_subscriber.unsubscribe_all()
         except Exception as e:
@@ -145,13 +145,13 @@ class RequestResponse:
 class WorkQueue:
     """Work Queue 패턴"""
 
-    def __init__(self, topic: str, broker_name: str = None, worker_count: int = 4):
+    def __init__(self, topic: str, broker_name: str = None, worker_count=4):
         self.topic = topic
         self.broker_name = broker_name
         self.worker_count = worker_count
         self._publisher = Publisher(broker_name, topic)
-        self._subscribers: List[Subscriber] = []
-        self._task_handlers: Dict[str, Callable] = {}
+        self._subscribers=[]
+        self._task_handlers={}
         self._running = False
 
     async def start_workers(self, task_handler: Callable):
@@ -179,7 +179,7 @@ class WorkQueue:
         try:
             for subscriber in self._subscribers:
                 await subscriber.unsubscribe_all()
-            self._subscribers = {}
+            self._subscribers={}
             self._running = False
             logger.info(f"Work Queue 중지: {self.topic}")
             return Success(None)
@@ -224,7 +224,7 @@ class EventBus:
     def __init__(self, broker_name: str = None):
         self.broker_name = broker_name
         self._event_handlers: Dict[str, List[Callable]] = {}
-        self._subscribers: Dict[str, Subscriber] = {}
+        self._subscribers={}
         self._publisher = Publisher(broker_name)
 
     async def subscribe_event(
@@ -290,7 +290,7 @@ class EventBus:
         try:
             event_type = message.topic
             handlers = self._event_handlers.get(event_type, [])
-            tasks = []
+            tasks=[]
             for handler in handlers:
                 if asyncio.iscoroutinefunction(handler):
                     task = asyncio.create_task(handler(message))
@@ -329,9 +329,9 @@ class SagaStep:
 
     name: str
     action: Callable
-    compensate: Optional[Callable] = None
+    compensate=None
     timeout: float = 30.0
-    retries: int = 3
+    retries=3
 
 
 @dataclass
@@ -340,9 +340,9 @@ class SagaContext:
 
     saga_id: str
     status: SagaStatus = SagaStatus.PENDING
-    current_step: int = 0
+    current_step=0
     completed_steps: List[str] = field(default_factory=list)
-    failed_step: Optional[str] = None
+    failed_step=None
     data: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -354,18 +354,18 @@ class Saga:
     def __init__(self, saga_id: str, broker_name: str = None):
         self.saga_id = saga_id
         self.broker_name = broker_name
-        self.steps: List[SagaStep] = []
+        self.steps=[]
         self.context = SagaContext(saga_id=saga_id)
         self._publisher = Publisher(broker_name)
-        self._compensation_stack: List[SagaStep] = []
+        self._compensation_stack=[]
 
     def add_step(
         self,
         name: str,
         action: Callable,
-        compensate: Optional[Callable] = None,
+        compensate=None,
         timeout: float = 30.0,
-        retries: int = 3,
+        retries=3,
     ) -> "Saga":
         """Saga 단계 추가"""
         step = SagaStep(
@@ -532,7 +532,7 @@ class MessageRouter:
     def __init__(self, broker_name: str = None):
         self.broker_name = broker_name
         self._routes: Dict[str, List[Callable]] = {}
-        self._subscribers: Dict[str, Subscriber] = {}
+        self._subscribers={}
         self._publisher = Publisher(broker_name)
 
     def add_route(self, pattern: str, handler: Callable) -> "MessageRouter":
@@ -613,7 +613,7 @@ class MessageRouter:
             else:
                 for subscriber in self._subscribers.values():
                     await subscriber.unsubscribe_all()
-                self._subscribers = {}
+                self._subscribers={}
             return Success(None)
         except Exception as e:
             error_msg = f"라우팅 중지 실패: {str(e)}"

@@ -116,7 +116,7 @@ class MemoryMetrics:
     snapshots: List[MemorySnapshot] = field(default_factory=list)
     object_history: Dict[str, List[ObjectTypeInfo]] = field(default_factory=dict)
     detected_leaks: List[MemoryLeak] = field(default_factory=list)
-    peak_memory: int = 0
+    peak_memory=0
 
     def add_snapshot(self, snapshot: MemorySnapshot):
         """스냅샷 추가"""
@@ -126,14 +126,14 @@ class MemoryMetrics:
         if snapshot.used_memory > self.peak_memory:
             self.peak_memory = snapshot.used_memory
 
-    def get_recent_snapshots(self, minutes: int = 10) -> List[MemorySnapshot]:
+    def get_recent_snapshots(self, minutes=10) -> List[MemorySnapshot]:
         """최근 N분간의 스냅샷 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
             snapshot for snapshot in self.snapshots if snapshot.timestamp >= cutoff_time
         ]
 
-    def detect_memory_trends(self, minutes: int = 5) -> Dict[str, str]:
+    def detect_memory_trends(self, minutes=5) -> Dict[str, str]:
         """메모리 사용 트렌드 분석"""
         recent = self.get_recent_snapshots(minutes)
         if len(recent) < 2:
@@ -166,20 +166,20 @@ class MemoryProfiler:
     """메모리 프로파일러"""
 
     def __init__(
-        self, collection_interval: float = 2.0, enable_tracemalloc: bool = True
+        self, collection_interval=2.0, enable_tracemalloc=True
     ):
         self.collection_interval = collection_interval
         self.enable_tracemalloc = enable_tracemalloc
         self.metrics = MemoryMetrics()
         self.is_running = False
-        self.collection_task: Optional[asyncio.Task] = None
+        self.collection_task=None
         self.start_time = datetime.now()
         self.leak_detection_enabled = True
         self.leak_detection_window = 50
         self.leak_threshold_growth = 1.5
         self.tracked_types: Set[str] = set()
         self.object_refs: Dict[str, List[weakref.ref]] = defaultdict(list)
-        self.alert_callbacks: List[callable] = []
+        self.alert_callbacks=[]
         if self.enable_tracemalloc and (not tracemalloc.is_tracing()):
             tracemalloc.start(25)
 
@@ -238,7 +238,7 @@ class MemoryProfiler:
             process = psutil.Process()
             process_memory = process.memory_info()
             gc_counts = list(gc.get_count())
-            gc_stats = {}
+            gc_stats={}
             try:
                 if hasattr(gc, "get_stats"):
                     gc_stats = {
@@ -305,7 +305,7 @@ class MemoryProfiler:
     async def _check_memory_alerts(self, snapshot: MemorySnapshot):
         """메모리 알림 확인"""
         try:
-            alerts = []
+            alerts=[]
             if snapshot.memory_percent > 85.0:
                 alerts = alerts + [f"High memory usage: {snapshot.memory_percent:.1f}%"]
             if snapshot.swap_percent > 50.0:
@@ -362,7 +362,7 @@ class MemoryProfiler:
         """최대 메모리 사용량 반환"""
         return self.metrics.peak_memory
 
-    async def analyze_object_growth(self, minutes: int = 5) -> Dict[str, Any]:
+    async def analyze_object_growth(self, minutes=5) -> Dict[str, Any]:
         """객체 증가 패턴 분석"""
         try:
             recent = self.metrics.get_recent_snapshots(minutes)
@@ -395,7 +395,7 @@ class MemoryProfiler:
         """가비지 컬렉션 강제 실행"""
         try:
             before = self.get_current_snapshot()
-            collected = []
+            collected=[]
             for generation in range(gc.get_count().__len__()):
                 collected = collected + [gc.collect(generation)]
             await asyncio.sleep(0.1)
@@ -415,7 +415,7 @@ class MemoryProfiler:
             return {"error": str(e)}
 
     def get_tracemalloc_statistics(
-        self, limit: int = 10
+        self, limit=10
     ) -> Optional[List[Dict[str, Any]]]:
         """tracemalloc 통계 정보 반환"""
         if not tracemalloc.is_tracing():
@@ -440,7 +440,7 @@ class MemoryProfiler:
 
 
 def create_memory_profiler(
-    collection_interval: float = 2.0, enable_tracemalloc: bool = True
+    collection_interval: float = 2.0, enable_tracemalloc=True
 ) -> MemoryProfiler:
     """메모리 프로파일러 생성"""
     return MemoryProfiler(

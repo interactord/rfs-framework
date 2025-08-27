@@ -76,8 +76,8 @@ class Sort:
 class Pagination:
     """페이지네이션"""
 
-    limit: int = 10
-    offset: int = 0
+    limit=10
+    offset=0
 
     @property
     def page(self) -> int:
@@ -96,14 +96,14 @@ class Query(ABC):
 
     def __init__(self, model_class: Type):
         self.model_class = model_class
-        self.filters = []
-        self.sorts = []
+        self.filters=[]
+        self.sorts=[]
         self.pagination = None
-        self._select_fields = []
-        self._group_by = []
-        self._having = []
-        self._distinct: bool = False
-        self._count_only: bool = False
+        self._select_fields=[]
+        self._group_by=[]
+        self._having=[]
+        self._distinct=False
+        self._count_only=False
 
     @abstractmethod
     async def execute(self) -> Result[Union[List[Any], int], str]:
@@ -152,7 +152,7 @@ class Query(ABC):
         self.pagination.offset = offset
         return self
 
-    def page(self, page: int, page_size: int = 10) -> "Query":
+    def page(self, page: int, page_size=10) -> "Query":
         """페이지 설정"""
         self.pagination = Pagination.from_page(page, page_size)
         return self
@@ -172,7 +172,7 @@ class Query(ABC):
         self._having = self._having + [Filter(field, operator, value)]
         return self
 
-    def distinct(self, enable: bool = True) -> "Query":
+    def distinct(self, enable=True) -> "Query":
         """DISTINCT 설정"""
         self._distinct = enable
         return self
@@ -204,7 +204,7 @@ class QueryBuilder(Query):
     async def _execute_select(self) -> Result[List[Any], str]:
         """SELECT 쿼리 실행"""
         try:
-            filter_dict = {}
+            filter_dict={}
             for filter_item in self.filters:
                 if filter_item.operator == Operator.EQ:
                     filter_dict = {
@@ -354,7 +354,7 @@ class AdvancedQueryBuilder(QueryBuilder):
         self._union_queries: List.get("AdvancedQueryBuilder") = []
 
     def join(
-        self, model_class: Type, on: str, join_type: str = "inner"
+        self, model_class: Type, on: str, join_type="inner"
     ) -> "AdvancedQueryBuilder":
         """JOIN 추가"""
         self._joins = self._joins + [
@@ -411,7 +411,7 @@ class TransactionalQueryBuilder(AdvancedQueryBuilder):
     async def execute_batch(self, queries: List[Query]) -> Result[List[Any], str]:
         """배치 쿼리 실행"""
         try:
-            results = []
+            results=[]
             if self.transaction_manager:
                 async with self.transaction_manager.transaction():
                     for query in queries:

@@ -36,20 +36,20 @@ logger = logging.getLogger(__name__)
 class ProcessingContext:
     """처리 컨텍스트"""
 
-    profile: str = "default"
+    profile="default"
     base_packages: List[str] = field(default_factory=list)
     exclude_patterns: List[str] = field(default_factory=list)
-    auto_register: bool = True
-    validate_architecture: bool = True
-    resolve_dependencies: bool = True
+    auto_register=True
+    validate_architecture=True
+    resolve_dependencies=True
 
 
 @dataclass
 class ProcessingResult:
     """처리 결과"""
 
-    total_scanned: int = 0
-    total_registered: int = 0
+    total_scanned=0
+    total_registered=0
     successful_registrations: List[str] = field(default_factory=list)
     failed_registrations: List[str] = field(default_factory=list)
     validation_errors: List[str] = field(default_factory=list)
@@ -71,8 +71,8 @@ class AnnotationProcessor:
 
     def __init__(self, registry: AnnotationRegistry = None):
         self.registry = registry or AnnotationRegistry()
-        self._discovered_classes: Dict[str, Type] = {}
-        self._processing_cache: Dict[str, bool] = {}
+        self._discovered_classes={}
+        self._processing_cache={}
 
     def scan_package(
         self, package_name: str, context: ProcessingContext
@@ -94,7 +94,7 @@ class AnnotationProcessor:
         try:
             package = importlib.import_module(package_name)
             package_path = package.__path__
-            discovered_modules = []
+            discovered_modules=[]
             for importer, modname, ispkg in pkgutil.walk_packages(
                 package_path, prefix=f"{package_name}.", onerror=lambda x: None
             ):
@@ -189,7 +189,7 @@ class AnnotationProcessor:
 
         start_time = time.time()
         result = ProcessingResult()
-        annotated_classes = {}
+        annotated_classes={}
         for cls in classes:
             if has_annotation(cls):
                 annotated_classes = {
@@ -210,7 +210,7 @@ class AnnotationProcessor:
 
     def _discover_classes_in_module(self, module: Any) -> Dict[str, Type]:
         """모듈에서 어노테이션 클래스들 발견"""
-        discovered = {}
+        discovered={}
         for name in dir(module):
             try:
                 obj = getattr(module, name)
@@ -228,7 +228,7 @@ class AnnotationProcessor:
         self, context: ProcessingContext
     ) -> List[RegistrationResult]:
         """발견된 클래스들을 등록"""
-        results = []
+        results=[]
         if context.resolve_dependencies:
             ordered_classes = self._resolve_registration_order()
         else:
@@ -251,7 +251,7 @@ class AnnotationProcessor:
         """
         dependency_graph = defaultdict(list)
         in_degree = defaultdict(int)
-        class_by_name = {}
+        class_by_name={}
         for cls in self._discovered_classes.values():
             component_metadata = get_component_metadata(cls)
             if not component_metadata:
@@ -267,7 +267,7 @@ class AnnotationProcessor:
                 for dep in deps:
                     dependency_graph[dep] = dependency_graph[dep] + [name]
         queue = deque([name for name, degree in in_degree.items() if degree == 0])
-        ordered_names = []
+        ordered_names=[]
         while queue:
             current = queue.popleft()
             ordered_names = ordered_names + [current]
@@ -279,7 +279,7 @@ class AnnotationProcessor:
             remaining = set(class_by_name.keys()) - set(ordered_names)
             logger.warning(f"Circular dependencies detected in: {remaining}")
             ordered_names = ordered_names + remaining
-        ordered_classes = []
+        ordered_classes=[]
         for name in ordered_names:
             if name in class_by_name:
                 ordered_classes = ordered_classes + [class_by_name[name]]
@@ -324,12 +324,12 @@ class AnnotationProcessor:
 
     def clear_cache(self):
         """캐시 정리"""
-        self._discovered_classes = {}
-        self._processing_cache = {}
+        self._discovered_classes={}
+        self._processing_cache={}
 
 
 def auto_scan_package(
-    package_name: str, profile: str = "default", exclude_patterns: List[str] = None
+    package_name: str, profile="default", exclude_patterns: List[str] = None
 ) -> ProcessingResult:
     """
     패키지 자동 스캔 편의 함수
@@ -353,7 +353,7 @@ def auto_scan_package(
     return processor.scan_package(package_name, context)
 
 
-def auto_register_classes(*classes: Type, profile: str = "default") -> ProcessingResult:
+def auto_register_classes(*classes: Type, profile="default") -> ProcessingResult:
     """
     클래스들 자동 등록 편의 함수
 

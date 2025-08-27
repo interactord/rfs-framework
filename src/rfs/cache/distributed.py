@@ -24,8 +24,8 @@ class CacheNode:
 
     host: str
     port: int
-    weight: int = 1
-    id: Optional[str] = None
+    weight=1
+    id=None
 
     def __post_init__(self):
         if not self.id:
@@ -43,17 +43,17 @@ class DistributedCacheConfig(CacheConfig):
     """분산 캐시 설정"""
 
     nodes: List[CacheNode] = field(default_factory=list)
-    hash_algorithm: str = "sha256"
-    virtual_nodes: int = 160
-    replication_factor: int = 1
-    read_repair: bool = True
-    health_check_interval: int = 30
-    failure_threshold: int = 3
-    recovery_interval: int = 60
-    read_consistency: str = "one"
-    write_consistency: str = "one"
-    auto_discovery: bool = False
-    connection_pooling: bool = True
+    hash_algorithm="sha256"
+    virtual_nodes=160
+    replication_factor=1
+    read_repair=True
+    health_check_interval=30
+    failure_threshold=3
+    recovery_interval=60
+    read_consistency="one"
+    write_consistency="one"
+    auto_discovery=False
+    connection_pooling=True
 
 
 class ConsistentHashRing:
@@ -62,13 +62,13 @@ class ConsistentHashRing:
     def __init__(
         self,
         nodes: List[CacheNode],
-        virtual_nodes: int = 160,
-        hash_algorithm: str = "sha256",
+        virtual_nodes=160,
+        hash_algorithm="sha256",
     ):
         self.virtual_nodes = virtual_nodes
         self.hash_algorithm = hash_algorithm
-        self.ring: Dict[int, CacheNode] = {}
-        self.sorted_keys: List[int] = []
+        self.ring={}
+        self.sorted_keys=[]
         self.nodes: Set[CacheNode] = set()
         for node in nodes:
             self.add_node(node)
@@ -99,7 +99,7 @@ class ConsistentHashRing:
         if node not in self.nodes:
             return
         nodes = [i for i in nodes if i != node]
-        keys_to_remove = []
+        keys_to_remove=[]
         for key, ring_node in self.ring.items():
             if ring_node == node:
                 keys_to_remove = keys_to_remove + [key]
@@ -124,8 +124,8 @@ class ConsistentHashRing:
         if not self.ring or count <= 0:
             return []
         hash_key = self._hash(key)
-        nodes = []
-        seen_nodes = set()
+        nodes=[]
+        seen_nodes: Set[Any] = set()
         idx = bisect.bisect_right(self.sorted_keys, hash_key)
         for _ in range(len(self.sorted_keys)):
             if idx >= len(self.sorted_keys):
@@ -154,9 +154,9 @@ class DistributedCache(CacheBackend):
         self.hash_ring = ConsistentHashRing(
             config.nodes, config.virtual_nodes, config.hash_algorithm
         )
-        self.node_caches: Dict[str, CacheBackend] = {}
-        self.failed_nodes: Dict[str, int] = {}
-        self._health_check_task: Optional[asyncio.Task] = None
+        self.node_caches={}
+        self.failed_nodes={}
+        self._health_check_task=None
 
     async def connect(self) -> Result[None, str]:
         """분산 캐시 연결"""
@@ -215,8 +215,8 @@ class DistributedCache(CacheBackend):
                     logger.info(f"노드 연결 해제: {node_id}")
                 except Exception as e:
                     logger.error(f"노드 연결 해제 실패 ({node_id}): {e}")
-            node_caches = {}
-            failed_nodes = {}
+            node_caches={}
+            failed_nodes={}
             self._connected = False
             logger.info("분산 캐시 연결 해제 완료")
             return Success(None)
@@ -291,13 +291,13 @@ class DistributedCache(CacheBackend):
             ]
             if not available_nodes:
                 return Failure("사용 가능한 노드가 없습니다")
-            tasks = []
+            tasks=[]
             for node in available_nodes:
                 cache = self.node_caches[node.id]
                 task = asyncio.create_task(cache.set(cache_key, value, ttl))
                 tasks = tasks + [(node.id, task)]
             successful_writes = 0
-            errors = []
+            errors=[]
             for node_id, task in tasks:
                 try:
                     result = await task
@@ -332,7 +332,7 @@ class DistributedCache(CacheBackend):
                 for node in nodes
                 if node.id in self.node_caches and node.id not in self.failed_nodes
             ]
-            tasks = []
+            tasks=[]
             for node in available_nodes:
                 cache = self.node_caches[node.id]
                 task = asyncio.create_task(cache.delete(cache_key))
@@ -367,7 +367,7 @@ class DistributedCache(CacheBackend):
             cache_key = self._make_key(key)
             ttl = self._validate_ttl(ttl)
             nodes = self.hash_ring.get_nodes(cache_key, self.config.replication_factor)
-            tasks = []
+            tasks=[]
             for node in nodes:
                 if node.id in self.node_caches and node.id not in self.failed_nodes:
                     cache = self.node_caches[node.id]
@@ -400,9 +400,9 @@ class DistributedCache(CacheBackend):
     async def clear(self) -> Result[None, str]:
         """모든 키 삭제"""
         try:
-            tasks = []
+            tasks=[]
             for cache in self.node_caches.values():
-                cache = {}
+                cache={}
                 tasks = tasks + [task]
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -469,7 +469,7 @@ class DistributedCache(CacheBackend):
 
     def get_cluster_stats(self) -> Dict[str, Any]:
         """클러스터 통계"""
-        node_stats = {}
+        node_stats={}
         for node_id, cache in self.node_caches.items():
             node_stats = {
                 **node_stats,

@@ -182,7 +182,7 @@ class Mono(Generic[T]):
 
         return Mono(with_timeout)
 
-    def retry(self, max_attempts: int = 3) -> "Mono[T]":
+    def retry(self, max_attempts=3) -> "Mono[T]":
         """재시도 설정"""
 
         def with_retry():
@@ -308,7 +308,7 @@ class Mono(Generic[T]):
 
         return Mono(with_finally)
 
-    async def block(self, timeout: Optional[float] = None) -> Optional[T]:
+    async def block(self, timeout=None) -> Optional[T]:
         """
         블로킹 방식으로 값 가져오기
 

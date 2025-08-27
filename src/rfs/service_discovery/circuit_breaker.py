@@ -40,16 +40,16 @@ class CircuitBreakerConfig:
     """서킷 브레이커 설정"""
 
     # 실패 임계값
-    failure_threshold: int = 5  # 실패 횟수 임계값
+    failure_threshold=5  # 실패 횟수 임계값
     failure_rate_threshold: float = 0.5  # 실패율 임계값 (50%)
 
     # 시간 설정
     timeout: float = 10.0  # 요청 타임아웃 (초)
     reset_timeout: float = 60.0  # OPEN 상태 유지 시간 (초)
-    half_open_max_requests: int = 3  # HALF_OPEN 상태에서 테스트 요청 수
+    half_open_max_requests=3  # HALF_OPEN 상태에서 테스트 요청 수
 
     # 윈도우 설정
-    window_size: int = 10  # 슬라이딩 윈도우 크기
+    window_size=10  # 슬라이딩 윈도우 크기
     window_duration: float = 60.0  # 시간 윈도우 (초)
 
     # 기타 설정
@@ -64,14 +64,14 @@ class CircuitBreakerConfig:
 class CircuitBreakerMetrics:
     """서킷 브레이커 메트릭"""
 
-    total_requests: int = 0
-    successful_requests: int = 0
-    failed_requests: int = 0
-    rejected_requests: int = 0
+    total_requests=0
+    successful_requests=0
+    failed_requests=0
+    rejected_requests=0
 
     total_response_time: float = 0.0
-    last_failure_time: Optional[datetime] = None
-    last_success_time: Optional[datetime] = None
+    last_failure_time=None
+    last_success_time=None
 
     state_changes: List[tuple] = field(default_factory=list)  # (시간, 이전상태, 새상태)
 
@@ -98,7 +98,7 @@ class CircuitBreakerMetrics:
 class CircuitBreaker:
     """서킷 브레이커"""
 
-    def __init__(self, name: str, config: Optional[CircuitBreakerConfig] = None):
+    def __init__(self, name: str, config=None):
         self.name = name
         self.config = config or CircuitBreakerConfig()
         self.state = CircuitState.CLOSED
@@ -116,7 +116,7 @@ class CircuitBreaker:
         self.lock = threading.RLock()
 
         # 상태 변경 콜백
-        self.on_state_change: Optional[Callable] = None
+        self.on_state_change=None
 
     def _should_allow_request(self) -> bool:
         """요청 허용 여부 결정"""
@@ -164,7 +164,7 @@ class CircuitBreaker:
                     if recent_failures == 0:
                         self._transition_to_closed()
 
-    def _record_failure(self, error: Optional[Exception] = None) -> None:
+    def _record_failure(self, error=None) -> None:
         """실패 기록"""
         with self.lock:
             # 제외할 예외인지 확인
@@ -322,8 +322,8 @@ class CircuitBreaker:
         with self.lock:
             self.state = CircuitState.CLOSED
             self.metrics = CircuitBreakerMetrics()
-            failure_window = {}
-            request_times = {}
+            failure_window={}
+            request_times={}
             self.half_open_requests = 0
             self.last_state_change = datetime.now()
 
@@ -357,11 +357,11 @@ class CircuitBreakerRegistry:
     """서킷 브레이커 레지스트리"""
 
     def __init__(self):
-        self.breakers: Dict[str, CircuitBreaker] = {}
+        self.breakers={}
         self.lock = threading.Lock()
 
     def get_or_create(
-        self, name: str, config: Optional[CircuitBreakerConfig] = None
+        self, name: str, config=None
     ) -> CircuitBreaker:
         """서킷 브레이커 가져오기 또는 생성"""
         with self.lock:
@@ -390,7 +390,7 @@ _registry = CircuitBreakerRegistry()
 
 
 def circuit_breaker(
-    name: Optional[str] = None, config: Optional[CircuitBreakerConfig] = None
+    name=None, config=None
 ):
     """
     서킷 브레이커 데코레이터

@@ -43,15 +43,15 @@ class LogLevel(Enum):
 class LogContext:
     """로그 컨텍스트"""
 
-    request_id: Optional[str] = None
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    correlation_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    service_name: Optional[str] = None
-    operation: Optional[str] = None
+    request_id=None
+    user_id=None
+    session_id=None
+    trace_id=None
+    span_id=None
+    correlation_id=None
+    tenant_id=None
+    service_name=None
+    operation=None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -68,16 +68,16 @@ class LogEntry:
     level: LogLevel
     message: str
     logger_name: str
-    module: Optional[str] = None
-    function: Optional[str] = None
-    line_number: Optional[int] = None
-    context: Optional[LogContext] = None
+    module=None
+    function=None
+    line_number=None
+    context=None
     data: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    error_type: Optional[str] = None
-    error_traceback: Optional[str] = None
-    execution_time_ms: Optional[float] = None
-    memory_used_mb: Optional[float] = None
+    error_type=None
+    error_traceback=None
+    execution_time_ms=None
+    memory_used_mb=None
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -131,11 +131,11 @@ class EnhancedLogger:
         self,
         name: str,
         level: LogLevel = LogLevel.INFO,
-        enable_console: bool = True,
-        enable_file: bool = False,
-        file_path: Optional[str] = None,
-        enable_json: bool = True,
-        enable_async: bool = True,
+        enable_console=True,
+        enable_file=False,
+        file_path=None,
+        enable_json=True,
+        enable_async=True,
     ):
         self.name = name
         self.level = level
@@ -147,8 +147,8 @@ class EnhancedLogger:
         self._logger = logging.getLogger(name)
         self._logger.setLevel(getattr(logging, level.value))
         self._setup_handlers()
-        self._log_queue: Optional[asyncio.Queue] = None
-        self._log_processor_task: Optional[asyncio.Task] = None
+        self._log_queue=None
+        self._log_processor_task=None
         self._async_initialized = False
         self._filters: List[Callable[[LogEntry], bool]] = []
         self._handlers: List[Callable[[LogEntry], None]] = []
@@ -226,7 +226,7 @@ class EnhancedLogger:
         message: str,
         data: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
-        error: Optional[Exception] = None,
+        error=None,
         **kwargs,
     ) -> LogEntry:
         """로그 엔트리 생성"""
@@ -297,7 +297,7 @@ class EnhancedLogger:
         message: str,
         data: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
-        error: Optional[Exception] = None,
+        error=None,
         **kwargs,
     ) -> None:
         """내부 로그 메서드"""
@@ -339,7 +339,7 @@ class EnhancedLogger:
         self,
         level: LogLevel,
         message: str,
-        context: Optional[LogContext] = None,
+        context=None,
         **kwargs,
     ) -> None:
         """공개 로그 메서드"""
@@ -395,7 +395,7 @@ class EnhancedLogger:
     def error(
         self,
         message: str,
-        error: Optional[Exception] = None,
+        error=None,
         data: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
         **kwargs,
@@ -406,7 +406,7 @@ class EnhancedLogger:
     def critical(
         self,
         message: str,
-        error: Optional[Exception] = None,
+        error=None,
         data: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
         **kwargs,
@@ -431,12 +431,12 @@ class EnhancedLogger:
                 await self._log_processor_task
 
 
-_loggers: Dict[str, EnhancedLogger] = {}
-_default_logger: Optional[EnhancedLogger] = None
+_loggers={}
+_default_logger=None
 
 
 def get_logger(
-    name: Optional[str] = None, level: LogLevel = LogLevel.INFO, **kwargs
+    name=None, level: LogLevel = LogLevel.INFO, **kwargs
 ) -> EnhancedLogger:
     """로거 조회/생성"""
     if name is None:
@@ -475,7 +475,7 @@ def log_info(
     message: str,
     data: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    logger_name: Optional[str] = None,
+    logger_name=None,
     **kwargs,
 ) -> None:
     """정보 로그 (편의 함수)"""
@@ -487,7 +487,7 @@ def log_warning(
     message: str,
     data: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    logger_name: Optional[str] = None,
+    logger_name=None,
     **kwargs,
 ) -> None:
     """경고 로그 (편의 함수)"""
@@ -497,10 +497,10 @@ def log_warning(
 
 def log_error(
     message: str,
-    error: Optional[Exception] = None,
+    error=None,
     data: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    logger_name: Optional[str] = None,
+    logger_name=None,
     **kwargs,
 ) -> None:
     """에러 로그 (편의 함수)"""
@@ -512,7 +512,7 @@ def log_debug(
     message: str,
     data: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    logger_name: Optional[str] = None,
+    logger_name=None,
     **kwargs,
 ) -> None:
     """디버그 로그 (편의 함수)"""
@@ -522,10 +522,10 @@ def log_debug(
 
 def log_critical(
     message: str,
-    error: Optional[Exception] = None,
+    error=None,
     data: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    logger_name: Optional[str] = None,
+    logger_name=None,
     **kwargs,
 ) -> None:
     """치명적 에러 로그 (편의 함수)"""
@@ -535,9 +535,9 @@ def log_critical(
 
 def log_execution(
     level: LogLevel = LogLevel.INFO,
-    include_args: bool = False,
-    include_result: bool = False,
-    logger_name: Optional[str] = None,
+    include_args=False,
+    include_result=False,
+    logger_name=None,
 ):
     """함수 실행 로깅 데코레이터"""
 

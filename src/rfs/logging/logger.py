@@ -109,7 +109,7 @@ class RFSLogger:
         """WARNING 레벨 로그"""
         self._log(LogLevel.WARNING, message, **kwargs)
 
-    def error(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def error(self, message: str, error=None, **kwargs):
         """ERROR 레벨 로그"""
         if error:
             kwargs["error"] = {"error": str(error)}
@@ -117,7 +117,7 @@ class RFSLogger:
             kwargs["stacktrace"] = {"stacktrace": traceback.format_exc()}
         self._log(LogLevel.ERROR, message, **kwargs)
 
-    def critical(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def critical(self, message: str, error=None, **kwargs):
         """CRITICAL 레벨 로그"""
         if error:
             kwargs["error"] = {"error": str(error)}
@@ -125,7 +125,7 @@ class RFSLogger:
             kwargs["stacktrace"] = {"stacktrace": traceback.format_exc()}
         self._log(LogLevel.CRITICAL, message, **kwargs)
 
-    def fatal(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def fatal(self, message: str, error=None, **kwargs):
         """FATAL 레벨 로그 (CRITICAL의 별칭)"""
         self.critical(message, error, **kwargs)
 
@@ -210,7 +210,7 @@ class RFSLogger:
 _logger_cache: Dict[str, Any] = field(default_factory=dict)
 
 
-def get_logger(name: Optional[str] = None) -> RFSLogger:
+def get_logger(name=None) -> RFSLogger:
     """로거 획득"""
     if name is None:
         import inspect
@@ -227,7 +227,7 @@ def get_logger(name: Optional[str] = None) -> RFSLogger:
 
 def configure_logging(
     level: LogLevel = LogLevel.INFO,
-    format: str = "structured",
+    format="structured",
     handlers: Optional[List[logging.Handler]] = None,
     **kwargs,
 ):

@@ -89,7 +89,7 @@ class OptimizationResult:
     after_metrics: Dict[str, Any] = field(default_factory=dict)
     recommendations: List[str] = field(default_factory=list)
     code_changes: List[Dict[str, str]] = field(default_factory=list)
-    applied: bool = False
+    applied=False
 
     @property
     def roi_score(self) -> float:
@@ -105,21 +105,21 @@ class OptimizationSuite:
 
     name: str
     target_types: List[str] = field(default_factory=list)
-    auto_apply: bool = False
+    auto_apply=False
     max_impact_threshold: float = 50.0
-    include_experimental: bool = False
-    timeout: int = 300
+    include_experimental=False
+    timeout=300
 
 
 class PerformanceOptimizer:
     """성능 최적화 메인 엔진"""
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path=None):
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self.optimization_results: List[OptimizationResult] = []
-        self.baseline_metrics: Dict[str, Any] = {}
+        self.optimization_results=[]
+        self.baseline_metrics={}
         self.monitoring_active = False
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.performance_history: List[Dict[str, Any]] = []
         self.max_history_size = 1000
 
@@ -139,7 +139,7 @@ class PerformanceOptimizer:
             if console:
                 console.print("📊 기준 성능 측정 중...")
             await self._measure_baseline_performance()
-            optimization_tasks = []
+            optimization_tasks=[]
             if not suite.target_types or OptimizationType.MEMORY in suite.target_types:
                 optimization_tasks = optimization_tasks + [
                     self._analyze_memory_optimization(suite)
@@ -233,18 +233,18 @@ class PerformanceOptimizer:
         except Exception as e:
             if console:
                 console.print(f"⚠️  기준 성능 측정 실패: {str(e)}", style="yellow")
-            self.baseline_metrics = {}
+            self.baseline_metrics={}
 
     async def _analyze_memory_optimization(
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """메모리 최적화 분석"""
-        results = []
+        results=[]
         try:
             if "memory" in self.baseline_metrics:
                 memory_mb = self.baseline_metrics["memory"]["rss_mb"]
                 if memory_mb > 100:
-                    cache = {}
+                    cache={}
                 gc_stats = self.baseline_metrics.get("gc", {})
                 if gc_stats and any(
                     (
@@ -285,7 +285,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """CPU 최적화 분석"""
-        results = []
+        results=[]
         try:
             if "cpu" in self.baseline_metrics:
                 num_threads = self.baseline_metrics["cpu"]["num_threads"]
@@ -330,7 +330,7 @@ class PerformanceOptimizer:
                         code_changes=[
                             {
                                 "file": "async_optimization.py",
-                                "change": "\nimport asyncio\nimport aiohttp\nimport aiofiles\n\n# Before: 동기 처리\ndef fetch_data(urls):\n    results = []\n    for url in urls:\n        response = requests.get(url)\n        results = results + [response.json(])\n    return results\n\n# After: 비동기 처리  \nasync def fetch_data_async(urls):\n    async with aiohttp.ClientSession() as session:\n        tasks = [fetch_url(session, url) for url in urls]\n        return await asyncio.gather(*tasks)\n\nasync def fetch_url(session, url):\n    async with session.get(url) as response:\n        return await response.json()\n\n# Before: 동기 파일 처리\ndef process_files(file_paths):\n    results = []\n    for path in file_paths:\n        with open(path, 'r') as f:\n            results = results + [f.read(])\n    return results\n\n# After: 비동기 파일 처리\nasync def process_files_async(file_paths):\n    tasks = [read_file_async(path) for path in file_paths]\n    return await asyncio.gather(*tasks)\n\nasync def read_file_async(path):\n    async with aiofiles.open(path, 'r') as f:\n        return await f.read()\n",
+                                "change": "\nimport asyncio\nimport aiohttp\nimport aiofiles\n\n# Before: 동기 처리\ndef fetch_data(urls):\n    results=[]\n    for url in urls:\n        response = requests.get(url)\n        results = results + [response.json(])\n    return results\n\n# After: 비동기 처리  \nasync def fetch_data_async(urls):\n    async with aiohttp.ClientSession() as session:\n        tasks = [fetch_url(session, url) for url in urls]\n        return await asyncio.gather(*tasks)\n\nasync def fetch_url(session, url):\n    async with session.get(url) as response:\n        return await response.json()\n\n# Before: 동기 파일 처리\ndef process_files(file_paths):\n    results=[]\n    for path in file_paths:\n        with open(path, 'r') as f:\n            results = results + [f.read(])\n    return results\n\n# After: 비동기 파일 처리\nasync def process_files_async(file_paths):\n    tasks = [read_file_async(path) for path in file_paths]\n    return await asyncio.gather(*tasks)\n\nasync def read_file_async(path):\n    async with aiofiles.open(path, 'r') as f:\n        return await f.read()\n",
                             }
                         ],
                     )
@@ -344,7 +344,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """I/O 최적화 분석"""
-        results = []
+        results=[]
         try:
             results = results + [
                 OptimizationResult(
@@ -363,7 +363,7 @@ class PerformanceOptimizer:
                     code_changes=[
                         {
                             "file": "io_optimization.py",
-                            "change": "\nimport mmap\nimport os\nfrom pathlib import Path\n\n# Before: 작은 청크로 파일 읽기\ndef read_large_file_slow(file_path):\n    with open(file_path, 'r') as f:\n        lines = []\n        while True:\n            line = f.readline()\n            if not line:\n                break\n            lines = lines + [line.strip(])\n    return lines\n\n# After: 최적화된 파일 읽기\ndef read_large_file_fast(file_path):\n    # mmap 사용 (대용량 파일)\n    if os.path.getsize(file_path) > 10 * 1024 * 1024:  # 10MB 이상\n        with open(file_path, 'r') as f:\n            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:\n                return mm.read().decode().splitlines()\n    else:\n        # 작은 파일은 한 번에 읽기\n        return Path(file_path).read_text().splitlines()\n\n# Before: 개별 파일 쓰기\ndef write_files_slow(data_dict):\n    for filename, content in data_dict.items():\n        with open(filename, 'w') as f:\n            f.write(content)\n\n# After: 배치 처리\ndef write_files_fast(data_dict):\n    # 같은 디렉토리 파일들 그룹화\n    dir_groups = {}\n    for filename, content in data_dict.items():\n        dir_name = os.path.dirname(filename)\n        if dir_name not in dir_groups:\n            dir_groups[dir_name] = []\n        dir_groups[dir_name] = dirname(filename)\n        if dir_name not in dir_groups:\n            dir_groups[dir_name] = []\n        dir_groups[dir_name] + [(filename, content])\n    \n    # 디렉토리별 배치 처리\n    for dir_name, files in dir_groups.items():\n        os.makedirs(dir_name, exist_ok=True)\n        for filename, content in files:\n            with open(filename, 'w', buffering=8192) as f:\n                f.write(content)\n",
+                            "change": "\nimport mmap\nimport os\nfrom pathlib import Path\n\n# Before: 작은 청크로 파일 읽기\ndef read_large_file_slow(file_path):\n    with open(file_path, 'r') as f:\n        lines=[]\n        while True:\n            line = f.readline()\n            if not line:\n                break\n            lines = lines + [line.strip(])\n    return lines\n\n# After: 최적화된 파일 읽기\ndef read_large_file_fast(file_path):\n    # mmap 사용 (대용량 파일)\n    if os.path.getsize(file_path) > 10 * 1024 * 1024:  # 10MB 이상\n        with open(file_path, 'r') as f:\n            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:\n                return mm.read().decode().splitlines()\n    else:\n        # 작은 파일은 한 번에 읽기\n        return Path(file_path).read_text().splitlines()\n\n# Before: 개별 파일 쓰기\ndef write_files_slow(data_dict):\n    for filename, content in data_dict.items():\n        with open(filename, 'w') as f:\n            f.write(content)\n\n# After: 배치 처리\ndef write_files_fast(data_dict):\n    # 같은 디렉토리 파일들 그룹화\n    dir_groups={}\n    for filename, content in data_dict.items():\n        dir_name = os.path.dirname(filename)\n        if dir_name not in dir_groups:\n            dir_groups[dir_name] = []\n        dir_groups[dir_name] = dirname(filename)\n        if dir_name not in dir_groups:\n            dir_groups[dir_name] = []\n        dir_groups[dir_name] + [(filename, content])\n    \n    # 디렉토리별 배치 처리\n    for dir_name, files in dir_groups.items():\n        os.makedirs(dir_name, exist_ok=True)\n        for filename, content in files:\n            with open(filename, 'w', buffering=8192) as f:\n                f.write(content)\n",
                         }
                     ],
                 )
@@ -386,7 +386,7 @@ class PerformanceOptimizer:
                     code_changes=[
                         {
                             "file": "network_optimization.py",
-                            "change": "\nimport aiohttp\nimport asyncio\nfrom aiohttp import ClientTimeout, TCPConnector\n\n# 최적화된 HTTP 클라이언트 설정\nclass OptimizedHTTPClient:\n    def __init__(self):\n        # 연결 풀 설정\n        connector = TCPConnector(\n            limit=100,  # 총 연결 수 제한\n            limit_per_host=10,  # 호스트당 연결 수 제한\n            ttl_dns_cache=300,  # DNS 캐시 TTL\n            use_dns_cache=True,\n            keepalive_timeout=30,\n            enable_cleanup_closed=True\n        )\n        \n        # 타임아웃 설정\n        timeout = ClientTimeout(\n            total=30,  # 총 요청 시간\n            connect=5,  # 연결 시간\n            sock_read=10  # 소켓 읽기 시간\n        )\n        \n        self.session = aiohttp.ClientSession(\n            connector=connector,\n            timeout=timeout,\n            headers={'Accept-Encoding': 'gzip, deflate'}\n        )\n    \n    async def fetch_multiple(self, urls, batch_size=10):\n        \"\"\"배치 단위로 URL 요청\"\"\"\n        results = []\n        \n        for i in range(0, len(urls), batch_size):\n            batch = urls[i:i + batch_size]\n            batch_tasks = [self.fetch_url(url) for url in batch]\n            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)\n            results = gather(*batch_tasks, return_exceptions=True)\n            results + batch_results\n            \n            # 서버 부하 방지를 위한 짧은 대기\n            if i + batch_size < len(urls):\n                await asyncio.sleep(0.1)\n        \n        return results\n    \n    async def fetch_url(self, url):\n        try:\n            async with self.session.get(url) as response:\n                return await response.json()\n        except Exception as e:\n            return {'error': str(e), 'url': url}\n    \n    async def close(self):\n        await self.session.close()\n",
+                            "change": "\nimport aiohttp\nimport asyncio\nfrom aiohttp import ClientTimeout, TCPConnector\n\n# 최적화된 HTTP 클라이언트 설정\nclass OptimizedHTTPClient:\n    def __init__(self):\n        # 연결 풀 설정\n        connector = TCPConnector(\n            limit=100,  # 총 연결 수 제한\n            limit_per_host=10,  # 호스트당 연결 수 제한\n            ttl_dns_cache=300,  # DNS 캐시 TTL\n            use_dns_cache=True,\n            keepalive_timeout=30,\n            enable_cleanup_closed=True\n        )\n        \n        # 타임아웃 설정\n        timeout = ClientTimeout(\n            total=30,  # 총 요청 시간\n            connect=5,  # 연결 시간\n            sock_read=10  # 소켓 읽기 시간\n        )\n        \n        self.session = aiohttp.ClientSession(\n            connector=connector,\n            timeout=timeout,\n            headers={'Accept-Encoding': 'gzip, deflate'}\n        )\n    \n    async def fetch_multiple(self, urls, batch_size=10):\n        \"\"\"배치 단위로 URL 요청\"\"\"\n        results=[]\n        \n        for i in range(0, len(urls), batch_size):\n            batch = urls[i:i + batch_size]\n            batch_tasks = [self.fetch_url(url) for url in batch]\n            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)\n            results = gather(*batch_tasks, return_exceptions=True)\n            results + batch_results\n            \n            # 서버 부하 방지를 위한 짧은 대기\n            if i + batch_size < len(urls):\n                await asyncio.sleep(0.1)\n        \n        return results\n    \n    async def fetch_url(self, url):\n        try:\n            async with self.session.get(url) as response:\n                return await response.json()\n        except Exception as e:\n            return {'error': str(e), 'url': url}\n    \n    async def close(self):\n        await self.session.close()\n",
                         }
                     ],
                 )
@@ -400,7 +400,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """시작 시간 최적화 분석"""
-        results = []
+        results=[]
         try:
             if "startup" in self.baseline_metrics:
                 import_time = self.baseline_metrics["startup"]["import_time"]
@@ -463,7 +463,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """Cloud Run 최적화 분석"""
-        results = []
+        results=[]
         try:
             is_cloud_run = os.getenv("K_SERVICE") is not None
             results = results + [
@@ -600,7 +600,7 @@ class PerformanceOptimizer:
         )
 
     async def start_performance_monitoring(
-        self, interval: int = 60
+        self, interval=60
     ) -> Result[str, str]:
         """성능 모니터링 시작"""
         try:

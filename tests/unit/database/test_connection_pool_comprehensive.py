@@ -37,10 +37,10 @@ class MockConnection:
     """테스트용 Mock 연결 객체"""
 
     id: int
-    is_active: bool = True
+    is_active=True
     created_at: float = 0.0
     last_used: float = 0.0
-    use_count: int = 0
+    use_count=0
 
     def __post_init__(self):
         if self.created_at == 0.0:

@@ -48,19 +48,19 @@ class AnnotationRegistry(StatelessRegistry):
 
     def __init__(self):
         super().__init__()
-        self.ports: Dict[str, Type] = {}
+        self.ports={}
         self.adapters: Dict[str, List[Type]] = {}
-        self.use_cases: Dict[str, Type] = {}
-        self.controllers: Dict[str, Type] = {}
-        self.services: Dict[str, Type] = {}
-        self.repositories: Dict[str, Type] = {}
-        self.components: Dict[str, Type] = {}
-        self.singletons: Dict[str, Any] = {}
-        self.prototypes: Dict[str, Type] = {}
-        self.request_scoped: Dict[str, Any] = {}
+        self.use_cases={}
+        self.controllers={}
+        self.services={}
+        self.repositories={}
+        self.components={}
+        self.singletons={}
+        self.prototypes={}
+        self.request_scoped={}
         self.dependency_graph: Dict[str, Set[str]] = {}
         self.profiles: Set[str] = {"default"}
-        self.active_profile: str = "default"
+        self.active_profile="default"
 
     def scan_and_register(self, *module_paths: str):
         """
@@ -134,7 +134,7 @@ class AnnotationRegistry(StatelessRegistry):
             self.dependency_graph[component_id].add(dep.name)
 
     def get_component(
-        self, component_id: str, qualifier: Optional[str] = None
+        self, component_id: str, qualifier=None
     ) -> Result[Any, str]:
         """
         컴포넌트 인스턴스 획득
@@ -166,7 +166,7 @@ class AnnotationRegistry(StatelessRegistry):
             return Failure(f"Failed to get component {component_id}: {e}")
 
     def _find_component_class(
-        self, component_id: str, qualifier: Optional[str] = None
+        self, component_id: str, qualifier=None
     ) -> Optional[Type]:
         """컴포넌트 클래스 찾기"""
         for storage in [
@@ -202,7 +202,7 @@ class AnnotationRegistry(StatelessRegistry):
         metadata = get_component_metadata(cls)
         if not metadata:
             return cls()
-        constructor_deps = {}
+        constructor_deps={}
         for dep in metadata.constructor_dependencies:
             dep_instance = self.get_component(dep.name, dep.qualifier)
             if type(dep_instance).__name__ == "Success":
@@ -240,7 +240,7 @@ class AnnotationRegistry(StatelessRegistry):
     ) -> bool:
         """순환 의존성 체크"""
         if visited is None:
-            visited = set()
+            visited: Set[Any] = set()
         if component_id in visited:
             return True
         visited.add(component_id)
@@ -277,7 +277,7 @@ class AnnotationRegistry(StatelessRegistry):
         except Exception as e:
             return Failure(f"Failed to auto-wire object: {e}")
 
-    def get_all_components(self, component_type: Optional[str] = None) -> List[Any]:
+    def get_all_components(self, component_type=None) -> List[Any]:
         """
         특정 타입의 모든 컴포넌트 조회
 
@@ -287,12 +287,12 @@ class AnnotationRegistry(StatelessRegistry):
         Returns:
             컴포넌트 인스턴스 리스트
         """
-        components = []
+        components=[]
         match component_type:
             case "port":
                 storage = self.ports
             case "adapter":
-                storage = {}
+                storage={}
                 for adapters in self.adapters.values():
                     for adapter in adapters:
                         metadata = get_component_metadata(adapter)
@@ -324,7 +324,7 @@ class AnnotationRegistry(StatelessRegistry):
 
     def clear_request_scope(self):
         """요청 스코프 클리어"""
-        request_scoped = {}
+        request_scoped={}
 
     def destroy(self):
         """컨테이너 종료 및 리소스 정리"""
@@ -333,11 +333,11 @@ class AnnotationRegistry(StatelessRegistry):
             metadata = get_component_metadata(cls)
             if metadata and metadata.pre_destroy:
                 metadata.pre_destroy(instance)
-        singletons = {}
-        request_scoped = {}
+        singletons={}
+        request_scoped={}
 
 
-_annotation_registry: Optional[AnnotationRegistry] = None
+_annotation_registry=None
 
 
 def get_annotation_registry() -> AnnotationRegistry:
@@ -361,14 +361,14 @@ def auto_wire(obj: Any) -> Result[Any, str]:
 
 
 def get_component(
-    component_id: str, qualifier: Optional[str] = None
+    component_id: str, qualifier=None
 ) -> Result[Any, str]:
     """컴포넌트 획득 헬퍼"""
     registry = get_annotation_registry()
     return registry.get_component(component_id, qualifier)
 
 
-def get_all_components(component_type: Optional[str] = None) -> List[Any]:
+def get_all_components(component_type=None) -> List[Any]:
     """모든 컴포넌트 조회 헬퍼"""
     registry = get_annotation_registry()
     return registry.get_all_components(component_type)

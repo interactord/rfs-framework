@@ -46,17 +46,17 @@ class Message:
     """메시지"""
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    topic: str = ""
+    topic=""
     data: Any = None
     headers: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     priority: MessagePriority = MessagePriority.NORMAL
-    ttl: Optional[int] = None
-    retry_count: int = 0
-    max_retries: int = 3
-    dead_letter_topic: Optional[str] = None
-    correlation_id: Optional[str] = None
-    reply_to: Optional[str] = None
+    ttl=None
+    retry_count=0
+    max_retries=3
+    dead_letter_topic=None
+    correlation_id=None
+    reply_to=None
 
     def __post_init__(self):
         if not self.id:
@@ -156,41 +156,41 @@ class MessageConfig:
 
     # 브로커 설정
     broker_type: BrokerType = BrokerType.REDIS
-    broker_url: str = "redis://localhost:6379"
-    host: str = "localhost"
-    port: int = 6379
+    broker_url="redis://localhost:6379"
+    host="localhost"
+    port=6379
 
     # 연결 설정
-    connection_pool_size: int = 10
-    connection_timeout: int = 30
-    heartbeat_interval: int = 30
+    connection_pool_size=10
+    connection_timeout=30
+    heartbeat_interval=30
 
     # 메시지 설정
-    default_ttl: int = 3600  # 1시간
-    max_message_size: int = 1024 * 1024  # 1MB
-    default_max_retries: int = 3
-    max_retries: int = 3  # Alias for compatibility
+    default_ttl=3600  # 1시간
+    max_message_size=1024 * 1024  # 1MB
+    default_max_retries=3
+    max_retries=3  # Alias for compatibility
 
     # 배치 처리
-    batch_size: int = 100
+    batch_size=100
     batch_timeout: float = 1.0  # 초
 
     # Dead Letter Queue
-    enable_dlq: bool = True
-    dlq_suffix: str = ".dlq"
+    enable_dlq=True
+    dlq_suffix=".dlq"
 
     # 메트릭스
-    enable_metrics: bool = True
-    metrics_interval: int = 60
+    enable_metrics=True
+    metrics_interval=60
 
     # 직렬화
-    serializer: str = "json"  # json, pickle, msgpack
-    compression: bool = False
+    serializer="json"  # json, pickle, msgpack
+    compression=False
 
     # 기타
-    namespace: str = "rfs"
-    auto_ack: bool = True
-    prefetch_count: int = 10
+    namespace="rfs"
+    auto_ack=True
+    prefetch_count=10
 
 
 class MessageBroker(ABC):
@@ -199,8 +199,8 @@ class MessageBroker(ABC):
     def __init__(self, config: MessageConfig):
         self.config = config
         self._connected = False
-        self._publishers: Dict[str, Any] = {}
-        self._subscribers: Dict[str, Any] = {}
+        self._publishers={}
+        self._subscribers={}
         self._stats = {
             "messages_sent": 0,
             "messages_received": 0,
@@ -279,7 +279,7 @@ class MessageBroker(ABC):
         return Success(None)
 
     async def nack_message(
-        self, message: Message, requeue: bool = True
+        self, message: Message, requeue=True
     ) -> Result[None, str]:
         """메시지 거부"""
         self._stats = {
@@ -357,8 +357,8 @@ class MessageManager(metaclass=SingletonMeta):
     """메시지 매니저"""
 
     def __init__(self):
-        self.brokers: Dict[str, MessageBroker] = {}
-        self.default_broker: Optional[str] = None
+        self.brokers={}
+        self.default_broker=None
 
     async def add_broker(self, name: str, broker: MessageBroker) -> Result[None, str]:
         """브로커 추가"""
@@ -447,7 +447,7 @@ def get_message_broker(name: str = None) -> Optional[MessageBroker]:
 
 # 브로커 팩토리
 async def create_message_broker(
-    config: MessageConfig, name: str = "default"
+    config: MessageConfig, name="default"
 ) -> Result[MessageBroker, str]:
     """메시지 브로커 생성"""
     try:
@@ -485,7 +485,7 @@ async def create_message_broker(
 # 고수준 메시징 인터페이스
 @dataclass
 class Messaging:
-    broker_name: str = "default"
+    broker_name="default"
 
     @property
     def broker(self) -> Optional[MessageBroker]:

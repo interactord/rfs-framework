@@ -62,11 +62,11 @@ class DatabaseThresholds:
     """데이터베이스 임계값 설정"""
 
     slow_query_seconds: float = 1.0
-    connection_pool_min: int = 5
-    connection_pool_max: int = 20
+    connection_pool_min=5
+    connection_pool_max=20
     connection_timeout_seconds: float = 30.0
-    query_cache_size_mb: int = 100
-    max_concurrent_queries: int = 100
+    query_cache_size_mb=100
+    max_concurrent_queries=100
     index_usage_threshold: float = 0.1
 
 
@@ -110,12 +110,12 @@ class DatabaseOptimizationConfig:
 
     database_type: DatabaseType = DatabaseType.POSTGRESQL
     thresholds: DatabaseThresholds = field(default_factory=DatabaseThresholds)
-    enable_query_caching: bool = True
-    enable_connection_pooling: bool = True
-    enable_query_analysis: bool = True
-    enable_index_analysis: bool = True
+    enable_query_caching=True
+    enable_connection_pooling=True
+    enable_query_analysis=True
+    enable_index_analysis=True
     monitoring_interval_seconds: float = 60.0
-    auto_optimization: bool = False
+    auto_optimization=False
 
 
 class QueryAnalyzer:
@@ -250,7 +250,7 @@ class QueryAnalyzer:
 
     def _detect_performance_issues(self, query: str) -> List[Dict[str, Any]]:
         """성능 문제 탐지"""
-        issues = []
+        issues=[]
         for rule in self.performance_rules:
             pattern = self.query_patterns.get(rule["pattern"])
             if pattern and pattern.search(query):
@@ -265,7 +265,7 @@ class QueryAnalyzer:
 
     def _recommend_indexes(self, query: str) -> List[str]:
         """인덱스 추천"""
-        recommendations = []
+        recommendations=[]
         query_upper = query.upper()
         where_match = re.search(
             "WHERE\\s+(.*?)(?:\\s+GROUP\\s+BY|\\s+ORDER\\s+BY|\\s+HAVING|$)",
@@ -419,7 +419,7 @@ class IndexOptimizer:
         )
 
     def record_index_usage(
-        self, index_name: str, usage_type: str, scan_cost: float = 0
+        self, index_name: str, usage_type: str, scan_cost=0
     ) -> None:
         """인덱스 사용 기록"""
         stats = self.index_usage_stats[index_name]
@@ -502,7 +502,7 @@ class IndexOptimizer:
         self, query_stats: Dict[str, QueryStats]
     ) -> List[str]:
         """쿼리 통계 기반 인덱스 추천"""
-        recommendations = []
+        recommendations=[]
         column_usage = Counter()
         for stats in query_stats.values():
             if stats.avg_duration > 1.0 and stats.execution_count > 10:
@@ -518,17 +518,15 @@ class QueryOptimizer:
     def __init__(self, database_type: DatabaseType):
         self.database_type = database_type
         self.query_analyzer = QueryAnalyzer(database_type)
-        self.query_cache: Dict[str, Any] = {}
-        self.query_stats: Dict[str, QueryStats] = {}
+        self.query_cache={}
+        self.query_stats={}
         self.cache_hits = 0
         self.cache_misses = 0
 
     def record_query_execution(
         self,
         query: str,
-        duration: float,
-        affected_rows: int = 0,
-        error: Optional[str] = None,
+        duration: float, affected_rows=0, error=None,
     ) -> None:
         """쿼리 실행 기록"""
         query_hash = self.query_analyzer.generate_query_hash(query)
@@ -582,10 +580,10 @@ class QueryOptimizer:
         }
 
     def analyze_slow_queries(
-        self, threshold_seconds: float = 1.0
+        self, threshold_seconds=1.0
     ) -> List[Dict[str, Any]]:
         """느린 쿼리 분석"""
-        slow_queries = []
+        slow_queries=[]
         for query_hash, stats in self.query_stats.items():
             if stats.avg_duration > threshold_seconds:
                 analysis = self.query_analyzer.analyze_query("")
@@ -635,12 +633,12 @@ class QueryOptimizer:
 class DatabaseOptimizer:
     """데이터베이스 최적화 엔진"""
 
-    def __init__(self, config: Optional[DatabaseOptimizationConfig] = None):
+    def __init__(self, config=None):
         self.config = config or DatabaseOptimizationConfig()
         self.query_optimizer = QueryOptimizer(self.config.database_type)
         self.connection_pool_optimizer = ConnectionPoolOptimizer(self.config)
         self.index_optimizer = IndexOptimizer(self.config.database_type)
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.performance_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -747,9 +745,7 @@ class DatabaseOptimizer:
     def record_query_execution(
         self,
         query: str,
-        duration: float,
-        affected_rows: int = 0,
-        error: Optional[str] = None,
+        duration: float, affected_rows=0, error=None,
     ) -> None:
         """쿼리 실행 기록"""
         self.query_optimizer.record_query_execution(
@@ -757,7 +753,7 @@ class DatabaseOptimizer:
         )
 
     def record_connection_event(
-        self, event_type: str, duration: float = 0, success: bool = True
+        self, event_type: str, duration=0, success=True
     ) -> None:
         """연결 이벤트 기록"""
         if event_type == "acquisition":
@@ -768,13 +764,13 @@ class DatabaseOptimizer:
             self.connection_pool_optimizer.record_connection_timeout()
 
     def update_connection_pool_state(
-        self, total: int, active: int, idle: int, waiting: int = 0
+        self, total: int, active: int, idle: int, waiting=0
     ) -> None:
         """연결 풀 상태 업데이트"""
         self.connection_pool_optimizer.update_pool_state(total, active, idle, waiting)
 
     def record_index_usage(
-        self, index_name: str, usage_type: str, scan_cost: float = 0
+        self, index_name: str, usage_type: str, scan_cost=0
     ) -> None:
         """인덱스 사용 기록"""
         self.index_optimizer.record_index_usage(index_name, usage_type, scan_cost)
@@ -833,7 +829,7 @@ class DatabaseOptimizer:
         cache_stats: Dict,
     ) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations = []
+        recommendations=[]
         critical_queries = [
             q for q in slow_queries if q["priority"] == OptimizationPriority.CRITICAL
         ]
@@ -907,17 +903,17 @@ class DatabaseOptimizer:
         """리소스 정리"""
         try:
             await self.stop_monitoring()
-            query_cache = {}
+            query_cache={}
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_database_optimizer: Optional[DatabaseOptimizer] = None
+_database_optimizer=None
 
 
 def get_database_optimizer(
-    config: Optional[DatabaseOptimizationConfig] = None,
+    config=None,
 ) -> DatabaseOptimizer:
     """데이터베이스 optimizer 싱글톤 인스턴스 반환"""
     # global _database_optimizer - removed for functional programming

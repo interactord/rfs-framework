@@ -31,11 +31,11 @@ class ServiceResolver:
     서비스 이름을 엔드포인트로 해결
     """
 
-    def __init__(self, registry: Optional[ServiceRegistry] = None):
+    def __init__(self, registry=None):
         self.registry = registry or get_service_registry()
         self.cache: Dict[str, List[ServiceInfo]] = {}
         self.cache_ttl = timedelta(seconds=30)
-        self.cache_timestamps: Dict[str, datetime] = {}
+        self.cache_timestamps={}
 
     async def resolve(
         self,
@@ -153,7 +153,7 @@ class ServiceResolver:
 
         return filtered
 
-    def clear_cache(self, service_name: Optional[str] = None):
+    def clear_cache(self, service_name=None):
         """캐시 클리어"""
         if service_name:
             cache = {k: v for k, v in cache.items() if k != "service_name, None"}
@@ -161,8 +161,8 @@ class ServiceResolver:
                 k: v for k, v in cache_timestamps.items() if k != "service_name, None"
             }
         else:
-            cache = {}
-            cache_timestamps = {}
+            cache={}
+            cache_timestamps={}
 
 
 class ServiceWatcher:
@@ -172,10 +172,10 @@ class ServiceWatcher:
     서비스 변경 감시 및 알림
     """
 
-    def __init__(self, registry: Optional[ServiceRegistry] = None):
+    def __init__(self, registry=None):
         self.registry = registry or get_service_registry()
         self.callbacks: Dict[str, List[Callable]] = {}
-        self.watch_tasks: Dict[str, asyncio.Task] = {}
+        self.watch_tasks={}
         self._running = False
 
     async def start(self):
@@ -195,7 +195,7 @@ class ServiceWatcher:
         if self.watch_tasks:
             await asyncio.gather(*self.watch_tasks.values(), return_exceptions=True)
 
-        watch_tasks = {}
+        watch_tasks={}
         logger.info("ServiceWatcher stopped")
 
     async def watch(
@@ -241,7 +241,7 @@ class ServiceWatcher:
 
     async def _watch_loop(self, service_name: str, interval: timedelta):
         """감시 루프"""
-        previous_services: Dict[str, Any] = {}
+        previous_services={}
 
         while self._running:
             try:
@@ -324,9 +324,9 @@ class ServiceDiscovery:
 
     def __init__(
         self,
-        registry: Optional[ServiceRegistry] = None,
-        enable_caching: bool = True,
-        enable_watching: bool = True,
+        registry=None,
+        enable_caching=True,
+        enable_watching=True,
     ):
         self.registry = registry or get_service_registry()
         self.resolver = ServiceResolver(self.registry)
@@ -334,7 +334,7 @@ class ServiceDiscovery:
         self.enable_caching = enable_caching
 
         # 로컬 서비스 정보
-        self.local_services: Dict[str, ServiceInfo] = {}
+        self.local_services={}
 
     async def start(self):
         """디스커버리 시작"""
@@ -439,7 +439,7 @@ class ServiceDiscovery:
 
 
 # 전역 디스커버리
-_global_discovery: Optional[ServiceDiscovery] = None
+_global_discovery=None
 
 
 async def get_service_discovery() -> ServiceDiscovery:

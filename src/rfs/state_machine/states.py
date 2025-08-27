@@ -28,7 +28,7 @@ class StateDefinition:
     entry_actions: list = field(default_factory=list)  # 진입 시 실행할 액션
     exit_actions: list = field(default_factory=list)  # 탈출 시 실행할 액션
     internal_transitions: dict = field(default_factory=dict)  # 내부 전이
-    parent_state: Optional[str] = None
+    parent_state=None
     child_states: Set[str] = field(default_factory=set)
 
 
@@ -57,8 +57,8 @@ class State:
         # 통계
         self.enter_count = 0
         self.exit_count = 0
-        self.last_entered: Optional[datetime] = None
-        self.last_exited: Optional[datetime] = None
+        self.last_entered=None
+        self.last_exited=None
         self.total_time = 0.0
 
     def add_child(self, child_state: "State") -> "State":
@@ -104,7 +104,7 @@ class State:
         """액션 실행"""
         try:
             if context is None:
-                context = {}
+                context={}
 
             # 비동기 함수인지 확인
             import asyncio

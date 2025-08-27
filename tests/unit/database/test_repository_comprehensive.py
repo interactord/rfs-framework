@@ -33,10 +33,10 @@ from rfs.database.repository import (
 class TestUser(BaseModel):
     """테스트용 User 모델"""
 
-    id: Optional[int] = None
-    name: str = ""
-    email: str = ""
-    age: int = 0
+    id=None
+    name=""
+    email=""
+    age=0
 
     def __post_init__(self):
         if not self.id:
@@ -47,10 +47,10 @@ class TestUser(BaseModel):
 class TestProduct(BaseModel):
     """테스트용 Product 모델"""
 
-    id: Optional[int] = None
-    title: str = ""
+    id=None
+    title=""
     price: float = 0.0
-    active: bool = True
+    active=True
 
 
 class MockDatabase:

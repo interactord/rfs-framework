@@ -248,12 +248,12 @@ class TestBaseModel:
     class TestUser(BaseModel):
         """테스트용 사용자 모델"""
 
-        id: Optional[int] = None
-        name: str = ""
-        email: str = ""
-        age: int = 0
+        id=None
+        name=""
+        email=""
+        age=0
         created_at: datetime = field(default_factory=datetime.now)
-        is_active: bool = True
+        is_active=True
 
     def test_base_model_creation(self):
         """BaseModel 생성 테스트"""
@@ -484,8 +484,8 @@ class TestModelRegistry:
     class SampleModel(BaseModel):
         """테스트용 샘플 모델"""
 
-        id: Optional[int] = None
-        name: str = ""
+        id=None
+        name=""
 
     def test_model_registration(self, registry):
         """모델 등록 테스트"""
@@ -593,14 +593,14 @@ class TestModelValidationScenarios:
     class Product(BaseModel):
         """테스트용 제품 모델"""
 
-        id: Optional[int] = None
-        name: str = ""
+        id=None
+        name=""
         price: float = 0.0
-        category_id: Optional[int] = None
+        category_id=None
         tags: List[str] = field(default_factory=list)
         metadata: Dict[str, Any] = field(default_factory=dict)
         created_at: datetime = field(default_factory=datetime.now)
-        is_available: bool = True
+        is_available=True
 
     def test_complex_validation_scenario(self):
         """복잡한 유효성 검사 시나리오"""
@@ -695,15 +695,15 @@ class TestModelValidationScenarios:
 
         @dataclass
         class Address(BaseModel):
-            street: str = ""
-            city: str = ""
-            zip_code: str = ""
+            street=""
+            city=""
+            zip_code=""
 
         @dataclass
         class User(BaseModel):
-            name: str = ""
-            email: str = ""
-            address: Optional[Address] = None
+            name=""
+            email=""
+            address=None
 
         # Mock nested validation
         def mock_validate_user(self):
@@ -754,11 +754,11 @@ class TestModelValidationScenarios:
 
         @dataclass
         class Employee(BaseModel):
-            name: str = ""
-            employee_type: str = ""  # "contractor" or "full_time"
-            hourly_rate: Optional[float] = None
-            salary: Optional[float] = None
-            contract_end_date: Optional[datetime] = None
+            name=""
+            employee_type=""  # "contractor" or "full_time"
+            hourly_rate=None
+            salary=None
+            contract_end_date=None
 
         # Mock conditional validation
         def mock_conditional_validate(self):
@@ -828,8 +828,8 @@ class TestModelHelperFunctions:
 
     @dataclass
     class TestModel(BaseModel):
-        id: Optional[int] = None
-        name: str = ""
+        id=None
+        name=""
 
     @patch("rfs.database.models.get_model_registry")
     def test_create_model_helper(self, mock_get_registry):
@@ -894,11 +894,11 @@ class TestModelPerformance:
         @dataclass
         class LargeModel(BaseModel):
             # 많은 필드를 가진 모델
-            field_01: str = ""
-            field_02: str = ""
-            field_03: int = 0
+            field_01=""
+            field_02=""
+            field_03=0
             field_04: float = 0.0
-            field_05: bool = False
+            field_05=False
             # ... 실제로는 더 많은 필드가 있다고 가정
 
         # Mock high-performance validation
@@ -963,8 +963,8 @@ class TestModelPerformance:
 
         @dataclass
         class SerializationTestModel(BaseModel):
-            id: int = 0
-            name: str = ""
+            id=0
+            name=""
             data: Dict[str, Any] = field(default_factory=dict)
             items: List[str] = field(default_factory=list)
             created_at: datetime = field(default_factory=datetime.now)

@@ -24,7 +24,7 @@ R = TypeVar("R")
 class MemoizeCache:
     """LRU cache for memoization."""
 
-    def __init__(self, maxsize: int = 128):
+    def __init__(self, maxsize=128):
         self.cache: OrderedDict = OrderedDict()
         self.maxsize = maxsize
         self.lock = Lock()
@@ -53,8 +53,8 @@ class MemoizeCache:
 
 
 def memoize(
-    maxsize: int = 128,
-    ttl: Optional[timedelta] = None,
+    maxsize=128,
+    ttl=None,
     key_func: Optional[Callable[..., str]] = None,
 ) -> Callable:
     """
@@ -81,7 +81,7 @@ def memoize(
 
     def decorator(func: Callable) -> Callable:
         cache = MemoizeCache(maxsize)
-        cache_times: Dict[str, datetime] = {}
+        cache_times={}
 
         def make_key(*args, **kwargs) -> str:
             if key_func:
@@ -119,7 +119,7 @@ def memoize(
     return decorator
 
 
-def throttle(rate: float, per: float = 1.0, burst: int = 1) -> Callable:
+def throttle(rate: float, per: float = 1.0, burst=1) -> Callable:
     """
     Throttle function calls to a maximum rate.
 
@@ -173,7 +173,7 @@ def throttle(rate: float, per: float = 1.0, burst: int = 1) -> Callable:
     return decorator
 
 
-def debounce(wait: float, immediate: bool = False) -> Callable:
+def debounce(wait: float, immediate=False) -> Callable:
     """
     Debounce function calls - only execute after wait period of no calls.
 
@@ -219,7 +219,7 @@ def debounce(wait: float, immediate: bool = False) -> Callable:
 
 
 def retry(
-    max_attempts: int = 3,
+    max_attempts=3,
     delay: float = 1.0,
     backoff: float = 2.0,
     exceptions: tuple = (Exception,),
@@ -275,7 +275,7 @@ def retry(
     return decorator
 
 
-def timeout(seconds: float, error_message: str = "Function call timed out") -> Callable:
+def timeout(seconds: float, error_message="Function call timed out") -> Callable:
     """
     Timeout decorator for functions (works with threads).
 
@@ -327,7 +327,7 @@ def timeout(seconds: float, error_message: str = "Function call timed out") -> C
     return decorator
 
 
-def rate_limit(calls: int, period: timedelta, scope: str = "global") -> Callable:
+def rate_limit(calls: int, period: timedelta, scope="global") -> Callable:
     """
     Rate limiting decorator with configurable scope.
 
@@ -346,7 +346,7 @@ def rate_limit(calls: int, period: timedelta, scope: str = "global") -> Callable
     """
 
     def decorator(func: Callable) -> Callable:
-        call_times: Dict[str, list] = {}
+        call_times={}
         lock = Lock()
 
         def get_scope_key(*args, **kwargs) -> str:
@@ -388,7 +388,7 @@ def rate_limit(calls: int, period: timedelta, scope: str = "global") -> Callable
 
 
 def circuit_breaker(
-    failure_threshold: int = 5,
+    failure_threshold=5,
     recovery_timeout: float = 60.0,
     expected_exception: type = Exception,
 ) -> Callable:
@@ -481,7 +481,7 @@ def lazy(func: Callable[[], T]) -> Callable[[], T]:
         Computing...
         >>> result2 = expensive_data()  # Uses cached result
     """
-    cache = []
+    cache=[]
     lock = Lock()
 
     @wraps(func)

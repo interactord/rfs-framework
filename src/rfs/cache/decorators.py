@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 class CacheKeyBuilder:
     """캐시 키 생성기"""
 
-    def __init__(self, prefix: str = "", namespace: str = "", separator: str = ":"):
+    def __init__(self, prefix="", namespace="", separator=":"):
         self.prefix = prefix
         self.namespace = namespace
         self.separator = separator
@@ -32,7 +32,7 @@ class CacheKeyBuilder:
         func: Callable,
         args: tuple,
         kwargs: dict,
-        custom_key: Optional[str] = None,
+        custom_key=None,
     ) -> str:
         """캐시 키 생성"""
         if custom_key:
@@ -44,7 +44,7 @@ class CacheKeyBuilder:
 
     def _format_key(self, key: str) -> str:
         """키 포맷팅"""
-        parts = []
+        parts=[]
         if self.namespace:
             parts = parts + [self.namespace]
         if self.prefix:
@@ -85,13 +85,13 @@ class CacheKeyBuilder:
 
 
 def cached(
-    ttl: Optional[int] = None,
+    ttl=None,
     key: Optional[Union[str, Callable]] = None,
-    cache_name: Optional[str] = None,
-    namespace: Optional[str] = None,
-    condition: Optional[Callable] = None,
-    unless: Optional[Callable] = None,
-    version: Optional[str] = None,
+    cache_name=None,
+    namespace=None,
+    condition=None,
+    unless=None,
+    version=None,
 ):
     """캐시 데코레이터
 
@@ -151,9 +151,9 @@ def cached(
 
 
 def cache_result(
-    ttl: Optional[int] = None,
-    key_func: Optional[Callable] = None,
-    cache_name: Optional[str] = None,
+    ttl=None,
+    key_func=None,
+    cache_name=None,
 ):
     """결과 캐싱 데코레이터 (간단 버전)"""
     return cached(ttl=ttl, key=key_func, cache_name=cache_name)
@@ -161,9 +161,9 @@ def cache_result(
 
 def invalidate_cache(
     key: Optional[Union[str, Callable]] = None,
-    cache_name: Optional[str] = None,
-    namespace: Optional[str] = None,
-    pattern: Optional[str] = None,
+    cache_name=None,
+    namespace=None,
+    pattern=None,
 ):
     """캐시 무효화 데코레이터"""
 
@@ -248,7 +248,7 @@ def _generate_cache_key(
     args: tuple,
     kwargs: dict,
     custom_key: Optional[Union[str, Callable]] = None,
-    version: Optional[str] = None,
+    version=None,
 ) -> str:
     """캐시 키 생성"""
     if callable(custom_key):
@@ -281,9 +281,9 @@ async def _invalidate_pattern(cache_backend: CacheBackend, pattern: str):
 
 
 def cached_method(
-    ttl: Optional[int] = None,
-    key_attr: Optional[str] = None,
-    cache_name: Optional[str] = None,
+    ttl=None,
+    key_attr=None,
+    cache_name=None,
 ):
     """메서드 캐시 데코레이터"""
 
@@ -313,7 +313,7 @@ def cached_method(
 
 
 def cache_warming(
-    warm_keys: List[tuple], ttl: Optional[int] = None, cache_name: Optional[str] = None
+    warm_keys: List[tuple], ttl=None, cache_name=None
 ):
     """캐시 워밍 데코레이터"""
 
@@ -340,7 +340,7 @@ def cache_warming(
     return decorator
 
 
-def cache_stats(cache_name: Optional[str] = None):
+def cache_stats(cache_name=None):
     """캐시 통계 추적 데코레이터"""
 
     def decorator(func: Callable) -> Callable:

@@ -28,20 +28,20 @@ class FixtureConfig:
     """픽스처 설정"""
 
     scope: FixtureScope = FixtureScope.FUNCTION
-    autouse: bool = False
-    params: Optional[list] = None
-    ids: Optional[list] = None
+    autouse=False
+    params=None
+    ids=None
 
 
 # 픽스처 레지스트리
-_fixtures: Dict[str, Any] = {}
+_fixtures={}
 
 
 def fixture(
     scope: FixtureScope = FixtureScope.FUNCTION,
-    autouse: bool = False,
-    params: Optional[list] = None,
-    ids: Optional[list] = None,
+    autouse=False,
+    params=None,
+    ids=None,
 ) -> Callable:
     """픽스처 데코레이터"""
 

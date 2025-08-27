@@ -81,8 +81,8 @@ class OAuthConfig:
     token_url: str
     redirect_uri: str
     scopes: List[str] = field(default_factory=list)
-    grant_type: str = "authorization_code"
-    use_pkce: bool = True
+    grant_type="authorization_code"
+    use_pkce=True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -94,7 +94,7 @@ class WebhookConfig:
     name: str
     url: str
     events: List[str]
-    secret: Optional[str] = None
+    secret=None
     headers: Dict[str, str] = field(default_factory=dict)
     retry_policy: Dict[str, Any] = field(
         default_factory=lambda: {
@@ -104,7 +104,7 @@ class WebhookConfig:
             "exponential_base": 2,
         }
     )
-    active: bool = True
+    active=True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -121,9 +121,9 @@ class APIEndpoint:
     query_params: Dict[str, Any] = field(default_factory=dict)
     body_template: Optional[Dict[str, Any]] = None
     response_schema: Optional[Dict[str, Any]] = None
-    timeout: int = 30
-    retry_count: int = 3
-    cache_ttl: int = 0
+    timeout=30
+    retry_count=3
+    cache_ttl=0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -145,8 +145,8 @@ class APIIntegration:
             "expected_exception": Exception,
         }
     )
-    version: str = "v1"
-    active: bool = True
+    version="v1"
+    active=True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -176,8 +176,8 @@ class RESTIntegration:
     auth_type: AuthType
     auth_config: Dict[str, Any]
     resources: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    api_version: str = "v1"
-    use_hypermedia: bool = False
+    api_version="v1"
+    use_hypermedia=False
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -188,11 +188,11 @@ class WebSocketConnection:
     id: str
     url: str
     state: WebSocketState
-    session: Optional[aiohttp.ClientSession] = None
-    websocket: Optional[aiohttp.ClientWebSocketResponse] = None
-    heartbeat_interval: int = 30
-    reconnect_attempts: int = 0
-    max_reconnect_attempts: int = 5
+    session=None
+    websocket=None
+    heartbeat_interval=30
+    reconnect_attempts=0
+    max_reconnect_attempts=5
     message_handlers: Dict[str, Callable] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -226,8 +226,8 @@ class CircuitBreaker:
 
     def __init__(
         self,
-        failure_threshold: int = 5,
-        recovery_timeout: int = 60,
+        failure_threshold=5,
+        recovery_timeout=60,
         expected_exception: type = Exception,
     ):
         self.failure_threshold = failure_threshold
@@ -291,15 +291,15 @@ class WebIntegrationManager:
     """웹 통합 관리자"""
 
     def __init__(self):
-        self.integrations: Dict[str, APIIntegration] = {}
-        self.webhooks: Dict[str, WebhookConfig] = {}
-        self.oauth_configs: Dict[str, OAuthConfig] = {}
-        self.websocket_connections: Dict[str, WebSocketConnection] = {}
-        self.graphql_integrations: Dict[str, GraphQLIntegration] = {}
-        self.rest_integrations: Dict[str, RESTIntegration] = {}
-        self.rate_limiters: Dict[str, RateLimiter] = {}
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
-        self._session: Optional[aiohttp.ClientSession] = None
+        self.integrations={}
+        self.webhooks={}
+        self.oauth_configs={}
+        self.websocket_connections={}
+        self.graphql_integrations={}
+        self.rest_integrations={}
+        self.rate_limiters={}
+        self.circuit_breakers={}
+        self._session=None
         self._cache: Dict[str, Tuple[Any, float]] = {}
         self._running = False
         self._tasks: Set[asyncio.Task] = set()
@@ -329,7 +329,7 @@ class WebIntegrationManager:
                 self._session = None
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks = {}
+                _tasks={}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop integration manager: {e}")
@@ -687,7 +687,7 @@ class WebIntegrationManager:
         self, auth_type: AuthType, auth_config: Dict[str, Any]
     ) -> Dict[str, str]:
         """인증 헤더 생성"""
-        headers = {}
+        headers={}
         match auth_type:
             case AuthType.API_KEY:
                 headers = {
@@ -835,7 +835,7 @@ class WebIntegrationManager:
         return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 
-_web_integration_manager: Optional[WebIntegrationManager] = None
+_web_integration_manager=None
 
 
 def get_web_integration_manager() -> WebIntegrationManager:

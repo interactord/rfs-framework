@@ -47,45 +47,45 @@ class SecurityPolicy:
     level: SecurityLevel = SecurityLevel.STANDARD
 
     # Password policies
-    min_password_length: int = 12
-    require_uppercase: bool = True
-    require_lowercase: bool = True
-    require_numbers: bool = True
-    require_special_chars: bool = True
-    password_history: int = 5
-    password_expiry_days: int = 90
+    min_password_length=12
+    require_uppercase=True
+    require_lowercase=True
+    require_numbers=True
+    require_special_chars=True
+    password_history=5
+    password_expiry_days=90
 
     # Session policies
-    session_timeout_minutes: int = 30
-    max_concurrent_sessions: int = 3
-    require_mfa: bool = False
+    session_timeout_minutes=30
+    max_concurrent_sessions=3
+    require_mfa=False
 
     # Access control
-    max_login_attempts: int = 5
-    lockout_duration_minutes: int = 30
+    max_login_attempts=5
+    lockout_duration_minutes=30
     ip_whitelist: List[str] = field(default_factory=list)
     ip_blacklist: List[str] = field(default_factory=list)
 
     # Encryption
-    encryption_algorithm: str = "AES-256"
-    key_rotation_days: int = 90
+    encryption_algorithm="AES-256"
+    key_rotation_days=90
 
     # API security
-    rate_limit_per_minute: int = 100
-    require_api_key: bool = True
-    require_https: bool = True
+    rate_limit_per_minute=100
+    require_api_key=True
+    require_https=True
 
     # Data protection
-    data_retention_days: int = 365
-    require_data_encryption_at_rest: bool = True
-    require_data_encryption_in_transit: bool = True
+    data_retention_days=365
+    require_data_encryption_at_rest=True
+    require_data_encryption_in_transit=True
 
     # Compliance
     compliance_standards: List[str] = field(default_factory=list)
 
     # Audit
-    enable_audit_logging: bool = True
-    audit_retention_days: int = 730
+    enable_audit_logging=True
+    audit_retention_days=730
 
 
 @dataclass
@@ -95,9 +95,9 @@ class HardeningResult:
     timestamp: datetime
     policy_applied: str
     security_level: SecurityLevel
-    total_checks: int = 0
-    passed_checks: int = 0
-    failed_checks: int = 0
+    total_checks=0
+    passed_checks=0
+    failed_checks=0
     critical_issues: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
@@ -128,7 +128,7 @@ class SecurityHardening:
         self.policy = policy or SecurityPolicy(
             name="default", level=SecurityLevel.STANDARD
         )
-        self._hardening_history: List[HardeningResult] = []
+        self._hardening_history=[]
 
     def apply_hardening(
         self, target: Dict[str, Any] = None
@@ -245,7 +245,7 @@ class SecurityHardening:
         self._check_incident_response(target, result)
 
     def _check_password_policy(
-        self, target: Dict[str, Any], result: HardeningResult, basic: bool = False
+        self, target: Dict[str, Any], result: HardeningResult, basic=False
     ):
         """비밀번호 정책 검사"""
         total_checks = total_checks + 1
@@ -290,7 +290,7 @@ class SecurityHardening:
             result.critical_issues = result.critical_issues + ["HTTPS not enforced"]
 
     def _check_authentication(
-        self, target: Dict[str, Any], result: HardeningResult, basic: bool = False
+        self, target: Dict[str, Any], result: HardeningResult, basic=False
     ):
         """인증 검사"""
         total_checks = total_checks + 1
@@ -546,7 +546,7 @@ class SecurityHardening:
         Returns:
             Result[검증 결과, 에러 메시지]
         """
-        errors = []
+        errors=[]
 
         if len(password) < self.policy.min_password_length:
             errors = [
@@ -573,7 +573,7 @@ class SecurityHardening:
 
         return Success(True)
 
-    def generate_secure_token(self, length: int = 32) -> str:
+    def generate_secure_token(self, length=32) -> str:
         """
         보안 토큰 생성
 

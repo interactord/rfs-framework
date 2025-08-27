@@ -40,9 +40,9 @@ class TestResult:
     test_name: str
     status: TestStatus
     duration: float
-    message: Optional[str] = None
-    error: Optional[Exception] = None
-    traceback: Optional[str] = None
+    message=None
+    error=None
+    traceback=None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def is_passed(self) -> bool:
@@ -114,7 +114,7 @@ class TestReport:
 class TestCase(ABC):
     """테스트 케이스 기본 클래스"""
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name=None):
         self.name = name or self.__class__.__name__
         self.setup_done = False
         self.teardown_done = False
@@ -145,7 +145,7 @@ class AsyncTestCase(TestCase):
 class FunctionTestCase(TestCase):
     """함수 기반 테스트 케이스"""
 
-    def __init__(self, test_function: Callable, name: Optional[str] = None):
+    def __init__(self, test_function: Callable, name=None):
         super().__init__(name or test_function.__name__)
         self.test_function = test_function
 
@@ -166,9 +166,9 @@ class TestSuite:
 
     def __init__(self, name: str):
         self.name = name
-        self.test_cases: List[TestCase] = []
-        self.setup_hooks: List[Callable] = []
-        self.teardown_hooks: List[Callable] = []
+        self.test_cases=[]
+        self.setup_hooks=[]
+        self.teardown_hooks=[]
 
     def add_test(self, test_case: Union[TestCase, Callable]):
         """테스트 추가"""
@@ -216,10 +216,10 @@ class TestSuite:
 class TestRunner:
     """테스트 러너"""
 
-    def __init__(self, verbose: bool = True, stop_on_failure: bool = False):
+    def __init__(self, verbose=True, stop_on_failure=False):
         self.verbose = verbose
         self.stop_on_failure = stop_on_failure
-        self.results: List[TestResult] = []
+        self.results=[]
 
     async def run_test_case(self, test_case: TestCase) -> TestResult:
         """단일 테스트 케이스 실행"""
@@ -323,7 +323,7 @@ class TestRunner:
         return report
 
 
-def discover_tests(directory: str, pattern: str = "test_*.py") -> List[TestCase]:
+def discover_tests(directory: str, pattern="test_*.py") -> List[TestCase]:
     """테스트 파일에서 테스트 케이스 발견"""
     test_cases = []
     test_files = glob.glob(os.path.join(directory, pattern))
@@ -349,7 +349,7 @@ def discover_tests(directory: str, pattern: str = "test_*.py") -> List[TestCase]
 
 
 async def run_test(
-    test_case: Union[TestCase, Callable], verbose: bool = True
+    test_case: Union[TestCase, Callable], verbose=True
 ) -> TestResult:
     """단일 테스트 실행"""
     runner = TestRunner(verbose=verbose)
@@ -359,7 +359,7 @@ async def run_test(
 
 
 async def run_test_suite(
-    test_suite: TestSuite, verbose: bool = True, stop_on_failure: bool = False
+    test_suite: TestSuite, verbose=True, stop_on_failure=False
 ) -> TestReport:
     """테스트 스위트 실행"""
     runner = TestRunner(verbose=verbose, stop_on_failure=stop_on_failure)

@@ -24,12 +24,12 @@ T = TypeVar("T", bound=BaseModel)
 class RepositoryConfig:
     """Repository 설정"""
 
-    auto_commit: bool = True
-    batch_size: int = 100
-    cache_enabled: bool = True
-    cache_ttl: int = 3600
-    retry_count: int = 3
-    timeout: int = 30
+    auto_commit=True
+    batch_size=100
+    cache_enabled=True
+    cache_ttl=3600
+    retry_count=3
+    timeout=30
 
 
 class Repository(Generic[T], ABC):
@@ -199,11 +199,11 @@ class CRUDRepository(BaseRepository[T]):
     ) -> Result[List[T], str]:
         """대량 생성"""
         try:
-            models = []
+            models=[]
             batch_size = self.config.batch_size
             for i in range(0, len(data_list), batch_size):
                 batch = data_list[i : i + batch_size]
-                batch_models = []
+                batch_models=[]
                 for data in batch:
                     create_result = await self.create(data)
                     if not create_result.is_success():
@@ -221,11 +221,11 @@ class CRUDRepository(BaseRepository[T]):
     async def bulk_update(self, updates: List[Dict[str, Any]]) -> Result[List[T], str]:
         """대량 업데이트"""
         try:
-            models = []
+            models=[]
             batch_size = self.config.batch_size
             for i in range(0, len(updates), batch_size):
                 batch = updates[i : i + batch_size]
-                batch_models = []
+                batch_models=[]
                 for update_data in batch:
                     if "id" not in update_data:
                         return Failure("업데이트 데이터에 id가 필요합니다")
@@ -266,8 +266,8 @@ class CRUDRepository(BaseRepository[T]):
 
     async def find_paginated(
         self,
-        page: int = 1,
-        page_size: int = 10,
+        page=1,
+        page_size=10,
         filters: Dict[str, Any] = None,
         sort: List[Sort] = None,
     ) -> Result[Dict[str, Any], str]:
@@ -315,8 +315,8 @@ class RepositoryRegistry(metaclass=SingletonMeta):
     """Repository 레지스트리"""
 
     def __init__(self):
-        self.repositories: Dict[str, Repository] = {}
-        self.configs: Dict[str, RepositoryConfig] = {}
+        self.repositories={}
+        self.configs={}
 
     def register_repository(
         self,

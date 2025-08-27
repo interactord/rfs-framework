@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 def service_endpoint(
     name: str,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    protocol: str = "http",
-    path: str = "/",
-    version: str = "1.0.0",
+    host=None,
+    port=None,
+    protocol="http",
+    path="/",
+    version="1.0.0",
     tags: Optional[List[str]] = None,
     ttl: Optional[timedelta] = timedelta(seconds=30),
 ):
@@ -147,7 +147,7 @@ def discoverable(name: str, **kwargs):
 
 
 def health_check(
-    path: str = "/health",
+    path="/health",
     interval: timedelta = timedelta(seconds=10),
     timeout: timedelta = timedelta(seconds=5),
 ):
@@ -194,9 +194,9 @@ def health_check(
 
 
 def circuit_breaker(
-    failure_threshold: int = 5,
+    failure_threshold=5,
     recovery_timeout: timedelta = timedelta(seconds=60),
-    success_threshold: int = 2,
+    success_threshold=2,
 ):
     """
     서킷 브레이커 데코레이터
@@ -236,7 +236,7 @@ def circuit_breaker(
 def load_balanced(
     service_name: str,
     load_balancer_type: LoadBalancerType = LoadBalancerType.ROUND_ROBIN,
-    max_retries: int = 3,
+    max_retries=3,
 ):
     """
     로드 밸런싱 클라이언트 데코레이터
@@ -272,8 +272,8 @@ def load_balanced(
 
 def service_call(
     service_name: str,
-    method: str = "GET",
-    path: str = "/",
+    method="GET",
+    path="/",
     timeout: timedelta = timedelta(seconds=30),
 ):
     """
@@ -328,9 +328,9 @@ def service_call(
 
 
 def retry_on_failure(
-    max_attempts: int = 3,
+    max_attempts=3,
     delay: timedelta = timedelta(seconds=1),
-    exponential_backoff: bool = True,
+    exponential_backoff=True,
 ):
     """
     실패 시 재시도 데코레이터

@@ -43,18 +43,18 @@ class TaskResult:
     task_type: TaskType
     status: ResultStatus
     start_time: datetime
-    end_time: Optional[datetime] = None
-    execution_time_ms: Optional[int] = None
+    end_time=None
+    execution_time_ms=None
     result_data: Any = None
-    error_message: Optional[str] = None
-    error_type: Optional[str] = None
-    error_traceback: Optional[str] = None
-    context: Optional[TaskContext] = None
-    retry_count: int = 0
+    error_message=None
+    error_type=None
+    error_traceback=None
+    context=None
+    retry_count=0
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    memory_used_mb: Optional[float] = None
-    cpu_time_ms: Optional[float] = None
+    memory_used_mb=None
+    cpu_time_ms=None
 
     def __post_init__(self):
         """초기화 후 처리"""
@@ -71,7 +71,7 @@ class TaskResult:
         result_data: Any,
         start_time: datetime,
         end_time: datetime,
-        context: Optional[TaskContext] = None,
+        context=None,
         **kwargs,
     ) -> "TaskResult":
         """성공 결과 생성"""
@@ -96,9 +96,9 @@ class TaskResult:
         error_message: str,
         start_time: datetime,
         end_time: datetime,
-        error_type: Optional[str] = None,
-        error_traceback: Optional[str] = None,
-        context: Optional[TaskContext] = None,
+        error_type=None,
+        error_traceback=None,
+        context=None,
         **kwargs,
     ) -> "TaskResult":
         """실패 결과 생성"""
@@ -212,15 +212,15 @@ class TaskResult:
 class TaskResultStore:
     """작업 결과 저장소"""
 
-    def __init__(self, storage_path: Optional[str] = None, max_results: int = 10000):
+    def __init__(self, storage_path=None, max_results=10000):
         self.storage_path = Path(storage_path) if storage_path else None
         self.max_results = max_results
-        self._results: Dict[str, TaskResult] = {}
+        self._results={}
         self._results_by_name: Dict[str, List[str]] = {}
         self._results_by_status: Dict[ResultStatus, List[str]] = {
             status: [] for status in ResultStatus
         }
-        self._task_ids_by_time: List[str] = []
+        self._task_ids_by_time=[]
         self._stats = {
             "total_results": 0,
             "success_count": 0,
@@ -272,7 +272,7 @@ class TaskResultStore:
             self._results[task_id] for task_id in task_ids if task_id in self._results
         ]
 
-    def get_recent_results(self, limit: int = 100) -> List[TaskResult]:
+    def get_recent_results(self, limit=100) -> List[TaskResult]:
         """최근 결과 조회"""
         recent_ids = self._task_ids_by_time[-limit:]
         return [
@@ -285,7 +285,7 @@ class TaskResultStore:
         self, start_time: datetime, end_time: datetime
     ) -> List[TaskResult]:
         """시간 범위내 결과 조회"""
-        results = []
+        results=[]
         for task_id in self._task_ids_by_time:
             result = self._results.get(task_id)
             if result and start_time <= result.start_time <= end_time:
@@ -294,12 +294,12 @@ class TaskResultStore:
 
     async def query_results(
         self,
-        task_name: Optional[str] = None,
-        status: Optional[ResultStatus] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        task_name=None,
+        status=None,
+        start_time=None,
+        end_time=None,
         tags: Optional[List[str]] = None,
-        limit: int = 100,
+        limit=100,
     ) -> List[TaskResult]:
         """복합 조건 결과 조회"""
         results = list(self._results.values())
@@ -363,7 +363,7 @@ class TaskResultStore:
             return
         if len(self._results) > self.max_results:
             removal_count = len(self._results) - self.max_results
-            candidates = []
+            candidates=[]
             for task_id in self._task_ids_by_time:
                 result = self._results.get(task_id)
                 if result and result.status == ResultStatus.SUCCESS:
@@ -454,7 +454,7 @@ class ResultAnalyzer:
     def __init__(self, result_store: TaskResultStore):
         self.result_store = result_store
 
-    def analyze_task_performance(self, task_name: str, days: int = 7) -> Dict[str, Any]:
+    def analyze_task_performance(self, task_name: str, days=7) -> Dict[str, Any]:
         """작업 성능 분석"""
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
@@ -489,7 +489,7 @@ class ResultAnalyzer:
             "recent_results": [r.to_dict() for r in results[-10:]],
         }
 
-    def analyze_failure_patterns(self, days: int = 7) -> Dict[str, Any]:
+    def analyze_failure_patterns(self, days=7) -> Dict[str, Any]:
         """실패 패턴 분석"""
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
@@ -500,8 +500,8 @@ class ResultAnalyzer:
         ]
         if not failed_results:
             return {"error": "No failures found"}
-        failure_by_type = {}
-        failure_by_task = {}
+        failure_by_type={}
+        failure_by_task={}
         for result in failed_results:
             error_type = result.error_type or "Unknown"
             if error_type not in failure_by_type:
@@ -536,7 +536,7 @@ class ResultAnalyzer:
         }
 
 
-_default_result_store: Optional[TaskResultStore] = None
+_default_result_store=None
 
 
 def get_default_result_store() -> TaskResultStore:
@@ -550,7 +550,7 @@ def get_default_result_store() -> TaskResultStore:
 
 
 def create_result_analyzer(
-    result_store: Optional[TaskResultStore] = None,
+    result_store=None,
 ) -> ResultAnalyzer:
     """결과 분석기 생성"""
     store = result_store or get_default_result_store()

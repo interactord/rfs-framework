@@ -54,19 +54,19 @@ class TaskMetrics:
     작업 메트릭 컬렉션
     """
 
-    total_tasks: int = 0
-    successful_tasks: int = 0
-    failed_tasks: int = 0
-    cancelled_tasks: int = 0
-    timeout_tasks: int = 0
-    retried_tasks: int = 0
-    active_tasks: int = 0
-    queued_tasks: int = 0
-    pending_tasks: int = 0
+    total_tasks=0
+    successful_tasks=0
+    failed_tasks=0
+    cancelled_tasks=0
+    timeout_tasks=0
+    retried_tasks=0
+    active_tasks=0
+    queued_tasks=0
+    pending_tasks=0
     total_duration: timedelta = timedelta()
-    min_duration: Optional[timedelta] = None
-    max_duration: Optional[timedelta] = None
-    avg_duration: Optional[timedelta] = None
+    min_duration=None
+    max_duration=None
+    avg_duration=None
     tasks_per_second: float = 0.0
     tasks_per_minute: float = 0.0
     error_rate: float = 0.0
@@ -166,16 +166,16 @@ class TaskMonitor:
     """
 
     def __init__(
-        self, history_size: int = 1000, window_size: timedelta = timedelta(minutes=5)
+        self, history_size=1000, window_size: timedelta = timedelta(minutes=5)
     ):
         self.history_size = history_size
         self.window_size = window_size
         self.metrics = TaskMetrics()
         self.metric_history: deque = deque(maxlen=history_size)
         self.task_history: deque = deque(maxlen=history_size)
-        self.hourly_stats: Dict[str, TaskMetrics] = {}
-        self.daily_stats: Dict[str, TaskMetrics] = {}
-        self.alert_handlers: List[Callable] = []
+        self.hourly_stats={}
+        self.daily_stats={}
+        self.alert_handlers=[]
         self.thresholds = {
             "error_rate": 0.1,
             "timeout_rate": 0.05,
@@ -250,7 +250,7 @@ class TaskMonitor:
         """메트릭 딕셔너리 조회"""
         return self.metrics.to_dict()
 
-    def get_recent_tasks(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_recent_tasks(self, limit=100) -> List[Dict[str, Any]]:
         """최근 작업 조회"""
         return list(self.task_history)[-limit:]
 
@@ -310,7 +310,7 @@ class TaskMonitor:
             except Exception as e:
                 logger.error(f"Alert handler error: {e}")
 
-    def export_metrics(self, format: str = "json") -> str:
+    def export_metrics(self, format="json") -> str:
         """메트릭 내보내기"""
         metrics_dict = self.get_metrics_dict()
         match format:
@@ -323,7 +323,7 @@ class TaskMonitor:
 
     def _format_prometheus(self, metrics: Dict[str, Any]) -> str:
         """Prometheus 형식으로 포맷"""
-        lines = []
+        lines=[]
         for name, value in metrics.get("counters").items():
             lines = lines + [f"task_{name} {value}"]
         for name, value in metrics.get("gauges").items():
@@ -342,11 +342,11 @@ class TaskMonitor:
     def reset_metrics(self):
         """메트릭 리셋"""
         self.metrics = TaskMetrics()
-        task_history = {}
-        metric_history = {}
+        task_history={}
+        metric_history={}
 
 
-_global_monitor: Optional[TaskMonitor] = None
+_global_monitor=None
 
 
 def get_task_monitor() -> TaskMonitor:
@@ -362,6 +362,6 @@ def get_metrics() -> TaskMetrics:
     return get_task_monitor().get_metrics()
 
 
-def export_metrics(format: str = "json") -> str:
+def export_metrics(format="json") -> str:
     """메트릭 내보내기"""
     return get_task_monitor().export_metrics(format)

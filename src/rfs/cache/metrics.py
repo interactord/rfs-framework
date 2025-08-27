@@ -24,11 +24,11 @@ logger = get_logger(__name__)
 class CacheMetrics:
     """캐시 메트릭스"""
 
-    hits: int = 0
-    misses: int = 0
-    sets: int = 0
-    deletes: int = 0
-    errors: int = 0
+    hits=0
+    misses=0
+    sets=0
+    deletes=0
+    errors=0
     avg_get_time: float = 0.0
     avg_set_time: float = 0.0
     max_get_time: float = 0.0
@@ -37,10 +37,10 @@ class CacheMetrics:
     hourly_misses: Dict[str, int] = field(default_factory=dict)
     key_patterns: Dict[str, int] = field(default_factory=dict)
     hot_keys: List[str] = field(default_factory=list)
-    memory_usage: int = 0
-    memory_limit: int = 0
-    connections_active: int = 0
-    connections_idle: int = 0
+    memory_usage=0
+    memory_limit=0
+    connections_active=0
+    connections_idle=0
 
     @property
     def total_operations(self) -> int:
@@ -95,20 +95,20 @@ class MetricsCollector(metaclass=SingletonMeta):
     """메트릭스 수집기"""
 
     def __init__(self):
-        self.collectors: Dict[str, Callable] = {}
+        self.collectors={}
         self.metrics_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1440))
         self.key_access_count: Dict[str, int] = defaultdict(int)
         self.operation_times: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
-        self._collection_task: Optional[asyncio.Task] = None
+        self._collection_task=None
         self._collection_interval = 60
         self.alert_thresholds = {
             "hit_rate_min": 0.8,
             "error_rate_max": 0.01,
             "response_time_max": 1.0,
         }
-        self.alert_callbacks: List[Callable] = []
+        self.alert_callbacks=[]
 
-    def start_collection(self, interval: int = 60):
+    def start_collection(self, interval=60):
         """메트릭스 수집 시작"""
         self._collection_interval = interval
         if not self._collection_task or self._collection_task.done():
@@ -212,7 +212,7 @@ class MetricsCollector(metaclass=SingletonMeta):
             }
         ]
 
-    def _get_hot_keys(self, cache_name: str, limit: int = 10) -> List[str]:
+    def _get_hot_keys(self, cache_name: str, limit=10) -> List[str]:
         """Hot keys 추출"""
         cache_keys = {
             k: v
@@ -224,7 +224,7 @@ class MetricsCollector(metaclass=SingletonMeta):
 
     async def _check_alerts(self, cache_name: str, metrics: CacheMetrics):
         """알림 확인"""
-        alerts = []
+        alerts=[]
         if metrics.hit_rate < self.alert_thresholds["hit_rate_min"]:
             alerts = alerts + [
                 {
@@ -274,11 +274,11 @@ class MetricsCollector(metaclass=SingletonMeta):
         """알림 임계값 설정"""
         self.alert_thresholds = {**self.alert_thresholds, metric: threshold}
 
-    def get_metrics_history(self, cache_name: str, hours: int = 24) -> List[Dict]:
+    def get_metrics_history(self, cache_name: str, hours=24) -> List[Dict]:
         """메트릭스 히스토리 조회"""
         history = self.metrics_history.get(cache_name, deque())
         cutoff_time = datetime.now() - timedelta(hours=hours)
-        filtered_history = []
+        filtered_history=[]
         for entry in history:
             entry_time = datetime.strptime(entry["timestamp"], "%Y-%m-%d %H:%M")
             if entry_time >= cutoff_time:
@@ -322,7 +322,7 @@ class MetricsCollector(metaclass=SingletonMeta):
             return {"error": str(e)}
 
 
-_metrics_collector: Optional[MetricsCollector] = None
+_metrics_collector=None
 
 
 def get_metrics_collector() -> MetricsCollector:
@@ -372,9 +372,9 @@ def reset_cache_metrics(cache_name: str = None) -> Result[None, str]:
             for key in keys_to_remove:
                 del collector.key_access_count[key]
         else:
-            metrics_history = {}
-            operation_times = {}
-            key_access_count = {}
+            metrics_history={}
+            operation_times={}
+            key_access_count={}
         return Success(None)
     except Exception as e:
         return Failure(f"메트릭스 초기화 실패: {str(e)}")

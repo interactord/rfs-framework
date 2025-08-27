@@ -53,7 +53,7 @@ class Stub:
     """Stub 객체"""
 
     def __init__(
-        self, return_value: Any = None, side_effect: Optional[Callable] = None
+        self, return_value: Any = None, side_effect=None
     ):
         """초기화"""
         self.return_value = return_value
@@ -109,7 +109,7 @@ def patch_object(target: Any, attribute: str, new: Any = None, **kwargs):
     return base_patch.object(target, attribute, new, **kwargs)
 
 
-def patch_method(cls: type, method_name: str, new: Optional[Callable] = None):
+def patch_method(cls: type, method_name: str, new=None):
     """메서드 패치"""
     if new is None:
         new = Mock()
@@ -244,14 +244,14 @@ class FakeRedis:
     """Fake Redis"""
 
     def __init__(self):
-        self.data: Dict[str, Any] = {}
-        self.expiry: Dict[str, float] = {}
+        self.data={}
+        self.expiry={}
 
     def get(self, key: str) -> Optional[Any]:
         """값 조회"""
         return self.data.get(key)
 
-    def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ex=None) -> bool:
         """값 설정"""
         self.data[key] = value
         if ex:
@@ -316,7 +316,7 @@ class FakeMessageBroker:
         """메시지 조회"""
         return self.queues.get(channel, [])
 
-    def clear(self, channel: Optional[str] = None) -> None:
+    def clear(self, channel=None) -> None:
         """클리어"""
         if channel:
             if channel in self.queues:

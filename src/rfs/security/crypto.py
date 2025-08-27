@@ -54,9 +54,9 @@ class EncryptionResult:
     """암호화 결과"""
 
     encrypted_data: bytes
-    nonce: Optional[bytes] = None
-    tag: Optional[bytes] = None
-    salt: Optional[bytes] = None
+    nonce=None
+    tag=None
+    salt=None
 
 
 @dataclass
@@ -65,7 +65,7 @@ class KeyPair:
 
     private_key: bytes
     public_key: bytes
-    algorithm: str = "RSA"
+    algorithm="RSA"
 
 
 class CryptoManager:
@@ -82,20 +82,20 @@ class CryptoManager:
             )
         return Success(None)
 
-    def generate_key(self, length: int = 32) -> bytes:
+    def generate_key(self, length=32) -> bytes:
         """대칭키 생성"""
         return secrets.token_bytes(length)
 
-    def generate_salt(self, length: int = 16) -> bytes:
+    def generate_salt(self, length=16) -> bytes:
         """솔트 생성"""
         return secrets.token_bytes(length)
 
-    def generate_nonce(self, length: int = 12) -> bytes:
+    def generate_nonce(self, length=12) -> bytes:
         """논스 생성"""
         return secrets.token_bytes(length)
 
     def encrypt_aes_gcm(
-        self, data: bytes, key: bytes, nonce: Optional[bytes] = None
+        self, data: bytes, key: bytes, nonce=None
     ) -> Result[EncryptionResult, str]:
         """AES-GCM 암호화"""
         check_result = self._check_cryptography()
@@ -147,7 +147,7 @@ class CryptoManager:
             return Failure(f"AES-GCM 복호화 실패: {str(e)}")
 
     def encrypt_aes_cbc(
-        self, data: bytes, key: bytes, iv: Optional[bytes] = None
+        self, data: bytes, key: bytes, iv=None
     ) -> Result[EncryptionResult, str]:
         """AES-CBC 암호화"""
         check_result = self._check_cryptography()
@@ -202,7 +202,7 @@ class CryptoManager:
         except Exception as e:
             return Failure(f"AES-CBC 복호화 실패: {str(e)}")
 
-    def generate_rsa_keypair(self, key_size: int = 2048) -> Result[KeyPair, str]:
+    def generate_rsa_keypair(self, key_size=2048) -> Result[KeyPair, str]:
         """RSA 키쌍 생성"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
@@ -342,7 +342,7 @@ class CryptoManager:
         self,
         data: bytes,
         algorithm: HashAlgorithm = HashAlgorithm.SHA256,
-        salt: Optional[bytes] = None,
+        salt=None,
     ) -> Result[bytes, str]:
         """데이터 해싱"""
         try:
@@ -452,7 +452,7 @@ def decrypt(
             return Failure(f"지원하지 않는 복호화 알고리즘: {algorithm}")
 
 
-def hash_password(password: str, salt: Optional[bytes] = None) -> Result[str, str]:
+def hash_password(password: str, salt=None) -> Result[str, str]:
     """비밀번호 해싱"""
     hash_result = _crypto_manager.hash_data(
         password.encode(), HashAlgorithm.PBKDF2, salt
@@ -473,12 +473,12 @@ def verify_password(password: str, hashed_password: str) -> Result[bool, str]:
         return Failure(f"비밀번호 검증 실패: {str(e)}")
 
 
-def generate_salt(length: int = 16) -> bytes:
+def generate_salt(length=16) -> bytes:
     """솔트 생성"""
     return _crypto_manager.generate_salt(length)
 
 
-def generate_key(length: int = 32) -> bytes:
+def generate_key(length=32) -> bytes:
     """키 생성"""
     return _crypto_manager.generate_key(length)
 
@@ -486,7 +486,7 @@ def generate_key(length: int = 32) -> bytes:
 def hash_data(
     data: Union[str, bytes],
     algorithm: HashAlgorithm = HashAlgorithm.SHA256,
-    salt: Optional[bytes] = None,
+    salt=None,
 ) -> Result[str, str]:
     """데이터 해싱 (Base64 인코딩)"""
     if type(data).__name__ == "str":
@@ -539,6 +539,6 @@ def verify_signature(
         return Failure(f"서명 검증 실패: {str(e)}")
 
 
-def generate_keypair(key_size: int = 2048) -> Result[KeyPair, str]:
+def generate_keypair(key_size=2048) -> Result[KeyPair, str]:
     """키쌍 생성"""
     return _crypto_manager.generate_rsa_keypair(key_size)

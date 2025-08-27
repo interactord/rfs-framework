@@ -16,9 +16,9 @@ from ..core.result import Failure, Result, Success
 class CoverageReport:
     """커버리지 리포트"""
 
-    total_lines: int = 0
-    covered_lines: int = 0
-    missed_lines: int = 0
+    total_lines=0
+    covered_lines=0
+    missed_lines=0
     coverage_percentage: float = 0.0
     files: Dict[str, Dict[str, any]] = field(default_factory=dict)
 
@@ -123,7 +123,7 @@ class CoverageCollector:
         except Exception as e:
             return Failure(f"Failed to generate report: {str(e)}")
 
-    def html_report(self, directory: str = "htmlcov") -> Result[str, str]:
+    def html_report(self, directory="htmlcov") -> Result[str, str]:
         """HTML 리포트 생성"""
         try:
             self.cov.html_report(directory=directory)
@@ -133,7 +133,7 @@ class CoverageCollector:
 
 
 # Global coverage instance
-_coverage_collector: Optional[CoverageCollector] = None
+_coverage_collector=None
 
 
 def start_coverage(source_paths: Optional[List[str]] = None) -> Result[None, str]:
@@ -202,7 +202,7 @@ def analyze_coverage(
         return Failure(f"Failed to analyze coverage: {str(e)}")
 
 
-def generate_coverage_html(directory: str = "htmlcov") -> Result[str, str]:
+def generate_coverage_html(directory="htmlcov") -> Result[str, str]:
     """HTML 커버리지 리포트 생성"""
     global _coverage_collector
 

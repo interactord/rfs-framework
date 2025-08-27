@@ -68,15 +68,15 @@ class TestConfig:
     framework: TestFramework = TestFramework.PYTEST
     test_paths: List[str] = field(default_factory=list)
     patterns: List[str] = field(default_factory=list)
-    parallel: bool = True
-    max_workers: int = 4
-    coverage: bool = True
+    parallel=True
+    max_workers=4
+    coverage=True
     coverage_threshold: float = 80.0
-    verbose: bool = True
-    fail_fast: bool = False
-    timeout: int = 300
+    verbose=True
+    fail_fast=False
+    timeout=300
     environment_vars: Dict[str, Any] = field(default_factory=dict)
-    fixtures_path: Optional[str] = None
+    fixtures_path=None
     mock_config: Optional[Dict[str, Any]] = None
 
 
@@ -85,13 +85,13 @@ class TestResult:
     """테스트 결과"""
 
     framework: TestFramework
-    total_tests: int = 0
-    passed_tests: int = 0
-    failed_tests: int = 0
-    skipped_tests: int = 0
-    error_tests: int = 0
+    total_tests=0
+    passed_tests=0
+    failed_tests=0
+    skipped_tests=0
+    error_tests=0
     execution_time: float = 0.0
-    coverage_percentage: Optional[float] = None
+    coverage_percentage=None
     failed_test_details: List[Dict[str, Any]] = field(default_factory=list)
     coverage_report: Optional[Dict[str, Any]] = None
     performance_metrics: Dict[str, Any] = field(default_factory=dict)
@@ -112,13 +112,13 @@ class TestResult:
 class TestRunner:
     """고급 테스트 실행기"""
 
-    def __init__(self, config: Optional[TestConfig] = None):
+    def __init__(self, config=None):
         self.config = config or TestConfig()
         self.project_path = Path.cwd()
-        self.test_history: List[TestResult] = []
+        self.test_history=[]
 
     async def run_tests(
-        self, test_type: Optional[TestType] = None, **kwargs
+        self, test_type=None, **kwargs
     ) -> Result[TestResult, str]:
         """테스트 실행"""
         try:

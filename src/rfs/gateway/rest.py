@@ -55,11 +55,11 @@ class RestRequest:
     path: str
     headers: Dict[str, Any] = field(default_factory=dict)
     query_params: Dict[str, List[str]] = field(default_factory=dict)
-    body: Optional[bytes] = None
+    body=None
     json_body: Optional[Dict[str, Any]] = None
     path_params: Dict[str, Any] = field(default_factory=dict)
-    remote_addr: Optional[str] = None
-    user_agent: Optional[str] = None
+    remote_addr=None
+    user_agent=None
 
     @property
     def content_type(self) -> Optional[str]:
@@ -71,7 +71,7 @@ class RestRequest:
         return self.headers.get(name) or self.headers.get(name.lower())
 
     def get_query_param(
-        self, name: str, default: Optional[str] = None
+        self, name: str, default=None
     ) -> Optional[str]:
         """쿼리 파라미터 가져오기"""
         values = self.query_params.get(name, [])
@@ -96,9 +96,9 @@ class RestRequest:
 class RestResponse:
     """REST 응답"""
 
-    status_code: int = 200
+    status_code=200
     headers: Dict[str, Any] = field(default_factory=dict)
-    body: Optional[bytes] = None
+    body=None
     json_body: Optional[Dict[str, Any]] = None
 
     def set_json(self, data: Any):
@@ -163,7 +163,7 @@ class RoutePattern:
     @classmethod
     def create(cls, pattern: str) -> "RoutePattern":
         """패턴에서 RoutePattern 생성"""
-        param_names = []
+        param_names=[]
         regex_pattern = pattern
         import re
 
@@ -229,7 +229,7 @@ class CorsMiddleware(RestMiddleware):
         allowed_origins: List[str] = None,
         allowed_methods: List[str] = None,
         allowed_headers: List[str] = None,
-        allow_credentials: bool = False,
+        allow_credentials=False,
     ):
         self.allowed_origins = allowed_origins or ["*"]
         self.allowed_methods = allowed_methods or [
@@ -303,7 +303,7 @@ class AuthenticationMiddleware(RestMiddleware):
 
     def __init__(
         self,
-        jwt_service: Optional[JWTService] = None,
+        jwt_service=None,
         exclude_paths: Optional[List[str]] = None,
         required_roles: Optional[List[str]] = None,
         required_permissions: Optional[List[tuple[str, str]]] = None,
@@ -406,9 +406,9 @@ class RateLimitMiddleware(RestMiddleware):
 
     def __init__(
         self,
-        requests_per_minute: int = 60,
-        requests_per_hour: int = 1000,
-        by_user: bool = True,
+        requests_per_minute=60,
+        requests_per_hour=1000,
+        by_user=True,
     ):
         """레이트 리미팅 미들웨어 초기화
 
@@ -501,18 +501,18 @@ class RateLimitMiddleware(RestMiddleware):
 class RouterConfig:
     """라우터 설정"""
 
-    base_path: str = ""
+    base_path=""
     middleware: List[str] = field(default_factory=list)
-    error_handler: Optional[Callable] = None
+    error_handler=None
 
 
 class RestGateway:
     """REST API 게이트웨이"""
 
-    def __init__(self, config: Optional[RouterConfig] = None):
+    def __init__(self, config=None):
         self.config = config or RouterConfig()
-        self.routes: List[RestRoute] = []
-        self.global_middleware: List[RestMiddleware] = []
+        self.routes=[]
+        self.global_middleware=[]
 
     def add_route(
         self,
@@ -626,7 +626,7 @@ class RestGateway:
 
 
 def create_rest_gateway(
-    base_path: str = "", middleware: Optional[List[RestMiddleware]] = None
+    base_path="", middleware: Optional[List[RestMiddleware]] = None
 ) -> RestGateway:
     """REST 게이트웨이 생성"""
     config = RouterConfig(base_path=base_path, middleware=middleware or [])

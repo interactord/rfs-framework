@@ -23,13 +23,13 @@ logger = get_logger(__name__)
 class MemoryCacheConfig(CacheConfig):
     """메모리 캐시 설정"""
 
-    max_size: int = 1000
-    eviction_policy: str = "lru"
-    cleanup_interval: int = 300
-    lazy_expiration: bool = True
-    memory_limit: int = 100 * 1024 * 1024
-    estimate_size: bool = True
-    enable_detailed_stats: bool = True
+    max_size=1000
+    eviction_policy="lru"
+    cleanup_interval=300
+    lazy_expiration=True
+    memory_limit=100 * 1024 * 1024
+    estimate_size=True
+    enable_detailed_stats=True
 
 
 class CacheItem:
@@ -84,15 +84,15 @@ class MemoryCache(CacheBackend):
     def __init__(self, config: MemoryCacheConfig):
         super().__init__(config)
         self.config: MemoryCacheConfig = config
-        self._data: Dict[str, CacheItem] = {}
+        self._data={}
         self._access_order: OrderedDict = OrderedDict()
-        self._frequency: Dict[str, int] = {}
-        self._insertion_order: List[str] = []
+        self._frequency={}
+        self._insertion_order=[]
         self._ttl_heap: List[Tuple[float, str]] = []
         self._lock = RLock()
         self._current_size = 0
         self._current_memory = 0
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task=None
 
     async def connect(self) -> Result[None, str]:
         """캐시 초기화"""
@@ -121,11 +121,11 @@ class MemoryCache(CacheBackend):
                 except asyncio.CancelledError:
                     pass
             with self._lock:
-                self._data = {}
+                self._data={}
                 self._access_order = OrderedDict()
-                self._frequency = {}
-                self._insertion_order = []
-                self._ttl_heap = []
+                self._frequency={}
+                self._insertion_order=[]
+                self._ttl_heap=[]
                 self._current_size = 0
                 self._current_memory = 0
             self._connected = False
@@ -314,7 +314,7 @@ class MemoryCache(CacheBackend):
         try:
             with self._lock:
                 if self.namespace:
-                    keys_to_delete = []
+                    keys_to_delete=[]
                     prefix = f"{self.namespace}:"
                     for key in self._data.keys():
                         if key.startswith(prefix):
@@ -322,11 +322,11 @@ class MemoryCache(CacheBackend):
                     for key in keys_to_delete:
                         self._remove_item(key)
                 else:
-                    self._data = {}
+                    self._data={}
                     self._access_order = OrderedDict()
-                    self._frequency = {}
-                    self._insertion_order = []
-                    self._ttl_heap = []
+                    self._frequency={}
+                    self._insertion_order=[]
+                    self._ttl_heap=[]
                     self._current_size = 0
                     self._current_memory = 0
                 return Success(None)
@@ -441,7 +441,7 @@ class MemoryCache(CacheBackend):
             try:
                 await asyncio.sleep(self.config.cleanup_interval)
                 current_time = time.time()
-                expired_keys = []
+                expired_keys=[]
                 with self._lock:
                     while self._ttl_heap:
                         expires_at, key = self._ttl_heap[0]

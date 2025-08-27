@@ -88,12 +88,12 @@ class StartupMetrics:
     initial_memory_mb: float = 0.0
     final_memory_mb: float = 0.0
     memory_saved_mb: float = 0.0
-    preloaded_modules: int = 0
-    failed_imports: int = 0
-    cached_objects: int = 0
-    cpu_cores: int = 0
+    preloaded_modules=0
+    failed_imports=0
+    cached_objects=0
+    cpu_cores=0
     available_memory_mb: float = 0.0
-    python_version: str = ""
+    python_version=""
 
     def __post_init__(self):
         if not self.python_version:
@@ -112,16 +112,16 @@ class OptimizationConfig:
     preload_modules: List[str] = field(default_factory=list)
     preload_patterns: List[str] = field(default_factory=list)
     max_preload_time: float = 5.0
-    enable_cache_warmup: bool = True
+    enable_cache_warmup=True
     cache_warmup_functions: List[Callable] = field(default_factory=list)
     max_warmup_time: float = 3.0
-    enable_gc_optimization: bool = True
-    gc_freeze: bool = True
+    enable_gc_optimization=True
+    gc_freeze=True
     memory_threshold_mb: float = 100.0
-    max_workers: int = 4
-    enable_async_warmup: bool = True
-    collect_detailed_metrics: bool = True
-    log_optimization_steps: bool = True
+    max_workers=4
+    enable_async_warmup=True
+    collect_detailed_metrics=True
+    log_optimization_steps=True
 
 
 class ColdStartOptimizer:
@@ -135,15 +135,15 @@ class ColdStartOptimizer:
         metrics = optimizer.get_metrics()
     """
 
-    def __init__(self, config: OptimizationConfig = None):
+    def __init__(self, config=None):
         self.config = config or OptimizationConfig()
         self.start_time = time.time()
         self.metrics = StartupMetrics()
         self._preloaded_modules: Set[str] = set()
-        self._warmup_functions: List[Callable] = []
+        self._warmup_functions=[]
         self._optimization_completed = False
-        self._phase_times: Dict[str, float] = {}
-        self._import_times: Dict[str, float] = {}
+        self._phase_times={}
+        self._import_times={}
         self.metrics.initial_memory_mb = self._get_memory_usage()
         if self.config.log_optimization_steps:
             logger.info(
@@ -151,7 +151,7 @@ class ColdStartOptimizer:
             )
 
     def preload_modules(
-        self, modules: List[str], timeout: float = None
+        self, modules: List[str], timeout=None
     ) -> Dict[str, bool]:
         """
         모듈들을 사전 로딩
@@ -165,7 +165,7 @@ class ColdStartOptimizer:
         """
         phase_start = time.time()
         timeout = timeout or self.config.max_preload_time
-        results = {}
+        results={}
         failed_count = 0
         if (
             self.config.level == OptimizationLevel.AGGRESSIVE
@@ -214,7 +214,7 @@ class ColdStartOptimizer:
         self, modules: List[str], timeout: float
     ) -> Dict[str, bool]:
         """병렬 모듈 로딩"""
-        results = {}
+        results={}
 
         def load_module(module_name: str) -> tuple[str, bool, float]:
             start_time = time.time()
@@ -243,7 +243,7 @@ class ColdStartOptimizer:
                     logger.error(f"Parallel loading error for {module_name}: {e}")
         return results
 
-    def register_warmup_function(self, func: Callable, priority: int = 0) -> None:
+    def register_warmup_function(self, func: Callable, priority=0) -> None:
         """
         워밍업 함수 등록
 
@@ -254,7 +254,7 @@ class ColdStartOptimizer:
         self._warmup_functions = self._warmup_functions + [(priority, func)]
         self._warmup_functions.sort(key=lambda x: x[0])
 
-    async def warm_up(self, timeout: float = None) -> Dict[str, Any]:
+    async def warm_up(self, timeout=None) -> Dict[str, Any]:
         """
         캐시 및 연결 워밍업
 
@@ -412,7 +412,7 @@ class ColdStartOptimizer:
             "optimization_time": 0.0,
         }
         try:
-            collected_objects = []
+            collected_objects=[]
             for generation in range(3):
                 collected = gc.collect()
                 collected_objects = collected_objects + [collected]
@@ -543,7 +543,7 @@ class ColdStartOptimizer:
 
     def _generate_recommendations(self) -> List[str]:
         """성능 개선 추천사항 생성"""
-        recommendations = []
+        recommendations=[]
         metrics = self.get_metrics()
         if metrics.total_startup_time > 5.0:
             recommendations = recommendations + [
@@ -576,9 +576,7 @@ class ColdStartOptimizer:
 
 
 def create_optimizer(
-    level: OptimizationLevel = OptimizationLevel.MODERATE,
-    modules: List[str] = None,
-    warmup_functions: List[Callable] = None,
+    level: OptimizationLevel = OptimizationLevel.MODERATE, modules=None, warmup_functions=None,
 ) -> ColdStartOptimizer:
     """
     Cold Start Optimizer 생성 편의 함수
@@ -600,9 +598,7 @@ def create_optimizer(
 
 
 async def quick_optimize(
-    modules: List[str] = None,
-    warmup_functions: List[Callable] = None,
-    level: OptimizationLevel = OptimizationLevel.MODERATE,
+    modules: List[str] = None, warmup_functions=None, level=OptimizationLevel.MODERATE,
 ) -> StartupMetrics:
     """
     빠른 최적화 실행 함수
@@ -680,8 +676,8 @@ class ColdStartConfig:
     optimization_phase: OptimizationPhase = OptimizationPhase.IMPORT
     max_startup_time: float = 3.0
     max_memory_mb: float = 256.0
-    enable_profiling: bool = True
-    enable_caching: bool = True
+    enable_profiling=True
+    enable_caching=True
 
 
 def get_default_cold_start_optimizer() -> ColdStartOptimizer:
@@ -700,7 +696,7 @@ async def measure_cold_start_time() -> float:
 
 
 async def optimize_cold_start(
-    config: Optional[ColdStartConfig] = None,
+    config=None,
 ) -> Dict[str, Any]:
     """Cold Start 최적화 실행"""
     if config is None:

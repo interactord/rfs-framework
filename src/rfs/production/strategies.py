@@ -52,34 +52,34 @@ class DeploymentConfig:
     deployment_type: DeploymentType = DeploymentType.BLUE_GREEN
 
     # 공통 설정
-    health_check_interval: int = 30  # 초
-    health_check_timeout: int = 10  # 초
-    max_deployment_time: int = 600  # 최대 배포 시간 (초)
+    health_check_interval=30  # 초
+    health_check_timeout=10  # 초
+    max_deployment_time=600  # 최대 배포 시간 (초)
 
     # Blue-Green 설정
-    switch_delay: int = 60  # 트래픽 전환 전 대기 시간
+    switch_delay=60  # 트래픽 전환 전 대기 시간
 
     # Canary 설정
-    canary_percentage: int = 10  # 초기 카나리 트래픽 비율
-    canary_increment: int = 10  # 증가 단위
-    canary_interval: int = 60  # 증가 간격 (초)
+    canary_percentage=10  # 초기 카나리 트래픽 비율
+    canary_increment=10  # 증가 단위
+    canary_interval=60  # 증가 간격 (초)
 
     # Rolling 설정
-    batch_size: int = 1  # 동시 업데이트 인스턴스 수
-    batch_interval: int = 30  # 배치 간 대기 시간
+    batch_size=1  # 동시 업데이트 인스턴스 수
+    batch_interval=30  # 배치 간 대기 시간
 
     # A/B Testing 설정
-    ab_split_percentage: int = 50  # A/B 트래픽 분할 비율
-    ab_duration: int = 3600  # A/B 테스트 기간 (초)
+    ab_split_percentage=50  # A/B 트래픽 분할 비율
+    ab_duration=3600  # A/B 테스트 기간 (초)
 
     # 롤백 설정
-    auto_rollback: bool = True
+    auto_rollback=True
     rollback_on_error_rate: float = 0.05  # 5% 에러율
     rollback_on_latency: float = 2.0  # 2초 이상 지연
 
     # 모니터링
-    monitoring_enabled: bool = True
-    metrics_collection_interval: int = 10  # 초
+    monitoring_enabled=True
+    metrics_collection_interval=10  # 초
 
 
 @dataclass
@@ -87,17 +87,17 @@ class DeploymentMetrics:
     """배포 메트릭"""
 
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: Optional[datetime] = None
+    end_time=None
     success_rate: float = 0.0
     error_rate: float = 0.0
     average_latency: float = 0.0
     peak_latency: float = 0.0
     requests_per_second: float = 0.0
-    instance_count: int = 0
-    healthy_instances: int = 0
-    deployment_duration: Optional[timedelta] = None
-    rollback_triggered: bool = False
-    rollback_reason: Optional[str] = None
+    instance_count=0
+    healthy_instances=0
+    deployment_duration=None
+    rollback_triggered=False
+    rollback_reason=None
 
 
 class DeploymentStrategy(ABC):
@@ -106,8 +106,8 @@ class DeploymentStrategy(ABC):
     def __init__(self, config: DeploymentConfig):
         self.config = config
         self.metrics = DeploymentMetrics()
-        self.monitoring_client: Optional[CloudMonitoringClient] = None
-        self._deployment_task: Optional[asyncio.Task] = None
+        self.monitoring_client=None
+        self._deployment_task=None
         self._is_deploying = False
 
     @abstractmethod
@@ -477,7 +477,7 @@ class DeploymentStrategyFactory:
 
     @staticmethod
     def create(
-        deployment_type: DeploymentType, config: Optional[DeploymentConfig] = None
+        deployment_type: DeploymentType, config=None
     ) -> DeploymentStrategy:
         """배포 전략 생성"""
         if config is None:

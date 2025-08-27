@@ -106,13 +106,13 @@ class MonitoringConfig:
 
     thresholds: MonitoringThresholds = field(default_factory=MonitoringThresholds)
     collection_interval_seconds: float = 30.0
-    retention_days: int = 30
-    enable_system_monitoring: bool = True
-    enable_application_monitoring: bool = True
-    enable_network_monitoring: bool = True
-    enable_custom_metrics: bool = True
+    retention_days=30
+    enable_system_monitoring=True
+    enable_application_monitoring=True
+    enable_network_monitoring=True
+    enable_custom_metrics=True
     alert_cooldown_seconds: float = 300.0
-    max_metrics_history: int = 2880
+    max_metrics_history=2880
 
 
 class MetricsCollector:
@@ -121,7 +121,7 @@ class MetricsCollector:
     def __init__(self, config: MonitoringConfig):
         self.config = config
         self.custom_collectors: Dict[str, Callable[[], float]] = {}
-        self.network_baseline: Dict[str, float] = {}
+        self.network_baseline={}
         self.process_start_time = time.time()
         self._initialize_network_baseline()
 
@@ -280,7 +280,7 @@ class MetricsCollector:
 
     async def _collect_custom_metrics(self) -> Dict[str, float]:
         """커스텀 메트릭 수집"""
-        custom_metrics = {}
+        custom_metrics={}
         for name, collector in self.custom_collectors.items():
             try:
                 value = collector()
@@ -333,8 +333,8 @@ class AlertGenerator:
 
     def __init__(self, config: MonitoringConfig):
         self.config = config
-        self.last_alerts: Dict[str, datetime] = {}
-        self.alert_callbacks: List[Callable] = []
+        self.last_alerts={}
+        self.alert_callbacks=[]
 
     def register_alert_callback(self, callback: Callable) -> None:
         """알림 콜백 등록"""
@@ -342,7 +342,7 @@ class AlertGenerator:
 
     def check_thresholds(self, metrics: ProductionMetrics) -> List[Dict[str, Any]]:
         """임계값 확인 및 알림 생성"""
-        alerts = []
+        alerts=[]
         thresholds = self.config.thresholds
         current_time = datetime.now()
         alerts = alerts + self._check_cpu_thresholds(metrics, thresholds, current_time)
@@ -368,7 +368,7 @@ class AlertGenerator:
         current_time: datetime,
     ) -> List[Dict[str, Any]]:
         """CPU 임계값 확인"""
-        alerts = []
+        alerts=[]
         cpu_usage = metrics.cpu_usage_percent
         if cpu_usage >= thresholds.cpu_critical_percent:
             alert_key = "cpu_critical"
@@ -407,7 +407,7 @@ class AlertGenerator:
         current_time: datetime,
     ) -> List[Dict[str, Any]]:
         """메모리 임계값 확인"""
-        alerts = []
+        alerts=[]
         memory_usage = metrics.memory_usage_percent
         if memory_usage >= thresholds.memory_critical_percent:
             alert_key = "memory_critical"
@@ -446,7 +446,7 @@ class AlertGenerator:
         current_time: datetime,
     ) -> List[Dict[str, Any]]:
         """디스크 임계값 확인"""
-        alerts = []
+        alerts=[]
         disk_usage = metrics.disk_usage_percent
         if disk_usage >= thresholds.disk_critical_percent:
             alert_key = "disk_critical"
@@ -485,7 +485,7 @@ class AlertGenerator:
         current_time: datetime,
     ) -> List[Dict[str, Any]]:
         """응답 시간 임계값 확인"""
-        alerts = []
+        alerts=[]
         response_time = metrics.avg_response_time_ms
         if response_time >= thresholds.response_time_critical_ms:
             alert_key = "response_time_critical"
@@ -524,7 +524,7 @@ class AlertGenerator:
         current_time: datetime,
     ) -> List[Dict[str, Any]]:
         """에러율 임계값 확인"""
-        alerts = []
+        alerts=[]
         if metrics.request_count > 0:
             error_rate = metrics.error_count / metrics.request_count * 100
             if error_rate >= thresholds.error_rate_critical_percent:
@@ -561,7 +561,7 @@ class AlertGenerator:
         self, metrics: ProductionMetrics, current_time: datetime
     ) -> List[Dict[str, Any]]:
         """시스템 상태 알림 확인"""
-        alerts = []
+        alerts=[]
         if metrics.system_status == SystemStatus.CRITICAL:
             alert_key = "system_critical"
             if self._should_send_alert(alert_key, current_time):
@@ -640,11 +640,11 @@ class AlertGenerator:
 class ProductionMonitor:
     """프로덕션 모니터"""
 
-    def __init__(self, config: Optional[MonitoringConfig] = None):
+    def __init__(self, config=None):
         self.config = config or MonitoringConfig()
         self.metrics_collector = MetricsCollector(self.config)
         self.alert_generator = AlertGenerator(self.config)
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.metrics_history: deque = deque(maxlen=self.config.max_metrics_history)
         self.alerts_history: deque = deque(maxlen=1000)
         self.is_running = False
@@ -732,14 +732,14 @@ class ProductionMonitor:
             return self.metrics_history[-1]
         return None
 
-    def get_metrics_history(self, minutes: int = 60) -> List[ProductionMetrics]:
+    def get_metrics_history(self, minutes=60) -> List[ProductionMetrics]:
         """메트릭 이력 조회"""
         if not self.metrics_history:
             return []
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [m for m in self.metrics_history if m.timestamp >= cutoff_time]
 
-    def get_recent_alerts(self, count: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_alerts(self, count=10) -> List[Dict[str, Any]]:
         """최근 알림 조회"""
         return list(self.alerts_history)[-count:]
 
@@ -764,7 +764,7 @@ class ProductionMonitor:
             "monitoring_active": self.is_running,
         }
 
-    def get_performance_trends(self, hours: int = 24) -> Dict[str, Any]:
+    def get_performance_trends(self, hours=24) -> Dict[str, Any]:
         """성능 트렌드 분석"""
         metrics_list = self.get_metrics_history(hours * 60)
         if len(metrics_list) < 2:
@@ -853,7 +853,7 @@ class ProductionMonitor:
         self, metrics: ProductionMetrics, recent_alerts: List[Dict[str, Any]]
     ) -> List[str]:
         """추천사항 생성"""
-        recommendations = []
+        recommendations=[]
         if metrics.cpu_usage_percent > 80:
             recommendations = recommendations + [
                 "High CPU usage detected - consider scaling up or optimizing processes"
@@ -889,19 +889,19 @@ class ProductionMonitor:
         """리소스 정리"""
         try:
             await self.stop_monitoring()
-            metrics_history = []
-            alerts_history = []
+            metrics_history=[]
+            alerts_history=[]
             logging.info("Production monitor cleanup completed")
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_production_monitor: Optional[ProductionMonitor] = None
+_production_monitor=None
 
 
 def get_production_monitor(
-    config: Optional[MonitoringConfig] = None,
+    config=None,
 ) -> ProductionMonitor:
     """프로덕션 모니터 싱글톤 인스턴스 반환"""
     # global _production_monitor - removed for functional programming
@@ -911,7 +911,7 @@ def get_production_monitor(
 
 
 async def start_production_monitoring(
-    config: Optional[MonitoringConfig] = None,
+    config=None,
 ) -> Result[ProductionMonitor, str]:
     """프로덕션 모니터링 시작"""
     monitor = get_production_monitor(config)

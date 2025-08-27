@@ -100,14 +100,14 @@ class SystemMetrics:
             self.resource_history = self.resource_history[-1000:]
         self.uptime = datetime.now() - self.system_info.boot_time
 
-    def get_recent_usage(self, minutes: int = 10) -> List[ResourceUsage]:
+    def get_recent_usage(self, minutes=10) -> List[ResourceUsage]:
         """최근 N분간의 사용량 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
             usage for usage in self.resource_history if usage.timestamp >= cutoff_time
         ]
 
-    def get_average_usage(self, minutes: int = 10) -> Optional[ResourceUsage]:
+    def get_average_usage(self, minutes=10) -> Optional[ResourceUsage]:
         """최근 N분간의 평균 사용량 반환"""
         recent = self.get_recent_usage(minutes)
         if not recent:
@@ -136,18 +136,18 @@ class SystemMetrics:
 class SystemProfiler:
     """시스템 프로파일러"""
 
-    def __init__(self, collection_interval: float = 1.0):
+    def __init__(self, collection_interval=1.0):
         self.collection_interval = collection_interval
         self.metrics = SystemMetrics(system_info=SystemInfo.collect())
         self.is_running = False
-        self.collection_task: Optional[asyncio.Task] = None
+        self.collection_task=None
         self.start_time = datetime.now()
         self.alert_thresholds = {
             "cpu_percent": 80.0,
             "memory_percent": 85.0,
             "disk_usage_percent": 90.0,
         }
-        self.alert_callbacks: List[callable] = []
+        self.alert_callbacks=[]
 
     async def start(self) -> Result[bool, str]:
         """프로파일링 시작"""
@@ -232,7 +232,7 @@ class SystemProfiler:
     async def _check_alerts(self, usage: ResourceUsage):
         """알림 조건 검사"""
         try:
-            alerts = []
+            alerts=[]
             if usage.cpu_percent > self.alert_thresholds["cpu_percent"]:
                 alerts = alerts + [f"High CPU usage: {usage.cpu_percent:.1f}%"]
             if usage.memory_percent > self.alert_thresholds["memory_percent"]:
@@ -277,7 +277,7 @@ class SystemProfiler:
         """프로파일러 가동 시간 반환"""
         return datetime.now() - self.start_time
 
-    async def get_performance_summary(self, minutes: int = 10) -> Dict[str, Any]:
+    async def get_performance_summary(self, minutes=10) -> Dict[str, Any]:
         """성능 요약 정보 반환"""
         try:
             current = self.get_current_usage()
@@ -318,7 +318,7 @@ class SystemProfiler:
             logger.error(f"Failed to get performance summary: {e}")
             return {"error": str(e)}
 
-    async def export_metrics(self, format: str = "json") -> Result[Dict[str, Any], str]:
+    async def export_metrics(self, format="json") -> Result[Dict[str, Any], str]:
         """메트릭 내보내기"""
         try:
             if format == "json":

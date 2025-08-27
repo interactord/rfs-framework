@@ -57,7 +57,7 @@ class MockTransactionData:
     id: str
     state: TransactionState = TransactionState.STARTED
     operations: List[Dict[str, Any]] = None
-    isolation_level: str = "READ_COMMITTED"
+    isolation_level="READ_COMMITTED"
     savepoints: List[str] = None
 
     def __post_init__(self):
@@ -76,7 +76,7 @@ class MockMemoryDatabase:
         self.next_id = 1
         self.lock = asyncio.Lock()
 
-    async def create_transaction(self, isolation_level: str = "READ_COMMITTED") -> str:
+    async def create_transaction(self, isolation_level="READ_COMMITTED") -> str:
         """새 트랜잭션 생성"""
         async with self.lock:
             tx_id = f"tx_{uuid.uuid4().hex[:8]}"

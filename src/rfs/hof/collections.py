@@ -134,7 +134,7 @@ def flat_map(func: Callable[[T], Iterable[U]], iterable: Iterable[T]) -> List[U]
 
 
 def drop_last(
-    iterable: Iterable[T], n: int = 1, predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], n=1, predicate: Optional[Callable[[T], bool]] = None
 ) -> List[T]:
     """
     Drops last n elements or elements matching predicate from the end.
@@ -169,7 +169,7 @@ def drop_last(
 
 
 def drop_first(
-    iterable: Iterable[T], n: int = 1, predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], n=1, predicate: Optional[Callable[[T], bool]] = None
 ) -> List[T]:
     """
     Drops first n elements or elements matching predicate from start.
@@ -379,8 +379,8 @@ def partition(
         >>> partition(lambda x: x % 2 == 0, [1, 2, 3, 4, 5])
         ([2, 4], [1, 3, 5])
     """
-    true_items = []
-    false_items = []
+    true_items=[]
+    false_items=[]
     for item in iterable:
         if predicate(item):
             true_items.append(item)
@@ -404,7 +404,7 @@ def group_by(key_func: Callable[[T], K], iterable: Iterable[T]) -> Dict[K, List[
         >>> group_by(lambda x: x % 3, [1, 2, 3, 4, 5, 6])
         {1: [1, 4], 2: [2, 5], 0: [3, 6]}
     """
-    result = {}
+    result={}
     for item in iterable:
         key = key_func(item)
         if key not in result:
@@ -429,7 +429,7 @@ def chunk(iterable: Iterable[T], size: int) -> List[List[T]]:
         [[1, 2], [3, 4], [5]]
     """
     it = iter(iterable)
-    chunks = []
+    chunks=[]
     while True:
         chunk_items = list(islice(it, size))
         if not chunk_items:

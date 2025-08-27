@@ -25,10 +25,10 @@ def Transactional(
     isolation: IsolationLevel = IsolationLevel.READ_COMMITTED,
     propagation: PropagationLevel = PropagationLevel.REQUIRED,
     timeout: Optional[Union[int, timedelta]] = None,
-    read_only: bool = False,
+    read_only=False,
     rollback_on: Optional[List[Type[Exception]]] = None,
     no_rollback_on: Optional[List[Type[Exception]]] = None,
-    retry: int = 0,
+    retry=0,
     retry_delay: Union[int, timedelta] = 1,
 ):
     """
@@ -323,7 +323,7 @@ class TransactionalClass:
         isolation: IsolationLevel = IsolationLevel.READ_COMMITTED,
         propagation: PropagationLevel = PropagationLevel.REQUIRED,
         timeout: Optional[Union[int, timedelta]] = None,
-        read_only: bool = False,
+        read_only=False,
         methods: Optional[List[str]] = None,
         exclude_methods: Optional[List[str]] = None,
     ):

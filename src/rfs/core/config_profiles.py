@@ -70,7 +70,7 @@ class DevelopmentProfile(ConfigProfile):
 
     def validate_environment(self) -> tuple[bool, list[str]]:
         """개발 환경 검증"""
-        warnings = []
+        warnings=[]
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
         if "localhost" not in redis_url and "127.0.0.1" not in redis_url:
             warnings = warnings + ["개발 환경에서는 로컬 Redis 사용을 권장합니다"]
@@ -116,7 +116,7 @@ class TestProfile(ConfigProfile):
 
     def validate_environment(self) -> tuple[bool, list[str]]:
         """테스트 환경 검증"""
-        errors = []
+        errors=[]
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
         if not redis_url.endswith("/1"):
             errors = errors + [
@@ -161,7 +161,7 @@ class ProductionProfile(ConfigProfile):
 
     def validate_environment(self) -> tuple[bool, list[str]]:
         """운영 환경 엄격한 검증"""
-        errors = []
+        errors=[]
         if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
             errors = errors + [
                 "운영 환경에서는 GOOGLE_APPLICATION_CREDENTIALS가 필수입니다"
@@ -190,7 +190,7 @@ class ProfileManager:
     """프로파일 관리자 (RFS v4)"""
 
     def __init__(self):
-        self._profiles = {}
+        self._profiles={}
 
     def get_profile(self, environment: Environment) -> ConfigProfile:
         """환경에 따른 프로파일 조회"""
@@ -253,7 +253,7 @@ class ProfileManager:
         self, from_env: Environment, to_env: Environment
     ) -> tuple[bool, list[str]]:
         """프로파일 안전 전환 (v4 신규)"""
-        messages = []
+        messages=[]
         valid, errors = self.validate_profile(to_env)
         if not valid:
             return (False, errors)

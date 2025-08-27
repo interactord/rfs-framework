@@ -50,8 +50,8 @@ class ServiceEndpoint:
 
     host: str
     port: int
-    protocol: str = "http"  # http, https, grpc, tcp
-    path: str = "/"
+    protocol="http"  # http, https, grpc, tcp
+    path="/"
 
     @property
     def url(self) -> str:
@@ -86,11 +86,11 @@ class ServiceHealth:
     """서비스 헬스 정보"""
 
     status: HealthStatus = HealthStatus.UNKNOWN
-    last_check: Optional[datetime] = None
-    response_time: Optional[timedelta] = None
-    error_count: int = 0
-    success_count: int = 0
-    consecutive_failures: int = 0
+    last_check=None
+    response_time=None
+    error_count=0
+    success_count=0
+    consecutive_failures=0
     details: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -106,7 +106,7 @@ class ServiceHealth:
             return 0.0
         return self.success_count / total
 
-    def update_health(self, success: bool, response_time: Optional[timedelta] = None):
+    def update_health(self, success: bool, response_time=None):
         """헬스 업데이트"""
         self.last_check = datetime.now()
         self.response_time = response_time
@@ -129,15 +129,15 @@ class ServiceHealth:
 class ServiceMetadata:
     """서비스 메타데이터"""
 
-    version: str = "1.0.0"
-    environment: str = "production"
-    region: str = "default"
-    zone: str = "default"
+    version="1.0.0"
+    environment="production"
+    region="default"
+    zone="default"
     tags: List[str] = field(default_factory=list)
     labels: Dict[str, Any] = field(default_factory=dict)
     annotations: Dict[str, Any] = field(default_factory=dict)
-    weight: int = 100  # 로드 밸런싱 가중치
-    priority: int = 0  # 우선순위
+    weight=100  # 로드 밸런싱 가중치
+    priority=0  # 우선순위
 
     def matches_tags(self, required_tags: List[str]) -> bool:
         """태그 매칭"""
@@ -156,7 +156,7 @@ class ServiceInfo:
     """서비스 정보"""
 
     service_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    name: str = ""
+    name=""
     endpoint: ServiceEndpoint = field(
         default_factory=lambda: ServiceEndpoint("localhost", 8080)
     )
@@ -167,7 +167,7 @@ class ServiceInfo:
     # 등록 정보
     registered_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    ttl: Optional[timedelta] = None
+    ttl=None
 
     # 의존성
     dependencies: List[str] = field(default_factory=list)
@@ -273,18 +273,18 @@ class ServiceInfo:
 class HealthCheck:
     """헬스 체크 설정"""
 
-    enabled: bool = True
+    enabled=True
     interval: timedelta = timedelta(seconds=10)
     timeout: timedelta = timedelta(seconds=5)
-    healthy_threshold: int = 2  # 정상 판정 임계값
-    unhealthy_threshold: int = 3  # 비정상 판정 임계값
+    healthy_threshold=2  # 정상 판정 임계값
+    unhealthy_threshold=3  # 비정상 판정 임계값
 
     # 체크 방법
-    check_type: str = "http"  # http, tcp, grpc, exec
-    check_path: str = "/health"
-    check_method: str = "GET"
+    check_type="http"  # http, tcp, grpc, exec
+    check_path="/health"
+    check_method="GET"
     check_headers: Dict[str, Any] = field(default_factory=dict)
-    check_body: Optional[str] = None
+    check_body=None
     expected_status: List[str] = field(default_factory=list)
 
     def should_check(self, last_check: Optional[datetime]) -> bool:

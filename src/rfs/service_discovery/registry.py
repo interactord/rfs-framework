@@ -46,7 +46,7 @@ class ServiceRegistry(ABC):
 
     @abstractmethod
     async def get_services(
-        self, name: Optional[str] = None
+        self, name=None
     ) -> Result[List[ServiceInfo], str]:
         """서비스 목록 조회"""
         pass
@@ -75,7 +75,7 @@ class InMemoryRegistry(ServiceRegistry):
     """
 
     def __init__(self):
-        self.services: Dict[str, ServiceInfo] = {}
+        self.services={}
         self.service_names: Dict[str, Set[str]] = {}
         self.watchers: Dict[str, List[callable]] = {}
         self._lock = asyncio.Lock()
@@ -121,7 +121,7 @@ class InMemoryRegistry(ServiceRegistry):
             return Success(service)
 
     async def get_services(
-        self, name: Optional[str] = None
+        self, name=None
     ) -> Result[List[ServiceInfo], str]:
         """서비스 목록 조회"""
         async with self._lock:
@@ -129,7 +129,7 @@ class InMemoryRegistry(ServiceRegistry):
                 if name not in self.service_names:
                     return Success([])
                 service_ids = self.service_names[name]
-                services = []
+                services=[]
                 for service_id in list(service_ids):
                     if service_id in self.services:
                         service = self.services[service_id]
@@ -140,8 +140,8 @@ class InMemoryRegistry(ServiceRegistry):
                             services = services + [service]
                 return Success(services)
             else:
-                services = []
-                expired_ids = []
+                services=[]
+                expired_ids=[]
                 for service_id, service in self.services.items():
                     if service.is_expired:
                         expired_ids = expired_ids + [service_id]
@@ -195,11 +195,11 @@ class RedisRegistry(ServiceRegistry):
     Redis 기반 레지스트리
     """
 
-    def __init__(self, redis_client, key_prefix: str = "service:"):
+    def __init__(self, redis_client, key_prefix="service:"):
         self.redis = redis_client
         self.key_prefix = key_prefix
         self.watchers: Dict[str, List[callable]] = {}
-        self._watch_task: Optional[asyncio.Task] = None
+        self._watch_task=None
 
     def _make_key(self, service_id: str) -> str:
         """키 생성"""
@@ -267,7 +267,7 @@ class RedisRegistry(ServiceRegistry):
             return Failure(f"Failed to get service: {str(e)}")
 
     async def get_services(
-        self, name: Optional[str] = None
+        self, name=None
     ) -> Result[List[ServiceInfo], str]:
         """서비스 목록 조회"""
         try:
@@ -276,7 +276,7 @@ class RedisRegistry(ServiceRegistry):
                 service_ids = self.redis.smembers(name_key)
             else:
                 service_ids = self.redis.smembers(f"{self.key_prefix}all")
-            services = []
+            services=[]
             for service_id in service_ids:
                 if type(service_id).__name__ == "bytes":
                     service_id = service_id.decode("utf-8")
@@ -427,7 +427,7 @@ class ConsulRegistry(ServiceRegistry):
             return Failure(f"Failed to get service: {str(e)}")
 
     async def get_services(
-        self, name: Optional[str] = None
+        self, name=None
     ) -> Result[List[ServiceInfo], str]:
         """서비스 목록 조회"""
         try:
@@ -435,7 +435,7 @@ class ConsulRegistry(ServiceRegistry):
                 _, services = self.consul.health.service(name, passing=True)
             else:
                 _, services = self.consul.agent.services()
-            service_list = []
+            service_list=[]
             for consul_service in services:
                 service = self._consul_to_service_info(consul_service)
                 service_list = service_list + [service]
@@ -473,7 +473,7 @@ class ConsulRegistry(ServiceRegistry):
         pass
 
 
-_global_registry: Optional[ServiceRegistry] = None
+_global_registry=None
 
 
 def get_service_registry() -> ServiceRegistry:

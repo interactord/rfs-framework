@@ -45,12 +45,12 @@ class RedisMessageBroker(MessageBroker):
         self.redis = None
         self.pubsub = None
 
-        self._subscription_tasks = {}
-        self._message_handlers = {}
+        self._subscription_tasks={}
+        self._message_handlers={}
 
         # Stream 기반 구현을 위한 변수들
-        self._stream_consumers = {}
-        self._stream_consumer_tasks = {}
+        self._stream_consumers={}
+        self._stream_consumer_tasks={}
 
     async def connect(self) -> Result[None, str]:
         """Redis 연결"""
@@ -107,7 +107,7 @@ class RedisMessageBroker(MessageBroker):
                 except asyncio.CancelledError:
                     pass
 
-            _subscription_tasks = {}
+            _subscription_tasks={}
 
             # Stream consumer 태스크 정리
             for task in list(self._stream_consumer_tasks.values()):
@@ -117,7 +117,7 @@ class RedisMessageBroker(MessageBroker):
                 except asyncio.CancelledError:
                     pass
 
-            _stream_consumer_tasks = {}
+            _stream_consumer_tasks={}
 
             # Pub/Sub 정리
             if self.pubsub:
@@ -238,8 +238,8 @@ class RedisMessageBroker(MessageBroker):
         self,
         topic: str,
         handler: Callable,
-        consumer_group: str = "default",
-        consumer_name: str = "consumer-1",
+        consumer_group="default",
+        consumer_name="consumer-1",
     ) -> Result[None, str]:
         """스트림 구독"""
         try:

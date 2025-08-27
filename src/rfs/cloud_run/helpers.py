@@ -67,7 +67,7 @@ class CloudRunServiceDiscovery(metaclass=SingletonMeta):
     """Cloud Run 서비스 디스커버리"""
 
     def __init__(self):
-        self._services = {}
+        self._services={}
         self._initialized = False
 
     async def initialize(self):
@@ -93,7 +93,7 @@ class CloudRunServiceDiscovery(metaclass=SingletonMeta):
 class ServiceEndpoint:
     """서비스 엔드포인트"""
 
-    def __init__(self, name: str, url: str, region: str = None):
+    def __init__(self, name: str, url: str, region=None):
         self.name = name
         self.url = url
         self.region = region or get_cloud_run_region()
@@ -117,7 +117,7 @@ def get_service_discovery() -> CloudRunServiceDiscovery:
     return CloudRunServiceDiscovery()
 
 
-async def discover_services(pattern: str = "*") -> List[ServiceEndpoint]:
+async def discover_services(pattern="*") -> List[ServiceEndpoint]:
     """
     서비스 탐색
 
@@ -129,7 +129,7 @@ async def discover_services(pattern: str = "*") -> List[ServiceEndpoint]:
     """
     discovery = get_service_discovery()
     await discovery.initialize()
-    services = []
+    services=[]
     for name in discovery.list_services():
         if pattern == "*" or pattern in name:
             endpoint = discovery.get_service(name)
@@ -140,10 +140,7 @@ async def discover_services(pattern: str = "*") -> List[ServiceEndpoint]:
 
 async def call_service(
     service_name: str,
-    path: str,
-    method: str = "GET",
-    data: Dict[str, Any] = None,
-    headers: Dict[str, str] = None,
+    path: str, method="GET", data=None, headers=None,
 ) -> Result[Dict[str, Any], str]:
     """
     서비스 호출
@@ -219,7 +216,7 @@ def get_task_queue() -> CloudTaskQueue:
     return CloudTaskQueue()
 
 
-async def submit_task(url: str, payload: Dict[str, Any], delay_seconds: int = 0) -> str:
+async def submit_task(url: str, payload: Dict[str, Any], delay_seconds=0) -> str:
     """
     작업 제출
 
@@ -281,7 +278,7 @@ class CloudMonitoringClient(metaclass=SingletonMeta):
         self._logs: List[Dict[str, Any]] = []
 
     def record_metric(
-        self, name: str, value: float, unit: str = None, labels: Dict[str, str] = None
+        self, name: str, value: float, unit=None, labels=None
     ):
         """메트릭 기록"""
         metric = {
@@ -324,7 +321,7 @@ def get_monitoring_client() -> CloudMonitoringClient:
 
 
 def record_metric(
-    name: str, value: float, unit: str = None, labels: Dict[str, str] = None
+    name: str, value: float, unit=None, labels=None
 ):
     """
     메트릭 기록 헬퍼
@@ -408,7 +405,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
             "target_memory": 70,
             "scale_down_delay": 300,
         }
-        self._metrics = []
+        self._metrics=[]
 
     def configure(self, **kwargs):
         """설정 업데이트"""
@@ -426,7 +423,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
     def get_recommendations(self) -> List[str]:
         """스케일링 권장사항"""
         analysis = self.analyze_metrics()
-        recommendations = []
+        recommendations=[]
         if analysis["should_scale_up"]:
             recommendations = recommendations + [
                 f"Scale up to {analysis.get('recommended_instances')} instances"

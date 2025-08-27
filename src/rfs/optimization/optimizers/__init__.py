@@ -11,6 +11,7 @@ RFS Advanced Optimizers Suite (RFS v4.2)
 - 스케일링 최적화
 """
 
+from typing import Any, Dict
 from .cloud_run_optimizer import (
     CloudRunConfig,
     CloudRunOptimizer,
@@ -102,7 +103,7 @@ def get_all_optimizers():
 async def run_comprehensive_optimization():
     """종합적인 시스템 최적화 실행"""
     optimizers = get_all_optimizers()
-    results = {}
+    results={}
     for name, optimizer in optimizers.items():
         try:
             result = await optimizer.optimize()

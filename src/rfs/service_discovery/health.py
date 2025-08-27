@@ -153,8 +153,8 @@ class HttpHealthCheck:
 
     def __init__(
         self,
-        path: str = "/health",
-        method: str = "GET",
+        path="/health",
+        method="GET",
         expected_status: List[int] = None,
         timeout: timedelta = timedelta(seconds=5),
     ):
@@ -205,19 +205,19 @@ class HealthMonitor:
 
     def __init__(
         self,
-        registry: Optional[ServiceRegistry] = None,
-        default_check: Optional[HealthCheck] = None,
+        registry=None,
+        default_check=None,
     ):
         self.registry = registry or get_service_registry()
         self.default_check = default_check or HealthCheck()
         self.checker = HealthChecker()
 
         # 모니터링 대상
-        self.monitored_services: Dict[str, ServiceInfo] = {}
-        self.health_checks: Dict[str, HealthCheck] = {}
+        self.monitored_services={}
+        self.health_checks={}
 
         # 모니터링 태스크
-        self.monitor_tasks: Dict[str, asyncio.Task] = {}
+        self.monitor_tasks={}
         self._running = False
 
     async def start(self):
@@ -236,11 +236,11 @@ class HealthMonitor:
         if self.monitor_tasks:
             await asyncio.gather(*self.monitor_tasks.values(), return_exceptions=True)
 
-        monitor_tasks = {}
+        monitor_tasks={}
         logger.info("HealthMonitor stopped")
 
     async def monitor(
-        self, service: ServiceInfo, health_check: Optional[HealthCheck] = None
+        self, service: ServiceInfo, health_check=None
     ):
         """
         서비스 모니터링 시작
@@ -350,7 +350,7 @@ class HealthMonitor:
 
 
 # 전역 헬스 모니터
-_global_monitor: Optional[HealthMonitor] = None
+_global_monitor=None
 
 
 async def get_health_monitor() -> HealthMonitor:

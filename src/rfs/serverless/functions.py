@@ -50,8 +50,8 @@ class HttpTrigger:
     """HTTP 트리거"""
 
     methods: List[str] = field(default_factory=list)
-    cors: bool = True
-    security_level: str = "SECURE_ALWAYS"
+    cors=True
+    security_level="SECURE_ALWAYS"
 
 
 @dataclass
@@ -59,7 +59,7 @@ class PubSubTrigger:
     """Pub/Sub 트리거"""
 
     topic: str
-    subscription: Optional[str] = None
+    subscription=None
 
 
 @dataclass
@@ -67,14 +67,14 @@ class FunctionConfig:
     """서버리스 함수 설정"""
 
     name: str
-    runtime: str = "python311"
-    memory: str = "256MB"
-    timeout: int = 60
+    runtime="python311"
+    memory="256MB"
+    timeout=60
     environment_variables: Dict[str, Any] = field(default_factory=dict)
     trigger: Optional[Union[HttpTrigger, PubSubTrigger]] = None
-    min_instances: int = 0
-    max_instances: int = 100
-    ingress_settings: str = "ALLOW_ALL"
+    min_instances=0
+    max_instances=100
+    ingress_settings="ALLOW_ALL"
 
 
 @dataclass
@@ -84,8 +84,8 @@ class FunctionContext:
     function_name: str
     execution_id: str
     timestamp: datetime = field(default_factory=datetime.now)
-    trigger_type: Optional[TriggerType] = None
-    request_id: Optional[str] = None
+    trigger_type=None
+    request_id=None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -97,8 +97,8 @@ class ServerlessFunction:
         self.handler = handler
         self.execution_count = 0
         self.error_count = 0
-        self.last_execution: Optional[datetime] = None
-        self.middlewares: List[Callable] = []
+        self.last_execution=None
+        self.middlewares=[]
 
     def add_middleware(self, middleware: Callable):
         """미들웨어 추가"""
@@ -143,7 +143,7 @@ class FunctionRegistry:
     """함수 레지스트리"""
 
     def __init__(self):
-        self.functions: Dict[str, ServerlessFunction] = {}
+        self.functions={}
 
     def register(self, function: ServerlessFunction):
         """함수 등록"""
@@ -173,7 +173,7 @@ class FunctionManager:
 
     def __init__(self):
         self.registry = FunctionRegistry()
-        self.global_middlewares: List[Callable] = []
+        self.global_middlewares=[]
 
     def add_global_middleware(self, middleware: Callable):
         """전역 미들웨어 추가"""
@@ -193,7 +193,7 @@ class FunctionManager:
         self,
         function_name: str,
         event: Dict[str, Any],
-        context: Optional[FunctionContext] = None,
+        context=None,
     ) -> Any:
         """함수 호출"""
         function = self.registry.get_function(function_name)
@@ -207,7 +207,7 @@ class FunctionManager:
         return await function.execute(event, context)
 
 
-_manager: Optional[FunctionManager] = None
+_manager=None
 
 
 def get_manager() -> FunctionManager:
@@ -227,7 +227,7 @@ def serverless_handler(config: FunctionConfig):
 
         @functools.wraps(func)
         async def wrapper(
-            event: Dict[str, Any], context: Optional[FunctionContext] = None
+            event: Dict[str, Any], context=None
         ):
             if context is None:
                 context = FunctionContext(
@@ -246,8 +246,8 @@ def serverless_handler(config: FunctionConfig):
 def http_function(
     name: str,
     methods: List[HttpMethod] = None,
-    memory: str = "256MB",
-    timeout: int = 60,
+    memory="256MB",
+    timeout=60,
 ):
     """HTTP 함수 데코레이터"""
     if methods is None:
@@ -258,7 +258,7 @@ def http_function(
     return serverless_handler(config)
 
 
-def pubsub_function(name: str, topic: str, memory: str = "256MB", timeout: int = 60):
+def pubsub_function(name: str, topic: str, memory="256MB", timeout=60):
     """Pub/Sub 함수 데코레이터"""
     config = FunctionConfig(
         name=name, memory=memory, timeout=timeout, trigger=PubSubTrigger(topic=topic)
@@ -313,7 +313,7 @@ async def auth_middleware(
 
 
 def create_http_response(
-    status_code: int = 200, body: Any = None, headers: Dict[str, str] = None
+    status_code=200, body: Any = None, headers: Dict[str, str] = None
 ) -> Dict[str, Any]:
     """HTTP 응답 생성"""
     response = {

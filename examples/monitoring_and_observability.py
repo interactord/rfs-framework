@@ -37,9 +37,9 @@ from rfs.service_discovery.circuit_breaker import CircuitBreaker, CircuitBreaker
 @dataclass
 class BusinessMetrics:
     """비즈니스 메트릭"""
-    total_users: int = 0
-    active_sessions: int = 0
-    orders_per_hour: int = 0
+    total_users=0
+    active_sessions=0
+    orders_per_hour=0
     revenue_today: float = 0.0
     conversion_rate: float = 0.0
 
@@ -50,8 +50,8 @@ class SystemMetrics:
     cpu_usage: float = 0.0
     memory_usage: float = 0.0
     disk_usage: float = 0.0
-    request_count: int = 0
-    error_count: int = 0
+    request_count=0
+    error_count=0
     response_time_avg: float = 0.0
 
 
@@ -411,7 +411,7 @@ class AlertManager:
         self.alert_rules = []
         self.monitoring = True
     
-    def add_alert_rule(self, name: str, condition_func, message: str, severity: str = "warning"):
+    def add_alert_rule(self, name: str, condition_func, message: str, severity="warning"):
         """알림 규칙 추가"""
         self.alert_rules.append({
             "name": name,

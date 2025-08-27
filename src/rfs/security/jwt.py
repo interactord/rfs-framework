@@ -17,10 +17,10 @@ class JWTService:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
-        algorithm: str = "HS256",
-        access_token_expire_minutes: int = 30,
-        refresh_token_expire_days: int = 7,
+        secret_key=None,
+        algorithm="HS256",
+        access_token_expire_minutes=30,
+        refresh_token_expire_days=7,
     ):
         """JWT 서비스 초기화
 
@@ -42,8 +42,8 @@ class JWTService:
         self,
         user_id: str,
         user: Optional[Dict[str, Any]] = None,
-        roles: Optional[list] = None,
-        permissions: Optional[list] = None,
+        roles=None,
+        permissions=None,
         additional_claims: Optional[Dict[str, Any]] = None,
     ) -> Result[str, str]:
         """액세스 토큰 생성
@@ -112,7 +112,7 @@ class JWTService:
     async def verify_token(
         self,
         token: str,
-        token_type: Optional[TokenType] = None,
+        token_type=None,
     ) -> Result[Dict[str, Any], str]:
         """토큰 검증
 

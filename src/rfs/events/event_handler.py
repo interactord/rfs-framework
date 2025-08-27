@@ -53,13 +53,13 @@ class HandlerMetadata:
     event_type: Type[Event]
     priority: HandlerPriority
     mode: HandlerMode
-    timeout_seconds: Optional[float] = None
-    retry_count: int = 0
+    timeout_seconds=None
+    retry_count=0
     conditions: List[Callable[[Event], bool]] = field(default_factory=list)
     tags: Set[str] = field(default_factory=set)
-    execution_count: int = 0
-    success_count: int = 0
-    failure_count: int = 0
+    execution_count=0
+    success_count=0
+    failure_count=0
     total_execution_time_ms: float = 0.0
 
     def get_success_rate(self) -> float:
@@ -123,11 +123,11 @@ class FunctionEventHandler(EventHandler):
         self,
         handler_func: Callable[[Event], Union[Any, Result[Any, str]]],
         event_type: Type[Event],
-        handler_id: Optional[str] = None,
+        handler_id=None,
         priority: HandlerPriority = HandlerPriority.NORMAL,
         mode: HandlerMode = HandlerMode.ASYNC,
-        timeout_seconds: Optional[float] = None,
-        retry_count: int = 0,
+        timeout_seconds=None,
+        retry_count=0,
         conditions: Optional[List[Callable[[Event], bool]]] = None,
     ):
         self.handler_func = handler_func
@@ -189,10 +189,10 @@ class HandlerExecution:
     handler_id: str
     event_id: str
     start_time: datetime
-    end_time: Optional[datetime] = None
-    result: Optional[Result] = None
-    execution_time_ms: Optional[float] = None
-    retry_attempt: int = 0
+    end_time=None
+    result=None
+    execution_time_ms=None
+    retry_attempt=0
 
     def mark_completed(self, result: Result) -> None:
         """실행 완료 마킹"""
@@ -207,9 +207,9 @@ class HandlerRegistry:
     """핸들러 레지스트리"""
 
     def __init__(self):
-        self._handlers: Dict[str, EventHandler] = {}
+        self._handlers={}
         self._handlers_by_type: Dict[Type[Event], List[str]] = defaultdict(list)
-        self._handler_metadata: Dict[str, HandlerMetadata] = {}
+        self._handler_metadata={}
         self._handlers_by_tag: Dict[str, Set[str]] = defaultdict(set)
 
     def register_handler(
@@ -270,7 +270,7 @@ class HandlerRegistry:
         """이벤트에 대한 핸들러 조회"""
         event_type = type(event)
         handler_ids = self._handlers_by_type.get(event_type, [])
-        valid_handlers = []
+        valid_handlers=[]
         for handler_id in handler_ids:
             handler = self._handlers.get(handler_id)
             if handler and handler.can_handle(event):
@@ -320,7 +320,7 @@ class EventProcessor:
     def __init__(self, registry: HandlerRegistry):
         self.registry = registry
         self._execution_history: deque = deque(maxlen=1000)
-        self._active_executions: Dict[str, HandlerExecution] = {}
+        self._active_executions={}
 
     async def process_event(
         self, event: Event, filter_tags: Optional[Set[str]] = None
@@ -333,7 +333,7 @@ class EventProcessor:
             ]
         if not handlers:
             return []
-        results = []
+        results=[]
         for handler in handlers:
             result = await self._execute_handler(handler, event)
             results = results + [result]
@@ -352,7 +352,7 @@ class EventProcessor:
             return []
         tasks = [self._execute_handler(handler, event) for handler in handlers]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results = []
+        processed_results=[]
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [
@@ -433,7 +433,7 @@ class EventProcessor:
             )
 
     def get_execution_history(
-        self, handler_id: Optional[str] = None, limit: int = 100
+        self, handler_id=None, limit=100
     ) -> List[HandlerExecution]:
         """실행 기록 조회"""
         history = list(self._execution_history)
@@ -456,7 +456,7 @@ class HandlerChain:
 
     async def process(self, event: Event) -> Result[List[Any], str]:
         """체인 처리"""
-        results = []
+        results=[]
         for handler in self.handlers:
             if not handler.can_handle(event):
                 continue
@@ -480,8 +480,8 @@ def event_handler(
     event_type: Type[Event],
     priority: HandlerPriority = HandlerPriority.NORMAL,
     mode: HandlerMode = HandlerMode.ASYNC,
-    timeout_seconds: Optional[float] = None,
-    retry_count: int = 0,
+    timeout_seconds=None,
+    retry_count=0,
     conditions: Optional[List[Callable[[Event], bool]]] = None,
     tags: Optional[Set[str]] = None,
 ):
@@ -504,8 +504,8 @@ def event_handler(
     return decorator
 
 
-_default_registry: Optional[HandlerRegistry] = None
-_default_processor: Optional[EventProcessor] = None
+_default_registry=None
+_default_processor=None
 
 
 def get_default_handler_registry() -> HandlerRegistry:

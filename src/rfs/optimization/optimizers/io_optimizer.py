@@ -68,9 +68,9 @@ class IOThresholds:
     disk_read_mb_per_sec: float = 100.0
     disk_write_mb_per_sec: float = 80.0
     network_timeout_sec: float = 30.0
-    buffer_size_kb: int = 64
-    max_concurrent_operations: int = 50
-    cache_size_mb: int = 100
+    buffer_size_kb=64
+    max_concurrent_operations=50
+    cache_size_mb=100
 
 
 @dataclass
@@ -99,31 +99,31 @@ class IOOptimizationConfig:
     buffering_strategy: BufferingStrategy = BufferingStrategy.ADAPTIVE
     compression_strategy: CompressionStrategy = CompressionStrategy.ADAPTIVE
     thresholds: IOThresholds = field(default_factory=IOThresholds)
-    enable_caching: bool = True
-    enable_compression: bool = True
-    enable_monitoring: bool = True
+    enable_caching=True
+    enable_compression=True
+    enable_monitoring=True
     monitoring_interval_seconds: float = 30.0
 
 
 class IOCache:
     """I/O 캐시 시스템"""
 
-    def __init__(self, max_size_mb: int = 100):
+    def __init__(self, max_size_mb=100):
         self.max_size = max_size_mb * 1024 * 1024
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.access_times: Dict[str, datetime] = {}
-        self.sizes: Dict[str, int] = {}
+        self.access_times={}
+        self.sizes={}
         self.current_size = 0
         self.hits = 0
         self.misses = 0
         self.lock = threading.Lock()
 
-    def _generate_key(self, path: str, params: Dict[str, Any] = None) -> str:
+    def _generate_key(self, path: str, params=None) -> str:
         """캐시 키 생성"""
         key_data = f"{path}:{(str(params) if params else '')}"
         return hashlib.md5(key_data.encode()).hexdigest()
 
-    def get(self, path: str, params: Dict[str, Any] = None) -> Optional[Any]:
+    def get(self, path: str, params=None) -> Optional[Any]:
         """캐시에서 데이터 조회"""
         key = self._generate_key(path, params)
         with self.lock:
@@ -135,7 +135,7 @@ class IOCache:
                 misses = misses + 1
                 return None
 
-    def put(self, path: str, data: Any, params: Dict[str, Any] = None) -> bool:
+    def put(self, path: str, data: Any, params=None) -> bool:
         """캐시에 데이터 저장"""
         key = self._generate_key(path, params)
         try:
@@ -174,9 +174,9 @@ class IOCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache = {}
-            access_times = {}
-            sizes = {}
+            cache={}
+            access_times={}
+            sizes={}
             self.current_size = 0
 
     def get_stats(self) -> Dict[str, Any]:
@@ -196,11 +196,11 @@ class IOCache:
 class CompressionManager:
     """압축 관리자"""
 
-    def __init__(self, strategy: CompressionStrategy = CompressionStrategy.ADAPTIVE):
+    def __init__(self, strategy=CompressionStrategy.ADAPTIVE):
         self.strategy = strategy
         self.compression_stats = defaultdict(list)
 
-    async def compress(self, data: bytes, method: str = None) -> Result[bytes, str]:
+    async def compress(self, data: bytes, method=None) -> Result[bytes, str]:
         """데이터 압축"""
         try:
             if method is None:
@@ -261,7 +261,7 @@ class CompressionManager:
 
     def get_compression_stats(self) -> Dict[str, Any]:
         """압축 통계"""
-        stats = {}
+        stats={}
         for method, records in self.compression_stats.items():
             if records:
                 avg_ratio = sum((r["ratio"] for r in records)) / len(records)
@@ -292,7 +292,7 @@ class DiskIOOptimizer:
         self.operation_stats = defaultdict(list)
         self.semaphore = asyncio.Semaphore(config.thresholds.max_concurrent_operations)
 
-    def _get_buffer_size(self, file_size: int = None) -> int:
+    def _get_buffer_size(self, file_size=None) -> int:
         """최적 버퍼 크기 결정"""
         match self.config.buffering_strategy:
             case BufferingStrategy.NO_BUFFER:
@@ -313,7 +313,7 @@ class DiskIOOptimizer:
         return 64 * 1024
 
     async def read_file(
-        self, file_path: str, use_cache: bool = True
+        self, file_path: str, use_cache=True
     ) -> Result[bytes, str]:
         """파일 읽기 최적화"""
         async with self.semaphore:
@@ -355,7 +355,7 @@ class DiskIOOptimizer:
                 return Failure(f"File read failed: {e}")
 
     async def write_file(
-        self, file_path: str, data: bytes, use_compression: bool = None
+        self, file_path: str, data: bytes, use_compression=None
     ) -> Result[bool, str]:
         """파일 쓰기 최적화"""
         async with self.semaphore:
@@ -401,7 +401,7 @@ class DiskIOOptimizer:
                 return Failure(f"File write failed: {e}")
 
     async def read_file_streaming(
-        self, file_path: str, chunk_size: int = None
+        self, file_path: str, chunk_size=None
     ) -> AsyncGenerator[bytes, None]:
         """스트리밍 파일 읽기"""
         try:
@@ -447,11 +447,11 @@ class NetworkIOOptimizer:
             if config.enable_caching
             else None
         )
-        self.session_cache = {}
+        self.session_cache={}
         self.operation_stats = defaultdict(list)
         self.semaphore = asyncio.Semaphore(config.thresholds.max_concurrent_operations)
 
-    async def _get_session(self, base_url: str = None) -> aiohttp.ClientSession:
+    async def _get_session(self, base_url=None) -> aiohttp.ClientSession:
         """HTTP 세션 획득 (재사용)"""
         session_key = base_url or "default"
         if session_key not in self.session_cache:
@@ -473,7 +473,7 @@ class NetworkIOOptimizer:
         return self.session_cache[session_key]
 
     async def http_get(
-        self, url: str, headers: Dict[str, str] = None, use_cache: bool = True
+        self, url: str, headers=None, use_cache=True
     ) -> Result[bytes, str]:
         """HTTP GET 최적화"""
         async with self.semaphore:
@@ -511,7 +511,7 @@ class NetworkIOOptimizer:
                 return Failure(f"HTTP GET failed: {e}")
 
     async def http_post(
-        self, url: str, data: bytes, headers: Dict[str, str] = None
+        self, url: str, data: bytes, headers=None
     ) -> Result[bytes, str]:
         """HTTP POST 최적화"""
         async with self.semaphore:
@@ -543,7 +543,7 @@ class NetworkIOOptimizer:
                 return Failure(f"HTTP POST failed: {e}")
 
     async def batch_http_get(
-        self, urls: List[str], max_concurrent: int = 10
+        self, urls: List[str], max_concurrent=10
     ) -> List[Result[bytes, str]]:
         """배치 HTTP GET"""
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -554,7 +554,7 @@ class NetworkIOOptimizer:
 
         tasks = [fetch_one(url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results = []
+        processed_results=[]
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -567,7 +567,7 @@ class NetworkIOOptimizer:
         for session in self.session_cache.values():
             if not session.closed:
                 await session.close()
-        session_cache = {}
+        session_cache={}
 
     def get_stats(self) -> Dict[str, Any]:
         """네트워크 I/O 통계"""
@@ -600,11 +600,11 @@ class NetworkIOOptimizer:
 class IOOptimizer:
     """I/O 최적화 엔진"""
 
-    def __init__(self, config: Optional[IOOptimizationConfig] = None):
+    def __init__(self, config=None):
         self.config = config or IOOptimizationConfig()
         self.disk_optimizer = DiskIOOptimizer(self.config)
         self.network_optimizer = NetworkIOOptimizer(self.config)
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -749,19 +749,19 @@ class IOOptimizer:
         return max(0.0, min(100.0, score))
 
     async def read_file(
-        self, file_path: str, use_cache: bool = True
+        self, file_path: str, use_cache=True
     ) -> Result[bytes, str]:
         """파일 읽기"""
         return await self.disk_optimizer.read_file(file_path, use_cache)
 
     async def write_file(
-        self, file_path: str, data: bytes, use_compression: bool = None
+        self, file_path: str, data: bytes, use_compression=None
     ) -> Result[bool, str]:
         """파일 쓰기"""
         return await self.disk_optimizer.write_file(file_path, data, use_compression)
 
     async def read_file_streaming(
-        self, file_path: str, chunk_size: int = None
+        self, file_path: str, chunk_size=None
     ) -> AsyncGenerator[bytes, None]:
         """스트리밍 파일 읽기"""
         async for chunk in self.disk_optimizer.read_file_streaming(
@@ -770,19 +770,19 @@ class IOOptimizer:
             yield chunk
 
     async def http_get(
-        self, url: str, headers: Dict[str, str] = None, use_cache: bool = True
+        self, url: str, headers=None, use_cache=True
     ) -> Result[bytes, str]:
         """HTTP GET"""
         return await self.network_optimizer.http_get(url, headers, use_cache)
 
     async def http_post(
-        self, url: str, data: bytes, headers: Dict[str, str] = None
+        self, url: str, data: bytes, headers=None
     ) -> Result[bytes, str]:
         """HTTP POST"""
         return await self.network_optimizer.http_post(url, data, headers)
 
     async def batch_http_get(
-        self, urls: List[str], max_concurrent: int = 10
+        self, urls: List[str], max_concurrent=10
     ) -> List[Result[bytes, str]]:
         """배치 HTTP GET"""
         return await self.network_optimizer.batch_http_get(urls, max_concurrent)
@@ -813,7 +813,7 @@ class IOOptimizer:
 
     def _generate_recommendations(self, stats: IOStats) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations = []
+        recommendations=[]
         if stats.avg_read_time > 1.0:
             recommendations = recommendations + [
                 "Consider using larger buffer sizes for file reading"
@@ -861,18 +861,18 @@ class IOOptimizer:
             await self.stop_monitoring()
             await self.network_optimizer.cleanup_sessions()
             if self.disk_optimizer.cache:
-                cache = {}
+                cache={}
             if self.network_optimizer.cache:
-                cache = {}
+                cache={}
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_io_optimizer: Optional[IOOptimizer] = None
+_io_optimizer=None
 
 
-def get_io_optimizer(config: Optional[IOOptimizationConfig] = None) -> IOOptimizer:
+def get_io_optimizer(config=None) -> IOOptimizer:
     """I/O optimizer 싱글톤 인스턴스 반환"""
     # global _io_optimizer - removed for functional programming
     if _io_optimizer is None:

@@ -64,13 +64,13 @@ class NetworkThresholds:
 
     connection_timeout_sec: float = 10.0
     read_timeout_sec: float = 30.0
-    max_connections_per_host: int = 10
-    max_total_connections: int = 100
+    max_connections_per_host=10
+    max_total_connections=100
     keepalive_timeout_sec: float = 60.0
-    retry_attempts: int = 3
-    circuit_breaker_threshold: int = 5
-    cache_size_mb: int = 100
-    compression_threshold_bytes: int = 1024
+    retry_attempts=3
+    circuit_breaker_threshold=5
+    cache_size_mb=100
+    compression_threshold_bytes=1024
 
 
 @dataclass
@@ -99,22 +99,22 @@ class NetworkOptimizationConfig:
 
     strategy: NetworkOptimizationStrategy = NetworkOptimizationStrategy.BALANCED
     thresholds: NetworkThresholds = field(default_factory=NetworkThresholds)
-    enable_compression: bool = True
-    enable_caching: bool = True
-    enable_connection_pooling: bool = True
-    enable_circuit_breaker: bool = True
-    enable_request_batching: bool = True
+    enable_compression=True
+    enable_caching=True
+    enable_connection_pooling=True
+    enable_circuit_breaker=True
+    enable_request_batching=True
     monitoring_interval_seconds: float = 60.0
-    user_agent: str = "RFS-Framework/4.2"
+    user_agent="RFS-Framework/4.2"
 
 
 class ConnectionCache:
     """연결 캐시"""
 
-    def __init__(self, max_size: int = 50):
+    def __init__(self, max_size=50):
         self.max_size = max_size
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.access_times: Dict[str, datetime] = {}
+        self.access_times={}
         self.lock = threading.Lock()
 
     def get_connection_info(self, host: str) -> Optional[Dict[str, Any]]:
@@ -146,14 +146,14 @@ class ConnectionCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache = {}
-            access_times = {}
+            cache={}
+            access_times={}
 
 
 class CircuitBreaker:
     """서킷 브레이커"""
 
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: float = 60.0):
+    def __init__(self, failure_threshold=5, recovery_timeout=60.0):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.failure_count = 0
@@ -200,7 +200,7 @@ class CircuitBreaker:
 class RequestBatcher:
     """요청 배치 처리기"""
 
-    def __init__(self, batch_size: int = 10, batch_timeout: float = 1.0):
+    def __init__(self, batch_size=10, batch_timeout=1.0):
         self.batch_size = batch_size
         self.batch_timeout = batch_timeout
         self.pending_requests: List[Tuple[str, Dict, asyncio.Future]] = []
@@ -224,7 +224,7 @@ class RequestBatcher:
         if not self.pending_requests:
             return
         batch = self.pending_requests.copy()
-        pending_requests = {}
+        pending_requests={}
         self.last_batch_time = time.time()
         for url, options, future in batch:
             try:
@@ -242,24 +242,24 @@ class RequestBatcher:
 class ResponseCache:
     """응답 캐시"""
 
-    def __init__(self, max_size_mb: int = 100):
+    def __init__(self, max_size_mb=100):
         self.max_size = max_size_mb * 1024 * 1024
         self.cache: Dict[str, Dict[str, Any]] = {}
-        self.sizes: Dict[str, int] = {}
-        self.access_times: Dict[str, datetime] = {}
+        self.sizes={}
+        self.access_times={}
         self.current_size = 0
         self.hits = 0
         self.misses = 0
         self.lock = threading.Lock()
 
-    def _generate_key(self, url: str, headers: Dict[str, Any] = None) -> str:
+    def _generate_key(self, url: str, headers=None) -> str:
         """캐시 키 생성"""
         key_data = f"{url}:{str(sorted((headers or {}).items()))}"
         import hashlib
 
         return hashlib.md5(key_data.encode()).hexdigest()
 
-    def get(self, url: str, headers: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+    def get(self, url: str, headers=None) -> Optional[Dict[str, Any]]:
         """캐시에서 응답 조회"""
         key = self._generate_key(url, headers)
         with self.lock:
@@ -279,9 +279,7 @@ class ResponseCache:
     def put(
         self,
         url: str,
-        data: Dict[str, Any],
-        headers: Dict[str, Any] = None,
-        ttl_seconds: int = 300,
+        data: Dict[str, Any], headers=None, ttl_seconds=300,
     ) -> bool:
         """캐시에 응답 저장"""
         key = self._generate_key(url, headers)
@@ -343,9 +341,9 @@ class ResponseCache:
     def clear(self) -> None:
         """캐시 전체 삭제"""
         with self.lock:
-            cache = {}
-            sizes = {}
-            access_times = {}
+            cache={}
+            sizes={}
+            access_times={}
             self.current_size = 0
 
 
@@ -355,7 +353,7 @@ class ConnectionOptimizer:
     def __init__(self, config: NetworkOptimizationConfig):
         self.config = config
         self.connection_cache = ConnectionCache()
-        self.sessions: Dict[str, aiohttp.ClientSession] = {}
+        self.sessions={}
         self.connection_stats = defaultdict(
             lambda: {
                 "total_connections": 0,
@@ -366,7 +364,7 @@ class ConnectionOptimizer:
         )
 
     async def get_optimized_session(
-        self, base_url: str = None
+        self, base_url=None
     ) -> aiohttp.ClientSession:
         """최적화된 세션 획득"""
         session_key = base_url or "default"
@@ -440,7 +438,7 @@ class ConnectionOptimizer:
                 for stats in self.connection_stats.values()
             )
         )
-        all_connection_times = []
+        all_connection_times=[]
         for stats in self.connection_stats.values():
             all_connection_times = all_connection_times + stats.get("connection_times")
         avg_connection_time = sum(all_connection_times) / max(
@@ -460,7 +458,7 @@ class ConnectionOptimizer:
         for session in self.sessions.values():
             if not session.closed:
                 await session.close()
-        sessions = {}
+        sessions={}
 
 
 class RequestOptimizer:
@@ -468,7 +466,7 @@ class RequestOptimizer:
 
     def __init__(self, config: NetworkOptimizationConfig):
         self.config = config
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.circuit_breakers={}
         self.request_batcher = (
             RequestBatcher() if config.enable_request_batching else None
         )
@@ -574,8 +572,8 @@ class RequestOptimizer:
         successful_requests = sum(
             (stats["successful_requests"] for stats in self.request_stats.values())
         )
-        all_response_times = []
-        all_sizes = []
+        all_response_times=[]
+        all_sizes=[]
         for stats in self.request_stats.values():
             all_response_times = all_response_times + stats.get("response_times")
             all_sizes = all_sizes + stats.get("sizes")
@@ -644,7 +642,7 @@ class CachingOptimizer:
         return 300
 
     async def get_cached_response(
-        self, url: str, headers: Dict[str, Any] = None
+        self, url: str, headers=None
     ) -> Optional[Dict[str, Any]]:
         """캐시된 응답 조회"""
         return self.response_cache.get(url, headers)
@@ -653,8 +651,7 @@ class CachingOptimizer:
         self,
         url: str,
         response_data: Dict[str, Any],
-        response: aiohttp.ClientResponse,
-        headers: Dict[str, Any] = None,
+        response: aiohttp.ClientResponse, headers=None,
     ) -> None:
         """응답 캐시"""
         if self.should_cache_response(response):
@@ -667,18 +664,18 @@ class CachingOptimizer:
 
     def clear_cache(self) -> None:
         """캐시 삭제"""
-        response_cache = {}
+        response_cache={}
 
 
 class NetworkOptimizer:
     """네트워크 최적화 엔진"""
 
-    def __init__(self, config: Optional[NetworkOptimizationConfig] = None):
+    def __init__(self, config=None):
         self.config = config or NetworkOptimizationConfig()
         self.connection_optimizer = ConnectionOptimizer(self.config)
         self.request_optimizer = RequestOptimizer(self.config)
         self.caching_optimizer = CachingOptimizer(self.config)
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.stats_history: deque = deque(maxlen=100)
         self.is_running = False
         self.total_bytes_sent = 0
@@ -781,17 +778,14 @@ class NetworkOptimizer:
             return Failure(f"Failed to collect network stats: {e}")
 
     async def get(
-        self, url: str, headers: Dict[str, str] = None, **kwargs
+        self, url: str, headers=None, **kwargs
     ) -> Result[Dict[str, Any], str]:
         """GET 요청"""
         return await self._execute_request("GET", url, headers=headers, **kwargs)
 
     async def post(
         self,
-        url: str,
-        data: Any = None,
-        json: Any = None,
-        headers: Dict[str, str] = None,
+        url: str, data=None, json=None, headers=None,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """POST 요청"""
@@ -801,10 +795,7 @@ class NetworkOptimizer:
 
     async def put(
         self,
-        url: str,
-        data: Any = None,
-        json: Any = None,
-        headers: Dict[str, str] = None,
+        url: str, data=None, json=None, headers=None,
         **kwargs,
     ) -> Result[Dict[str, Any], str]:
         """PUT 요청"""
@@ -813,7 +804,7 @@ class NetworkOptimizer:
         )
 
     async def delete(
-        self, url: str, headers: Dict[str, str] = None, **kwargs
+        self, url: str, headers=None, **kwargs
     ) -> Result[Dict[str, Any], str]:
         """DELETE 요청"""
         return await self._execute_request("DELETE", url, headers=headers, **kwargs)
@@ -856,7 +847,7 @@ class NetworkOptimizer:
             return Failure(f"Request execution failed: {e}")
 
     async def batch_requests(
-        self, requests: List[Dict[str, Any]], max_concurrent: int = 10
+        self, requests: List[Dict[str, Any]], max_concurrent=10
     ) -> List[Result[Dict[str, Any], str]]:
         """배치 요청"""
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -874,7 +865,7 @@ class NetworkOptimizer:
 
         tasks = [execute_single(req) for req in requests]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results = []
+        processed_results=[]
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [Failure(str(result))]
@@ -922,7 +913,7 @@ class NetworkOptimizer:
         cache_stats: Dict,
     ) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations = []
+        recommendations=[]
         if current_stats.avg_response_time > 5.0:
             recommendations = recommendations + [
                 "High response time - consider connection pooling optimization"
@@ -992,11 +983,11 @@ class NetworkOptimizer:
             return Failure(f"Cleanup failed: {e}")
 
 
-_network_optimizer: Optional[NetworkOptimizer] = None
+_network_optimizer=None
 
 
 def get_network_optimizer(
-    config: Optional[NetworkOptimizationConfig] = None,
+    config=None,
 ) -> NetworkOptimizer:
     """네트워크 optimizer 싱글톤 인스턴스 반환"""
     # global _network_optimizer - removed for functional programming

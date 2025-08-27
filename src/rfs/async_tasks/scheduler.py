@@ -38,16 +38,16 @@ class Schedule:
 
     schedule_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     schedule_type: ScheduleType = ScheduleType.ONCE
-    expression: Optional[str] = None
-    interval: Optional[timedelta] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    timezone: str = "UTC"
-    max_runs: Optional[int] = None
-    run_count: int = 0
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
-    enabled: bool = True
+    expression=None
+    interval=None
+    start_time=None
+    end_time=None
+    timezone="UTC"
+    max_runs=None
+    run_count=0
+    last_run=None
+    next_run=None
+    enabled=True
 
     def calculate_next_run(self) -> Optional[datetime]:
         """다음 실행 시간 계산"""
@@ -115,13 +115,13 @@ class ScheduledTask:
     """스케줄된 작업"""
 
     task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    name: str = ""
+    name=""
     task: Union[Callable, Task] = None
     schedule: Schedule = field(default_factory=Schedule)
     priority: TaskPriority = TaskPriority.NORMAL
     context: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    enabled: bool = True
+    enabled=True
 
     def should_run(self) -> bool:
         """실행 여부 확인"""
@@ -171,10 +171,10 @@ class TaskScheduler:
     - 동적 스케줄 관리
     """
 
-    def __init__(self, task_manager: Optional[AsyncTaskManager] = None):
+    def __init__(self, task_manager=None):
         self.task_manager = task_manager
-        self.scheduled_tasks: Dict[str, ScheduledTask] = {}
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self.scheduled_tasks={}
+        self._scheduler_task=None
         self._shutdown = False
         self._lock = asyncio.Lock()
 
@@ -200,7 +200,7 @@ class TaskScheduler:
         self,
         func: Union[Callable, Task],
         schedule: Schedule,
-        name: Optional[str] = None,
+        name=None,
         priority: TaskPriority = TaskPriority.NORMAL,
         context: Optional[Dict[str, Any]] = None,
         tags: Optional[List[str]] = None,
@@ -271,7 +271,7 @@ class TaskScheduler:
         while not self._shutdown:
             try:
                 now = datetime.now()
-                tasks_to_run = []
+                tasks_to_run=[]
                 async with self._lock:
                     for task_id, scheduled_task in self.scheduled_tasks.items():
                         if scheduled_task.should_run():
@@ -317,7 +317,7 @@ class TaskScheduler:
             logger.error(f"Failed to run scheduled task {scheduled_task.name}: {e}")
 
 
-_global_scheduler: Optional[TaskScheduler] = None
+_global_scheduler=None
 
 
 async def get_scheduler() -> TaskScheduler:

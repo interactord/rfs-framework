@@ -27,7 +27,7 @@ class TransitionResult:
     to_state: Optional[str]
     event: str
     context: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Exception] = None
+    error=None
     duration_ms: float = 0.0
 
 
@@ -66,7 +66,7 @@ class Transition:
 
         try:
             if context is None:
-                context = {}
+                context={}
 
             # Guard가 비동기 함수인지 확인
             if asyncio.iscoroutinefunction(self.guard):
@@ -87,7 +87,7 @@ class Transition:
         start_time = time.time()
 
         if context is None:
-            context = {}
+            context={}
 
         try:
             # Guard 조건 확인

@@ -42,8 +42,8 @@ class RedisLock:
         self,
         redis_client: Any,  # redis.Redis when available
         key: str,
-        timeout: int = 10,
-        retry_times: int = 3,
+        timeout=10,
+        retry_times=3,
         retry_delay: float = 0.1,
     ):
         self.redis = redis_client
@@ -104,7 +104,7 @@ class RedisTransactionResource(TransactionResource):
 
     def __init__(self, redis_client: Any):
         self.redis = redis_client
-        self.pipelines = {}
+        self.pipelines={}
         self.savepoints: Dict[str, Dict[str, Any]] = {}
 
     def begin(self, metadata: TransactionMetadata) -> Result[None, str]:
@@ -173,11 +173,11 @@ class RedisTransactionManager:
 
     def __init__(
         self,
-        redis_client: Optional[Any] = None,
-        host: str = "localhost",
-        port: int = 6379,
-        db: int = 0,
-        password: Optional[str] = None,
+        redis_client=None,
+        host="localhost",
+        port=6379,
+        db=0,
+        password=None,
         **kwargs,
     ):
         if redis_client:
@@ -199,7 +199,7 @@ class RedisTransactionManager:
         manager.register_resource("redis", self.resource)
 
     def pipeline(
-        self, transaction: bool = True
+        self, transaction=True
     ) -> Any:  # Pipeline when redis is available
         """파이프라인 생성"""
         pipeline = self.redis.pipeline(transaction=transaction)
@@ -223,8 +223,8 @@ class RedisTransactionManager:
     def lock(
         self,
         key: str,
-        timeout: int = 10,
-        retry_times: int = 3,
+        timeout=10,
+        retry_times=3,
         retry_delay: float = 0.1,
     ) -> RedisLock:
         """분산 락 생성"""
@@ -289,8 +289,8 @@ class RedisTransactionManager:
 
 
 def redis_transactional(
-    redis_manager: Optional[RedisTransactionManager] = None,
-    lock_key: Optional[str] = None,
+    redis_manager=None,
+    lock_key=None,
     watch_keys: Optional[List[str]] = None,
 ):
     """

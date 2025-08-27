@@ -361,7 +361,7 @@ def from_optional(value: Optional[T], error: E | None = None) -> "Result[T, E]":
 
 def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values: List[T] = []
+    values=[]
     for result in results:
         match result:
             case Success() as s:
@@ -408,7 +408,7 @@ async def traverse_async(
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # 예외를 Failure로 변환 - 함수형 패턴 적용
-    processed_results = []
+    processed_results=[]
     for result in results:
         # 함수형 패턴: isinstance 대신 type 비교 및 hasattr 사용
         # 함수형 패턴: append 대신 리스트 연결
@@ -481,7 +481,7 @@ def async_result_decorator(
 def combine(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
     """여러 Result를 하나의 Result로 결합 - 함수형 패턴 적용"""
     # 함수형 패턴: 리스트 연결 사용 (early return 유지)
-    values = []
+    values=[]
     for result in results:
         match result:
             case Success() as s:
@@ -1063,6 +1063,6 @@ def maybe_of(value: Optional[T]) -> Maybe[T]:
     return Maybe.some(value) if value is not None else Maybe.none()
 
 
-def either_of(value: T, error: Optional[E] = None) -> Either[T, E]:
+def either_of(value: T, error=None) -> Either[T, E]:
     """값 또는 에러로 Either 생성"""
     return Either.left(f.error) if error is not None else Either.right(value)

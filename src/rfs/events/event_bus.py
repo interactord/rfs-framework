@@ -44,9 +44,9 @@ class Event:
     )
     timestamp: datetime = field(default_factory=datetime.now)
     priority: EventPriority = EventPriority.NORMAL
-    source: Optional[str] = None
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None
+    source=None
+    correlation_id=None
+    causation_id=None
 
     def with_metadata(self, **metadata) -> "Event":
         """메타데이터 추가"""
@@ -108,8 +108,8 @@ class EventSubscription:
     def __init__(
         self,
         handler: Callable[[Event], Any],
-        filter: Optional[EventFilter] = None,
-        async_handler: bool = True,
+        filter=None,
+        async_handler=True,
     ):
         self.handler = handler
         self.filter = filter or EventFilter()
@@ -117,15 +117,15 @@ class EventSubscription:
         self.subscription_id = f"sub_{int(datetime.now().timestamp())}"
         self.handled_count = 0
         self.error_count = 0
-        self.last_handled: Optional[datetime] = None
+        self.last_handled=None
 
 
 class EventBus:
     """이벤트 버스"""
 
-    def __init__(self, max_buffer_size: int = 1000):
-        self.subscriptions: List[EventSubscription] = []
-        self.event_buffer: List[Event] = []
+    def __init__(self, max_buffer_size=1000):
+        self.subscriptions=[]
+        self.event_buffer=[]
         self.max_buffer_size = max_buffer_size
         self.is_processing = False
         self.total_events = 0
@@ -191,7 +191,7 @@ class EventBus:
             logger.debug(f"No handlers for event: {event.event_type}")
             return
         matching_subscriptions.sort(key=lambda sub: event.priority.value, reverse=True)
-        tasks = []
+        tasks=[]
         for subscription in matching_subscriptions:
             task = self._execute_handler(subscription, event)
             tasks = tasks + [task]
@@ -344,7 +344,7 @@ def validation_middleware(event: Event) -> Event:
     if not event.event_type:
         raise ValueError("Event type is required")
     if not event.data:
-        event.data = {}
+        event.data={}
     return event
 
 
@@ -371,7 +371,7 @@ class ReactiveEventBus:
 
     def subscribe_flux(self, event_types: List[str]) -> Flux[Event]:
         """이벤트 스트림 구독"""
-        events = []
+        events=[]
 
         def collect_event(event: Event):
             events = events + [event]
@@ -380,7 +380,7 @@ class ReactiveEventBus:
         return Flux.from_iterable(events)
 
 
-_event_bus: Optional[EventBus] = None
+_event_bus=None
 
 
 async def get_event_bus() -> EventBus:
@@ -394,4 +394,4 @@ async def get_event_bus() -> EventBus:
     return _event_bus
 
 
-StatelessRegistry.register("event_bus", dependencies=[])(get_event_bus)
+StatelessRegistry.register("event_bus")(get_event_bus)

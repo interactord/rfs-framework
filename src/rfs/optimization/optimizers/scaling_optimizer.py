@@ -74,8 +74,8 @@ class ScalingThresholds:
     request_rate_scale_up: float = 1000.0  # 요청률 스케일업 임계값
     response_time_scale_up_ms: float = 2000.0  # 응답시간 스케일업 임계값
     error_rate_scale_up_percent: float = 5.0  # 에러율 스케일업 임계값
-    min_instances: int = 1  # 최소 인스턴스 수
-    max_instances: int = 10  # 최대 인스턴스 수
+    min_instances=1  # 최소 인스턴스 수
+    max_instances=10  # 최대 인스턴스 수
     scale_up_cooldown_seconds: float = 300.0  # 스케일업 쿨다운
     scale_down_cooldown_seconds: float = 600.0  # 스케일다운 쿨다운
 
@@ -118,10 +118,10 @@ class AutoScalingConfig:
     strategy: ScalingStrategy = ScalingStrategy.REACTIVE
     scaling_type: ScalingType = ScalingType.HORIZONTAL
     thresholds: ScalingThresholds = field(default_factory=ScalingThresholds)
-    enable_predictive_scaling: bool = True
-    enable_cost_optimization: bool = True
+    enable_predictive_scaling=True
+    enable_cost_optimization=True
     monitoring_interval_seconds: float = 30.0
-    decision_window_minutes: int = 5
+    decision_window_minutes=5
     confidence_threshold: float = 0.7
 
 
@@ -130,7 +130,7 @@ class MetricCollector:
 
     def __init__(self):
         self.metrics_history: deque = deque(maxlen=1000)
-        self.custom_collectors: Dict[str, Callable] = {}
+        self.custom_collectors={}
         self.lock = threading.Lock()
 
     def add_metric(self, metrics: ResourceMetrics) -> None:
@@ -144,7 +144,7 @@ class MetricCollector:
         """커스텀 메트릭 수집기 등록"""
         self.custom_collectors = {**self.custom_collectors, name: collector_func}
 
-    def get_recent_metrics(self, minutes: int = 5) -> List[ResourceMetrics]:
+    def get_recent_metrics(self, minutes=5) -> List[ResourceMetrics]:
         """최근 메트릭 조회"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
 
@@ -152,12 +152,12 @@ class MetricCollector:
             return [m for m in self.metrics_history if m.timestamp >= cutoff_time]
 
     def get_metric_trend(
-        self, metric_type: MetricType, minutes: int = 10
+        self, metric_type: MetricType, minutes=10
     ) -> List[float]:
         """메트릭 트렌드 분석"""
         recent_metrics = self.get_recent_metrics(minutes)
 
-        values = []
+        values=[]
         for metric in recent_metrics:
             match metric_type:
                 case MetricType.CPU_USAGE:
@@ -176,7 +176,7 @@ class MetricCollector:
         return values
 
     def calculate_metric_statistics(
-        self, metric_type: MetricType, minutes: int = 5
+        self, metric_type: MetricType, minutes=5
     ) -> Dict[str, float]:
         """메트릭 통계 계산"""
         values = self.get_metric_trend(metric_type, minutes)
@@ -237,13 +237,13 @@ class PredictiveScaling:
         if len(self.weekly_patterns[weekday]) > 100:
             self.weekly_patterns[weekday] = self.weekly_patterns[weekday][-100:]
 
-    def predict_future_load(self, minutes_ahead: int = 15) -> Dict[str, float]:
+    def predict_future_load(self, minutes_ahead=15) -> Dict[str, float]:
         """미래 부하 예측"""
         future_time = datetime.now() + timedelta(minutes=minutes_ahead)
         future_hour = future_time.hour
         future_weekday = future_time.weekday()
 
-        predictions = {}
+        predictions={}
 
         # CPU 사용률 예측 (시간대 기반)
         if future_hour in self.seasonal_patterns:
@@ -281,15 +281,14 @@ class ScalingDecisionEngine:
 
     def __init__(self, config: AutoScalingConfig):
         self.config = config
-        self.last_scale_up_time: Optional[datetime] = None
-        self.last_scale_down_time: Optional[datetime] = None
+        self.last_scale_up_time=None
+        self.last_scale_down_time=None
         self.decision_history: deque = deque(maxlen=100)
 
     def make_scaling_decision(
         self,
         current_metrics: ResourceMetrics,
-        metric_stats: Dict[MetricType, Dict[str, float]],
-        predictions: Dict[str, float] = None,
+        metric_stats: Dict[MetricType, Dict[str, float]], predictions=None,
     ) -> ScalingDecision:
         """스케일링 결정 생성"""
 
@@ -380,12 +379,11 @@ class ScalingDecisionEngine:
     def _analyze_scale_up_signals(
         self,
         metrics: ResourceMetrics,
-        metric_stats: Dict[MetricType, Dict[str, float]],
-        predictions: Dict[str, float] = None,
+        metric_stats: Dict[MetricType, Dict[str, float]], predictions=None,
     ) -> Dict[str, Any]:
         """스케일업 신호 분석"""
-        signals = []
-        reasons = []
+        signals=[]
+        reasons=[]
 
         # CPU 사용률 체크
         cpu_stats = metric_stats.get(MetricType.CPU_USAGE, {})
@@ -452,12 +450,11 @@ class ScalingDecisionEngine:
     def _analyze_scale_down_signals(
         self,
         metrics: ResourceMetrics,
-        metric_stats: Dict[MetricType, Dict[str, float]],
-        predictions: Dict[str, float] = None,
+        metric_stats: Dict[MetricType, Dict[str, float]], predictions=None,
     ) -> Dict[str, Any]:
         """스케일다운 신호 분석"""
-        signals = []
-        reasons = []
+        signals=[]
+        reasons=[]
 
         # 최소 인스턴스 수 체크
         if metrics.instance_count <= self.config.thresholds.min_instances:
@@ -601,15 +598,14 @@ class ResourcePrediction:
     """리소스 예측"""
 
     def __init__(self):
-        self.prediction_models: Dict[str, Any] = {}
+        self.prediction_models={}
         self.prediction_history: deque = deque(maxlen=1000)
         self.accuracy_metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
 
     def predict_resource_needs(
         self,
         current_metrics: ResourceMetrics,
-        historical_metrics: List[ResourceMetrics],
-        time_horizon_minutes: int = 15,
+        historical_metrics: List[ResourceMetrics], time_horizon_minutes=15,
     ) -> Dict[str, Any]:
         """리소스 요구사항 예측"""
 
@@ -736,7 +732,7 @@ class ResourcePrediction:
             return 0.5  # 기본 신뢰도
 
         # 최근 예측들의 정확도 평균
-        accuracies = []
+        accuracies=[]
         for metric_type in [
             "cpu_usage_percent",
             "memory_usage_percent",
@@ -789,7 +785,7 @@ class ResourcePrediction:
 
     def get_prediction_accuracy_stats(self) -> Dict[str, float]:
         """예측 정확도 통계"""
-        stats = {}
+        stats={}
         for metric_type, accuracies in self.accuracy_metrics.items():
             if accuracies:
                 stats[metric_type] = {
@@ -804,7 +800,7 @@ class ResourcePrediction:
 class ScalingOptimizer:
     """스케일링 최적화 엔진"""
 
-    def __init__(self, config: Optional[AutoScalingConfig] = None):
+    def __init__(self, config=None):
         self.config = config or AutoScalingConfig()
 
         self.metric_collector = MetricCollector()
@@ -812,7 +808,7 @@ class ScalingOptimizer:
         self.decision_engine = ScalingDecisionEngine(self.config)
         self.resource_prediction = ResourcePrediction()
 
-        self.monitoring_task: Optional[asyncio.Task] = None
+        self.monitoring_task=None
         self.scaling_actions: deque = deque(maxlen=100)
         self.is_running = False
 
@@ -921,7 +917,7 @@ class ScalingOptimizer:
     async def _make_scaling_decision(self, current_metrics: ResourceMetrics) -> None:
         """스케일링 결정 생성 및 실행"""
         # 메트릭 통계 계산
-        metric_stats = {}
+        metric_stats={}
         for metric_type in MetricType:
             stats = self.metric_collector.calculate_metric_statistics(
                 metric_type, self.config.decision_window_minutes
@@ -1061,7 +1057,7 @@ class ScalingOptimizer:
         predictions: Dict[str, Any],
     ) -> List[str]:
         """최적화 추천사항 생성"""
-        recommendations = []
+        recommendations=[]
 
         # 리소스 효율성 분석
         if (
@@ -1189,11 +1185,11 @@ class ScalingOptimizer:
 
 
 # 전역 optimizer 인스턴스
-_scaling_optimizer: Optional[ScalingOptimizer] = None
+_scaling_optimizer=None
 
 
 def get_scaling_optimizer(
-    config: Optional[AutoScalingConfig] = None,
+    config=None,
 ) -> ScalingOptimizer:
     """스케일링 optimizer 싱글톤 인스턴스 반환"""
     global _scaling_optimizer

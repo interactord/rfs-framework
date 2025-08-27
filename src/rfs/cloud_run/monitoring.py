@@ -570,7 +570,7 @@ _monitoring_client: Optional[CloudMonitoringClient] = None
 
 async def get_monitoring_client(project_id: str = None) -> CloudMonitoringClient:
     """모니터링 클라이언트 인스턴스 획득"""
-    # global _monitoring_client - removed for functional programming
+    global _monitoring_client
     if _monitoring_client is None:
         if project_id is None:
             project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")

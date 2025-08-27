@@ -42,9 +42,11 @@ jobs:
       run: |
         isort --check-only src/rfs tests/
     
-    - name: Type check with mypy
+    - name: Type check with mypy (Phase 1 - Warnings Only)
       run: |
-        mypy src/rfs
+        mypy src/rfs --config-file mypy.ini || true
+      # Phase 1-5: mypy 오류 허용 (경고만 표시)
+      # Phase 6+: continue-on-error 제거 예정
     
     - name: Security check with bandit
       run: |

@@ -51,10 +51,8 @@ from .health import (
 )
 from .registry import (
     ConsulRegistry,
-    EtcdRegistry,
     RedisRegistry,
     ServiceRegistry,
-    ZookeeperRegistry,
     get_service_registry,
 )
 
@@ -71,8 +69,6 @@ __all__ = [
     # Registry
     "ServiceRegistry",
     "ConsulRegistry",
-    "EtcdRegistry",
-    "ZookeeperRegistry",
     "RedisRegistry",
     "get_service_registry",
     # Discovery

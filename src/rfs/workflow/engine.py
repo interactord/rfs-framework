@@ -115,11 +115,9 @@ class WorkflowInstance:
 class WorkflowEvent(Event):
     """워크플로우 이벤트"""
 
-    instance_id: str
-    workflow_id: str
-    event_type: str
-    step_id = None
-    data: Optional[Dict[str, Any]] = None
+    instance_id: str = ""
+    workflow_id: str = ""
+    step_id: Optional[str] = None
 
 
 class WorkflowEngine:

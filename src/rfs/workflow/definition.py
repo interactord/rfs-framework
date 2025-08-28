@@ -30,12 +30,12 @@ class WorkflowStep:
     id: str
     name: str
     step_type: StepType
-    task_type = None  # 태스크 타입 (http, database, email 등)
+    task_type: Optional[str] = None  # 태스크 타입 (http, database, email 등)
     config: Dict[str, Any] = field(default_factory=dict)
     input_mapping: Optional[Dict[str, str]] = None
     output_mapping: Optional[Dict[str, str]] = None
-    condition: Optional.get("Condition") = None
-    retry_config: Optional.get("RetryConfig") = None
+    condition: Optional["Condition"] = None
+    retry_config: Optional["RetryConfig"] = None
     timeout = None  # 초
 
     def with_config(self, **config) -> "WorkflowStep":
@@ -73,7 +73,7 @@ class WorkflowStep:
 class RetryConfig:
     """재시도 설정"""
 
-    max_attempts = 3
+    max_attempts: int = 3
     delay: float = 1.0
     backoff_factor: float = 2.0
     max_delay: float = 60.0

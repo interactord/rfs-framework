@@ -86,7 +86,8 @@ class ValidationResult:
     details: Dict[str, Any] = field(default_factory=dict)
     execution_time: float = 0.0
     recommendations: List[str] = field(default_factory=list)
-    severity = "info"
+    severity: str = "info"
+    fix_hint: Optional[str] = None
 
     @property
     def is_success(self) -> bool:

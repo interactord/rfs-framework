@@ -50,8 +50,8 @@ class ServiceEndpoint:
 
     host: str
     port: int
-    protocol = "http"  # http, https, grpc, tcp
-    path = "/"
+    protocol: str = "http"  # http, https, grpc, tcp
+    path: str = "/"
 
     @property
     def url(self) -> str:
@@ -86,11 +86,11 @@ class ServiceHealth:
     """서비스 헬스 정보"""
 
     status: HealthStatus = HealthStatus.UNKNOWN
-    last_check = None
-    response_time = None
-    error_count = 0
-    success_count = 0
-    consecutive_failures = 0
+    last_check: Optional[datetime] = None
+    response_time: Optional[float] = None
+    error_count: int = 0
+    success_count: int = 0
+    consecutive_failures: int = 0
     details: Dict[str, Any] = field(default_factory=dict)
 
     @property

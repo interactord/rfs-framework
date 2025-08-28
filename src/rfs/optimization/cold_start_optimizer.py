@@ -541,7 +541,7 @@ class ColdStartOptimizer:
 
     def _generate_recommendations(self) -> List[str]:
         """성능 개선 추천사항 생성"""
-        recommendations = []
+        recommendations: List[str] = []
         metrics = self.get_metrics()
         if metrics.total_startup_time > 5.0:
             recommendations = recommendations + [
@@ -598,7 +598,7 @@ def create_optimizer(
 
 
 async def quick_optimize(
-    modules: List[str] = None,
+    modules: Optional[List[str]] = None,
     warmup_functions=None,
     level=OptimizationLevel.MODERATE,
 ) -> StartupMetrics:
@@ -699,7 +699,7 @@ async def measure_cold_start_time() -> float:
 
 async def optimize_cold_start(
     config=None,
-) -> Dict[str, Any]:
+) -> StartupMetrics:
     """Cold Start 최적화 실행"""
     if config is None:
         config = ColdStartConfig()

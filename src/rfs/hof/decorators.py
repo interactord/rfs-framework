@@ -112,8 +112,9 @@ def memoize(
 
             return result
 
-        wrapper.cache_clear = cache.clear
-        wrapper.cache = cache
+        # 캐시 관련 속성 추가
+        setattr(wrapper, 'cache_clear', cache.clear)
+        setattr(wrapper, 'cache', cache)
         return wrapper
 
     return decorator

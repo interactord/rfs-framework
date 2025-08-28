@@ -161,7 +161,8 @@ class RFSLogger:
         """기본 포매터"""
         try:
             from .formatters import StructuredFormatter
-            return StructuredFormatter()
+            formatter: logging.Formatter = StructuredFormatter()
+            return formatter
         except ImportError:
             return logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

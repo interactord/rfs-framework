@@ -7,7 +7,7 @@ Transition definitions for State Machine
 import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from .state import State
@@ -30,7 +30,7 @@ class TransitionResult:
     to_state: Optional[str]
     event: str
     context: Dict[str, Any] = field(default_factory=dict)
-    error = None
+    error: Optional[Exception] = None
     duration_ms: float = 0.0
 
 
@@ -73,9 +73,11 @@ class Transition:
 
             # Guard가 비동기 함수인지 확인
             if asyncio.iscoroutinefunction(self.guard):
-                return await self.guard(context)
+                result = await self.guard(context)
+                return bool(result)
             else:
-                return self.guard(context)
+                result = self.guard(context)
+                return bool(result)
 
         except Exception as e:
             print(
@@ -117,9 +119,12 @@ class Transition:
                 await self.to_state.enter(context)
 
             # 성공 통계 업데이트
-            execution_count = execution_count + 1
-            duration_ms = (time.time() - start_time) * 1000
-            total_duration_ms = total_duration_ms + duration_ms
+            execution_count: int = self.execution_count + 1
+            duration_ms: float = (time.time() - start_time) * 1000
+            total_duration_ms: float = self.total_duration_ms + duration_ms
+            
+            self.execution_count = execution_count
+            self.total_duration_ms = total_duration_ms
 
             return TransitionResult(
                 success=True,
@@ -132,8 +137,10 @@ class Transition:
 
         except Exception as e:
             # 실패 통계 업데이트
-            failure_count = failure_count + 1
-            duration_ms = (time.time() - start_time) * 1000
+            failure_count: int = self.failure_count + 1
+            duration_ms: float = (time.time() - start_time) * 1000
+            
+            self.failure_count = failure_count
 
             return TransitionResult(
                 success=False,

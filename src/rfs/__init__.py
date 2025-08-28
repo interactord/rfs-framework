@@ -10,10 +10,10 @@ RFS Framework - Enterprise-Grade Reactive Functional Serverless
 - 지능형 Auto Scaling & Monitoring
 - 환경별 자동 설정 프로파일
 
-Version: 4.3.4 (Production Ready)
+Version: 4.3.5 (Production Ready)
 """
 
-__version__ = "4.3.4"
+__version__ = "4.3.5"
 __author__ = "RFS Framework Team"
 __phase__ = "Production Ready"
 
@@ -232,6 +232,45 @@ CloudRunConfig = None
 get_optimizer = None
 
 # === Standard Library Integration (stdlib.py) ===
+# === Async Pipeline System (NEW v4.4) ===
+from .async_pipeline import (
+    # Core Components
+    AsyncResult,
+    AsyncPipeline,
+    AsyncPipelineBuilder,
+    async_pipe,
+    execute_async_pipeline,
+    parallel_pipeline_execution,
+    # AsyncResult Utilities
+    async_success,
+    async_failure,
+    from_awaitable,
+    sequence_async_results,
+    parallel_map_async,
+    # Error Handling
+    AsyncErrorContext,
+    AsyncRetryWrapper,
+    AsyncFallbackWrapper,
+    AsyncCircuitBreaker,
+    AsyncErrorStrategy,
+    AsyncErrorMonitor,
+    ErrorSeverity,
+    with_retry,
+    with_fallback,
+    with_circuit_breaker,
+    # Performance Tools
+    AsyncPerformanceMonitor,
+    AsyncBackpressureController,
+    AsyncStreamProcessor,
+    AsyncCache,
+    PerformanceMetrics,
+    parallel_map,
+    async_cached,
+    async_rate_limited,
+    get_global_cache,
+    get_global_monitor,
+)
+
 from . import stdlib
 from .optimization import (  # Cold Start Optimizer (NEW)
     CacheWarmupStrategy,
@@ -374,6 +413,42 @@ __all__ = [
     "Saga",
     "SagaManager",
     "saga_step",
+    # === Async Pipeline System ===
+    # Core Components
+    "AsyncResult",
+    "AsyncPipeline",
+    "AsyncPipelineBuilder", 
+    "async_pipe",
+    "execute_async_pipeline",
+    "parallel_pipeline_execution",
+    # AsyncResult Utilities
+    "async_success",
+    "async_failure",
+    "from_awaitable",
+    "sequence_async_results",
+    "parallel_map_async",
+    # Error Handling
+    "AsyncErrorContext",
+    "AsyncRetryWrapper",
+    "AsyncFallbackWrapper",
+    "AsyncCircuitBreaker",
+    "AsyncErrorStrategy",
+    "AsyncErrorMonitor",
+    "ErrorSeverity",
+    "with_retry",
+    "with_fallback",
+    "with_circuit_breaker",
+    # Performance Tools
+    "AsyncPerformanceMonitor",
+    "AsyncBackpressureController",
+    "AsyncStreamProcessor",
+    "AsyncCache",
+    "PerformanceMetrics",
+    "parallel_map",
+    "async_cached",
+    "async_rate_limited",
+    "get_global_cache",
+    "get_global_monitor",
     # === Cloud Run Specialization ===
     # Service Discovery
     "CloudRunServiceDiscovery",

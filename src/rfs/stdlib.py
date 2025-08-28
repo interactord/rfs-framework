@@ -108,6 +108,21 @@ from .hof.async_hof import (
     async_retry,
 )
 
+# 비동기 파이프라인 (새로 구현된 핵심 기능)
+from .async_pipeline import (
+    AsyncResult,
+    AsyncPipeline, 
+    async_pipe as async_pipeline_pipe,  # 기존 async_pipe와 구분
+    async_success,
+    async_failure,
+    parallel_map,
+    AsyncCache,
+    async_cached,
+    with_retry,
+    with_fallback,
+    with_circuit_breaker,
+)
+
 # 컬렉션 연산 (Swift-inspired)
 from .hof.collections import safe_map  # PR 문서에서 제안된 함수
 from .hof.collections import (
@@ -420,6 +435,18 @@ __all__ = [
     "async_filter",
     "async_retry",
     "async_parallel",
+    # 비동기 파이프라인 (새로 구현된 핵심 기능)
+    "AsyncResult",
+    "AsyncPipeline",
+    "async_pipeline_pipe",
+    "async_success",
+    "async_failure",
+    "parallel_map",
+    "AsyncCache",
+    "async_cached",
+    "with_retry",
+    "with_fallback",
+    "with_circuit_breaker",
     # === 테스트 유틸리티 ===
     "RFSTestCase",
     "async_test_decorator",
@@ -467,9 +494,8 @@ if globals().get("_RFS_STDLIB_TIPS", True):
         config = RFSConfig()
         if config.is_development():
             print("💡 RFS Framework stdlib이 로드되었습니다!")
-            print(
-                "   사용 예시: from rfs.stdlib import Result, Success, pipe, safe_map"
-            )
+            print("   표준 패턴: from rfs.stdlib import Result, Success, pipe, safe_map")
+            print("   비동기 파이프라인: from rfs.stdlib import AsyncResult, async_pipeline_pipe")
             print("   전체 import: from rfs.stdlib import *")
             print("   환경 정보: rfs_info()")
     except:

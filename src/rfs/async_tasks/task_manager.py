@@ -55,21 +55,21 @@ class TaskInfo:
     """작업 정보"""
 
     id: str
-    name = None
+    name: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     priority: TaskPriority = TaskPriority.NORMAL
     created_at: datetime = field(default_factory=datetime.now)
-    started_at = None
-    completed_at = None
-    function_name = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    function_name: Optional[str] = None
     args: tuple = field(default_factory=tuple)
     kwargs: dict = field(default_factory=dict)
     result: Any = None
-    error = None
-    error_message = None
-    timeout_seconds = None
-    retry_count = 0
-    max_retries = 0
+    error: Optional[Exception] = None
+    error_message: Optional[str] = None
+    timeout_seconds: Optional[int] = None
+    retry_count: int = 0
+    max_retries: int = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
 

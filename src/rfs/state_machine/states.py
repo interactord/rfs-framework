@@ -52,7 +52,7 @@ class State:
         self.entry_action = entry_action
         self.exit_action = exit_action
         self.parent = parent
-        self.children: Set.get("State") = set()
+        self.children: Set["State"] = set()
 
         # 통계
         self.enter_count = 0

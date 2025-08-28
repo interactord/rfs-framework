@@ -61,7 +61,7 @@ class WorkflowTrigger:
     name: str
     trigger_type: TriggerType
     conditions: Dict[str, Any]
-    enabled = True
+    enabled: bool = True
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def matches(self, event: Dict[str, Any]) -> bool:
@@ -92,9 +92,9 @@ class ActionRunner:
     name: str
     action_type: ActionType
     config: Dict[str, Any]
-    timeout = 300
-    retry_count = 0
-    on_failure = None
+    timeout: int = 300
+    retry_count: int = 0
+    on_failure: Optional[str] = None
 
     async def execute(self, context: Dict[str, Any]) -> Result[Dict[str, Any], str]:
         """액션 실행"""

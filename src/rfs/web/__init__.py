@@ -8,6 +8,15 @@ RFS Web Server Integration (RFS v4.1)
 - 비동기/동기 핸들러 지원
 """
 
+from .fastapi_helpers import (
+    AsyncResultRouter,
+    AsyncResultHTTPError,
+    async_result_to_response,
+    async_result_to_paginated_response,
+    create_async_result_router,
+    create_error_mapper,
+    batch_async_results_to_response,
+)
 from .handlers import (
     AsyncRequestHandler,
     ErrorHandler,
@@ -62,6 +71,14 @@ __all__ = [
     "get_web_server",
     "start_server",
     "shutdown_server",
+    # AsyncResult FastAPI Integration
+    "AsyncResultRouter",
+    "AsyncResultHTTPError",
+    "async_result_to_response",
+    "async_result_to_paginated_response",
+    "create_async_result_router",
+    "create_error_mapper",
+    "batch_async_results_to_response",
     # Middleware
     "RFSMiddleware",
     "CorsMiddleware",
@@ -94,9 +111,10 @@ __all__ = [
     "handle_error",
 ]
 
-__version__ = "4.1.0"
+__version__ = "4.4.0"
 __web_features__ = [
     "FastAPI/Flask 통합 지원",
+    "AsyncResult FastAPI 헬퍼",
     "자동 미들웨어 스택",
     "Cloud Run 최적화",
     "비동기/동기 핸들러",

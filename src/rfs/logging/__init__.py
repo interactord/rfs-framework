@@ -1,9 +1,16 @@
 """
 Enhanced Logging System for RFS Framework
 
-향상된 로깅 시스템 - 구조화된 로깅, 분산 추적, 메트릭
+향상된 로깅 시스템 - 구조화된 로깅, 분산 추적, 메트릭, AsyncResult 체인 로깅
 """
 
+from .async_logging import (
+    AsyncResultLogContext,
+    AsyncResultLogEntry,
+    AsyncResultLogger,
+    LogLevel as AsyncLogLevel,
+    log_async_chain,
+)
 from .decorators import (
     log_error,
     log_execution,
@@ -52,6 +59,12 @@ __all__ = [
     "get_logger",
     "configure_logging",
     "set_global_context",
+    # AsyncResult Logging
+    "AsyncResultLogger",
+    "AsyncResultLogContext",
+    "AsyncResultLogEntry",
+    "AsyncLogLevel",
+    "log_async_chain",
     # Structured
     "StructuredLogger",
     "LogEntry",

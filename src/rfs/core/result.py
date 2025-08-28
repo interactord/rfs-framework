@@ -95,30 +95,30 @@ class Success(Result[T, E]):
         """에러 값 추출 - Success는 None 반환"""
         return None
 
-    def map(self, func: Callable[[T], U]) -> Result[U, E]:
+    def map(self, func: Callable[[T], U]) -> 'Result[U, E]':
         try:
             return Success(func(self.value))
         except Exception as e:
-            return Failure(e)
+            return Failure(e)  # type: ignore[arg-type]
 
-    def bind(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+    def bind(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         try:
             return func(self.value)
         except Exception as e:
-            return Failure(e)
+            return Failure(e)  # type: ignore[arg-type]
 
-    def map_error(self, func: Callable[[E], U]) -> Result[T, U]:
+    def map_error(self, func: Callable[[E], U]) -> 'Result[T, U]':
         return Success(self.value)
 
-    def flat_map(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+    def flat_map(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         """flat_map alias for bind"""
         return self.bind(func)
 
-    def or_else(self, alternative: Callable[[], Result[T, E]]) -> Result[T, E]:
+    def or_else(self, alternative: Callable[[], 'Result[T, E]']) -> 'Result[T, E]':
         """Return self on Success"""
         return self
 
-    def filter(self, predicate: Callable[[T], bool], error: E) -> Result[T, E]:
+    def filter(self, predicate: Callable[[T], bool], error: E) -> 'Result[T, E]':
         """Filter success value with predicate"""
         try:
             if predicate(self.value):
@@ -126,7 +126,7 @@ class Success(Result[T, E]):
             else:
                 return Failure(error)
         except Exception as e:
-            return Failure(e)
+            return Failure(e)  # type: ignore[arg-type]
 
     def __repr__(self) -> str:
         return f"Success({self.value})"
@@ -150,9 +150,7 @@ class Failure(Result[T, E]):
 
     def unwrap(self) -> T:
         # 함수형 패턴: isinstance 대신 type 비교
-        if hasattr(self.error, "__class__") and issubclass(
-            self.error.__class__, Exception
-        ):
+        if isinstance(self.error, Exception):
             raise self.error
         raise ValueError(f"Failure unwrap: {self.error}")
 
@@ -175,30 +173,30 @@ class Failure(Result[T, E]):
         """값 추출 - Failure는 None 반환"""
         return None
 
-    def map(self, func: Callable[[T], U]) -> Result[U, E]:
+    def map(self, func: Callable[[T], U]) -> 'Result[U, E]':
         return Failure(self.error)
 
-    def bind(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+    def bind(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         return Failure(self.error)
 
-    def map_error(self, func: Callable[[E], U]) -> Result[T, U]:
+    def map_error(self, func: Callable[[E], U]) -> 'Result[T, U]':
         try:
             return Failure(func(self.error))
         except Exception as e:
-            return Failure(e)
+            return Failure(e)  # type: ignore[arg-type]
 
-    def flat_map(self, func: Callable[[T], Result[U, E]]) -> Result[U, E]:
+    def flat_map(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         """flat_map alias for bind"""
         return self.bind(func)
 
-    def or_else(self, alternative: Callable[[], Result[T, E]]) -> Result[T, E]:
+    def or_else(self, alternative: Callable[[], 'Result[T, E]']) -> 'Result[T, E]':
         """Return alternative on Failure"""
         try:
             return alternative()
         except Exception as e:
-            return Failure(e)
+            return Failure(e)  # type: ignore[arg-type]
 
-    def filter(self, predicate: Callable[[T], bool], error: E) -> Result[T, E]:
+    def filter(self, predicate: Callable[[T], bool], error: E) -> 'Result[T, E]':
         """Filter returns self (Failure) unchanged"""
         return self
 
@@ -217,14 +215,14 @@ class ResultM(Result[T, E]):
     @classmethod
     def pure(cls, value: T) -> "Result[T, Any]":
         """Monad의 return/pure - 값을 Result 컨텍스트로 리프트"""
-        return Success(s.value)
+        return Success(value)
 
     @classmethod
     def wrap(cls, result: Result[T, E]) -> "ResultM[T, E]":
         """기존 Result를 ResultM으로 변환"""
         if result.is_success():
-            return cls.pure(result.value)
-        return Failure(result.error)
+            return cls.pure(result.unwrap())
+        return Failure(result.unwrap_error())
 
     def kleisli_compose(
         self, f: Callable[[T], "Result[U, E]"], g: Callable[[U], "Result[V, E]"]
@@ -449,7 +447,7 @@ def from_optional(value: Optional[T], error: E | None = None) -> "Result[T, E]":
 
 def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values = []
+    values: list[T] = []
     for result in results:
         match result:
             case Success() as s:
@@ -462,7 +460,7 @@ def sequence(results: List["Result[T, E]"]) -> "Result[List[T], E]":
 
 async def sequence_async(results: List["Result[T, E]"]) -> "Result[List[T], E]":
     """비동기 Result 리스트를 리스트 Result로 변환 - 함수형 패턴 적용"""
-    values = []
+    values: list[T] = []
     for result in results:
         match result:
             case Success() as s:

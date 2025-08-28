@@ -303,7 +303,6 @@ def performance_test(max_duration_ms: int = 1000):
             except Exception as e:
                 end_time = time.time()
                 duration_ms = (end_time - start_time) * 1000
-                print(f"Test failed after {duration_ms:.2f}ms: {e}")
                 raise
 
         def sync_wrapper(*args, **kwargs):
@@ -322,7 +321,6 @@ def performance_test(max_duration_ms: int = 1000):
             except Exception as e:
                 end_time = time.time()
                 duration_ms = (end_time - start_time) * 1000
-                print(f"Test failed after {duration_ms:.2f}ms: {e}")
                 raise
 
         if asyncio.iscoroutinefunction(func):

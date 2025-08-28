@@ -7,7 +7,7 @@ Inspired by Spring Reactor Flux
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, AsyncIterator, Callable, Generic, List, Optional, TypeVar, Union
+from typing import Any, AsyncIterator, Callable, Generic, List, Optional, Set, TypeVar, Union
 
 # Import from HOF library
 from ..hof.collections import fold_left
@@ -24,7 +24,7 @@ class Flux(Generic[T]):
     Spring Reactor의 Flux를 Python으로 구현
     """
 
-    def __init__(self, source: Callable[[], AsyncIterator[T]] = None):
+    def __init__(self, source: Optional[Callable[[], AsyncIterator[T]]] = None) -> None:
         self.source = source or self._empty_source
 
     @staticmethod
@@ -278,14 +278,14 @@ class Flux(Generic[T]):
 
     async def collect_list(self) -> List[T]:
         """모든 항목을 리스트로 수집"""
-        result = []
+        result: List[T] = []
         async for item in self.source():
             result = result + [item]
         return result
 
     async def collect_set(self) -> set[T]:
         """모든 항목을 셋으로 수집"""
-        result: Set[Any] = set()
+        result: Set[T] = set()
         async for item in self.source():
             result.add(item)
         return result
@@ -313,9 +313,9 @@ class Flux(Generic[T]):
 
     async def subscribe(
         self,
-        on_next: Callable[[T], None] = None,
-        on_error: Callable[[Exception], None] = None,
-        on_complete: Callable[[], None] = None,
+        on_next: Optional[Callable[[T], None]] = None,
+        on_error: Optional[Callable[[Exception], None]] = None,
+        on_complete: Optional[Callable[[], None]] = None,
     ) -> None:
         """
         스트림 구독

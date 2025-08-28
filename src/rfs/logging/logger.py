@@ -14,7 +14,7 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Union
 
 _log_context: ContextVar[Dict[str, Any]] = ContextVar("log_context", default={})
-_trace_context: ContextVar[Optional["TraceContext"]] = ContextVar(
+_trace_context: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
     "_trace_context", default=None
 )
 
@@ -54,13 +54,13 @@ class LogContext:
         """필드 추가"""
         self.fields = {**self.fields, key: value}
 
-    def remove_field(self, key: str):
+    def remove_field(self, key: str) -> None:
         """필드 제거"""
-        fields = {k: v for k, v in fields.items() if k != "key, None"}
+        self.fields = {k: v for k, v in self.fields.items() if k != key}
 
-    def get_fields(self) -> Dict[str, Any]:
+    def get_fields(self) -> dict[str, Any]:
         """필드 조회"""
-        return self.fields.copy()
+        return dict(self.fields)
 
 
 class RFSLogger:
@@ -159,9 +159,11 @@ class RFSLogger:
 
     def _get_default_formatter(self) -> logging.Formatter:
         """기본 포매터"""
-        from .formatters import StructuredFormatter
-
-        return StructuredFormatter()
+        try:
+            from .formatters import StructuredFormatter
+            return StructuredFormatter()
+        except ImportError:
+            return logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def with_context(self, **fields) -> LogContext:
         """컨텍스트 추가"""
@@ -171,8 +173,8 @@ class RFSLogger:
         """필드가 추가된 새 로거"""
         new_logger = RFSLogger(
             f"{self.name}[{','.join(fields.keys())}]",
-            level=self.logger.level,
-            handlers=self.logger.handlers,
+            level=LogLevel(self.logger.level),
+            handlers=list(self.logger.handlers),
         )
         current = _log_context.get()
         _log_context.set({**current, **fields})
@@ -182,8 +184,8 @@ class RFSLogger:
         """자식 로거 생성"""
         return RFSLogger(
             f"{self.name}.{suffix}",
-            level=self.logger.level,
-            handlers=self.logger.handlers,
+            level=LogLevel(self.logger.level),
+            handlers=list(self.logger.handlers),
         )
 
     def set_level(self, level: LogLevel):
@@ -198,19 +200,19 @@ class RFSLogger:
         """핸들러 제거"""
         self.logger.removeHandler(handler)
 
-    def get_metrics(self) -> Dict[str, int]:
+    def get_metrics(self) -> dict[str, int]:
         """로그 메트릭 조회"""
-        return self.log_counts.copy()
+        return {level.name: count for level, count in self.log_counts.items()}
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """메트릭 리셋"""
         self.log_counts = {level: 0 for level in LogLevel}
 
 
-_logger_cache: Dict[str, Any] = field(default_factory=dict)
+_logger_cache: dict[str, RFSLogger] = {}
 
 
-def get_logger(name=None) -> RFSLogger:
+def get_logger(name: Optional[str] = None) -> RFSLogger:
     """로거 획득"""
     if name is None:
         import inspect
@@ -221,7 +223,7 @@ def get_logger(name=None) -> RFSLogger:
         else:
             name = "root"
     if name not in _logger_cache:
-        _logger_cache[name] = {name: RFSLogger(name)}
+        _logger_cache[name] = RFSLogger(name)
     return _logger_cache[name]
 
 

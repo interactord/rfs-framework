@@ -20,10 +20,10 @@ logger = get_logger(__name__)
 
 
 def message_handler(
-    topic: str = None,
-    broker_name: str = None,
-    auto_ack=True,
-    max_retries=3,
+    topic: Optional[str] = None,
+    broker_name: Optional[str] = None,
+    auto_ack: bool = True,
+    max_retries: int = 3,
     retry_delay: float = 1.0,
 ):
     """메시지 핸들러 데코레이터"""
@@ -59,9 +59,9 @@ def message_handler(
 
 def topic_subscriber(
     topic: str,
-    broker_name: str = None,
-    config: SubscriptionConfig = None,
-    auto_start=True,
+    broker_name: Optional[str] = None,
+    config: Optional[SubscriptionConfig] = None,
+    auto_start: bool = True,
 ):
     """토픽 구독 데코레이터"""
 
@@ -106,7 +106,7 @@ def topic_subscriber(
 
 
 def retry_on_failure(
-    max_retries=3,
+    max_retries: int = 3,
     delay: float = 1.0,
     backoff_factor: float = 2.0,
     max_delay: float = 60.0,
@@ -144,7 +144,7 @@ def retry_on_failure(
     return decorator
 
 
-def dead_letter_queue(dlq_topic: str = None, max_failures=5, broker_name: str = None):
+def dead_letter_queue(dlq_topic: Optional[str] = None, max_failures: int = 5, broker_name: Optional[str] = None):
     """Dead Letter Queue 데코레이터"""
 
     def decorator(func: Callable) -> Callable:
@@ -182,7 +182,7 @@ def dead_letter_queue(dlq_topic: str = None, max_failures=5, broker_name: str = 
 
 
 async def send_to_dlq(
-    message: Message, error_message: str, dlq_topic: str = None, broker_name: str = None
+    message: Message, error_message: str, dlq_topic: Optional[str] = None, broker_name: Optional[str] = None
 ):
     """메시지를 Dead Letter Queue로 전송"""
     try:
@@ -304,9 +304,9 @@ def rate_limit(
 
 
 def message_metrics(
-    metric_name: str = None,
-    include_data_size=True,
-    include_processing_time=True,
+    metric_name: Optional[str] = None,
+    include_data_size: bool = True,
+    include_processing_time: bool = True,
 ):
     """메시지 메트릭스 수집 데코레이터"""
 
@@ -357,7 +357,7 @@ def message_metrics(
     return decorator
 
 
-def batch_handler(batch_size=10, batch_timeout: float = 1.0, max_batch_size=100):
+def batch_handler(batch_size: int = 10, batch_timeout: float = 1.0, max_batch_size: int = 100):
     """배치 메시지 처리 데코레이터"""
     message_batches = {}
     batch_timers = {}
@@ -424,8 +424,8 @@ def batch_handler(batch_size=10, batch_timeout: float = 1.0, max_batch_size=100)
 def create_message_handler_class(
     topic: str,
     handler_func: Callable,
-    broker_name: str = None,
-    config: SubscriptionConfig = None,
+    broker_name: Optional[str] = None,
+    config: Optional[SubscriptionConfig] = None,
 ) -> type:
     """메시지 핸들러 클래스 동적 생성"""
 

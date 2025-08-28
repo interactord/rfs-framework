@@ -27,25 +27,25 @@ try:
     SQLAlchemy_Base = declarative_base()
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
-    Column = None
-    Integer = None
-    String = None
-    DateTime = None
-    Boolean = None
-    Text = None
-    JSON = None
-    ForeignKey = None
-    relationship = None
-    SQLAlchemy_Base = object
+    Column = None  # type: ignore[misc,assignment]
+    Integer = None  # type: ignore[misc,assignment]
+    String = None  # type: ignore[misc,assignment]
+    DateTime = None  # type: ignore[misc,assignment]
+    Boolean = None  # type: ignore[misc,assignment]
+    Text = None  # type: ignore[misc,assignment]
+    JSON = None  # type: ignore[misc,assignment]
+    ForeignKey = None  # type: ignore[misc,assignment]
+    relationship = None  # type: ignore[misc,assignment]
+    SQLAlchemy_Base = object  # type: ignore[misc,assignment]
     SQLALCHEMY_AVAILABLE = False
 try:
-    from tortoise import fields
+    from tortoise import fields as tortoise_fields
     from tortoise.models import Model as TortoiseBaseModel
 
     TORTOISE_AVAILABLE = True
 except ImportError:
-    TortoiseBaseModel = object
-    fields = None
+    TortoiseBaseModel = object  # type: ignore[misc,assignment]
+    tortoise_fields = None  # type: ignore[misc,assignment]
     TORTOISE_AVAILABLE = False
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
@@ -276,7 +276,7 @@ class TortoiseModel(BaseModel):
     @classmethod
     def create_table(cls) -> Table:
         """Tortoise 테이블 정의"""
-        fields = {}
+        fields: Dict[str, Dict[str, Field]] = {}
         if hasattr(cls, "_meta") and hasattr(cls._meta, "fields_map"):
             for field_name, field_obj in cls._meta.fields_map.items():
                 fields = {
@@ -326,7 +326,9 @@ class TortoiseModel(BaseModel):
     async def filter(cls, **filters) -> Result[List["TortoiseModel"], str]:
         """Tortoise 모델 목록 조회"""
         try:
-            models = await cls.filter(**filters).all()
+            # Use Tortoise ORM's filter method directly to avoid recursion
+            queryset = super().filter(**filters)  # type: ignore[misc]
+            models = await queryset.all()  # type: ignore[attr-defined]
             return Success(models)
         except Exception as e:
             return Failure(f"모델 목록 조회 실패: {str(e)}")
@@ -372,8 +374,8 @@ def get_model_registry() -> ModelRegistry:
 def create_model(
     name: str,
     fields: Dict[str, Field],
-    base_class: Type[BaseModel] = None,
-    table_name: str = None,
+    base_class: Optional[Type[BaseModel]] = None,
+    table_name: Optional[str] = None,
 ) -> Type[BaseModel]:
     """동적 모델 생성"""
     from .base import get_database_manager
@@ -401,6 +403,7 @@ def create_model(
             "__tablename__": {"__tablename__": table_name or name.lower()},
         }
         for field_name, field_def in fields.items():
+            column_type: Any
             match field_def.field_type:
                 case "integer":
                     column_type = Integer
@@ -429,31 +432,32 @@ def create_model(
                     )
                 },
             }
-    elif base_class == TortoiseModel and TORTOISE_AVAILABLE:
+    elif base_class == TortoiseModel and TORTOISE_AVAILABLE and tortoise_fields is not None:
         for field_name, field_def in fields.items():
+            field_obj: Any
             match field_def.field_type:
                 case "integer":
-                    field_obj = fields.IntField(pk=field_def.primary_key)
+                    field_obj = tortoise_fields.IntField(pk=field_def.primary_key)  # type: ignore[attr-defined]
                 case "string":
-                    field_obj = fields.CharField(
+                    field_obj = tortoise_fields.CharField(  # type: ignore[attr-defined]
                         max_length=field_def.max_length or 255, null=field_def.nullable
                     )
                 case "text":
-                    field_obj = fields.TextField(null=field_def.nullable)
+                    field_obj = tortoise_fields.TextField(null=field_def.nullable)  # type: ignore[attr-defined]
                 case "datetime":
-                    field_obj = fields.DatetimeField(
+                    field_obj = tortoise_fields.DatetimeField(  # type: ignore[attr-defined]
                         auto_now_add=True if field_def.default else False
                     )
                 case "boolean":
-                    field_obj = fields.BooleanField(default=field_def.default)
+                    field_obj = tortoise_fields.BooleanField(default=field_def.default)  # type: ignore[attr-defined]
                 case "json":
-                    field_obj = fields.JSONField(default=field_def.default)
+                    field_obj = tortoise_fields.JSONField(default=field_def.default)  # type: ignore[attr-defined]
                 case _:
-                    field_obj = fields.CharField(
+                    field_obj = tortoise_fields.CharField(  # type: ignore[attr-defined]
                         max_length=255, null=field_def.nullable
                     )
             attrs[field_name] = {field_name: field_obj}
-    model_class = type(name, (base_class,), attrs)
+    model_class = type(name, (base_class,) if base_class else (), attrs)  # type: ignore[arg-type]
     registry = get_model_registry()
     registry.register_model(model_class)
     return model_class

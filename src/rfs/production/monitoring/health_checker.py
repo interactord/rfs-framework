@@ -74,7 +74,7 @@ class HealthCheckResult:
     timestamp: datetime
     message: str
     details: Dict[str, Any] = field(default_factory=dict)
-    error = None
+    error: Optional[str] = None
 
 
 @dataclass
@@ -96,7 +96,7 @@ class EndpointCheck:
 
     def __init__(self, check_config: HealthCheck):
         self.config = check_config
-        self.session = None
+        self.session: Optional[aiohttp.ClientSession] = None
 
     async def initialize(self) -> None:
         """체크 초기화"""
@@ -107,6 +107,15 @@ class EndpointCheck:
     async def execute(self) -> HealthCheckResult:
         """헬스 체크 실행"""
         await self.initialize()
+        if self.session is None:
+            return HealthCheckResult(
+                check_name=self.config.name,
+                status=HealthStatus.UNHEALTHY,
+                response_time_ms=0,
+                timestamp=datetime.now(),
+                message="Failed to initialize session",
+                error="Session initialization failed"
+            )
         url = self.config.config["url"]
         method = self.config.config.get("method", "GET").upper()
         headers = self.config.config.get("headers", {})
@@ -988,7 +997,7 @@ class HealthChecker:
     async def run_all_checks(self) -> Dict[str, HealthCheckResult]:
         """모든 헬스 체크 실행"""
         results = {}
-        tasks = []
+        tasks: List[Tuple[str, Any]] = []
         for check_name in self.checks:
             if self.checks[check_name].enabled:
                 task = self.run_check(check_name)
@@ -1076,9 +1085,9 @@ class HealthChecker:
                 "message": "No health checks available",
                 "checks": {},
             }
-        critical_failures = []
-        degraded_services = []
-        healthy_services = []
+        critical_failures: List[str] = []
+        degraded_services: List[str] = []
+        healthy_services: List[str] = []
         for check_name, result in self.latest_results.items():
             check = self.checks[check_name]
             match result.status:
@@ -1147,21 +1156,21 @@ class HealthChecker:
             for handler in self.check_handlers.values():
                 if hasattr(handler, "cleanup"):
                     await handler.cleanup()
-            checks = {}
-            check_handlers = {}
-            check_results = {}
+            checks: Dict[str, HealthCheck] = {}
+            check_handlers: Dict[str, Any] = {}
+            check_results: Dict[str, HealthCheckResult] = {}
             logging.info("Health checker cleanup completed")
             return Success(True)
         except Exception as e:
             return Failure(f"Cleanup failed: {e}")
 
 
-_health_checker = None
+_health_checker: Optional[HealthChecker] = None
 
 
-def get_health_checker(config=None) -> HealthChecker:
+def get_health_checker(config: Optional[HealthCheckConfig] = None) -> HealthChecker:
     """헬스 체커 싱글톤 인스턴스 반환"""
-    # global _health_checker - removed for functional programming
+    global _health_checker
     if _health_checker is None:
         _health_checker = HealthChecker(config)
     return _health_checker

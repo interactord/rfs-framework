@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 class RequestResponse:
     """Request-Response 패턴"""
 
-    def __init__(self, broker_name: str = None, timeout: float = 30.0):
+    def __init__(self, broker_name: Optional[str] = None, timeout: float = 30.0):
         self.broker_name = broker_name
         self.timeout = timeout
         self._pending_requests = {}

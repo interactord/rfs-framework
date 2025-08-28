@@ -7,7 +7,10 @@ transformations in a functional way.
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, List, Optional, TypeVar, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -25,7 +28,7 @@ class Monad(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def bind(self, func: Callable[[T], "Monad[U]"]) -> "Monad[U]":
+    def bind(self, func: Callable[[T], "Monad[U]"], /) -> "Monad[U]":
         """Monadic bind (flatMap)."""
         pass
 
@@ -43,7 +46,7 @@ class Maybe(Monad[T]):
     Represents a value that might be present (Just) or absent (Nothing).
     """
 
-    def __init__(self, value=None):
+    def __init__(self, value: Optional[T] = None) -> None:
         self._value = value
 
     @staticmethod
@@ -84,11 +87,13 @@ class Maybe(Monad[T]):
         if self.is_nothing():
             return Maybe.nothing()
         try:
+            # Type assertion since we've checked is_nothing() above
+            assert self._value is not None
             return Maybe.just(func(self._value))
         except:
             return Maybe.nothing()
 
-    def bind(self, func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
+    def bind(self, func: Callable[[T], "Maybe[U]"], /) -> "Maybe[U]":  # type: ignore[override]
         """
         Monadic bind (flatMap).
 
@@ -99,26 +104,36 @@ class Maybe(Monad[T]):
         """
         if self.is_nothing():
             return Maybe.nothing()
+        # Type assertion since we've checked is_nothing() above
+        assert self._value is not None
         return func(self._value)
 
     def unwrap(self) -> T:
         """Get value or raise exception."""
         if self.is_nothing():
             raise ValueError("Cannot unwrap Nothing")
-        return self._value
+        return self._value  # type: ignore[return-value]
 
     def unwrap_or(self, default: T) -> T:
         """Get value or return default."""
-        return self._value if self.is_just() else default
+        if self.is_just():
+            assert self._value is not None
+            return self._value
+        return default
 
     def unwrap_or_else(self, func: Callable[[], T]) -> T:
         """Get value or compute default."""
-        return self._value if self.is_just() else func()
+        if self.is_just():
+            assert self._value is not None
+            return self._value
+        return func()
 
     def filter(self, predicate: Callable[[T], bool]) -> "Maybe[T]":
         """Keep value only if predicate is true."""
-        if self.is_just() and predicate(self._value):
-            return self
+        if self.is_just():
+            assert self._value is not None
+            if predicate(self._value):
+                return self
         return Maybe.nothing()
 
     def __repr__(self) -> str:
@@ -129,7 +144,7 @@ class Maybe(Monad[T]):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Maybe):
             return False
-        return self._value == other._value
+        return bool(self._value == other._value)
 
 
 # Either Monad
@@ -179,7 +194,7 @@ class Either(Monad[R], Generic[L, R]):
         try:
             return Either.right(func(self._right))
         except Exception as e:
-            return Either.left(e)
+            return Either.left(self._left)
 
     def map_left(self, func: Callable[[L], U]) -> "Either[U, R]":
         """Apply function to Left value."""
@@ -187,7 +202,7 @@ class Either(Monad[R], Generic[L, R]):
             return Either.right(self._right)
         return Either.left(func(self._left))
 
-    def bind(self, func: Callable[[R], "Either[L, U]"]) -> "Either[L, U]":
+    def bind(self, func: Callable[[R], "Either[L, U]"]) -> "Either[L, U]":  # type: ignore[override]
         """
         Monadic bind for Right value.
 
@@ -206,13 +221,13 @@ class Either(Monad[R], Generic[L, R]):
             if isinstance(self._left, Exception):
                 raise self._left
             raise ValueError(f"Cannot unwrap Left: {self._left}")
-        return self._right
+        return self._right  # type: ignore[no-any-return]
 
     def unwrap_left(self) -> L:
         """Get Left value or raise exception."""
         if self.is_right():
             raise ValueError(f"Cannot unwrap Right as Left: {self._right}")
-        return self._left
+        return self._left  # type: ignore[no-any-return]
 
     def unwrap_or(self, default: R) -> R:
         """Get Right value or return default."""
@@ -230,7 +245,7 @@ class Either(Monad[R], Generic[L, R]):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Either):
             return False
-        return self._left == other._left and self._right == other._right
+        return bool(self._left == other._left and self._right == other._right)
 
 
 # Result Monad (specialized Either for success/failure)
@@ -294,7 +309,7 @@ class Result(Generic[T, E]):
         try:
             return Result.success(func(self._value))
         except Exception as e:
-            return Result.failure(e)
+            return Result.failure(self._error)
 
     def map_error(self, func: Callable[[E], U]) -> "Result[T, U]":
         """Apply function to error value."""
@@ -321,13 +336,13 @@ class Result(Generic[T, E]):
             if isinstance(self._error, Exception):
                 raise self._error
             raise ValueError(f"Result is failure: {self._error}")
-        return self._value
+        return self._value  # type: ignore[no-any-return]
 
     def unwrap_error(self) -> E:
         """Get error value or raise exception."""
         if self.is_success():
             raise ValueError(f"Result is success: {self._value}")
-        return self._error
+        return self._error  # type: ignore[no-any-return]
 
     def unwrap_or(self, default: T) -> T:
         """Get success value or return default."""
@@ -345,7 +360,7 @@ class Result(Generic[T, E]):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Result):
             return False
-        return self._value == other._value and self._error == other._error
+        return bool(self._value == other._value and self._error == other._error)
 
 
 # Monad utility functions

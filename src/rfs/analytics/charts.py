@@ -226,7 +226,7 @@ class Chart(ABC):
 class LineChart(Chart):
     """라인 차트"""
 
-    def __init__(self, chart_id: str, title="", options=None):
+    def __init__(self, chart_id: str, title: str = "", options: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(chart_id, ChartType.LINE, title, options)
 
     def prepare_data(self, raw_data: List[Dict[str, Any]]) -> Result[ChartData, str]:
@@ -360,7 +360,7 @@ class PieChart(Chart):
 class ScatterChart(Chart):
     """산점도 차트"""
 
-    def __init__(self, chart_id: str, title="", options=None):
+    def __init__(self, chart_id: str, title: str = "", options: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(chart_id, ChartType.SCATTER, title, options)
 
     def prepare_data(self, raw_data: List[Dict[str, Any]]) -> Result[ChartData, str]:
@@ -430,7 +430,7 @@ class HistogramChart(Chart):
 class HeatmapChart(Chart):
     """히트맵 차트"""
 
-    def __init__(self, chart_id: str, title="", options=None):
+    def __init__(self, chart_id: str, title: str = "", options: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(chart_id, ChartType.HEATMAP, title, options)
 
     def prepare_data(self, raw_data: List[Dict[str, Any]]) -> Result[ChartData, str]:
@@ -465,7 +465,7 @@ class HeatmapChart(Chart):
 class ChartBuilder:
     """차트 빌더"""
 
-    def __init__(self, chart_id: str, chart_type: ChartType):
+    def __init__(self, chart_id: str, chart_type: ChartType) -> None:
         self.chart_id = chart_id
         self.chart_type = chart_type
         self.title = ""

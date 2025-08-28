@@ -19,7 +19,7 @@ class Publisher:
     """메시지 발행자"""
 
     def __init__(
-        self, broker_name: str = None, broker: MessageBroker = None, topic: str = None
+        self, broker_name: Optional[str] = None, broker: Optional[MessageBroker] = None, topic: Optional[str] = None
     ):
         self.broker_name = broker_name
         self._broker = broker
@@ -41,12 +41,12 @@ class Publisher:
     async def publish(
         self,
         data: Any,
-        topic: str = None,
+        topic: Optional[str] = None,
         priority: MessagePriority = MessagePriority.NORMAL,
-        ttl=None,
-        headers: Dict[str, Any] = None,
-        correlation_id=None,
-        reply_to=None,
+        ttl: Optional[int] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        correlation_id: Optional[str] = None,
+        reply_to: Optional[str] = None,
     ) -> Result[str, str]:
         """메시지 발행"""
         try:
@@ -95,7 +95,7 @@ class Publisher:
             return Failure(error_msg)
 
     async def publish_delayed(
-        self, data: Any, delay: Union[int, timedelta], topic: str = None, **kwargs
+        self, data: Any, delay: Union[int, timedelta], topic: Optional[str] = None, **kwargs
     ) -> Result[str, str]:
         """지연 메시지 발행"""
         try:
@@ -111,7 +111,7 @@ class Publisher:
             return Failure(error_msg)
 
     async def publish_at(
-        self, data: Any, scheduled_time: datetime, topic: str = None, **kwargs
+        self, data: Any, scheduled_time: datetime, topic: Optional[str] = None, **kwargs
     ) -> Result[str, str]:
         """예약 메시지 발행"""
         try:
@@ -145,15 +145,15 @@ class BatchPublisher(Publisher):
 
     def __init__(
         self,
-        broker_name: str = None,
-        topic: str = None,
-        batch_size=100,
+        broker_name: Optional[str] = None,
+        topic: Optional[str] = None,
+        batch_size: int = 100,
         flush_interval: float = 1.0,
     ):
         super().__init__(broker_name, topic)
         self.batch_size = batch_size
         self.flush_interval = flush_interval
-        self._message_batch = []
+        self._message_batch: List[Message] = []
         self._batch_lock = asyncio.Lock()
         self._flush_task = None
         self._start_flush_timer()
@@ -161,12 +161,12 @@ class BatchPublisher(Publisher):
     async def publish(
         self,
         data: Any,
-        topic: str = None,
+        topic: Optional[str] = None,
         priority: MessagePriority = MessagePriority.NORMAL,
-        ttl=None,
-        headers: Dict[str, Any] = None,
-        correlation_id=None,
-        reply_to=None,
+        ttl: Optional[int] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        correlation_id: Optional[str] = None,
+        reply_to: Optional[str] = None,
     ) -> Result[str, str]:
         """배치에 메시지 추가"""
         try:
@@ -232,7 +232,7 @@ class BatchPublisher(Publisher):
                         "publish_errors": self._stats["publish_errors"] + len(messages),
                     }
                     logger.error(f"배치 발행 실패 ({topic}): {result.unwrap_error()}")
-            _message_batch = {}
+            _message_batch: Dict[str, Any] = {}
             self._stats = {**self._stats, "last_publish_time": datetime.now()}
             if total_published > 0:
                 logger.debug(f"배치 플러시 완료: {total_published}개 메시지")
@@ -280,12 +280,12 @@ class BatchPublisher(Publisher):
 async def publish_message(
     topic: str,
     data: Any,
-    broker_name: str = None,
+    broker_name: Optional[str] = None,
     priority: MessagePriority = MessagePriority.NORMAL,
-    ttl=None,
-    headers: Dict[str, Any] = None,
-    correlation_id=None,
-    reply_to=None,
+    ttl: Optional[int] = None,
+    headers: Optional[Dict[str, Any]] = None,
+    correlation_id: Optional[str] = None,
+    reply_to: Optional[str] = None,
 ) -> Result[str, str]:
     """간편 메시지 발행"""
     publisher = Publisher(broker_name)
@@ -301,7 +301,7 @@ async def publish_message(
 
 
 async def publish_batch(
-    topic: str, messages: List[Dict[str, Any]], broker_name: str = None
+    topic: str, messages: List[Dict[str, Any]], broker_name: Optional[str] = None
 ) -> Result[List[str], str]:
     """간편 배치 발행"""
     try:

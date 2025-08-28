@@ -25,14 +25,14 @@ class Field:
     """필드 정의"""
 
     field_type: str
-    primary_key = False
-    nullable = True
+    primary_key: bool = False
+    nullable: bool = True
     default: Any = None
-    max_length = None
-    foreign_key = None
-    index = False
-    unique = False
-    description = None
+    max_length: Optional[int] = None
+    foreign_key: Optional[str] = None
+    index: bool = False
+    unique: bool = False
+    description: Optional[str] = None
 
 
 @dataclass

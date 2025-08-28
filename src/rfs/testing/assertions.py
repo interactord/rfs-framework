@@ -167,7 +167,7 @@ def assert_success(result: Result, message=None):
     """Result가 성공인지 확인"""
     if result.is_failure():
         raise AssertionError(
-            f"Expected success, but was failure: {result.unwrap_err()}"
+            f"Expected success, but was failure: {result.unwrap_error()}"
             + (f": {message}" if message else "")
         )
 
@@ -194,7 +194,7 @@ def assert_result_value(result: Result, expected_value: Any, message=None):
 def assert_result_error(result: Result, expected_error: Any, message=None):
     """Result의 오류 값 확인"""
     assert_failure(result, message)
-    actual_error = result.unwrap_err()
+    actual_error = result.unwrap_error()
     if actual_error != expected_error:
         raise AssertionError(
             _format_assertion_message(expected_error, actual_error, message)

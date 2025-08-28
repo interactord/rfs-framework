@@ -199,8 +199,8 @@ class MessageBroker(ABC):
     def __init__(self, config: MessageConfig):
         self.config = config
         self._connected = False
-        self._publishers = {}
-        self._subscribers = {}
+        self._publishers: Dict[str, Any] = {}
+        self._subscribers: Dict[str, Any] = {}
         self._stats = {
             "messages_sent": 0,
             "messages_received": 0,
@@ -364,7 +364,7 @@ class MessageManager(metaclass=SingletonMeta):
             # 브로커 연결
             connect_result = await broker.connect()
             if not connect_result.is_success():
-                return Failure(f"브로커 연결 실패: {connect_result.unwrap_err()}")
+                return Failure(f"브로커 연결 실패: {connect_result.unwrap_error()}")
 
             self.brokers = {**self.brokers, name: broker}
 
@@ -397,7 +397,7 @@ class MessageManager(metaclass=SingletonMeta):
             disconnect_result = await broker.disconnect()
             if not disconnect_result.is_success():
                 logger.warning(
-                    f"브로커 연결 해제 실패: {disconnect_result.unwrap_err()}"
+                    f"브로커 연결 해제 실패: {disconnect_result.unwrap_error()}"
                 )
 
             del self.brokers[name]
@@ -472,7 +472,7 @@ async def create_message_broker(
         add_result = await manager.add_broker(name, broker)
 
         if not add_result.is_success():
-            return Failure(add_result.unwrap_err())
+            return Failure(add_result.unwrap_error())
 
         return Success(broker)
 

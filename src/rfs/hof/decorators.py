@@ -24,7 +24,7 @@ R = TypeVar("R")
 class MemoizeCache:
     """LRU cache for memoization."""
 
-    def __init__(self, maxsize=128):
+    def __init__(self, maxsize: int = 128) -> None:
         self.cache: OrderedDict = OrderedDict()
         self.maxsize = maxsize
         self.lock = Lock()
@@ -81,7 +81,7 @@ def memoize(
 
     def decorator(func: Callable) -> Callable:
         cache = MemoizeCache(maxsize)
-        cache_times = {}
+        cache_times: Dict[str, datetime] = {}
 
         def make_key(*args, **kwargs) -> str:
             if key_func:
@@ -91,7 +91,7 @@ def memoize(
             return hashlib.md5(pickle.dumps(key_data)).hexdigest()
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             key = make_key(*args, **kwargs)
 
             # Check if cached value exists and is valid
@@ -146,7 +146,7 @@ def throttle(rate: float, per: float = 1.0, burst=1) -> Callable:
         lock = Lock()
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             with lock:
                 now = time.time()
                 time_since_last = now - last_called[0]
@@ -481,7 +481,7 @@ def lazy(func: Callable[[], T]) -> Callable[[], T]:
         Computing...
         >>> result2 = expensive_data()  # Uses cached result
     """
-    cache = []
+    cache: List[Any] = []
     lock = Lock()
 
     @wraps(func)

@@ -58,18 +58,24 @@ class Guard:
             self._handled = True
             # This is a bit hacky but works for early return simulation
             raise _GuardReturn(value)
+        # This should never be reached when condition is False
+        raise RuntimeError("Guard else_return called but condition was True")
 
     def else_raise(self, exception: Exception) -> NoReturn:
         """Raise an exception if guard fails."""
         if not self.condition:
             self._handled = True
             raise exception
+        # This should never be reached when condition is False
+        raise RuntimeError("Guard else_raise called but condition was True")
 
     def else_call(self, func: Callable[[], Any]) -> NoReturn:
         """Call a function if guard fails."""
         if not self.condition:
             result = func()
             raise _GuardReturn(result)
+        # This should never be reached when condition is False
+        raise RuntimeError("Guard else_call called but condition was True")
 
 
 class _GuardReturn(Exception):
@@ -251,7 +257,7 @@ def guard_range(
     max_val: Optional[Union[int, float]] = None,
     else_return: Any = None,
     else_raise=None,
-) -> Union[int, float]:
+) -> Any:
     """
     Guard for range checking with early return.
 
@@ -297,7 +303,7 @@ def guard_not_empty(
     collection: Union[list, dict, set, str, tuple],
     else_return: Any = None,
     else_raise=None,
-) -> Union[list, dict, set, str, tuple]:
+) -> Any:
     """
     Guard for non-empty collections.
 
@@ -395,6 +401,8 @@ class GuardContext:
         """Return early if any check failed."""
         if self.failed:
             raise _GuardReturn(value)
+        # This should never be reached when not failed
+        raise RuntimeError("GuardContext else_return called but no failure occurred")
 
     def else_raise(self, exception=None) -> NoReturn:
         """Raise exception if any check failed."""
@@ -402,6 +410,8 @@ class GuardContext:
             if exception is None:
                 exception = GuardError(self.failure_message)
             raise exception
+        # This should never be reached when not failed
+        raise RuntimeError("GuardContext else_raise called but no failure occurred")
 
 
 # Helper function to handle guard returns in functions

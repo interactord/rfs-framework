@@ -20,6 +20,7 @@ from rfs.hof.collections import (
     fold,
     fold_left,
     fold_right,
+    forEach,
     group_by,
     last,
     map_indexed,
@@ -242,3 +243,104 @@ class TestCollectionUtilities:
 
         result = drop_while(lambda x: x > 0, [1, 2, -1, 3])
         assert result == [-1, 3]
+
+
+class TestSwiftForEach:
+    """Test Swift-style forEach function."""
+
+    def test_forEach_basic_side_effects(self):
+        """Test basic forEach with side effects."""
+        result = []
+        forEach(lambda x: result.append(x * 2), [1, 2, 3])
+        assert result == [2, 4, 6]
+
+    def test_forEach_empty_iterable(self):
+        """Test forEach with empty iterable."""
+        result = []
+        forEach(lambda x: result.append(x), [])
+        assert result == []
+
+    def test_forEach_string_processing(self):
+        """Test forEach with string processing."""
+        processed = []
+        forEach(lambda s: processed.append(s.upper()), ["hello", "world"])
+        assert processed == ["HELLO", "WORLD"]
+
+    def test_forEach_dictionary_updates(self):
+        """Test forEach updating a dictionary."""
+        data = {}
+        items = [{"id": 1, "value": "A"}, {"id": 2, "value": "B"}, {"id": 3, "value": "C"}]
+        forEach(lambda item: data.update({item["id"]: item["value"]}), items)
+        assert data == {1: "A", 2: "B", 3: "C"}
+
+    def test_forEach_complex_side_effects(self):
+        """Test forEach with complex side effects."""
+        # 통계를 누적하는 예시
+        stats = {"total": 0, "count": 0, "max": float("-inf")}
+        
+        def accumulate_stats(value):
+            stats["total"] += value
+            stats["count"] += 1
+            stats["max"] = max(stats["max"], value)
+        
+        forEach(accumulate_stats, [5, 2, 8, 1, 9])
+        
+        assert stats["total"] == 25
+        assert stats["count"] == 5
+        assert stats["max"] == 9
+
+    def test_forEach_nested_data_processing(self):
+        """Test forEach with nested data structures."""
+        flattened = []
+        nested_lists = [[1, 2], [3, 4, 5], [6]]
+        
+        forEach(lambda lst: forEach(lambda x: flattened.append(x), lst), nested_lists)
+        assert flattened == [1, 2, 3, 4, 5, 6]
+
+    def test_forEach_with_enumerate_pattern(self):
+        """Test forEach pattern similar to enumerate."""
+        indexed_items = []
+        items = ["apple", "banana", "cherry"]
+        
+        # forEach를 사용하여 인덱스와 함께 처리
+        for i, item in enumerate(items):
+            forEach(lambda _: indexed_items.append(f"{i}: {item}"), [item])
+        
+        assert len(indexed_items) == 3
+        assert "0: apple" in indexed_items
+        assert "2: cherry" in indexed_items
+
+    def test_forEach_return_value(self):
+        """Test that forEach returns None."""
+        result = forEach(lambda x: x * 2, [1, 2, 3])
+        assert result is None
+
+    def test_forEach_with_print_simulation(self):
+        """Test forEach with print-like operations (captured)."""
+        output = []
+        
+        def mock_print(text):
+            output.append(str(text))
+        
+        forEach(lambda x: mock_print(f"Processing: {x}"), ["a", "b", "c"])
+        
+        assert output == ["Processing: a", "Processing: b", "Processing: c"]
+
+    def test_forEach_type_conversion(self):
+        """Test forEach with type conversions."""
+        converted = []
+        numbers = ["1", "2", "3", "4", "5"]
+        
+        forEach(lambda s: converted.append(int(s) * 10), numbers)
+        assert converted == [10, 20, 30, 40, 50]
+
+    def test_forEach_generator_input(self):
+        """Test forEach with generator input."""
+        result = []
+        
+        def number_generator():
+            for i in range(3):
+                yield i * 2
+        
+        forEach(lambda x: result.append(x + 1), number_generator())
+        assert result == [1, 3, 5]

@@ -23,27 +23,27 @@ class SubscriptionConfig:
     """구독 설정"""
 
     # 메시지 처리
-    auto_ack = True
-    prefetch_count = 10
-    max_retries = 3
+    auto_ack: bool = True
+    prefetch_count: int = 10
+    max_retries: int = 3
     retry_delay: float = 1.0  # 초
 
     # 필터링
-    message_filter = None
-    header_filters: Dict[str, Any] = None
+    message_filter: Optional[Callable] = None
+    header_filters: Optional[Dict[str, Any]] = None
 
     # 배치 처리
-    batch_processing = False
-    batch_size = 10
+    batch_processing: bool = False
+    batch_size: int = 10
     batch_timeout: float = 1.0  # 초
 
     # Dead Letter Queue
-    enable_dlq = True
-    dlq_topic = None
+    enable_dlq: bool = True
+    dlq_topic: Optional[str] = None
 
     # 기타
-    max_concurrent_messages = 1
-    timeout = None  # 메시지 처리 타임아웃
+    max_concurrent_messages: int = 1
+    timeout: Optional[float] = None  # 메시지 처리 타임아웃
 
 
 class MessageHandler(ABC):
@@ -97,9 +97,9 @@ class Subscriber:
 
     def __init__(
         self,
-        broker_name: str = None,
-        broker: MessageBroker = None,
-        config: SubscriptionConfig = None,
+        broker_name: Optional[str] = None,
+        broker: Optional[MessageBroker] = None,
+        config: Optional[SubscriptionConfig] = None,
     ):
         self.broker_name = broker_name
         self._broker = broker
@@ -131,7 +131,7 @@ class Subscriber:
         self,
         topic: str,
         handler: Union[MessageHandler, Callable],
-        config: SubscriptionConfig = None,
+        config: Optional[SubscriptionConfig] = None,
     ) -> Result[None, str]:
         """토픽 구독"""
         try:

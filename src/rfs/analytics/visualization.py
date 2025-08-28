@@ -198,13 +198,13 @@ class BusinessTheme(Theme):
 class VisualizationEngine:
     """시각화 엔진"""
 
-    def __init__(self, backend="plotly"):
+    def __init__(self, backend: str = "plotly") -> None:
         self.backend = backend
         self.current_theme: Theme = DefaultTheme()
         self._backend_module = None
         self._initialize_backend()
 
-    def _initialize_backend(self):
+    def _initialize_backend(self) -> None:
         """백엔드 초기화"""
         try:
             match self.backend:
@@ -227,8 +227,9 @@ class VisualizationEngine:
                         "show": show,
                         "HoverTool": HoverTool,
                     }
-        except ImportError as e:
-            print(f"Backend {self.backend} not available: {e}")
+        except ImportError:
+            # 백엔드가 사용 불가능한 경우 조용히 처리
+            pass
 
     def set_theme(self, theme: Theme) -> Result[bool, str]:
         """테마 설정"""
@@ -522,10 +523,10 @@ def apply_theme(config: PlotConfig, theme: Theme) -> PlotConfig:
 class PlotBuilder:
     """플롯 빌더 (Fluent API)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._plot_type = None
-        self._x_data = []
-        self._y_data = []
+        self._x_data: List[Any] = []
+        self._y_data: List[Any] = []
         self._config = PlotConfig()
         self._theme = None
         self._backend = "plotly"

@@ -8,7 +8,7 @@ partial application, and basic combinators.
 import inspect
 from functools import partial as functools_partial
 from functools import reduce, wraps
-from typing import Any, Callable, Tuple, TypeVar, Union, overload
+from typing import Any, Callable, Optional, Tuple, TypeVar, Union, overload
 
 # Type variables for generic type hints
 A = TypeVar("A")
@@ -70,7 +70,7 @@ def pipe(*functions: Callable) -> Callable:
     return reduce(lambda f, g: lambda *args, **kwargs: g(f(*args, **kwargs)), functions)
 
 
-def curry(func: Callable, arity: int = None) -> Callable:
+def curry(func: Callable, arity: Optional[int] = None) -> Callable:
     """
     Curry a function to enable partial application.
 
@@ -206,7 +206,7 @@ def flip(func: Callable[[A, B], R]) -> Callable[[B, A], R]:
     return flipped
 
 
-def apply(func: Callable[..., R], args: Union[Tuple, list]) -> R:
+def apply(func: Callable[..., R], args: Union[tuple[Any, ...], list[Any]]) -> R:
     """
     Apply a function to a tuple/list of arguments.
 
@@ -225,7 +225,8 @@ def apply(func: Callable[..., R], args: Union[Tuple, list]) -> R:
     """
     if isinstance(args, (tuple, list)):
         return func(*args)
-    return func(args)
+    # This should never be reached due to type constraints
+    raise TypeError(f"Expected tuple or list, got {type(args)}")
 
 
 # Decorator to make functions curryable

@@ -192,7 +192,7 @@ class MetricSnapshot:
 class TrafficPatternAnalyzer:
     """트래픽 패턴 분석기"""
 
-    def __init__(self, history_size=1440):
+    def __init__(self, history_size: int = 1440) -> None:
         self.history_size = history_size
         self.metric_history = []
 
@@ -370,7 +370,7 @@ class TrafficPatternAnalyzer:
 class AutoScalingOptimizer:
     """자동 스케일링 최적화기"""
 
-    def __init__(self, project_id: str, service_name: str, region="us-central1"):
+    def __init__(self, project_id: str, service_name: str, region: str = "us-central1") -> None:
         self.project_id = project_id
         self.service_name = service_name
         self.region = region

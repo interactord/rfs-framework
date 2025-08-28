@@ -177,7 +177,7 @@ class ColdStartOptimizer:
                 try:
                     importlib.import_module(module_name)
                     self._preloaded_modules.add(module_name)
-                    results[module_name] = {module_name: True}
+                    results[module_name] = True
                     import_time = time.time() - start_time
                     self._import_times = {
                         **self._import_times,
@@ -186,12 +186,12 @@ class ColdStartOptimizer:
                     if self.config.log_optimization_steps:
                         logger.debug(f"Preloaded {module_name} in {import_time:.3f}s")
                 except ImportError as e:
-                    results[module_name] = {module_name: False}
+                    results[module_name] = False
                     failed_count = failed_count + 1
                     if self.config.log_optimization_steps:
                         logger.warning(f"Failed to preload {module_name}: {e}")
                 except Exception as e:
-                    results[module_name] = {module_name: False}
+                    results[module_name] = False
                     failed_count = failed_count + 1
                     logger.error(f"Error preloading {module_name}: {e}")
                 if time.time() - phase_start > timeout:
@@ -212,7 +212,7 @@ class ColdStartOptimizer:
         self, modules: List[str], timeout: float
     ) -> Dict[str, bool]:
         """병렬 모듈 로딩"""
-        results = {}
+        results: Dict[str, bool] = {}
 
         def load_module(module_name: str) -> tuple[str, bool, float]:
             start_time = time.time()
@@ -231,13 +231,13 @@ class ColdStartOptimizer:
             for future in as_completed(future_to_module, timeout=timeout):
                 try:
                     module_name, success, load_time = future.result()
-                    results[module_name] = {module_name: success}
+                    results[module_name] = success
                     self._import_times = {**self._import_times, module_name: load_time}
                     if success:
                         self._preloaded_modules.add(module_name)
                 except Exception as e:
                     module_name = future_to_module[future]
-                    results[module_name] = {module_name: False}
+                    results[module_name] = False
                     logger.error(f"Parallel loading error for {module_name}: {e}")
         return results
 
@@ -308,7 +308,7 @@ class ColdStartOptimizer:
                 results = {
                     **results,
                     "function_results": {
-                        **results["function_results"],
+                        **results.get("function_results", {}),
                         func_name: {
                             "success": True,
                             "result": result,
@@ -316,13 +316,13 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["successful"] = results["successful"] + 1
+                results["successful"] = int(results.get("successful", 0)) + 1
             except Exception as e:
                 exec_time = time.time() - start_time
                 results = {
                     **results,
                     "function_results": {
-                        **results["function_results"],
+                        **results.get("function_results", {}),
                         func_name: {
                             "success": False,
                             "error": str(e),
@@ -330,7 +330,7 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["failed"] = results["failed"] + 1
+                results["failed"] = int(results.get("failed", 0)) + 1
                 if self.config.log_optimization_steps:
                     logger.warning(f"Warmup function {func_name} failed: {e}")
 
@@ -364,7 +364,7 @@ class ColdStartOptimizer:
                 results = {
                     **results,
                     "function_results": {
-                        **results["function_results"],
+                        **results.get("function_results", {}),
                         func_name: {
                             "success": True,
                             "result": result,
@@ -372,13 +372,13 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["successful"] = results["successful"] + 1
+                results["successful"] = int(results.get("successful", 0)) + 1
             except Exception as e:
                 exec_time = time.time() - func_start
                 results = {
                     **results,
                     "function_results": {
-                        **results["function_results"],
+                        **results.get("function_results", {}),
                         func_name: {
                             "success": False,
                             "error": str(e),
@@ -386,7 +386,7 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["failed"] = results["failed"] + 1
+                results["failed"] = int(results.get("failed", 0)) + 1
                 if self.config.log_optimization_steps:
                     logger.warning(f"Warmup function {func_name} failed: {e}")
         return results
@@ -402,7 +402,7 @@ class ColdStartOptimizer:
             return {"skipped": True, "reason": "gc optimization disabled"}
         phase_start = time.time()
         initial_memory = self._get_memory_usage()
-        optimization_results = {
+        optimization_results: Dict[str, Any] = {
             "initial_memory_mb": initial_memory,
             "final_memory_mb": 0.0,
             "memory_freed_mb": 0.0,
@@ -410,7 +410,7 @@ class ColdStartOptimizer:
             "optimization_time": 0.0,
         }
         try:
-            collected_objects = []
+            collected_objects: list[int] = []
             for generation in range(3):
                 collected = gc.collect()
                 collected_objects = collected_objects + [collected]

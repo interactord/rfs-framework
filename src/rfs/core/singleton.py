@@ -7,7 +7,7 @@ Spring Bean 스타일의 무상태 싱글톤 패턴
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, List, Type
 
 
 class SingletonMeta(type):
@@ -18,7 +18,7 @@ class SingletonMeta(type):
     해당 클래스는 싱글톤이 됩니다.
     """
 
-    _instances = {}
+    _instances: Dict[Type[Any], Any] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -36,9 +36,9 @@ class StatelessRegistry:
     - 무상태성 보장
     """
 
-    _instances = {}
-    _factories = {}
-    _dependencies = {}
+    _instances: Dict[str, Any] = {}
+    _factories: Dict[str, Type[Any]] = {}
+    _dependencies: Dict[str, list[str]] = {}
 
     @classmethod
     def register(cls, name: str | None = None, dependencies: list[str] | None = None):
@@ -70,7 +70,7 @@ class StatelessRegistry:
         dependencies = cls._dependencies.get(service_name, [])
         if not dependencies:
             return service_class()
-        injected_deps = []
+        injected_deps: List[Any] = []
         for dep_name in dependencies:
             if dep_name in cls._instances:
                 injected_deps = injected_deps + [cls._instances[dep_name]]
@@ -103,9 +103,9 @@ class StatelessRegistry:
     @classmethod
     def clear(cls) -> None:
         """모든 서비스 정리 (테스트용)"""
-        _instances = {}
-        _factories = {}
-        _dependencies = {}
+        cls._instances = {}
+        cls._factories = {}
+        cls._dependencies = {}
 
 
 def stateless(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -135,8 +135,8 @@ def stateless(func: Callable[..., Any]) -> Callable[..., Any]:
                 )
         return func(*args, **kwargs)
 
-    wrapper._is_stateless = True
-    wrapper._original_func = func
+    setattr(wrapper, '_is_stateless', True)
+    setattr(wrapper, '_original_func', func)
     return wrapper
 
 
@@ -156,7 +156,7 @@ def inject(
 
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            injected_deps = []
+            injected_deps: List[Any] = []
             for dep_name in dependency_names:
                 try:
                     dep = StatelessRegistry.get(dep_name)

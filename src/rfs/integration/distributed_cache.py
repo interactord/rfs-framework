@@ -131,9 +131,9 @@ class LocalCache:
 
     def __init__(self, config: CacheConfig):
         self.config = config
-        self.entries = {}
-        self.access_order = OrderedDict()
-        self.frequency_count = {}
+        self.entries: Dict[str, Any] = {}
+        self.access_order: OrderedDict[str, float] = OrderedDict()
+        self.frequency_count: Dict[str, int] = {}
         self.statistics = CacheStatistics()
         self._lock = asyncio.Lock()
 
@@ -141,6 +141,10 @@ class LocalCache:
         """캐시 조회"""
         async with self._lock:
             start_time = time.time()
+            misses: int = 0
+            expired: int = 0
+            access_count: int = 0
+            hits: int = 0
             if key in self.entries:
                 entry = self.entries[key]
                 if self._is_expired(entry):
@@ -170,7 +174,7 @@ class LocalCache:
             return None
 
     async def set(
-        self, key: str, value: Any, ttl: int = None, tags: Set[str] = None
+        self, key: str, value: Any, ttl: Optional[int] = None, tags: Optional[Set[str]] = None
     ) -> bool:
         """캐시 저장"""
         async with self._lock:
@@ -215,16 +219,16 @@ class LocalCache:
         """전체 캐시 클리어"""
         async with self._lock:
             count = len(self.entries)
-            entries = {}
-            access_order = {}
-            frequency_count = {}
+            entries: Dict[str, Any] = {}
+            access_order: Dict[str, float] = {}
+            frequency_count: Dict[str, int] = {}
             self.statistics.total_size_bytes = 0
             return count
 
     async def invalidate_by_tags(self, tags: Set[str]) -> int:
         """태그 기반 무효화"""
         async with self._lock:
-            keys_to_remove = []
+            keys_to_remove: List[str] = []
             for key, entry in self.entries.items():
                 if entry.tags & tags:
                     keys_to_remove = keys_to_remove + [key]
@@ -479,7 +483,7 @@ class DistributedCacheManager:
             )
             if partition_id and partition_id in self.partitions:
                 partition = self.partitions[partition_id]
-                keys_to_remove = []
+                keys_to_remove: List[str] = []
                 for key, entry in partition.entries.items():
                     if entry.tags & tags:
                         keys_to_remove = keys_to_remove + [key]

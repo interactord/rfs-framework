@@ -583,3 +583,38 @@ def drop_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> List[T]
         [3, 4, 5]
     """
     return list(dropwhile(predicate, iterable))
+
+
+def forEach(action: Callable[[T], None], iterable: Iterable[T]) -> None:
+    """
+    Swift-style forEach - 각 요소에 대해 부작용(side effect) 연산을 실행합니다.
+    Swift-inspired: collection.forEach { action($0) }
+
+    Args:
+        action: 각 요소에 적용할 함수 (반환값 없음)
+        iterable: 순회할 컬렉션
+
+    Returns:
+        None (부작용만 실행)
+
+    Example:
+        >>> result = []
+        >>> forEach(lambda x: result.append(x * 2), [1, 2, 3])
+        >>> result
+        [2, 4, 6]
+        
+        >>> # 로깅 예시
+        >>> forEach(lambda x: print(f"Processing: {x}"), ["a", "b", "c"])
+        Processing: a
+        Processing: b
+        Processing: c
+        
+        >>> # 딕셔너리 업데이트 예시
+        >>> data = {}
+        >>> forEach(lambda item: data.update({item['id']: item['value']}), 
+        ...         [{'id': 1, 'value': 'A'}, {'id': 2, 'value': 'B'}])
+        >>> data
+        {1: 'A', 2: 'B'}
+    """
+    for item in iterable:
+        action(item)

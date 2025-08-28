@@ -484,7 +484,7 @@ class AnnotationRegistry(ServiceRegistry):
 class RegistryManager:
     """레지스트리 관리자 - 함수형 싱글톤 패턴"""
 
-    _instances = {}
+    _instances: Dict[str, Any] = {}
 
     @classmethod
     def get_registry(cls, profile="default") -> AnnotationRegistry:

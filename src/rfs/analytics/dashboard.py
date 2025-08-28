@@ -128,7 +128,7 @@ class Widget(ABC):
                 return Failure(f"데이터 업데이트 실패: {str(e)}")
         return Success(None)
 
-    def set_refresh_interval(self, seconds: int):
+    def set_refresh_interval(self, seconds: int) -> None:
         """자동 새로고침 간격 설정"""
         self.refresh_interval = seconds
 
@@ -457,7 +457,7 @@ class Dashboard:
         except Exception as e:
             return Failure(f"대시보드 렌더링 실패: {str(e)}")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """대시보드 정리 (새로고침 태스크 취소)"""
         for task in self._refresh_tasks.values():
             task.cancel()
@@ -467,7 +467,7 @@ class Dashboard:
 class DashboardBuilder:
     """대시보드 빌더"""
 
-    def __init__(self, dashboard_id: str, title: str):
+    def __init__(self, dashboard_id: str, title: str) -> None:
         self.dashboard = Dashboard(dashboard_id, title)
 
     def description(self, description: str) -> "DashboardBuilder":
@@ -588,7 +588,7 @@ class DashboardBuilder:
 class DashboardManager:
     """대시보드 관리자"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dashboards = {}
 
     def create_dashboard(

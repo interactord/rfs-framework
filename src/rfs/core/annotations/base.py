@@ -163,7 +163,7 @@ def set_annotation_metadata(target: Any, metadata: AnnotationMetadata):
 
 
 def create_annotation_decorator(
-    annotation_type: AnnotationType, target_types: List[str] = None
+    annotation_type: AnnotationType, target_types: Optional[List[str]] = None
 ) -> Callable:
     """애노테이션 데코레이터 생성 헬퍼"""
     if target_types is None:
@@ -217,7 +217,7 @@ def create_annotation_decorator(
 
 def extract_dependencies(cls: Type) -> List[DependencyMetadata]:
     """클래스에서 의존성 추출"""
-    dependencies = []
+    dependencies: List[DependencyMetadata] = []
     if hasattr(cls, "__init__"):
         sig = inspect.signature(cls.__init__)
         for param_name, param in sig.parameters.items():
@@ -250,7 +250,7 @@ def extract_dependencies(cls: Type) -> List[DependencyMetadata]:
 class AutowiredField:
     """Autowired 필드를 위한 디스크립터"""
 
-    def __init__(self, field_type: Type = None, qualifier: str = None, lazy=False):
+    def __init__(self, field_type: Optional[Type] = None, qualifier: Optional[str] = None, lazy=False):
         self.field_type = field_type
         self.qualifier = qualifier
         self.lazy = lazy

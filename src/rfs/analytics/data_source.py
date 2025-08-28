@@ -55,7 +55,7 @@ class DataSchema:
     primary_key = None
     indexes: List[str] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.indexes is None:
             self.indexes = []
 
@@ -63,7 +63,7 @@ class DataSchema:
 class DataSource(ABC):
     """데이터 소스 추상 클래스"""
 
-    def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
+    def __init__(self, source_id: str, name: str, config: Dict[str, Any]) -> None:
         self.source_id = source_id
         self.name = name
         self.config = config
@@ -139,7 +139,7 @@ class DataSource(ABC):
 class DatabaseDataSource(DataSource):
     """데이터베이스 데이터 소스"""
 
-    def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
+    def __init__(self, source_id: str, name: str, config: Dict[str, Any]) -> None:
         super().__init__(source_id, name, config)
         self.connection_string: Optional[str] = config.get("connection_string")
         self.driver: str = config.get("driver", "postgresql")
@@ -271,7 +271,7 @@ class DatabaseDataSource(DataSource):
 class FileDataSource(DataSource):
     """파일 데이터 소스 (CSV, JSON, Excel)"""
 
-    def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
+    def __init__(self, source_id: str, name: str, config: Dict[str, Any]) -> None:
         super().__init__(source_id, name, config)
         self.file_path: Path = Path(config["file_path"])
         self.file_type: str = config.get("file_type", "csv")
@@ -387,7 +387,7 @@ class FileDataSource(DataSource):
 class APIDataSource(DataSource):
     """API 데이터 소스"""
 
-    def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
+    def __init__(self, source_id: str, name: str, config: Dict[str, Any]) -> None:
         super().__init__(source_id, name, config)
         self.base_url: str = config["base_url"]
         self.headers: Dict[str, str] = config.get("headers", {})
@@ -491,7 +491,7 @@ class APIDataSource(DataSource):
 class MetricsDataSource(DataSource):
     """메트릭 데이터 소스"""
 
-    def __init__(self, source_id: str, name: str, config: Dict[str, Any]):
+    def __init__(self, source_id: str, name: str, config: Dict[str, Any]) -> None:
         super().__init__(source_id, name, config)
         self.metrics_config: Dict[str, Any] = config.get("metrics", {})
         self._metrics_data: Dict[str, List[Dict[str, Any]]] = {}
@@ -585,7 +585,7 @@ class MetricsDataSource(DataSource):
 class DataSourceManager:
     """데이터 소스 관리자"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._sources = {}
         self._connected_sources = {}
 

@@ -7,7 +7,7 @@ Service Registry
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Set, Type
 
 
 class ServiceScope(Enum):
@@ -26,7 +26,7 @@ class ServiceDefinition:
     service_class: Type[Any]
     scope: ServiceScope = ServiceScope.SINGLETON
     dependencies: List[str] = field(default_factory=list)
-    lazy = False
+    lazy: bool = False
     created_at: datetime = field(default_factory=datetime.now)
 
 
@@ -41,9 +41,9 @@ class ServiceRegistry:
     """
 
     def __init__(self) -> None:
-        self._definitions = {}
-        self._instances = {}
-        self._creating: set = {str: set()}
+        self._definitions: Dict[str, ServiceDefinition] = {}
+        self._instances: Dict[str, Any] = {}
+        self._creating: Set[str] = set()
 
     def register(
         self,
@@ -51,7 +51,7 @@ class ServiceRegistry:
         service_class: Type[Any],
         scope: ServiceScope = ServiceScope.SINGLETON,
         dependencies: List[str] | None = None,
-        lazy=False,
+        lazy: bool = False,
     ) -> None:
         """서비스 등록"""
         definition = ServiceDefinition(
@@ -98,14 +98,14 @@ class ServiceRegistry:
         self._creating.add(name)
         try:
             definition = self._definitions[name]
-            dependencies = []
+            dependencies: List[Any] = []
             for dep_name in definition.dependencies:
                 dep_instance = self.get(dep_name)
                 dependencies = dependencies + [dep_instance]
             instance = definition.service_class(*dependencies)
             return instance
         finally:
-            self._creating = [i for i in self._creating if i != name]
+            self._creating.discard(name)
 
     def list_services(self) -> List[str]:
         """등록된 서비스 목록"""
@@ -119,34 +119,34 @@ class ServiceRegistry:
         """모든 서비스 정리"""
         self._instances = {}
         self._definitions = {}
-        self._creating = {}
+        self._creating = set()
 
     def health_check(self) -> Dict[str, Any]:
         """서비스 헬스체크"""
-        status = {
-            "total_services": len(self._definitions),
-            "instantiated": len(self._instances),
-            "services": {},
-        }
+        services_dict: Dict[str, Dict[str, Any]] = {}
+        
         for name, definition in self._definitions.items():
             is_instantiated = name in self._instances
+            created_at: Optional[str]
             match is_instantiated:
                 case True:
                     created_at = definition.created_at.isoformat()
                 case False:
                     created_at = None
-            status = {
-                **status,
-                "services": {
-                    **status["services"],
-                    name: {
-                        "scope": definition.scope.value,
-                        "dependencies": definition.dependencies,
-                        "instantiated": is_instantiated,
-                        "created_at": created_at,
-                    },
-                },
+                    
+            services_dict[name] = {
+                "scope": definition.scope.value,
+                "dependencies": definition.dependencies,
+                "instantiated": is_instantiated,
+                "created_at": created_at,
             }
+        
+        status: Dict[str, Any] = {
+            "total_services": len(self._definitions),
+            "instantiated": len(self._instances),
+            "services": services_dict,
+        }
+        
         return status
 
     def analyze_dependencies(self) -> Dict[str, Any]:
@@ -154,35 +154,37 @@ class ServiceRegistry:
         의존성 그래프 분석 (RFS v4 신규 기능)
 
         Returns:
-        의존성 트리, 순환 참조 검출, 깊이 분석 등
+            의존성 트리, 순환 참조 검출, 깊이 분석 등
         """
-        analysis = {
+        dependency_tree: Dict[str, Dict[str, List[str]]] = {}
+        orphaned_services: List[str] = []
+        
+        # 의존성 트리 구축
+        for name, definition in self._definitions.items():
+            dependency_tree[name] = {
+                "dependencies": definition.dependencies, 
+                "dependents": []
+            }
+        
+        # 종속 관계 설정
+        for name, definition in self._definitions.items():
+            for dep_name in definition.dependencies:
+                if dep_name in dependency_tree:
+                    dependency_tree[dep_name]["dependents"].append(name)
+        
+        # 고아 서비스 찾기
+        for name, tree_info in dependency_tree.items():
+            if len(tree_info["dependencies"]) == 0 and len(tree_info["dependents"]) == 0:
+                orphaned_services.append(name)
+        
+        analysis: Dict[str, Any] = {
             "total_services": len(self._definitions),
-            "dependency_tree": {},
+            "dependency_tree": dependency_tree,
             "circular_references": [],
-            "orphaned_services": [],
+            "orphaned_services": orphaned_services,
             "max_depth": 0,
         }
-        for name, definition in self._definitions.items():
-            analysis = {
-                **analysis,
-                "dependency_tree": {
-                    **analysis["dependency_tree"],
-                    name: {"dependencies": definition.dependencies, "dependents": []},
-                },
-            }
-            for name, definition in self._definitions.items():
-                for dep_name in definition.dependencies:
-                    if dep_name in analysis["dependency_tree"]:
-                        analysis["dependency_tree"][dep_name]["dependents"] = analysis[
-                            "dependency_tree"
-                        ][dep_name]["dependents"] + [name]
-            for name, tree_info in analysis["dependency_tree"].items():
-                match (len(tree_info["dependencies"]), len(tree_info["dependents"])):
-                    case [0, 0]:
-                        analysis["orphaned_services"] = analysis[
-                            "orphaned_services"
-                        ] + [name]
+        
         return analysis
 
     def get_service_metrics(self) -> Dict[str, Any]:
@@ -197,13 +199,10 @@ class ServiceRegistry:
             },
             "service_states": {},
         }
-        scope_counts: Dict[str, Any] = field(default_factory=dict)
+        scope_counts: Dict[str, int] = {}
         for definition in self._definitions.values():
             scope_name = definition.scope.value
-            scope_counts = {
-                **scope_counts,
-                scope_name: {scope_name: scope_counts.get(scope_name, 0) + 1},
-            }
+            scope_counts[scope_name] = scope_counts.get(scope_name, 0) + 1
         metrics = {
             **metrics,
             "registry_stats": {
@@ -220,8 +219,6 @@ class ServiceRegistry:
                     state = "prototype"
                 case ServiceScope.REQUEST:
                     state = "request_scoped"
-                case _:
-                    state = "unknown"
             metrics = {
                 **metrics,
                 "service_states": {
@@ -245,7 +242,7 @@ class StatelessRegistry:
     """
 
     def __init__(self) -> None:
-        self._services = {}
+        self._services: Dict[str, Any] = {}
         self._classes: Dict[str, Type[Any]] = {}
 
     def register(

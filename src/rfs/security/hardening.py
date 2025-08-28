@@ -124,14 +124,14 @@ class SecurityHardening:
     시스템 보안을 강화하고 정책을 적용
     """
 
-    def __init__(self, policy: SecurityPolicy = None):
+    def __init__(self, policy: Optional[SecurityPolicy] = None):
         self.policy = policy or SecurityPolicy(
             name="default", level=SecurityLevel.STANDARD
         )
-        self._hardening_history = []
+        self._hardening_history: List[Dict[str, Any]] = []
 
     def apply_hardening(
-        self, target: Dict[str, Any] = None
+        self, target: Optional[Dict[str, Any]] = None
     ) -> Result[HardeningResult, str]:
         """
         보안 강화 적용

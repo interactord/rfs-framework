@@ -76,8 +76,8 @@ class Sort:
 class Pagination:
     """페이지네이션"""
 
-    limit = 10
-    offset = 0
+    limit: int = 10
+    offset: int = 0
 
     @property
     def page(self) -> int:
@@ -96,14 +96,14 @@ class Query(ABC):
 
     def __init__(self, model_class: Type):
         self.model_class = model_class
-        self.filters = []
-        self.sorts = []
-        self.pagination = None
-        self._select_fields = []
-        self._group_by = []
-        self._having = []
-        self._distinct = False
-        self._count_only = False
+        self.filters: List[Filter] = []
+        self.sorts: List[Sort] = []
+        self.pagination: Optional[Pagination] = None
+        self._select_fields: List[str] = []
+        self._group_by: List[str] = []
+        self._having: List[Filter] = []
+        self._distinct: bool = False
+        self._count_only: bool = False
 
     @abstractmethod
     async def execute(self) -> Result[Union[List[Any], int], str]:
@@ -112,10 +112,10 @@ class Query(ABC):
 
     def where(
         self,
-        field: str = None,
+        field: Optional[str] = None,
         operator: Operator = Operator.EQ,
-        value: Any = None,
-        **kwargs,
+        value: Optional[Any] = None,
+        **kwargs: Any,
     ) -> "Query":
         """WHERE 조건 추가"""
         if field and operator and (value is not None):
@@ -204,7 +204,7 @@ class QueryBuilder(Query):
     async def _execute_select(self) -> Result[List[Any], str]:
         """SELECT 쿼리 실행"""
         try:
-            filter_dict = {}
+            filter_dict: Dict[str, Any] = {}
             for filter_item in self.filters:
                 if filter_item.operator == Operator.EQ:
                     filter_dict = {

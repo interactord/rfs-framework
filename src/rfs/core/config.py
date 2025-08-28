@@ -12,12 +12,12 @@ from typing import Any, ClassVar, Dict, Optional
 
 try:
     from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-    from pydantic_settings import BaseSettings
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 
     PYDANTIC_AVAILABLE = True
 except ImportError:
-    BaseModel = object
-    BaseSettings = object
+    BaseModel = object  # type: ignore[misc,assignment]
+    BaseSettings = object  # type: ignore[misc,assignment]
     Field = lambda default=None, **kwargs: default
     PYDANTIC_AVAILABLE = False
 
@@ -56,7 +56,7 @@ if PYDANTIC_AVAILABLE:
             ...         return v.lower().replace(" ", "-")
         """
 
-        model_config = ConfigDict(
+        model_config = SettingsConfigDict(
             # 환경 변수 설정
             env_file=".env",
             env_file_encoding="utf-8",
@@ -67,8 +67,6 @@ if PYDANTIC_AVAILABLE:
             extra="allow",
             # 문자열 검증 모드
             str_strip_whitespace=True,
-            # JSON 인코더 설정
-            json_encoders={},
         )
 
         # 기본 환경 설정
@@ -189,7 +187,7 @@ if PYDANTIC_AVAILABLE:
         Cloud Run, Redis, 모니터링 등의 고급 설정을 포함합니다.
         """
 
-        model_config = ConfigDict(
+        model_config = SettingsConfigDict(
             env_prefix="RFS_",  # RFS_ 접두사로 환경 변수 읽기
             env_file=".env",
             env_file_encoding="utf-8",
@@ -336,7 +334,7 @@ else:
     from dataclasses import dataclass, field
 
     # Pydantic 불가용시 더미 클래스 생성
-    class RFSBaseSettings:
+    class RFSBaseSettings:  # type: ignore[no-redef]
         """RFSBaseSettings 더미 구현 (Pydantic 불가용 환경)"""
 
         def __init__(self, **kwargs):
@@ -362,7 +360,7 @@ else:
             )
 
     @dataclass
-    class RFSConfig:
+    class RFSConfig:  # type: ignore[no-redef]
         """RFS Framework 설정 (Fallback)"""
 
         environment: Environment = Environment.DEVELOPMENT
@@ -419,9 +417,9 @@ class ConfigManager:
                     config_path
                 ).exists():
                     config_data = self._load_from_file(config_path)
-                    self._config = RFSConfig(**config_data, _env_file=env_file)
+                    self._config = RFSConfig(**config_data)
                 case [None, str() as env_file]:
-                    self._config = RFSConfig(_env_file=env_file)
+                    self._config = RFSConfig()
                 case _:
                     self._config = RFSConfig()
         else:
@@ -438,7 +436,7 @@ class ConfigManager:
         path = Path(file_path)
         if path.suffix.lower() == ".json":
             with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return json.load(f)  # type: ignore[no-any-return]
         else:
             raise ValueError(
                 f"Unsupported config file format: {path.suffix}. Only JSON is supported."
@@ -446,7 +444,7 @@ class ConfigManager:
 
     def _load_from_env(self) -> Dict[str, Any]:
         """환경 변수에서 설정 로드"""
-        config = {}
+        config: Dict[str, Any] = {}
         for key, value in os.environ.items():
             if key.startswith(self._env_prefix):
                 config_key = key[len(self._env_prefix) :].lower()
@@ -617,8 +615,11 @@ def export_cloud_run_yaml() -> str:
     """Cloud Run service.yaml 생성 (v4 신규)"""
     config = get_config()
     cloud_config = config_manager.export_cloud_run_config()
-    yaml_content = f'\napiVersion: serving.knative.dev/v1\nkind: Service\nmetadata:\n  name: rfs-service\n  annotations:\n    run.googleapis.com/ingress: all\nspec:\n  template:\n    metadata:\n      annotations:\n        autoscaling.knative.dev/maxScale: "{cloud_config.get('scaling')['max_instances']}"\n        run.googleapis.com/cpu-throttling: "false"\n        run.googleapis.com/execution-environment: gen2\n    spec:\n      containerConcurrency: {config.max_concurrency}\n      timeoutSeconds: 300\n      containers:\n      - image: gcr.io/PROJECT_ID/rfs-service:latest\n        resources:\n          limits:\n            cpu: "{cloud_config.get('resource_limits')['cpu']}"\n            memory: "{cloud_config.get('resource_limits')['memory']}"\n        env:\n'
-    for key, value in cloud_config.get("env_vars").items():
+    scaling = cloud_config.get('scaling', {})
+    resource_limits = cloud_config.get('resource_limits', {})
+    yaml_content = f'\napiVersion: serving.knative.dev/v1\nkind: Service\nmetadata:\n  name: rfs-service\n  annotations:\n    run.googleapis.com/ingress: all\nspec:\n  template:\n    metadata:\n      annotations:\n        autoscaling.knative.dev/maxScale: "{scaling.get('max_instances', 100)}"\n        run.googleapis.com/cpu-throttling: "false"\n        run.googleapis.com/execution-environment: gen2\n    spec:\n      containerConcurrency: {config.max_concurrency}\n      timeoutSeconds: 300\n      containers:\n      - image: gcr.io/PROJECT_ID/rfs-service:latest\n        resources:\n          limits:\n            cpu: "{resource_limits.get('cpu', '1000m')}"\n            memory: "{resource_limits.get('memory', '2Gi')}"\n        env:\n'
+    env_vars = cloud_config.get("env_vars", {})
+    for key, value in env_vars.items():
         yaml_content = (
             yaml_content + f'        - name: {key}\n          value: "{value}"\n'
         )
@@ -627,9 +628,9 @@ def export_cloud_run_yaml() -> str:
 
 def validate_environment() -> tuple[bool, list[str]]:
     """환경 설정 유효성 검증 (v4 신규)"""
-    errors = []
+    errors: list[str] = []
     config = get_config()
-    required_vars = []
+    required_vars: list[str] = []
     if config.environment == Environment.PRODUCTION:
         required_vars = required_vars + ["REDIS_URL", "GOOGLE_APPLICATION_CREDENTIALS"]
     for var in required_vars:

@@ -35,7 +35,7 @@ class RepositoryConfig:
 class Repository(Generic[T], ABC):
     """Repository 기본 인터페이스"""
 
-    def __init__(self, model_class: Type[T], config: RepositoryConfig = None):
+    def __init__(self, model_class: Type[T], config: Optional[RepositoryConfig] = None):
         self.model_class = model_class
         self.config = config or RepositoryConfig()
         self.model_name = model_class.__name__
@@ -62,13 +62,13 @@ class Repository(Generic[T], ABC):
 
     @abstractmethod
     async def find(
-        self, filters: Dict[str, Any] = None, limit: int = None, offset: int = None
+        self, filters: Optional[Dict[str, Any]] = None, limit: Optional[int] = None, offset: Optional[int] = None
     ) -> Result[List[T], str]:
         """모델 목록 조회"""
         pass
 
     @abstractmethod
-    async def count(self, filters: Dict[str, Any] = None) -> Result[int, str]:
+    async def count(self, filters: Optional[Dict[str, Any]] = None) -> Result[int, str]:
         """모델 개수 조회"""
         pass
 
@@ -76,7 +76,7 @@ class Repository(Generic[T], ABC):
 class BaseRepository(Repository[T]):
     """기본 Repository 구현"""
 
-    def __init__(self, model_class: Type[T], config: RepositoryConfig = None):
+    def __init__(self, model_class: Type[T], config: Optional[RepositoryConfig] = None):
         super().__init__(model_class, config)
         self._query_builder = QueryBuilder(model_class)
 
@@ -86,10 +86,10 @@ class BaseRepository(Repository[T]):
             instance = self.model_class(**data)
             save_result = await instance.save()
             if not save_result.is_success():
-                return Failure(f"모델 저장 실패: {save_result.unwrap_err()}")
+                return Failure(f"모델 저장 실패: {save_result.unwrap_error()}")
             model = save_result.unwrap()
             logger.info(f"모델 생성 완료: {self.model_name}")
-            return Success(model)
+            return Success(model)  # type: ignore[arg-type]
         except Exception as e:
             error_msg = f"모델 생성 실패 ({self.model_name}): {str(e)}"
             logger.error(error_msg)
@@ -116,17 +116,17 @@ class BaseRepository(Repository[T]):
         try:
             get_result = await self.get_by_id(id)
             if not get_result.is_success():
-                return Failure(get_result.unwrap_err())
+                return Failure(get_result.unwrap_error())
             model = get_result.unwrap()
             if not model:
                 return Failure(f"모델을 찾을 수 없습니다: {id}")
             model.update_from_dict(data)
             save_result = await model.save()
             if not save_result.is_success():
-                return Failure(f"모델 업데이트 실패: {save_result.unwrap_err()}")
+                return Failure(f"모델 업데이트 실패: {save_result.unwrap_error()}")
             updated_model = save_result.unwrap()
             logger.info(f"모델 업데이트 완료: {self.model_name} (ID: {id})")
-            return Success(updated_model)
+            return Success(updated_model)  # type: ignore[arg-type]
         except Exception as e:
             error_msg = f"모델 업데이트 실패 ({self.model_name}): {str(e)}"
             logger.error(error_msg)
@@ -137,13 +137,13 @@ class BaseRepository(Repository[T]):
         try:
             get_result = await self.get_by_id(id)
             if not get_result.is_success():
-                return Failure(get_result.unwrap_err())
+                return Failure(get_result.unwrap_error())
             model = get_result.unwrap()
             if not model:
                 return Failure(f"모델을 찾을 수 없습니다: {id}")
             delete_result = await model.delete()
             if not delete_result.is_success():
-                return Failure(f"모델 삭제 실패: {delete_result.unwrap_err()}")
+                return Failure(f"모델 삭제 실패: {delete_result.unwrap_error()}")
             logger.info(f"모델 삭제 완료: {self.model_name} (ID: {id})")
             return Success(None)
         except Exception as e:
@@ -152,7 +152,7 @@ class BaseRepository(Repository[T]):
             return Failure(error_msg)
 
     async def find(
-        self, filters: Dict[str, Any] = None, limit: int = None, offset: int = None
+        self, filters: Optional[Dict[str, Any]] = None, limit: Optional[int] = None, offset: Optional[int] = None
     ) -> Result[List[T], str]:
         """모델 목록 조회"""
         try:
@@ -165,7 +165,7 @@ class BaseRepository(Repository[T]):
                 query = query.offset(offset)
             result = await query.execute()
             if not result.is_success():
-                return Failure(f"모델 조회 실패: {result.unwrap_err()}")
+                return Failure(f"모델 조회 실패: {result.unwrap_error()}")
             models = result.unwrap()
             logger.info(f"모델 조회 완료: {self.model_name} ({len(models)}개)")
             return Success(models)
@@ -174,7 +174,7 @@ class BaseRepository(Repository[T]):
             logger.error(error_msg)
             return Failure(error_msg)
 
-    async def count(self, filters: Dict[str, Any] = None) -> Result[int, str]:
+    async def count(self, filters: Optional[Dict[str, Any]] = None) -> Result[int, str]:
         """모델 개수 조회"""
         try:
             query = self._query_builder.count()
@@ -182,7 +182,7 @@ class BaseRepository(Repository[T]):
                 query = query.where(**filters)
             result = await query.execute()
             if not result.is_success():
-                return Failure(f"개수 조회 실패: {result.unwrap_err()}")
+                return Failure(f"개수 조회 실패: {result.unwrap_error()}")
             count = result.unwrap()
             return Success(count)
         except Exception as e:
@@ -207,7 +207,7 @@ class CRUDRepository(BaseRepository[T]):
                 for data in batch:
                     create_result = await self.create(data)
                     if not create_result.is_success():
-                        return Failure(f"배치 생성 실패: {create_result.unwrap_err()}")
+                        return Failure(f"배치 생성 실패: {create_result.unwrap_error()}")
                     batch_models = batch_models + [create_result.unwrap()]
                 models = models + batch_models
                 logger.info(f"배치 처리 완료: {len(batch)}개")
@@ -234,7 +234,7 @@ class CRUDRepository(BaseRepository[T]):
                     update_result = await self.update(id_value, update_data)
                     if not update_result.is_success():
                         return Failure(
-                            f"배치 업데이트 실패: {update_result.unwrap_err()}"
+                            f"배치 업데이트 실패: {update_result.unwrap_error()}"
                         )
                     batch_models = batch_models + [update_result.unwrap()]
                 models = models + batch_models
@@ -255,7 +255,7 @@ class CRUDRepository(BaseRepository[T]):
                 for id_value in batch:
                     delete_result = await self.delete(id_value)
                     if not delete_result.is_success():
-                        return Failure(f"배치 삭제 실패: {delete_result.unwrap_err()}")
+                        return Failure(f"배치 삭제 실패: {delete_result.unwrap_error()}")
                 logger.info(f"삭제 배치 처리 완료: {len(batch)}개")
             logger.info(f"대량 삭제 완료: {self.model_name} ({len(ids)}개)")
             return Success(None)
@@ -266,10 +266,10 @@ class CRUDRepository(BaseRepository[T]):
 
     async def find_paginated(
         self,
-        page=1,
-        page_size=10,
-        filters: Dict[str, Any] = None,
-        sort: List[Sort] = None,
+        page: int = 1,
+        page_size: int = 10,
+        filters: Optional[Dict[str, Any]] = None,
+        sort: Optional[List[Sort]] = None,
     ) -> Result[Dict[str, Any], str]:
         """페이지네이션 조회"""
         try:
@@ -283,10 +283,10 @@ class CRUDRepository(BaseRepository[T]):
             query = query.limit(page_size).offset(offset)
             data_result = await query.execute()
             if not data_result.is_success():
-                return Failure(f"페이지네이션 조회 실패: {data_result.unwrap_err()}")
+                return Failure(f"페이지네이션 조회 실패: {data_result.unwrap_error()}")
             count_result = await self.count(filters)
             if not count_result.is_success():
-                return Failure(f"개수 조회 실패: {count_result.unwrap_err()}")
+                return Failure(f"개수 조회 실패: {count_result.unwrap_error()}")
             data = data_result.unwrap()
             total_count = count_result.unwrap()
             total_pages = (total_count + page_size - 1) // page_size
@@ -321,8 +321,8 @@ class RepositoryRegistry(metaclass=SingletonMeta):
     def register_repository(
         self,
         model_class: Type[BaseModel],
-        repository_class: Type[Repository] = None,
-        config: RepositoryConfig = None,
+        repository_class: Optional[Type[Repository]] = None,
+        config: Optional[RepositoryConfig] = None,
     ):
         """Repository 등록"""
         model_name = model_class.__name__
@@ -349,9 +349,9 @@ def get_repository_registry() -> RepositoryRegistry:
 
 
 def repository(
-    model_class: Type[BaseModel] = None,
-    repository_class: Type[Repository] = None,
-    config: RepositoryConfig = None,
+    model_class: Optional[Type[BaseModel]] = None,
+    repository_class: Optional[Type[Repository]] = None,
+    config: Optional[RepositoryConfig] = None,
 ):
     """Repository 데코레이터"""
 
@@ -381,9 +381,9 @@ def get_repository(
 
 def create_repository(
     model_class: Type[BaseModel],
-    repository_class: Type[Repository] = None,
-    config: RepositoryConfig = None,
-) -> Repository:
+    repository_class: Optional[Type[Repository]] = None,
+    config: Optional[RepositoryConfig] = None,
+) -> Optional[Repository]:
     """Repository 생성 및 등록"""
     registry = get_repository_registry()
     registry.register_repository(model_class, repository_class, config)

@@ -12,7 +12,10 @@ import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hashlib import _Hash
 
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
@@ -54,9 +57,9 @@ class EncryptionResult:
     """암호화 결과"""
 
     encrypted_data: bytes
-    nonce = None
-    tag = None
-    salt = None
+    nonce: Optional[bytes] = None
+    tag: Optional[bytes] = None
+    salt: Optional[bytes] = None
 
 
 @dataclass
@@ -65,7 +68,7 @@ class KeyPair:
 
     private_key: bytes
     public_key: bytes
-    algorithm = "RSA"
+    algorithm: str = "RSA"
 
 
 class CryptoManager:
@@ -100,7 +103,8 @@ class CryptoManager:
         """AES-GCM 암호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             if nonce is None:
@@ -109,7 +113,7 @@ class CryptoManager:
             cipher = Cipher(algorithms.AES(key), modes.GCM(nonce), backend=self.backend)
 
             encryptor = cipher.encryptor()
-            ciphertext = encryptor = {**encryptor, **data} + encryptor.finalize()
+            ciphertext = encryptor.update(data) + encryptor.finalize()
 
             return Success(
                 EncryptionResult(
@@ -126,7 +130,8 @@ class CryptoManager:
         """AES-GCM 복호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             cipher = Cipher(
@@ -136,10 +141,7 @@ class CryptoManager:
             )
 
             decryptor = cipher.decryptor()
-            plaintext = decryptor = {
-                **decryptor,
-                **encrypted_result.encrypted_data,
-            } + decryptor.finalize()
+            plaintext = decryptor.update(encrypted_result.encrypted_data) + decryptor.finalize()
 
             return Success(plaintext)
 
@@ -152,7 +154,8 @@ class CryptoManager:
         """AES-CBC 암호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             if iv is None:
@@ -165,7 +168,7 @@ class CryptoManager:
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=self.backend)
 
             encryptor = cipher.encryptor()
-            ciphertext = encryptor = {**encryptor, **padded_data} + encryptor.finalize()
+            ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
             return Success(EncryptionResult(encrypted_data=ciphertext, nonce=iv))
 
@@ -178,7 +181,8 @@ class CryptoManager:
         """AES-CBC 복호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             cipher = Cipher(
@@ -188,10 +192,7 @@ class CryptoManager:
             )
 
             decryptor = cipher.decryptor()
-            padded_data = decryptor = {
-                **decryptor,
-                **encrypted_result.encrypted_data,
-            } + decryptor.finalize()
+            padded_data = decryptor.update(encrypted_result.encrypted_data) + decryptor.finalize()
 
             # PKCS7 패딩 제거
             padding_length = padded_data[-1]
@@ -206,7 +207,8 @@ class CryptoManager:
         """RSA 키쌍 생성"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             private_key = rsa.generate_private_key(
@@ -237,7 +239,8 @@ class CryptoManager:
         """RSA 암호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             public_key = serialization.load_pem_public_key(
@@ -264,7 +267,8 @@ class CryptoManager:
         """RSA 복호화"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             private_key = serialization.load_pem_private_key(
@@ -289,21 +293,28 @@ class CryptoManager:
         """데이터 서명"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             private_key = serialization.load_pem_private_key(
                 private_key_pem, password=None, backend=self.backend
             )
 
-            signature = private_key.sign(
-                data,
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH,
-                ),
-                hashes.SHA256(),
-            )
+            # RSA 키에 대해서만 PSS 패딩을 사용
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+            if isinstance(private_key, RSAPrivateKey):
+                signature = private_key.sign(
+                    data,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH,
+                    ),
+                    hashes.SHA256(),
+                )
+            else:
+                # 다른 키 타입에 대해서는 기본 sign 방법 사용
+                signature = private_key.sign(data)
 
             return Success(signature)
 
@@ -316,22 +327,29 @@ class CryptoManager:
         """서명 검증"""
         check_result = self._check_cryptography()
         if check_result.is_failure():
-            return check_result
+            failure_result = check_result
+            return Failure(failure_result.unwrap_error())
 
         try:
             public_key = serialization.load_pem_public_key(
                 public_key_pem, backend=self.backend
             )
 
-            public_key.verify(
-                signature,
-                data,
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH,
-                ),
-                hashes.SHA256(),
-            )
+            # RSA 키에 대해서만 PSS 패딩을 사용
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+            if isinstance(public_key, RSAPublicKey):
+                public_key.verify(
+                    signature,
+                    data,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH,
+                    ),
+                    hashes.SHA256(),
+                )
+            else:
+                # 다른 키 타입에 대해서는 기본 verify 방법 사용
+                public_key.verify(signature, data)
 
             return Success(True)
 
@@ -365,11 +383,11 @@ class CryptoManager:
 
                 case HashAlgorithm.BLAKE2B:
                     if salt:
-                        hasher = hashlib.blake2b(
+                        hasher: Any = hashlib.blake2b(
                             salt=salt[:16]
                         )  # blake2b는 최대 16바이트 솔트
                     else:
-                        hasher = hashlib.blake2b()
+                        hasher: Any = hashlib.blake2b()
                     hasher.update(data)
                     return Success(hasher.digest())
 
@@ -405,7 +423,8 @@ class CryptoManager:
                 # 일반 해시의 경우
                 hash_result = self.hash_data(data, algorithm)
                 if hash_result.is_failure():
-                    return hash_result
+                    failure_result = hash_result
+                    return Failure(failure_result.unwrap_error())
 
                 computed_hash = hash_result.unwrap()
                 return Success(hmac.compare_digest(hashed_data, computed_hash))
@@ -425,7 +444,7 @@ def encrypt(
     algorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
 ) -> Result[EncryptionResult, str]:
     """데이터 암호화"""
-    if type(data).__name__ == "str":
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     match algorithm:
@@ -459,7 +478,8 @@ def hash_password(password: str, salt=None) -> Result[str, str]:
     )
     if hash_result.is_success():
         return Success(base64.b64encode(hash_result.unwrap()).decode())
-    return hash_result
+    failure_result = hash_result
+    return Failure(failure_result.unwrap_error())
 
 
 def verify_password(password: str, hashed_password: str) -> Result[bool, str]:
@@ -489,13 +509,14 @@ def hash_data(
     salt=None,
 ) -> Result[str, str]:
     """데이터 해싱 (Base64 인코딩)"""
-    if type(data).__name__ == "str":
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     hash_result = _crypto_manager.hash_data(data, algorithm, salt)
     if hash_result.is_success():
         return Success(base64.b64encode(hash_result.unwrap()).decode())
-    return hash_result
+    failure_result = hash_result
+    return Failure(failure_result.unwrap_error())
 
 
 def verify_hash(
@@ -504,7 +525,7 @@ def verify_hash(
     algorithm: HashAlgorithm = HashAlgorithm.SHA256,
 ) -> Result[bool, str]:
     """해시 검증"""
-    if type(data).__name__ == "str":
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     try:
@@ -516,20 +537,21 @@ def verify_hash(
 
 def sign_data(data: Union[str, bytes], private_key: bytes) -> Result[str, str]:
     """데이터 서명 (Base64 인코딩)"""
-    if type(data).__name__ == "str":
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     sign_result = _crypto_manager.sign_data(data, private_key)
     if sign_result.is_success():
         return Success(base64.b64encode(sign_result.unwrap()).decode())
-    return sign_result
+    failure_result = sign_result
+    return Failure(failure_result.unwrap_error())
 
 
 def verify_signature(
     data: Union[str, bytes], signature: str, public_key: bytes
 ) -> Result[bool, str]:
     """서명 검증"""
-    if type(data).__name__ == "str":
+    if isinstance(data, str):
         data = data.encode("utf-8")
 
     try:

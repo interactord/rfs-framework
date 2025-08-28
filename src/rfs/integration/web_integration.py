@@ -216,7 +216,7 @@ class RateLimiter:
         )
         self.last_update = now
         if self.current_tokens >= 1:
-            current_tokens = current_tokens - 1
+            self.current_tokens = self.current_tokens - 1
             return True
         return False
 
@@ -226,8 +226,8 @@ class CircuitBreaker:
 
     def __init__(
         self,
-        failure_threshold=5,
-        recovery_timeout=60,
+        failure_threshold: int = 5,
+        recovery_timeout: int = 60,
         expected_exception: type = Exception,
     ):
         self.failure_threshold = failure_threshold
@@ -248,9 +248,9 @@ class CircuitBreaker:
             result = func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
+        except self.expected_exception:
             self._on_failure()
-            raise e
+            raise
 
     async def async_call(self, func, *args, **kwargs):
         """비동기 함수 호출"""
@@ -263,16 +263,15 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
+        except self.expected_exception:
             self._on_failure()
-            raise e
+            raise
 
     def _should_attempt_reset(self) -> bool:
         """리셋 시도 여부"""
-        return (
-            self.last_failure_time
-            and time.time() - self.last_failure_time >= self.recovery_timeout
-        )
+        if self.last_failure_time is None:
+            return False
+        return time.time() - self.last_failure_time >= self.recovery_timeout
 
     def _on_success(self):
         """성공 처리"""

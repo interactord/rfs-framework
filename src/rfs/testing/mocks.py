@@ -16,7 +16,7 @@ from ..core.result import Failure, Result, Success
 class Mock(BaseMock):
     """RFS Mock 객체"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.call_history: List[Tuple[tuple, dict]] = []
 
@@ -28,7 +28,7 @@ class Mock(BaseMock):
 class AsyncMock(BaseAsyncMock):
     """비동기 Mock 객체"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.call_history: List[Tuple[tuple, dict]] = []
 
@@ -40,7 +40,7 @@ class AsyncMock(BaseAsyncMock):
 class MagicMock(BaseMagicMock):
     """Magic Mock 객체"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.call_history: List[Tuple[tuple, dict]] = []
 
@@ -52,7 +52,7 @@ class MagicMock(BaseMagicMock):
 class Stub:
     """Stub 객체"""
 
-    def __init__(self, return_value: Any = None, side_effect=None):
+    def __init__(self, return_value: Any = None, side_effect=None) -> None:
         """초기화"""
         self.return_value = return_value
         self.side_effect = side_effect

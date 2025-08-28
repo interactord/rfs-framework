@@ -66,7 +66,7 @@ def get_cloud_run_region() -> Optional[str]:
 class CloudRunServiceDiscovery(metaclass=SingletonMeta):
     """Cloud Run 서비스 디스커버리"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._services = {}
         self._initialized = False
 

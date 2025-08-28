@@ -7,7 +7,10 @@ Transition definitions for State Machine
 import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .state import State
 
 
 class TransitionType(Enum):
@@ -59,7 +62,7 @@ class Transition:
         self.failure_count = 0
         self.total_duration_ms = 0.0
 
-    async def can_execute(self, context: Dict[str, Any] = None) -> bool:
+    async def can_execute(self, context: Optional[Dict[str, Any]] = None) -> bool:
         """전이 실행 가능 여부 확인 (Guard 조건)"""
         if not self.guard:
             return True
@@ -80,7 +83,7 @@ class Transition:
             )
             return False
 
-    async def execute(self, context: Dict[str, Any] = None) -> TransitionResult:
+    async def execute(self, context: Optional[Dict[str, Any]] = None) -> TransitionResult:
         """전이 실행"""
         import time
 

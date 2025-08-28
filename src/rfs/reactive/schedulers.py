@@ -22,7 +22,7 @@ class SchedulerType(Enum):
 class Scheduler:
     """리액티브 스케줄러"""
 
-    def __init__(self, scheduler_type: SchedulerType = SchedulerType.IMMEDIATE):
+    def __init__(self, scheduler_type: SchedulerType = SchedulerType.IMMEDIATE) -> None:
         self.scheduler_type = scheduler_type
         self._executor = None
 

@@ -121,7 +121,7 @@ class MetricsCollector:
     def __init__(self, config: MonitoringConfig):
         self.config = config
         self.custom_collectors: Dict[str, Callable[[], float]] = {}
-        self.network_baseline = {}
+        self.network_baseline: Dict[str, Any] = {}
         self.process_start_time = time.time()
         self._initialize_network_baseline()
 
@@ -333,8 +333,8 @@ class AlertGenerator:
 
     def __init__(self, config: MonitoringConfig):
         self.config = config
-        self.last_alerts = {}
-        self.alert_callbacks = []
+        self.last_alerts: Dict[str, float] = {}
+        self.alert_callbacks: List[Callable] = []
 
     def register_alert_callback(self, callback: Callable) -> None:
         """알림 콜백 등록"""

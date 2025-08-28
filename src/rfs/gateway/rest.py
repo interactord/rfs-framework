@@ -132,7 +132,7 @@ class RestHandler(ABC):
 class JsonHandler(RestHandler):
     """JSON 응답 핸들러"""
 
-    def __init__(self, handler_func: Callable[[RestRequest], Any]):
+    def __init__(self, handler_func: Callable[[RestRequest], Any]) -> None:
         self.handler_func = handler_func
 
     async def handle(self, request: RestRequest) -> Result[RestResponse, str]:
@@ -161,7 +161,7 @@ class RoutePattern:
     @classmethod
     def create(cls, pattern: str) -> "RoutePattern":
         """패턴에서 RoutePattern 생성"""
-        param_names = []
+        param_names: List[str] = []
         regex_pattern = pattern
         import re
 
@@ -224,9 +224,9 @@ class CorsMiddleware(RestMiddleware):
 
     def __init__(
         self,
-        allowed_origins: List[str] = None,
-        allowed_methods: List[str] = None,
-        allowed_headers: List[str] = None,
+        allowed_origins: Optional[List[str]] = None,
+        allowed_methods: Optional[List[str]] = None,
+        allowed_headers: Optional[List[str]] = None,
         allow_credentials=False,
     ):
         self.allowed_origins = allowed_origins or ["*"]
@@ -507,7 +507,7 @@ class RouterConfig:
 class RestGateway:
     """REST API 게이트웨이"""
 
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or RouterConfig()
         self.routes = []
         self.global_middleware = []

@@ -189,7 +189,7 @@ class JWTService:
         Returns:
             Result[bool, str]: 성공 여부
         """
-        # TODO: 실제 구현에서는 Redis 등을 사용한 블랙리스트 관리 필요
+        # 프로덕션에서는 Redis나 데이터베이스를 사용한 토큰 블랙리스트 관리 필요
         return Success(True)
 
     async def decode_token(self, token: str) -> Result[Dict[str, Any], str]:

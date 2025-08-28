@@ -182,9 +182,9 @@ class RequestContext:
     path: str
     headers: Dict[str, str]
     query_params: Dict[str, Any]
-    body = None
-    user_id = None
-    api_key = None
+    body: Optional[str] = None
+    user_id: Optional[str] = None
+    api_key: Optional[str] = None
     start_time: float = field(default_factory=time.time)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -262,12 +262,10 @@ class RateLimiter:
         """고정 윈도우 확인"""
         window_key = f"{rule.id}:{identifier}"
         current_window = int(time.time())
+        if window_key not in self.fixed_windows:
+            self.fixed_windows[window_key] = {}
         if current_window not in self.fixed_windows[window_key]:
-            self.fixed_windows[window_key] = []
-            self.fixed_windows = {
-                **self.fixed_windows,
-                window_key: {**self.fixed_windows[window_key], current_window: 0},
-            }
+            self.fixed_windows[window_key][current_window] = 0
         if self.fixed_windows[window_key][current_window] >= rule.requests_per_second:
             return False
         self.fixed_windows[window_key][current_window] = (

@@ -48,8 +48,8 @@ class User:
     email: str
     name: str
     status: UserStatus = UserStatus.ACTIVE
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     def __post_init__(self):
         if self.created_at is None:

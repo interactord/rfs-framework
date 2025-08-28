@@ -97,7 +97,7 @@ class ServerlessFunction:
         self.handler = handler
         self.execution_count = 0
         self.error_count = 0
-        self.last_execution = None
+        self.last_execution: Optional[datetime] = None
         self.middlewares = []
 
     def add_middleware(self, middleware: Callable):

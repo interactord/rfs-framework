@@ -136,7 +136,8 @@ class CPUMetrics:
         """최근 N분간의 스냅샷 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
-            snapshot for snapshot in self.snapshots if snapshot.timestamp >= cutoff_time
+            snapshot for snapshot in self.snapshots 
+            if isinstance(snapshot.timestamp, datetime) and snapshot.timestamp >= cutoff_time
         ]
 
     def get_average_cpu_usage(self, minutes=10) -> float:
@@ -426,7 +427,7 @@ class CPUProfiler:
                 _,
                 total_time,
                 cumulative_time,
-            ) in stats.stats.items():
+            ) in stats.stats.items():  # type: ignore
                 filename, line_number, function_name = func_info
                 per_call_time = total_time / total_calls if total_calls > 0 else 0
                 result = ProfileResult(

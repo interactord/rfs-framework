@@ -43,18 +43,18 @@ class TaskResult:
     task_type: TaskType
     status: ResultStatus
     start_time: datetime
-    end_time = None
-    execution_time_ms = None
+    end_time: Optional[datetime] = None
+    execution_time_ms: Optional[float] = None
     result_data: Any = None
-    error_message = None
-    error_type = None
-    error_traceback = None
-    context = None
-    retry_count = 0
+    error_message: Optional[str] = None
+    error_type: Optional[str] = None
+    error_traceback: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+    retry_count: int = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    memory_used_mb = None
-    cpu_time_ms = None
+    memory_used_mb: Optional[float] = None
+    cpu_time_ms: Optional[float] = None
 
     def __post_init__(self):
         """초기화 후 처리"""

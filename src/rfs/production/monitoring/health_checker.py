@@ -942,11 +942,11 @@ class HealthChecker:
                 try:
                     result = await handler.execute()
                     self._update_check_state(check_name, result)
-                    total_checks_run = total_checks_run + 1
+                    self.total_checks_run += 1
                     if result.status == HealthStatus.HEALTHY:
-                        total_checks_passed = total_checks_passed + 1
+                        self.total_checks_passed += 1
                     else:
-                        total_checks_failed = total_checks_failed + 1
+                        self.total_checks_failed += 1
                     return Success(result)
                 except Exception as e:
                     last_error = str(e)
@@ -962,8 +962,8 @@ class HealthChecker:
                 error=last_error,
             )
             self._update_check_state(check_name, result)
-            total_checks_run = total_checks_run + 1
-            total_checks_failed = total_checks_failed + 1
+            self.total_checks_run += 1
+            self.total_checks_failed += 1
             return Success(result)
         except Exception as e:
             return Failure(f"Health check execution failed: {e}")

@@ -68,12 +68,44 @@ class Result(ABC, Generic[T, E]):
         """에러 변환"""
         pass
 
+    @abstractmethod
+    def unwrap_error(self) -> E:
+        """에러 값 추출 (실패시만 사용)"""
+        pass
+
+    @abstractmethod
+    def unwrap_err(self) -> E:
+        """에러 값 추출 (unwrap_error의 별칭)"""
+        pass
+
+    @property
+    @abstractmethod
+    def value(self) -> T:
+        """값 속성 - Success에서만 접근 가능"""
+        pass
+
+    @property
+    @abstractmethod  
+    def error(self) -> E:
+        """에러 속성 - Failure에서만 접근 가능"""
+        pass
+
 
 class Success(Result[T, E]):
     """성공 결과"""
 
     def __init__(self, value: T):
-        self.value = value
+        self._value = value
+    
+    @property
+    def value(self) -> T:
+        """값 속성 - Success에서 접근 가능"""
+        return self._value
+    
+    @property
+    def error(self) -> E:
+        """에러 속성 - Success에서는 접근 불가"""
+        raise AttributeError("Success has no error")
 
     def is_success(self) -> bool:
         return True
@@ -82,33 +114,41 @@ class Success(Result[T, E]):
         return False
 
     def unwrap(self) -> T:
-        return self.value
+        return self._value
 
     def unwrap_or(self, default: T) -> T:
-        return self.value
+        return self._value
 
     def get(self) -> T:
         """값 추출 (unwrap의 별칭)"""
-        return self.value
+        return self._value
 
     def get_error(self) -> None:
         """에러 값 추출 - Success는 None 반환"""
         return None
 
+    def unwrap_error(self) -> E:
+        """에러 값 추출 - Success는 AttributeError 발생"""
+        raise AttributeError("Success has no error to unwrap")
+
+    def unwrap_err(self) -> E:
+        """에러 값 추출 (unwrap_error의 별칭) - Success는 AttributeError 발생"""
+        raise AttributeError("Success has no error to unwrap")
+
     def map(self, func: Callable[[T], U]) -> 'Result[U, E]':
         try:
-            return Success(func(self.value))
+            return Success(func(self._value))
         except Exception as e:
             return Failure(e)  # type: ignore[arg-type]
 
     def bind(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         try:
-            return func(self.value)
+            return func(self._value)
         except Exception as e:
             return Failure(e)  # type: ignore[arg-type]
 
     def map_error(self, func: Callable[[E], U]) -> 'Result[T, U]':
-        return Success(self.value)
+        return Success(self._value)
 
     def flat_map(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
         """flat_map alias for bind"""
@@ -121,7 +161,7 @@ class Success(Result[T, E]):
     def filter(self, predicate: Callable[[T], bool], error: E) -> 'Result[T, E]':
         """Filter success value with predicate"""
         try:
-            if predicate(self.value):
+            if predicate(self._value):
                 return self
             else:
                 return Failure(error)
@@ -129,18 +169,28 @@ class Success(Result[T, E]):
             return Failure(e)  # type: ignore[arg-type]
 
     def __repr__(self) -> str:
-        return f"Success({self.value})"
+        return f"Success({self._value})"
 
     def __eq__(self, other: Any) -> bool:
         # 함수형 패턴: isinstance 대신 type 비교
-        return type(other).__name__ == "Success" and self.value == other.value
+        return type(other).__name__ == "Success" and self._value == other._value
 
 
 class Failure(Result[T, E]):
     """실패 결과"""
 
     def __init__(self, error: E):
-        self.error = error
+        self._error = error
+    
+    @property
+    def value(self) -> T:
+        """값 속성 - Failure에서는 접근 불가"""
+        raise AttributeError("Failure has no value")
+    
+    @property
+    def error(self) -> E:
+        """에러 속성 - Failure에서 접근 가능"""
+        return self._error
 
     def is_success(self) -> bool:
         return False
@@ -150,21 +200,21 @@ class Failure(Result[T, E]):
 
     def unwrap(self) -> T:
         # 함수형 패턴: isinstance 대신 type 비교
-        if isinstance(self.error, Exception):
-            raise self.error
-        raise ValueError(f"Failure unwrap: {self.error}")
+        if isinstance(self._error, Exception):
+            raise self._error
+        raise ValueError(f"Failure unwrap: {self._error}")
 
     def unwrap_error(self) -> E:
         """에러 값 추출"""
-        return self.error
+        return self._error
 
     def unwrap_err(self) -> E:
         """에러 값 추출 (unwrap_error의 별칭)"""
-        return self.error
+        return self._error
 
     def get_error(self) -> E:
         """에러 값 추출 (unwrap_error의 별칭)"""
-        return self.error
+        return self._error
 
     def unwrap_or(self, default: T) -> T:
         return default
@@ -174,14 +224,14 @@ class Failure(Result[T, E]):
         return None
 
     def map(self, func: Callable[[T], U]) -> 'Result[U, E]':
-        return Failure(self.error)
+        return Failure(self._error)
 
     def bind(self, func: Callable[[T], 'Result[U, E]']) -> 'Result[U, E]':
-        return Failure(self.error)
+        return Failure(self._error)
 
     def map_error(self, func: Callable[[E], U]) -> 'Result[T, U]':
         try:
-            return Failure(func(self.error))
+            return Failure(func(self._error))
         except Exception as e:
             return Failure(e)  # type: ignore[arg-type]
 
@@ -201,11 +251,11 @@ class Failure(Result[T, E]):
         return self
 
     def __repr__(self) -> str:
-        return f"Failure({self.error})"
+        return f"Failure({self._error})"
 
     def __eq__(self, other: Any) -> bool:
         # 함수형 패턴: isinstance 대신 type 비교
-        return type(other).__name__ == "Failure" and self.error == other.error
+        return type(other).__name__ == "Failure" and self._error == other._error
 
 
 # Monad 패턴 구현 (고급 함수형 프로그래밍)
@@ -486,7 +536,7 @@ async def traverse_async(
         (
             func(item)
             if asyncio.iscoroutinefunction(func)
-            else asyncio.create_task(asyncio.coroutine(lambda i=item: func(i))())
+            else asyncio.create_task(asyncio.to_thread(func, item))
         )
         for item in items
     ]
@@ -567,7 +617,7 @@ def async_result_decorator(
 def combine(*results: "Result[Any, E]") -> "Result[tuple[Any, ...], E]":
     """여러 Result를 하나의 Result로 결합 - 함수형 패턴 적용"""
     # 함수형 패턴: 리스트 연결 사용 (early return 유지)
-    values = []
+    values: List[Any] = []
     for result in results:
         match result:
             case Success() as s:
@@ -652,7 +702,8 @@ def get_value(result: "Result[T, Any]", default: T | None = None) -> T | None:
     """값 추출 (실패시 기본값) - 기존 V2 API 유지"""
     match result:
         case Success() as s:
-            return s.value
+            value: T = s.value  # type: ignore
+            return value
         case Failure() as f:
             return default
 
@@ -661,7 +712,8 @@ def get_error(result: "Result[Any, E]") -> E | None:
     """에러 추출 - 기존 V2 API 유지"""
     match result:
         case Failure() as f:
-            return f.error
+            error: E = f.error  # type: ignore
+            return error
         case Success() as s:
             return None
 
@@ -773,7 +825,8 @@ class ResultAsync(Generic[T, E]):
                         next_result = func(s.value)
                         # 함수형 패턴: isinstance 대신 type 비교
                         if type(next_result).__name__ == "ResultAsync":
-                            return await next_result._get_result()
+                            result_value: "Result[U, E]" = await next_result._get_result()  # type: ignore
+                            return result_value
                         elif hasattr(next_result, "__await__"):
                             return await next_result
                         else:

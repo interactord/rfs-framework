@@ -37,7 +37,7 @@ except ImportError:
 from ...core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
-    console = Console()
+    console: Optional[Console] = Console()
 else:
     console = None
 
@@ -257,9 +257,8 @@ class TestRunner:
                     root = tree.getroot()
                     coverage_elem = root.find(".//coverage")
                     if coverage_elem is not None:
-                        result.coverage_percentage = (
-                            float(coverage_elem.get("line-rate", 0)) * 100
-                        )
+                        line_rate = coverage_elem.get("line-rate", "0")
+                        result.coverage_percentage = float(line_rate) * 100
                 except:
                     pass
         except Exception as e:

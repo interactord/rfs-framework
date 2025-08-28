@@ -151,7 +151,7 @@ class AnnotationProcessor:
                 if type(module_item).__name__ == "str":
                     module = importlib.import_module(module_item)
                 else:
-                    module = module_item
+                    module = module_item  # type: ignore
                 module_classes = self._discover_classes_in_module(module)
                 # 함수형 패턴: update 대신 스프레드 연산자 사용
                 self._discovered_classes = {

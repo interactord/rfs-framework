@@ -337,7 +337,7 @@ class Flux(Generic[T]):
             else:
                 raise
 
-    def parallel(self, parallelism: int = None) -> "Flux[T]":
+    def parallel(self, parallelism: Optional[int] = None) -> "Flux[T]":
         """
         병렬 처리를 위한 Flux
 

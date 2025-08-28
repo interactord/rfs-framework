@@ -201,7 +201,7 @@ class LocalCache:
             )
             self.entries = {**self.entries, key: entry}
             if self.config.eviction_policy == EvictionPolicy.LRU:
-                self.access_order = {**self.access_order, key: True}
+                self.access_order[key] = time.time()
             elif self.config.eviction_policy == EvictionPolicy.LFU:
                 self.frequency_count = {**self.frequency_count, key: 1}
             total_size_bytes = total_size_bytes + size_bytes

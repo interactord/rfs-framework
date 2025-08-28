@@ -391,8 +391,8 @@ class AutoScalingOptimizer:
         # Test compatibility properties
         self.metrics: List[Dict[str, Any]] = []
         self.current_instances = 1
-        self.last_scale_up_time = None
-        self.last_scale_down_time = None
+        self.last_scale_up_time: Optional[datetime] = None
+        self.last_scale_down_time: Optional[datetime] = None
 
     async def initialize(self, config=None):
         """최적화기 초기화"""

@@ -13,11 +13,24 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from threading import Lock, Timer
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Protocol
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+class DebouncedFunction(Protocol):
+    """Debounced 함수 프로토콜"""
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+    def cancel(self) -> None: ...
+
+
+class CircuitBreakerFunction(Protocol):
+    """Circuit breaker 함수 프로토콜"""
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+    def state(self) -> str: ...
+    def reset(self) -> None: ...
 R = TypeVar("R")
 
 
@@ -174,7 +187,7 @@ def throttle(rate: float, per: float = 1.0, burst=1) -> Callable:
     return decorator
 
 
-def debounce(wait: float, immediate=False) -> Callable:
+def debounce(wait: float, immediate=False) -> Callable[[Callable], DebouncedFunction]:
     """
     Debounce function calls - only execute after wait period of no calls.
 
@@ -192,7 +205,7 @@ def debounce(wait: float, immediate=False) -> Callable:
         >>> # Rapid calls will only trigger once after 0.5s of inactivity
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> DebouncedFunction:
         timer = [None]
         lock = Lock()
 
@@ -213,8 +226,9 @@ def debounce(wait: float, immediate=False) -> Callable:
                 timer[0] = Timer(wait, call_func)
                 timer[0].start()
 
-        wrapper.cancel = lambda: timer[0].cancel() if timer[0] else None
-        return wrapper
+        # 타입 힌트를 위해 명시적으로 속성 추가
+        wrapper.cancel = lambda: timer[0].cancel() if timer[0] else None  # type: ignore
+        return wrapper  # type: ignore
 
     return decorator
 
@@ -392,7 +406,7 @@ def circuit_breaker(
     failure_threshold=5,
     recovery_timeout: float = 60.0,
     expected_exception: type = Exception,
-) -> Callable:
+) -> Callable[[Callable], CircuitBreakerFunction]:
     """
     Circuit breaker pattern to prevent cascading failures.
 
@@ -411,7 +425,7 @@ def circuit_breaker(
         ...     pass
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> CircuitBreakerFunction:
         failure_count = [0]
         last_failure_time = [None]
         state = ["closed"]  # closed, open, half-open
@@ -451,13 +465,14 @@ def circuit_breaker(
 
                     raise e
 
-        wrapper.state = lambda: state[0]
-        wrapper.reset = lambda: (
+        # 타입 힌트를 위해 명시적으로 속성 추가
+        wrapper.state = lambda: state[0]  # type: ignore
+        wrapper.reset = lambda: (  # type: ignore
             failure_count.__setitem__(0, 0),
             state.__setitem__(0, "closed"),
         )
 
-        return wrapper
+        return wrapper  # type: ignore
 
     return decorator
 

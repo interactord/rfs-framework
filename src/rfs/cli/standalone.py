@@ -22,7 +22,7 @@ except ImportError:
 if RICH_AVAILABLE:
     console = Console()
 else:
-    console = None
+    console = None  # type: ignore
 
 
 def show_welcome_banner():

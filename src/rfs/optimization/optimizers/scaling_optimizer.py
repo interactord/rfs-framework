@@ -279,8 +279,8 @@ class ScalingDecisionEngine:
 
     def __init__(self, config: AutoScalingConfig):
         self.config = config
-        self.last_scale_up_time = None
-        self.last_scale_down_time = None
+        self.last_scale_up_time: Optional[datetime] = None
+        self.last_scale_down_time: Optional[datetime] = None
         self.decision_history: deque = deque(maxlen=100)
 
     def make_scaling_decision(

@@ -52,8 +52,8 @@ class State:
     enter_count = 0
     exit_count = 0
     total_time: float = 0.0
-    last_entered = None
-    last_exited = None
+    last_entered: Optional[datetime] = None
+    last_exited: Optional[datetime] = None
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ class StateMachineState:
     event_history: Tuple[MachineEvent, ...] = field(default_factory=tuple)
     total_transitions = 0
     failed_transitions = 0
-    start_time = None
+    start_time: Optional[datetime] = None
 
 
 def create_state(
@@ -135,19 +135,26 @@ def update_state_stats(
     total_time: float = None,
 ) -> State:
     """순수 함수: 상태 통계 업데이트"""
-    return State(
+    # 새로운 상태 인스턴스 생성 (기본 매개변수만 사용)
+    new_state = State(
         name=state.name,
         state_type=state.state_type,
         entry_action=state.entry_action,
         exit_action=state.exit_action,
-        parent=state.parent,
-        children=state.children,
-        enter_count=enter_count if enter_count is not None else state.enter_count,
-        exit_count=exit_count if exit_count is not None else state.exit_count,
-        total_time=total_time if total_time is not None else state.total_time,
-        last_entered=datetime.now() if enter_count is not None else state.last_entered,
-        last_exited=datetime.now() if exit_count is not None else state.last_exited,
     )
+    
+    # 자식 상태들 및 부모 상태 복사
+    new_state.children = state.children.copy()
+    new_state.parent = state.parent
+    
+    # 통계 정보 수동 설정
+    new_state.enter_count = enter_count if enter_count is not None else state.enter_count
+    new_state.exit_count = exit_count if exit_count is not None else state.exit_count
+    new_state.total_time = total_time if total_time is not None else state.total_time
+    new_state.last_entered = datetime.now() if enter_count is not None else state.last_entered
+    new_state.last_exited = datetime.now() if exit_count is not None else state.last_exited
+    
+    return new_state
 
 
 def create_transition(
@@ -184,27 +191,32 @@ def update_transition_stats(
     duration_ms: float = None,
 ) -> Transition:
     """순수 함수: 전이 통계 업데이트"""
-    return Transition(
+    # 새로운 전이 인스턴스 생성 (기본 매개변수만 사용)
+    new_transition = Transition(
         from_state=transition.from_state,
         to_state=transition.to_state,
         event=transition.event,
         guard=transition.guard,
         action=transition.action,
         transition_type=transition.transition_type,
-        execution_count=(
-            execution_count
-            if execution_count is not None
-            else transition.execution_count
-        ),
-        failure_count=(
-            failure_count if failure_count is not None else transition.failure_count
-        ),
-        total_duration_ms=(
-            transition.total_duration_ms + duration_ms
-            if duration_ms is not None
-            else transition.total_duration_ms
-        ),
     )
+    
+    # 통계 정보 수동 설정
+    new_transition.execution_count = (
+        execution_count
+        if execution_count is not None
+        else transition.execution_count
+    )
+    new_transition.failure_count = (
+        failure_count if failure_count is not None else transition.failure_count
+    )
+    new_transition.total_duration_ms = (
+        transition.total_duration_ms + duration_ms
+        if duration_ms is not None
+        else transition.total_duration_ms
+    )
+    
+    return new_transition
 
 
 def create_state_machine(name: str) -> StateMachineState:
@@ -218,7 +230,7 @@ def add_state_to_machine(machine: StateMachineState, state: State) -> StateMachi
     new_initial_state = machine.initial_state
     if is_initial_state(state) and (not machine.initial_state):
         new_initial_state = state.name
-    return StateMachineState(
+    return StateMachineState(  # type: ignore
         name=machine.name,
         states=new_states,
         transitions=machine.transitions,
@@ -241,9 +253,9 @@ def add_transition_to_machine(
     key = f"{transition.from_state}:{transition.event}"
     new_transitions = copy.deepcopy(machine.transitions)
     if key not in new_transitions:
-        new_transitions[key] = {key: []}
+        new_transitions[key] = []
     new_transitions[key] = new_transitions[key] + [transition]
-    return StateMachineState(
+    return StateMachineState(  # type: ignore
         name=machine.name,
         states=machine.states,
         transitions=new_transitions,

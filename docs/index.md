@@ -7,7 +7,7 @@
 **Enterprise-Grade Reactive Functional Serverless Framework for Python**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/Version-4.3.0-green.svg)](https://pypi.org/project/rfs-framework/)
+[![Version](https://img.shields.io/badge/Version-4.3.5-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://interactord.github.io/rfs-framework/)
 
@@ -51,7 +51,7 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 | **메모리 사용** | ~25MB | 기본 실행 |
 | **응답 시간** | <100ms | API 호출 |
 | **처리량** | 1200 RPS | 벤치마크 |
-| **완성도** | 93% | v4.3.0 |
+| **완성도** | 95% | v4.3.5 |
 
 ## 🚀 빠른 시작
 

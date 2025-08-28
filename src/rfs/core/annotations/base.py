@@ -84,6 +84,9 @@ class ComponentMetadata:
     lazy: bool = False
     primary: bool = False
     qualifier: Optional[str] = None
+    component_id: Optional[str] = None
+    profile: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_service_scope(self) -> ServiceScope:
         """ServiceScope 반환"""

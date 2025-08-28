@@ -104,7 +104,8 @@ class SystemMetrics:
         """최근 N분간의 사용량 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
-            usage for usage in self.resource_history if usage.timestamp >= cutoff_time
+            usage for usage in self.resource_history 
+            if isinstance(usage.timestamp, datetime) and usage.timestamp >= cutoff_time
         ]
 
     def get_average_usage(self, minutes=10) -> Optional[ResourceUsage]:

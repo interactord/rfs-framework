@@ -306,8 +306,235 @@ await asyncio.gather(
 # "Expensive operation"은 한 번만 출력됨
 ```
 
+### AsyncResult와 Mono 통합
+
+RFS Framework v4.4.0부터 Mono와 AsyncResult를 완벽하게 통합할 수 있습니다.
+
+```python
+from rfs.reactive import Mono
+from rfs.async_pipeline import AsyncResult
+from rfs.core.result import Success, Failure
+
+# AsyncResult를 Mono로 변환
+def async_result_to_mono(async_result: AsyncResult) -> Mono:
+    """AsyncResult를 Mono로 변환"""
+    async def converter():
+        result = await async_result.to_result()
+        if result.is_success():
+            return result.unwrap()
+        else:
+            raise Exception(result.unwrap_error())
+    
+    return Mono.from_callable(converter)
+
+# Mono를 AsyncResult로 변환  
+def mono_to_async_result(mono: Mono) -> AsyncResult:
+    """Mono를 AsyncResult로 변환"""
+    async def converter():
+        try:
+            value = await mono.to_future()
+            return Success(value)
+        except Exception as e:
+            return Failure(str(e))
+    
+    return AsyncResult(converter())
+
+# 통합 사용 예시
+async def integrated_processing():
+    """Mono와 AsyncResult 통합 처리"""
+    
+    # 1. AsyncResult로 사용자 검증
+    user_validation = AsyncResult.from_async(lambda: validate_user("user123"))
+    
+    # 2. AsyncResult를 Mono로 변환하여 프로필 조회
+    profile_mono = (
+        async_result_to_mono(user_validation)
+        .flat_map(lambda user: fetch_user_profile_mono(user["id"]))
+        .map(lambda profile: {**profile, "validated": True})
+    )
+    
+    # 3. 최종 결과를 AsyncResult로 변환
+    final_result = mono_to_async_result(profile_mono)
+    
+    # 4. 결과 처리
+    if await final_result.is_success():
+        profile = await final_result.unwrap_async()
+        print(f"검증된 프로필: {profile}")
+        return profile
+    else:
+        error = await final_result.to_result().then(lambda r: r.unwrap_error())
+        print(f"처리 실패: {error}")
+        return None
+
+# 실행
+await integrated_processing()
+```
+
+### 실제 웹 API 사용 사례
+
+```python
+from rfs.reactive import Mono
+from rfs.web.fastapi_helpers import async_result_to_response
+from rfs.logging.async_logging import AsyncResultLogger, log_async_chain
+from fastapi import FastAPI, HTTPException
+import httpx
+
+app = FastAPI()
+logger = AsyncResultLogger()
+
+class UserService:
+    """사용자 서비스 클래스"""
+    
+    def get_user_mono(self, user_id: str) -> Mono[dict]:
+        """사용자 정보 조회를 Mono로 반환"""
+        async def fetch_user():
+            # 외부 API 호출 시뮬레이션
+            if user_id == "404":
+                raise HTTPException(status_code=404, detail="User not found")
+            return {"id": user_id, "name": f"User {user_id}", "email": f"user{user_id}@example.com"}
+        
+        return Mono.from_callable(fetch_user).timeout(5.0)
+    
+    def enrich_user_profile_mono(self, user: dict) -> Mono[dict]:
+        """사용자 프로필 보강을 Mono로 반환"""
+        async def enrich():
+            # 추가 정보 조회
+            return {
+                **user,
+                "profile_completed": True,
+                "last_login": "2025-01-01T10:00:00Z",
+                "preferences": {"theme": "dark", "language": "ko"}
+            }
+        
+        return Mono.from_callable(enrich)
+
+user_service = UserService()
+
+@app.get("/api/users/{user_id}")
+@log_async_chain(logger, "get_user_with_mono")
+async def get_user_with_mono(user_id: str):
+    """Mono를 사용한 사용자 조회 API"""
+    
+    try:
+        # Mono 체이닝으로 사용자 데이터 처리
+        user_data = await (
+            user_service.get_user_mono(user_id)
+            .flat_map(lambda user: user_service.enrich_user_profile_mono(user))
+            .map(lambda profile: {
+                "user": profile,
+                "retrieved_at": "2025-01-01T12:00:00Z",
+                "source": "mono_pipeline"
+            })
+            .on_error_return({
+                "error": "사용자 조회 실패",
+                "user_id": user_id
+            })
+            .to_future()
+        )
+        
+        return user_data
+        
+    except Exception as e:
+        return {"error": str(e), "user_id": user_id}
+
+# 캐시 우선 전략
+@app.get("/api/users/{user_id}/cached")
+async def get_cached_user(user_id: str):
+    """캐시 우선 사용자 조회"""
+    
+    def get_from_cache() -> Mono[dict]:
+        """캐시에서 사용자 조회 (빈 결과 시뮬레이션)"""
+        return Mono.empty()
+    
+    def get_fresh_data() -> Mono[dict]:
+        """새로운 데이터 조회"""
+        return (
+            user_service.get_user_mono(user_id)
+            .flat_map(user_service.enrich_user_profile_mono)
+            .map(lambda user: {**user, "cached": False, "fresh": True})
+        )
+    
+    result = await (
+        get_from_cache()
+        .switch_if_empty(get_fresh_data())
+        .on_error_return({"error": "모든 조회 방법 실패"})
+        .to_future()
+    )
+    
+    return result
+```
+
+### 에러 복구와 회복력 패턴
+
+```python
+from rfs.reactive import Mono
+import random
+import asyncio
+
+class ResilientDataService:
+    """회복력 있는 데이터 서비스"""
+    
+    def fetch_from_primary(self, key: str) -> Mono[dict]:
+        """주 데이터 소스에서 조회"""
+        async def primary_fetch():
+            # 70% 확률로 실패 시뮬레이션
+            if random.random() < 0.7:
+                raise ConnectionError("Primary database unavailable")
+            return {"source": "primary", "data": f"primary_data_{key}"}
+        
+        return Mono.from_callable(primary_fetch).timeout(2.0)
+    
+    def fetch_from_backup(self, key: str) -> Mono[dict]:
+        """백업 데이터 소스에서 조회"""
+        async def backup_fetch():
+            # 30% 확률로 실패
+            if random.random() < 0.3:
+                raise ConnectionError("Backup database unavailable")
+            return {"source": "backup", "data": f"backup_data_{key}"}
+        
+        return Mono.from_callable(backup_fetch).timeout(3.0)
+    
+    def fetch_from_cache(self, key: str) -> Mono[dict]:
+        """캐시에서 조회 (항상 성공)"""
+        async def cache_fetch():
+            return {"source": "cache", "data": f"cached_data_{key}", "stale": True}
+        
+        return Mono.from_callable(cache_fetch)
+    
+    def resilient_fetch(self, key: str) -> Mono[dict]:
+        """회복력 있는 데이터 조회"""
+        return (
+            self.fetch_from_primary(key)
+            .on_error_resume(lambda _: self.fetch_from_backup(key))
+            .on_error_resume(lambda _: self.fetch_from_cache(key))
+            .retry(max_attempts=2)  # 최대 2회 재시도
+            .do_on_next(lambda data: print(f"데이터 조회 성공: {data['source']}에서"))
+            .do_on_error(lambda error: print(f"모든 조회 실패: {error}"))
+        )
+
+# 사용 예시
+async def test_resilient_service():
+    service = ResilientDataService()
+    
+    # 10개의 키에 대해 회복력 있는 조회 수행
+    keys = [f"key_{i}" for i in range(10)]
+    
+    for key in keys:
+        try:
+            result = await service.resilient_fetch(key).to_future()
+            print(f"{key}: {result}")
+        except Exception as e:
+            print(f"{key} 최종 실패: {e}")
+
+# 실행
+await test_resilient_service()
+```
+
 ## 관련 문서
 
+- [반응형 프로그래밍 가이드](../../27-reactive-programming-guide.md) - 종합적인 반응형 프로그래밍 가이드
 - [Flux API](flux.md) - 다중 값 반응형 스트림
+- [AsyncResult API](../async-pipeline/async-result.md) - 비동기 Result 모나드
+- [AsyncResult Web Integration](../../26-asyncresult-web-integration.md) - 웹 통합 가이드
 - [반응형 프로그래밍](../../01-core-patterns.md#reactive-programming) - 반응형 패턴 개념
 - [비동기 처리](../../22-hot-library.md) - 함수형 반응형 유틸리티

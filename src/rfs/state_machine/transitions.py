@@ -197,9 +197,9 @@ class TransitionBuilder:
     def __init__(self):
         self.from_state = None
         self.to_state = None
-        self.event = None
-        self.guard = None
-        self.action = None
+        self._event_name = None
+        self._guard_func = None
+        self._action_func = None
         self.transition_type = TransitionType.EXTERNAL
 
     def source(self, state: "State") -> "TransitionBuilder":
@@ -214,21 +214,21 @@ class TransitionBuilder:
 
     def event(self, event_name: str) -> "TransitionBuilder":
         """이벤트 설정"""
-        self.event = event_name
+        self._event_name = event_name
         return self
 
     def guard(
         self, guard_func: Callable[[Dict[str, Any]], bool]
     ) -> "TransitionBuilder":
         """가드 조건 설정"""
-        self.guard = guard_func
+        self._guard_func = guard_func
         return self
 
     def action(
         self, action_func: Callable[[Dict[str, Any]], None]
     ) -> "TransitionBuilder":
         """액션 설정"""
-        self.action = action_func
+        self._action_func = action_func
         return self
 
     def internal(self) -> "TransitionBuilder":
@@ -248,15 +248,15 @@ class TransitionBuilder:
 
     def build(self) -> Transition:
         """전이 생성"""
-        if not all([self.from_state, self.to_state, self.event]):
+        if not all([self.from_state, self.to_state, self._event_name]):
             raise ValueError("From state, to state, and event must be specified")
 
         return Transition(
             from_state=self.from_state,
             to_state=self.to_state,
-            event=self.event,
-            guard=self.guard,
-            action=self.action,
+            event=self._event_name,
+            guard=self._guard_func,
+            action=self._action_func,
             transition_type=self.transition_type,
         )
 

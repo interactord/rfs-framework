@@ -55,8 +55,8 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = None
-        self.last_success_time = None
+        self.last_failure_time: Optional[datetime] = None
+        self.last_success_time: Optional[datetime] = None
 
     def call(self, func: Callable) -> Result[Any, str]:
         """함수 호출"""

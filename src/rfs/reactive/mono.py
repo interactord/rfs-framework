@@ -20,7 +20,7 @@ class Mono(Generic[T]):
     Spring Reactor의 Mono를 Python으로 구현
     """
 
-    def __init__(self, source: Callable[[], Optional[T]] = None):
+    def __init__(self, source: Optional[Callable[[], Optional[T]]] = None):
         self.source = source or (lambda: None)
 
     @staticmethod
@@ -60,7 +60,7 @@ class Mono(Generic[T]):
         return Mono(generator)
 
     @staticmethod
-    def delay(duration: float, value: T = None) -> "Mono[T]":
+    def delay(duration: float, value: Optional[T] = None) -> "Mono[Optional[T]]":
         """지연된 값을 방출하는 Mono"""
 
         def generator():
@@ -333,9 +333,9 @@ class Mono(Generic[T]):
 
     async def subscribe(
         self,
-        on_success: Callable[[T], None] = None,
-        on_error: Callable[[Exception], None] = None,
-        on_complete: Callable[[], None] = None,
+        on_success: Optional[Callable[[T], None]] = None,
+        on_error: Optional[Callable[[Exception], None]] = None,
+        on_complete: Optional[Callable[[], None]] = None,
     ) -> None:
         """
         Mono 구독

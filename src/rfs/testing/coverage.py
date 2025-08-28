@@ -171,7 +171,7 @@ def analyze_coverage(
 ) -> Result[dict, str]:
     """커버리지 분석"""
     try:
-        analysis = {
+        analysis: Dict[str, Any] = {
             "passed": report.coverage_percentage >= threshold,
             "coverage": report.coverage_percentage,
             "threshold": threshold,

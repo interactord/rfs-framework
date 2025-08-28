@@ -56,9 +56,9 @@ class Action:
         self.execution_count = 0
         self.failure_count = 0
         self.total_duration_ms = 0.0
-        self.last_executed = None
+        self.last_executed: Optional[datetime] = None
 
-    async def execute(self, context: Dict[str, Any] = None) -> ActionResult:
+    async def execute(self, context: Optional[Dict[str, Any]] = None) -> ActionResult:
         """액션 실행"""
         import time
 
@@ -83,9 +83,9 @@ class Action:
                     result = self.action_func(context)
 
             # 성공 통계 업데이트
-            execution_count = execution_count + 1
+            self.execution_count = self.execution_count + 1
             duration_ms = (time.time() - start_time) * 1000
-            total_duration_ms = total_duration_ms + duration_ms
+            self.total_duration_ms = self.total_duration_ms + duration_ms
 
             # 컨텍스트 변경사항 추출
             context_changes = {}
@@ -102,7 +102,7 @@ class Action:
 
         except Exception as e:
             # 실패 통계 업데이트
-            failure_count = failure_count + 1
+            self.failure_count = self.failure_count + 1
             duration_ms = (time.time() - start_time) * 1000
 
             return ActionResult(
@@ -160,7 +160,7 @@ class Guard:
         self.error_count = 0
         self.total_duration_ms = 0.0
 
-    async def evaluate(self, context: Dict[str, Any] = None) -> bool:
+    async def evaluate(self, context: Optional[Dict[str, Any]] = None) -> bool:
         """가드 조건 평가"""
         import time
 
@@ -170,7 +170,7 @@ class Guard:
             context = {}
 
         try:
-            evaluation_count = evaluation_count + 1
+            self.evaluation_count = self.evaluation_count + 1
 
             # 가드 함수 실행
             if asyncio.iscoroutinefunction(self.guard_func):
@@ -180,17 +180,17 @@ class Guard:
 
             # 결과 통계 업데이트
             if result:
-                true_count = true_count + 1
+                self.true_count = self.true_count + 1
             else:
-                false_count = false_count + 1
+                self.false_count = self.false_count + 1
 
             duration_ms = (time.time() - start_time) * 1000
-            total_duration_ms = total_duration_ms + duration_ms
+            self.total_duration_ms = self.total_duration_ms + duration_ms
 
             return bool(result)
 
         except Exception as e:
-            error_count = error_count + 1
+            self.error_count = self.error_count + 1
             print(f"Guard evaluation failed for {self.name}: {e}")
             return False
 
@@ -220,14 +220,14 @@ class ActionBuilder:
     """액션 빌더 (플루언트 인터페이스)"""
 
     def __init__(self):
-        self.name = None
+        self._action_name = None
         self.action_type = ActionType.TRANSITION
         self.action_func = None
         self.async_action = False
 
     def name(self, name: str) -> "ActionBuilder":
         """액션 이름 설정"""
-        self.name = name
+        self._action_name = name
         return self
 
     def entry_action(self) -> "ActionBuilder":
@@ -262,11 +262,11 @@ class ActionBuilder:
 
     def build(self) -> Action:
         """액션 생성"""
-        if not all([self.name, self.action_func]):
+        if not all([self._action_name, self.action_func]):
             raise ValueError("Name and action function must be specified")
 
         return Action(
-            name=self.name,
+            name=self._action_name,
             action_type=self.action_type,
             action_func=self.action_func,
             async_action=self.async_action,
@@ -277,13 +277,13 @@ class GuardBuilder:
     """가드 빌더 (플루언트 인터페이스)"""
 
     def __init__(self):
-        self.name = None
+        self._guard_name = None
         self.guard_func = None
-        self.description = ""
+        self._description_text = ""
 
     def name(self, name: str) -> "GuardBuilder":
         """가드 이름 설정"""
-        self.name = name
+        self._guard_name = name
         return self
 
     def condition(self, guard_func: Callable[[Dict[str, Any]], bool]) -> "GuardBuilder":
@@ -293,16 +293,16 @@ class GuardBuilder:
 
     def description(self, description: str) -> "GuardBuilder":
         """가드 설명 설정"""
-        self.description = description
+        self._description_text = description
         return self
 
     def build(self) -> Guard:
         """가드 생성"""
-        if not all([self.name, self.guard_func]):
+        if not all([self._guard_name, self.guard_func]):
             raise ValueError("Name and guard function must be specified")
 
         return Guard(
-            name=self.name, guard_func=self.guard_func, description=self.description
+            name=self._guard_name, guard_func=self.guard_func, description=self._description_text
         )
 
 

@@ -48,7 +48,7 @@ class StateMachine:
         self.name = name
         self.states = {}
         self.transitions: Dict[str, List[Transition]] = {}
-        self.current_state = None
+        self.current_state: Optional[State] = None
         self.initial_state = None
         self.machine_state = MachineState.IDLE
         self.context = {}
@@ -56,7 +56,7 @@ class StateMachine:
         self.processing_events = False
         self.total_transitions = 0
         self.failed_transitions = 0
-        self.start_time = None
+        self.start_time: Optional[datetime] = None
         self.event_history = []
         self.state_listeners = []
         self.transition_listeners = []
@@ -222,7 +222,7 @@ class StateMachine:
 
     def get_transition_stats(self) -> List[Dict[str, Any]]:
         """모든 전이의 통계"""
-        stats = []
+        stats: List[Dict[str, Any]] = []
         for transitions in self.transitions.values():
             for transition in transitions:
                 stats = stats + [transition.get_stats()]
@@ -241,29 +241,29 @@ class StateMachineBuilder:
 
     def __init__(self, name: str):
         self.name = name
-        self.states = []
-        self.transitions = []
-        self.state_listeners = []
-        self.transition_listeners = []
+        self._state_list: List[State] = []
+        self._transition_list: List[Transition] = []
+        self.state_listeners: List[callable] = []
+        self.transition_listeners: List[callable] = []
 
     def state(self, state: State) -> "StateMachineBuilder":
         """상태 추가"""
-        self.states = self.states + [state]
+        self._state_list = self._state_list + [state]
         return self
 
     def states(self, *states: State) -> "StateMachineBuilder":
         """여러 상태 추가"""
-        self.states = self.states + states
+        self._state_list = self._state_list + list(states)
         return self
 
     def transition(self, transition: Transition) -> "StateMachineBuilder":
         """전이 추가"""
-        self.transitions = self.transitions + [transition]
+        self._transition_list = self._transition_list + [transition]
         return self
 
     def transitions(self, *transitions: Transition) -> "StateMachineBuilder":
         """여러 전이 추가"""
-        self.transitions = self.transitions + transitions
+        self._transition_list = self._transition_list + list(transitions)
         return self
 
     def on_state_change(self, listener: callable) -> "StateMachineBuilder":
@@ -279,9 +279,9 @@ class StateMachineBuilder:
     def build(self) -> StateMachine:
         """상태 머신 생성"""
         machine = StateMachine(self.name)
-        for state in self.states:
+        for state in self._state_list:
             machine.add_state(state)
-        for transition in self.transitions:
+        for transition in self._transition_list:
             machine.add_transition(transition)
         for listener in self.state_listeners:
             machine.add_state_listener(listener)

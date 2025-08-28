@@ -131,7 +131,7 @@ class AnnotationRegistry(StatelessRegistry):
             self.prototypes = {**self.prototypes, component_id: cls}
         self.dependency_graph = {**self.dependency_graph, component_id: set()}
         for dep in metadata.dependencies:
-            self.dependency_graph[component_id].add(dep.name)
+            self.dependency_graph[component_id].add(dep if isinstance(dep, str) else dep.name)
 
     def get_component(self, component_id: str, qualifier=None) -> Result[Any, str]:
         """
@@ -157,8 +157,8 @@ class AnnotationRegistry(StatelessRegistry):
             if metadata:
                 if metadata.scope == ServiceScope.SINGLETON:
                     self.singletons = {**self.singletons, component_id: instance}
-                if metadata.post_construct:
-                    metadata.post_construct(instance)
+                if hasattr(metadata, 'post_construct') and metadata.post_construct:
+                    metadata.post_construct(instance)  # type: ignore
             return Success(instance)
         except Exception as e:
             return Failure(f"Failed to get component {component_id}: {e}")
@@ -238,7 +238,7 @@ class AnnotationRegistry(StatelessRegistry):
     ) -> bool:
         """순환 의존성 체크"""
         if visited is None:
-            visited: Set[Any] = set()
+            visited = set()
         if component_id in visited:
             return True
         visited.add(component_id)

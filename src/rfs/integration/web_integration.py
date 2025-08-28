@@ -234,7 +234,7 @@ class CircuitBreaker:
         self.recovery_timeout = recovery_timeout
         self.expected_exception = expected_exception
         self.failure_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: Optional[datetime] = None
         self.state = "closed"
 
     def call(self, func, *args, **kwargs):

@@ -264,7 +264,8 @@ async def async_parallel(*coroutines: Coroutine, return_exceptions=False) -> Lis
         >>> await async_parallel(task1(), task2())
         [1, 2]
     """
-    return await asyncio.gather(*coroutines, return_exceptions=return_exceptions)
+    result: List[Any] = await asyncio.gather(*coroutines, return_exceptions=return_exceptions)
+    return result
 
 
 async def async_sequential(
@@ -351,10 +352,10 @@ async def async_race(*coroutines: Coroutine) -> Any:
 
     # Cancel pending tasks
     for task in pending:
-        task.cancel()
+        task.cancel()  # type: ignore
 
     # Return result of first completed
-    return done.pop().result()
+    return done.pop().result()  # type: ignore
 
 
 async def async_all(predicates: List[Callable[[T], Awaitable[bool]]], value: T) -> bool:
@@ -452,7 +453,7 @@ class AsyncLazy:
 
     def __init__(self, func: Callable[[], Awaitable[T]]):
         self.func = func
-        self.value = None
+        self.value: Optional[T] = None
         self.computed = False
         self.lock = asyncio.Lock()
 
@@ -461,6 +462,7 @@ class AsyncLazy:
             if not self.computed:
                 self.value = await self.func()
                 self.computed = True
+        assert self.value is not None, "Value should be computed at this point"
         return self.value
 
 
@@ -512,5 +514,5 @@ async def async_memoize(
 
         return result
 
-    wrapper.cache_clear = lambda: cache.clear()
+    wrapper.cache_clear = lambda: cache.clear()  # type: ignore
     return wrapper

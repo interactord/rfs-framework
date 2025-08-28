@@ -454,7 +454,7 @@ class BatchSubscriber(Subscriber):
         if topic not in self._message_batches:
             self._message_batches = {**self._message_batches, topic: []}
 
-        self._message_batches[topic] = _message_batches[topic] + [message]
+        self._message_batches[topic] = self._message_batches[topic] + [message]
 
         # 배치 크기 확인
         if len(self._message_batches[topic]) >= config.batch_size:

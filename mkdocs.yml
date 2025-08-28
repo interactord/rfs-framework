@@ -191,6 +191,7 @@ nav:
     - 22-hot-library.md
     - 25-async-pipeline.md
     - 26-asyncresult-web-integration.md
+    - 27-reactive-programming-guide.md
     - 21-event-system.md
     - 23-profiles.md
     - 24-state-machine.md
@@ -229,6 +230,8 @@ nav:
     - Reactive:
       - Mono: api/reactive/mono.md
       - Flux: api/reactive/flux.md
+    - Async Pipeline:
+      - AsyncResult: api/async-pipeline/async-result.md
     - HOF:
       - Core Functions: api/hof/core.md
       - Collections: api/hof/collections.md

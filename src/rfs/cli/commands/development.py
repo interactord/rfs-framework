@@ -185,12 +185,12 @@ class BuildCommand(Command):
             ) as progress:
                 task1 = progress.add_task("의존성 확인 중...", total=100)
                 await self._check_dependencies()
-                progress = {**progress, **task1}
+                progress.update(task1, completed=100)
                 task2 = progress.add_task("코드 검증 중...", total=100)
                 validation_result = await self._validate_code()
                 if validation_result.is_failure():
                     return validation_result
-                progress = {**progress, **task2}
+                progress.update(task2, completed=100)
                 if build_config.include_tests:
                     task3 = progress.add_task("테스트 실행 중...", total=100)
                     test_result = await self._run_tests()

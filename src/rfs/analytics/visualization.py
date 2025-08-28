@@ -201,7 +201,7 @@ class VisualizationEngine:
     def __init__(self, backend: str = "plotly") -> None:
         self.backend = backend
         self.current_theme: Theme = DefaultTheme()
-        self._backend_module = None
+        self._backend_module: Optional[Dict[str, Any]] = None
         self._initialize_backend()
 
     def _initialize_backend(self) -> None:

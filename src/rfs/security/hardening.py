@@ -95,9 +95,9 @@ class HardeningResult:
     timestamp: datetime
     policy_applied: str
     security_level: SecurityLevel
-    total_checks = 0
-    passed_checks = 0
-    failed_checks = 0
+    total_checks: int = 0
+    passed_checks: int = 0
+    failed_checks: int = 0
     critical_issues: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
@@ -248,6 +248,10 @@ class SecurityHardening:
         self, target: Dict[str, Any], result: HardeningResult, basic=False
     ):
         """비밀번호 정책 검사"""
+        total_checks = 0
+        passed_checks = 0
+        failed_checks = 0
+        
         total_checks = total_checks + 1
 
         # Check minimum length
@@ -546,7 +550,7 @@ class SecurityHardening:
         Returns:
             Result[검증 결과, 에러 메시지]
         """
-        errors = []
+        errors: List[str] = []
 
         if len(password) < self.policy.min_password_length:
             errors = [
@@ -585,7 +589,7 @@ class SecurityHardening:
         """
         return secrets.token_urlsafe(length)
 
-    def hash_password(self, password: str, salt: str = None) -> str:
+    def hash_password(self, password: str, salt: Optional[str] = None) -> str:
         """
         비밀번호 해싱
 
@@ -642,7 +646,7 @@ class SecurityHardening:
             return 0.0
 
         latest = self._hardening_history[-1]
-        return latest.success_rate
+        return latest.get("success_rate", 0.0)
 
 
 # Helper functions

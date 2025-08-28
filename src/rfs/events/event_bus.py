@@ -44,9 +44,9 @@ class Event:
     )
     timestamp: datetime = field(default_factory=datetime.now)
     priority: EventPriority = EventPriority.NORMAL
-    source = None
-    correlation_id = None
-    causation_id = None
+    source: Optional[str] = None
+    correlation_id: Optional[str] = None
+    causation_id: Optional[str] = None
 
     def with_metadata(self, **metadata) -> "Event":
         """메타데이터 추가"""

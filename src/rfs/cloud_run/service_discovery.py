@@ -173,7 +173,7 @@ class CircuitBreaker:
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: Optional[datetime] = None
 
     def call(self, func: Callable) -> Any:
         """회로 차단기를 통한 함수 호출"""

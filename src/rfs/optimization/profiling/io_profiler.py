@@ -200,7 +200,8 @@ class IOMetrics:
         """최근 N분간의 스냅샷 반환"""
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         return [
-            snapshot for snapshot in self.snapshots if snapshot.timestamp >= cutoff_time
+            snapshot for snapshot in self.snapshots 
+            if isinstance(snapshot.timestamp, datetime) and snapshot.timestamp >= cutoff_time
         ]
 
     def calculate_io_rates(self, minutes=1) -> Dict[str, float]:

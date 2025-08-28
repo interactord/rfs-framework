@@ -55,7 +55,7 @@ class ValidationResult:
     message: str
     current_value: Any = None
     suggested_value: Any = None
-    fix_hint = ""
+    fix_hint: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""

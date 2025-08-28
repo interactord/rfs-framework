@@ -98,7 +98,7 @@ class ServiceEndpoint:
         self.url = url
         self.region = region or get_cloud_run_region()
         self.health_check_url = f"{url}/health"
-        self.last_health_check = None
+        self.last_health_check: Optional[datetime] = None
         self.is_healthy = True
 
     async def check_health(self) -> bool:

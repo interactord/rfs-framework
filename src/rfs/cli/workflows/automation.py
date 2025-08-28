@@ -27,7 +27,7 @@ except ImportError:
 from ...core.result import Failure, Result, Success
 
 if RICH_AVAILABLE:
-    console = Console()
+    console: Optional[Console] = Console()
 else:
     console = None
 

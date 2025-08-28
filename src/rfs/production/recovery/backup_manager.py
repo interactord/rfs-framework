@@ -124,9 +124,9 @@ class BackupOperation:
     status: BackupStatus
     progress: float = 0.0
     start_time: datetime = field(default_factory=datetime.now)
-    end_time = None
-    error_message = None
-    metadata: BackupMetadata = None
+    end_time: Optional[datetime] = None
+    error_message: Optional[str] = None
+    metadata: Optional[BackupMetadata] = None
     retry_count = 0
     max_retries = 3
 
@@ -549,7 +549,7 @@ class BackupManager:
                 for item in source_path.rglob("*"):
                     if self._should_exclude(str(item), target.exclude_patterns):
                         continue
-                    if item.stat().st_mtime > last_backup.end_time.timestamp():
+                    if last_backup.end_time and item.stat().st_mtime > last_backup.end_time.timestamp():
                         tar.add(item, arcname=item.relative_to(source_path))
                         file_count = file_count + 1
             metadata.size_bytes = os.path.getsize(backup_path)
@@ -573,7 +573,7 @@ class BackupManager:
                 for item in source_path.rglob("*"):
                     if self._should_exclude(str(item), target.exclude_patterns):
                         continue
-                    if item.stat().st_mtime > last_full_backup.end_time.timestamp():
+                    if last_full_backup.end_time and item.stat().st_mtime > last_full_backup.end_time.timestamp():
                         tar.add(item, arcname=item.relative_to(source_path))
                         file_count = file_count + 1
             metadata.size_bytes = os.path.getsize(backup_path)
@@ -666,7 +666,7 @@ class BackupManager:
         sha256_hash = hashlib.sha256()
         async with aiofiles.open(file_path, "rb") as f:
             while chunk := (await f.read(8192)):
-                sha256_hash = {**sha256_hash, **chunk}
+                sha256_hash.update(chunk)
         return sha256_hash.hexdigest()
 
     async def _verify_backup_integrity(self, backup_path: str) -> Result[bool, str]:

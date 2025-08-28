@@ -70,8 +70,8 @@ class CircuitBreakerMetrics:
     rejected_requests = 0
 
     total_response_time: float = 0.0
-    last_failure_time = None
-    last_success_time = None
+    last_failure_time: Optional[datetime] = None
+    last_success_time: Optional[datetime] = None
 
     state_changes: List[tuple] = field(default_factory=list)  # (시간, 이전상태, 새상태)
 
@@ -416,10 +416,10 @@ def circuit_breaker(name=None, config=None):
             wrapper = sync_wrapper
 
         # 서킷 브레이커 접근 메서드 추가
-        wrapper.circuit_breaker = lambda: _registry.get_or_create(breaker_name, config)
-        wrapper.reset = lambda: wrapper.circuit_breaker().reset()
-        wrapper.get_state = lambda: wrapper.circuit_breaker().get_state()
-        wrapper.get_metrics = lambda: wrapper.circuit_breaker().get_metrics()
+        wrapper.circuit_breaker = lambda: _registry.get_or_create(breaker_name, config)  # type: ignore
+        wrapper.reset = lambda: wrapper.circuit_breaker().reset()  # type: ignore
+        wrapper.get_state = lambda: wrapper.circuit_breaker().get_state()  # type: ignore
+        wrapper.get_metrics = lambda: wrapper.circuit_breaker().get_metrics()  # type: ignore
 
         return wrapper
 

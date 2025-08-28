@@ -57,8 +57,8 @@ class State:
         # 통계
         self.enter_count = 0
         self.exit_count = 0
-        self.last_entered = None
-        self.last_exited = None
+        self.last_entered: Optional[datetime] = None
+        self.last_exited: Optional[datetime] = None
         self.total_time = 0.0
 
     def add_child(self, child_state: "State") -> "State":
@@ -76,9 +76,9 @@ class State:
         self.children.discard(child_state)
         return self
 
-    async def enter(self, context: Dict[str, Any] = None) -> None:
+    async def enter(self, context: Optional[Dict[str, Any]] = None) -> None:
         """상태 진입"""
-        enter_count = enter_count + 1
+        self.enter_count = self.enter_count + 1
         self.last_entered = datetime.now()
 
         # 진입 액션 실행
@@ -86,13 +86,13 @@ class State:
             if callable(self.entry_action):
                 await self._execute_action(self.entry_action, context)
 
-    async def exit(self, context: Dict[str, Any] = None) -> None:
+    async def exit(self, context: Optional[Dict[str, Any]] = None) -> None:
         """상태 탈출"""
         if self.last_entered:
             duration = (datetime.now() - self.last_entered).total_seconds()
-            total_time = total_time + duration
+            self.total_time = self.total_time + duration
 
-        exit_count = exit_count + 1
+        self.exit_count = self.exit_count + 1
         self.last_exited = datetime.now()
 
         # 탈출 액션 실행
@@ -100,7 +100,7 @@ class State:
             if callable(self.exit_action):
                 await self._execute_action(self.exit_action, context)
 
-    async def _execute_action(self, action, context: Dict[str, Any] = None):
+    async def _execute_action(self, action, context: Optional[Dict[str, Any]] = None):
         """액션 실행"""
         try:
             if context is None:
@@ -152,10 +152,10 @@ class State:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __eq__(self, other) -> bool:
-        if type(other).__name__ == "State":
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, State):
             return self.name == other.name
-        elif type(other).__name__ == "str":
+        elif isinstance(other, str):
             return self.name == other
         return False
 
@@ -171,7 +171,7 @@ class StateBuilder:
         self.state_type = StateType.NORMAL
         self.entry_action = None
         self.exit_action = None
-        self.parent = None
+        self._parent_state: Optional[State] = None
 
     def initial(self) -> "StateBuilder":
         """초기 상태로 설정"""
@@ -200,7 +200,7 @@ class StateBuilder:
 
     def parent(self, parent_state: State) -> "StateBuilder":
         """부모 상태 설정"""
-        self.parent = parent_state
+        self._parent_state = parent_state
         return self
 
     def build(self) -> State:
@@ -210,12 +210,12 @@ class StateBuilder:
             state_type=self.state_type,
             entry_action=self.entry_action,
             exit_action=self.exit_action,
-            parent=self.parent,
+            parent=self._parent_state,
         )
 
         # 부모에 자식으로 추가
-        if self.parent:
-            self.parent.add_child(state)
+        if self._parent_state:
+            self._parent_state.add_child(state)
 
         return state
 

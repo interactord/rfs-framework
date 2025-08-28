@@ -229,7 +229,7 @@ class AsyncTaskManager:
         self.is_running = True
         for i in range(self.config.max_workers):
             worker_task = asyncio.create_task(self._worker(f"worker-{i}"))
-            self.worker_tasks = self.worker_tasks + [worker_task]
+            self.worker_tasks.append(worker_task)
         self.cleanup_task = asyncio.create_task(self._cleanup_loop())
         if self.config.collect_metrics:
             self.metrics_task = asyncio.create_task(self._metrics_loop())

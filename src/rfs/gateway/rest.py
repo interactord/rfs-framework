@@ -94,9 +94,9 @@ class RestRequest:
 class RestResponse:
     """REST 응답"""
 
-    status_code = 200
+    status_code: int = 200
     headers: Dict[str, Any] = field(default_factory=dict)
-    body = None
+    body: Optional[bytes] = None
     json_body: Optional[Dict[str, Any]] = None
 
     def set_json(self, data: Any):
@@ -499,9 +499,9 @@ class RateLimitMiddleware(RestMiddleware):
 class RouterConfig:
     """라우터 설정"""
 
-    base_path = ""
+    base_path: str = ""
     middleware: List[str] = field(default_factory=list)
-    error_handler = None
+    error_handler: Optional[Callable] = None
 
 
 class RestGateway:

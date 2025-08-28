@@ -43,15 +43,15 @@ class LogLevel(Enum):
 class LogContext:
     """로그 컨텍스트"""
 
-    request_id = None
-    user_id = None
-    session_id = None
-    trace_id = None
-    span_id = None
-    correlation_id = None
-    tenant_id = None
-    service_name = None
-    operation = None
+    request_id: Optional[str] = None
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    trace_id: Optional[str] = None
+    span_id: Optional[str] = None
+    correlation_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    service_name: Optional[str] = None
+    operation: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -629,3 +629,26 @@ class LogContextManager:
 def with_log_context(context: LogContext) -> LogContextManager:
     """로그 컨텍스트와 함께 실행"""
     return LogContextManager(context)
+
+
+# Export convenience functions for import
+__all__ = [
+    "EnhancedLogger",
+    "LogLevel", 
+    "LogContext",
+    "LogFormatter",
+    "JSONLogFormatter", 
+    "CustomLogFormatter",
+    "get_logger",
+    "get_default_logger",
+    "set_log_context",
+    "get_log_context",
+    "log_info",
+    "log_error", 
+    "log_warning",
+    "log_debug",
+    "log_critical",
+    "log_execution",
+    "with_log_context",
+    "LogContextManager",
+]

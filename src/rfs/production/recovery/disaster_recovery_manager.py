@@ -73,8 +73,8 @@ class RPO:
     """Recovery Point Objective - 복구 시점 목표"""
 
     target_minutes: int
-    actual_minutes = None
-    last_backup_time = None
+    actual_minutes: Optional[int] = None
+    last_backup_time: Optional[datetime] = None
     data_loss_acceptable = False
 
 
@@ -83,9 +83,9 @@ class RTO:
     """Recovery Time Objective - 복구 시간 목표"""
 
     target_minutes: int
-    actual_minutes = None
-    recovery_start_time = None
-    recovery_end_time = None
+    actual_minutes: Optional[int] = None
+    recovery_start_time: Optional[datetime] = None
+    recovery_end_time: Optional[datetime] = None
 
 
 @dataclass
@@ -382,7 +382,7 @@ class FailoverManager:
         self.config = config
         self.is_primary = True
         self.failover_in_progress = False
-        self.last_failover_time = None
+        self.last_failover_time: Optional[datetime] = None
         self.failover_callbacks = []
 
     def register_failover_callback(self, callback: Callable) -> None:

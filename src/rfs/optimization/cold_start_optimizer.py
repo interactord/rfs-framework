@@ -138,7 +138,7 @@ class ColdStartOptimizer:
     def __init__(self, config=None):
         self.config = config or OptimizationConfig()
         self.start_time = time.time()
-        self.metrics = StartupMetrics()
+        self.metrics: StartupMetrics = StartupMetrics()
         self._preloaded_modules: Set[str] = set()
         self._warmup_functions = []
         self._optimization_completed = False
@@ -347,7 +347,7 @@ class ColdStartOptimizer:
         self, warmup_functions: List[tuple], timeout: float
     ) -> Dict[str, Any]:
         """동기 워밍업 실행"""
-        results = {"successful": 0, "failed": 0, "function_results": {}}
+        results: Dict[str, Any] = {"successful": 0, "failed": 0, "function_results": {}}
         start_time = time.time()
         for priority, func in warmup_functions:
             if time.time() - start_time > timeout:
@@ -361,10 +361,15 @@ class ColdStartOptimizer:
                 else:
                     result = func()
                 exec_time = time.time() - func_start
+                
+                # 명시적 타입 캐스팅으로 mypy 에러 해결
+                function_results = results.get("function_results", {})
+                assert isinstance(function_results, dict)
+                
                 results = {
                     **results,
                     "function_results": {
-                        **results.get("function_results", {}),
+                        **function_results,
                         func_name: {
                             "success": True,
                             "result": result,
@@ -372,13 +377,20 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["successful"] = int(results.get("successful", 0)) + 1
+                successful_count = results.get("successful", 0)
+                assert isinstance(successful_count, int)
+                results["successful"] = successful_count + 1
             except Exception as e:
                 exec_time = time.time() - func_start
+                
+                # 명시적 타입 캐스팅으로 mypy 에러 해결
+                function_results = results.get("function_results", {})
+                assert isinstance(function_results, dict)
+                
                 results = {
                     **results,
                     "function_results": {
-                        **results.get("function_results", {}),
+                        **function_results,
                         func_name: {
                             "success": False,
                             "error": str(e),
@@ -386,7 +398,9 @@ class ColdStartOptimizer:
                         },
                     },
                 }
-                results["failed"] = int(results.get("failed", 0)) + 1
+                failed_count = results.get("failed", 0)
+                assert isinstance(failed_count, int)
+                results["failed"] = failed_count + 1
                 if self.config.log_optimization_steps:
                     logger.warning(f"Warmup function {func_name} failed: {e}")
         return results
@@ -480,7 +494,8 @@ class ColdStartOptimizer:
         """현재 메모리 사용량 조회 (MB)"""
         try:
             process = psutil.Process()
-            return process.memory_info().rss / (1024 * 1024)
+            memory_bytes: float = float(process.memory_info().rss)
+            return memory_bytes / (1024 * 1024)
         except Exception:
             return 0.0
 

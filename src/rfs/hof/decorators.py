@@ -13,7 +13,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from threading import Lock, Timer
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
 logger = logging.getLogger(__name__)
 

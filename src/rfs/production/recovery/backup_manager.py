@@ -102,14 +102,14 @@ class BackupMetadata:
     target_id: str
     backup_type: BackupType
     start_time: datetime
-    end_time = None
-    size_bytes = 0
-    file_count = 0
-    checksum = None
+    end_time: Optional[datetime] = None
+    size_bytes: int = 0
+    file_count: int = 0
+    checksum: Optional[str] = None
     compression_ratio: float = 1.0
-    encrypted = False
-    verified = False
-    parent_backup_id = None
+    encrypted: bool = False
+    verified: bool = False
+    parent_backup_id: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -141,10 +141,10 @@ class RestoreOperation:
     status: BackupStatus
     progress: float = 0.0
     start_time: datetime = field(default_factory=datetime.now)
-    end_time = None
-    error_message = None
-    verify_after_restore = True
-    overwrite_existing = False
+    end_time: Optional[datetime] = None
+    error_message: Optional[str] = None
+    verify_after_restore: bool = True
+    overwrite_existing: bool = False
 
 
 @dataclass

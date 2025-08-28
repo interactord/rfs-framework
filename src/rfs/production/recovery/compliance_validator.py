@@ -117,7 +117,7 @@ class ComplianceReport:
     control_results: List[ValidationResult]
     summary: Dict[str, Any]
     recommendations: List[str]
-    next_review_date = None
+    next_review_date: Optional[datetime] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 

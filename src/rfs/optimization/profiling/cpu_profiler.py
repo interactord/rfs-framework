@@ -40,7 +40,7 @@ class CPUCoreUsage:
 
     core_id: int
     usage_percent: float
-    frequency = None
+    frequency: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -79,8 +79,8 @@ class CPUSnapshot:
     loadavg: Optional[List[float]]
     core_usage: List[CPUCoreUsage]
     top_processes: List[ProcessCPUInfo]
-    context_switches = None
-    interrupts = None
+    context_switches: Optional[int] = None
+    interrupts: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -86,11 +86,11 @@ class CacheEntry:
     ttl: int
     created_at: float
     accessed_at: float
-    access_count = 0
-    size_bytes = 0
+    access_count: int = 0
+    size_bytes: int = 0
     tags: Set[str] = field(default_factory=set)
-    version = 1
-    compressed = False
+    version: int = 1
+    compressed: bool = False
 
 
 @dataclass

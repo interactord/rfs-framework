@@ -105,6 +105,10 @@
          <lastmod>2025-08-28</lastmod>
     </url>
     <url>
+         <loc>https://interactord.github.io/rfs-framework/27-reactive-programming-guide/</loc>
+         <lastmod>2025-08-28</lastmod>
+    </url>
+    <url>
          <loc>https://interactord.github.io/rfs-framework/99-implementation-status/</loc>
          <lastmod>2025-08-28</lastmod>
     </url>
@@ -162,6 +166,10 @@
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/</loc>
+         <lastmod>2025-08-28</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/api/async-pipeline/async-result/</loc>
          <lastmod>2025-08-28</lastmod>
     </url>
     <url>

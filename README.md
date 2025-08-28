@@ -5,7 +5,7 @@
 > **Enterprise-Grade Reactive Functional Serverless Framework for Python**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/Version-4.3.0-green.svg)](https://pypi.org/project/rfs-framework/)
+[![Version](https://img.shields.io/badge/Version-4.4.0-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Cloud Run Ready](https://img.shields.io/badge/Cloud%20Run-Ready-green.svg)](https://cloud.google.com/run)
 [![Code Coverage](https://codecov.io/gh/interactord/rfs-framework/branch/main/graph/badge.svg)](https://codecov.io/gh/interactord/rfs-framework)
@@ -20,7 +20,10 @@
 ## 🎯 Why RFS Framework?
 
 - **타입 안전성**: Result 패턴으로 예외 없는 에러 처리
-- **반응형 스트림**: Mono/Flux 패턴의 비동기 처리
+- **반응형 스트림**: Mono/Flux 패턴의 비동기 처리  
+- **웹 통합**: FastAPI + AsyncResult 완벽 통합 ✨ **NEW v4.4.0**
+- **프로덕션 로깅**: 민감 데이터 마스킹 및 메트릭 수집 ✨ **NEW v4.4.0**
+- **포괄적 테스팅**: AsyncResult 전용 테스팅 도구 ✨ **NEW v4.4.0**
 - **클라우드 네이티브**: Google Cloud Run 최적화
 - **프로덕션 준비**: 모니터링, 보안, 배포 전략 내장
 
@@ -29,21 +32,21 @@
 ### Installation
 
 ```bash
-# PyPI에서 설치 (v4.0.0 - 안정 버전)
+# PyPI에서 최신 버전 설치 (v4.4.0)
 pip install rfs-framework
 
-# 선택적 모듈 설치
-pip install rfs-framework[web]       # FastAPI 웹 프레임워크 (완료)
-pip install rfs-framework[database]  # 데이터베이스 지원 (완료)
-pip install rfs-framework[test]      # 테스팅 도구 (완료)
-pip install rfs-framework[dev]       # 개발 도구 (완료)
-pip install rfs-framework[docs]      # 문서화 도구 (TBD)
-pip install rfs-framework[ai]        # AI/ML 통합 (TBD)
+# 새로운 웹 통합 기능 포함 🚀
+pip install "rfs-framework[web]"     # FastAPI + AsyncResult 통합
+pip install "rfs-framework[database]"  # 데이터베이스 지원
+pip install "rfs-framework[test]"      # AsyncResult 테스팅 도구
+pip install "rfs-framework[dev]"       # 개발 도구 및 코드 품질
+pip install "rfs-framework[docs]"      # 문서화 도구
+pip install "rfs-framework[ai]"        # AI/ML 통합 (Experimental)
 
-# 모든 기능 포함
-pip install rfs-framework[all]
+# 모든 기능 포함 (권장)
+pip install "rfs-framework[all]"
 
-# GitHub에서 최신 버전 설치 (v4.3.0)
+# 최신 개발 버전 설치
 pip install git+https://github.com/interactord/rfs-framework.git
 ```
 
@@ -63,6 +66,36 @@ def divide(a: int, b: int) -> Result[float, str]:
 result = divide(10, 2)
 if result.is_success:
     print(f"Result: {result.unwrap()}")  # Result: 5.0
+```
+
+### 🆕 AsyncResult Web Integration (v4.4.0)
+
+```python
+from fastapi import FastAPI, HTTPException
+from rfs.web.fastapi_helpers import async_result_to_response
+from rfs.logging.async_logging import AsyncResultLogger, log_async_chain
+
+app = FastAPI()
+logger = AsyncResultLogger()
+
+# FastAPI + AsyncResult 완벽 통합
+@app.get("/users/{user_id}")
+@log_async_chain(logger, "get_user")  # 자동 로깅 및 메트릭
+async def get_user(user_id: str):
+    # AsyncResult 체인 (함수형 프로그래밍)
+    result = await (
+        fetch_user(user_id)
+        .bind(validate_permissions)
+        .bind(enrich_user_profile)
+    )
+    
+    # AsyncResult → JSONResponse 자동 변환
+    return await async_result_to_response(
+        result,
+        error_mapper=lambda e: HTTPException(status_code=404, detail=str(e))
+    )
+
+# 민감 데이터 자동 마스킹, p50/p90/p99 메트릭 자동 수집
 ```
 
 ### Reactive Streams
@@ -89,18 +122,20 @@ async def process_data():
 ```
 Application Layer
 ├── CLI & Tools       → 개발자 도구
-├── Web Framework     → FastAPI 통합
+├── Web Framework     → FastAPI + AsyncResult 통합 ✨
+├── Testing Suite     → AsyncResult 전용 테스팅 도구 ✨
 └── Cloud Services    → GCP 통합
 
 Core Layer
 ├── Result Pattern    → 함수형 에러 처리
 ├── Reactive Streams  → 비동기 스트림
+├── AsyncResult Web   → FastAPI 완벽 통합 ✨ NEW
 ├── State Machine     → 상태 관리
 └── Event Sourcing    → CQRS/이벤트 스토어
 
 Infrastructure Layer
 ├── Security          → RBAC/ABAC, JWT
-├── Monitoring        → 메트릭, 로깅
+├── Monitoring        → 메트릭, 프로덕션 로깅 ✨
 ├── Deployment        → Blue-Green, Canary
 └── Optimization      → 성능 최적화
 ```
@@ -215,7 +250,7 @@ rfs-framework/
 
 ## 🚧 Status
 
-- **완성도**: 93% (v4.3.0) - [현재 커버리지 ~10%](https://codecov.io/gh/interactord/rfs-framework)
+- **완성도**: 95% (v4.4.0) - [현재 커버리지 ~10%](https://codecov.io/gh/interactord/rfs-framework)
 - **프로덕션 준비**: ✅ Ready
 - **미완성 항목**: [TODO.md](./TODO.md) 참조
 

@@ -189,6 +189,8 @@ nav:
     - 03-configuration.md
     - 04-transactions.md
     - 22-hot-library.md
+    - 25-async-pipeline.md
+    - 26-asyncresult-web-integration.md
     - 21-event-system.md
     - 23-profiles.md
     - 24-state-machine.md
@@ -218,6 +220,12 @@ nav:
       - Configuration: api/core/config.md
       - Registry: api/core/registry.md
       - Annotations: core/annotations.md
+    - Web:
+      - FastAPI Helpers: api/web/fastapi-helpers.md
+    - Logging:
+      - AsyncResult 로깅: api/logging/async-logging.md
+    - Testing:
+      - AsyncResult 테스팅: api/testing/async-result-testing.md
     - Reactive:
       - Mono: api/reactive/mono.md
       - Flux: api/reactive/flux.md

@@ -36,7 +36,7 @@ class WorkflowStep:
     output_mapping: Optional[Dict[str, str]] = None
     condition: Optional["Condition"] = None
     retry_config: Optional["RetryConfig"] = None
-    timeout = None  # 초
+    timeout: Optional[float] = None  # 초
 
     def with_config(self, **config) -> "WorkflowStep":
         """설정 추가"""
@@ -157,44 +157,36 @@ class ConditionalStep(WorkflowStep):
     """조건부 스텝"""
 
     condition: Condition
+    step_type: StepType = StepType.CONDITIONAL
     true_steps: List[WorkflowStep] = field(default_factory=list)
     false_steps: List[WorkflowStep] = field(default_factory=list)
-
-    def __post_init__(self):
-        self.step_type = StepType.CONDITIONAL
 
 
 @dataclass
 class ParallelStep(WorkflowStep):
     """병렬 실행 스텝"""
 
+    step_type: StepType = StepType.PARALLEL
     parallel_steps: List[WorkflowStep] = field(default_factory=list)
-    wait_for_all = True  # 모든 스텝 완료 대기 여부
-
-    def __post_init__(self):
-        self.step_type = StepType.PARALLEL
+    wait_for_all: bool = True  # 모든 스텝 완료 대기 여부
 
 
 @dataclass
 class SequentialStep(WorkflowStep):
     """순차 실행 스텝"""
 
+    step_type: StepType = StepType.SEQUENTIAL
     sequential_steps: List[WorkflowStep] = field(default_factory=list)
-
-    def __post_init__(self):
-        self.step_type = StepType.SEQUENTIAL
 
 
 @dataclass
 class LoopStep(WorkflowStep):
     """반복 실행 스텝"""
 
+    step_type: StepType = StepType.LOOP
     loop_steps: List[WorkflowStep] = field(default_factory=list)
-    condition = None
-    max_iterations = None
-
-    def __post_init__(self):
-        self.step_type = StepType.LOOP
+    condition: Optional[Condition] = None
+    max_iterations: Optional[int] = None
 
 
 @dataclass
@@ -203,8 +195,8 @@ class WorkflowDefinition:
 
     id: str
     name: str
-    description = None
-    version = "1.0"
+    description: Optional[str] = None
+    version: str = "1.0"
     steps: List[WorkflowStep] = field(default_factory=list)
     variables: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)

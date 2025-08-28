@@ -129,15 +129,15 @@ class ServiceHealth:
 class ServiceMetadata:
     """서비스 메타데이터"""
 
-    version = "1.0.0"
-    environment = "production"
-    region = "default"
-    zone = "default"
+    version: str = "1.0.0"
+    environment: str = "production"
+    region: str = "default"
+    zone: str = "default"
     tags: List[str] = field(default_factory=list)
     labels: Dict[str, Any] = field(default_factory=dict)
     annotations: Dict[str, Any] = field(default_factory=dict)
-    weight = 100  # 로드 밸런싱 가중치
-    priority = 0  # 우선순위
+    weight: int = 100  # 로드 밸런싱 가중치
+    priority: int = 0  # 우선순위
 
     def matches_tags(self, required_tags: List[str]) -> bool:
         """태그 매칭"""
@@ -156,7 +156,7 @@ class ServiceInfo:
     """서비스 정보"""
 
     service_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    name = ""
+    name: str = ""
     endpoint: ServiceEndpoint = field(
         default_factory=lambda: ServiceEndpoint("localhost", 8080)
     )
@@ -167,7 +167,7 @@ class ServiceInfo:
     # 등록 정보
     registered_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    ttl = None
+    ttl: Optional[timedelta] = None
 
     # 의존성
     dependencies: List[str] = field(default_factory=list)

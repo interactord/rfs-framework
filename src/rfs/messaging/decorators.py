@@ -359,8 +359,8 @@ def message_metrics(
 
 def batch_handler(batch_size: int = 10, batch_timeout: float = 1.0, max_batch_size: int = 100):
     """배치 메시지 처리 데코레이터"""
-    message_batches = {}
-    batch_timers = {}
+    message_batches: Dict[str, List[Message]] = {}
+    batch_timers: Dict[str, Optional[asyncio.Task]] = {}
 
     def decorator(func: Callable) -> Callable:
 

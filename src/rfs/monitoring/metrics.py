@@ -39,7 +39,7 @@ class Metric:
     value: Union[int, float]
     labels: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-    description = None
+    description: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {

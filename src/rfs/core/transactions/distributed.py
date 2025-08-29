@@ -233,7 +233,7 @@ class SagaTransaction:
         """
         results = []
         self.event_bus.publish(
-            Event(type="saga.started", source=self.name, data={"saga_id": self.saga_id})
+            Event(event_type="saga.started", source=self.name, data={"saga_id": self.saga_id})
         )
         for step in self.steps:
             try:

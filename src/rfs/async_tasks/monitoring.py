@@ -76,6 +76,12 @@ class TaskMetrics:
 
     def update_from_metadata(self, metadata: TaskMetadata):
         """메타데이터로부터 업데이트"""
+        total_tasks: int = 0
+        successful_tasks: int = 0
+        failed_tasks: int = 0
+        cancelled_tasks: int = 0
+        timeout_tasks: int = 0
+        
         total_tasks = total_tasks + 1
         match metadata.status:
             case TaskStatus.COMPLETED:
@@ -219,7 +225,7 @@ class TaskMonitor:
 
     def record_task_error(self, metadata: TaskMetadata, error: Exception):
         """작업 에러 기록"""
-        failed_tasks = failed_tasks + 1
+        self.metrics.failed_tasks += 1
         self.metrics.active_tasks = max(0, self.metrics.active_tasks - 1)
         self.task_history = self.task_history + [
             {
@@ -257,6 +263,9 @@ class TaskMonitor:
     def get_window_metrics(self) -> TaskMetrics:
         """시간 윈도우 메트릭 조회"""
         window_metrics = TaskMetrics()
+        successful_tasks: int = 0
+        failed_tasks: int = 0
+        total_tasks: int = 0
         now = datetime.now()
         for task in self.task_history:
             if "timestamp" in task:

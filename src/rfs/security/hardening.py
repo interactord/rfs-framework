@@ -252,13 +252,13 @@ class SecurityHardening:
         passed_checks = 0
         failed_checks = 0
         
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         # Check minimum length
         if self.policy.min_password_length >= 12:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.warnings = result.warnings + [
                 f"Password length should be at least 12 characters"
             ]
@@ -273,43 +273,43 @@ class SecurityHardening:
                     self.policy.require_special_chars,
                 ]
             ):
-                passed_checks = passed_checks + 1
+                result.passed_checks += 1
             else:
-                failed_checks = failed_checks + 1
+                result.failed_checks += 1
                 result.recommendations = result.recommendations + [
                     "Enable all password complexity requirements"
                 ]
 
     def _check_https_enforcement(self, target: Dict[str, Any], result: HardeningResult):
         """HTTPS 강제 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.require_https:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
             result.remediation_actions = result.remediation_actions + [
                 "HTTPS enforced for all connections"
             ]
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.critical_issues = result.critical_issues + ["HTTPS not enforced"]
 
     def _check_authentication(
         self, target: Dict[str, Any], result: HardeningResult, basic=False
     ):
         """인증 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.max_login_attempts <= 5:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.warnings = result.warnings + [
                 "Consider limiting login attempts to prevent brute force"
             ]
 
         if not basic and self.policy.require_mfa:
-            total_checks = total_checks + 1
-            passed_checks = passed_checks + 1
+            result.total_checks += 1
+            result.passed_checks += 1
             result.remediation_actions = result.remediation_actions + [
                 "MFA enabled for all users"
             ]
@@ -318,55 +318,55 @@ class SecurityHardening:
         self, target: Dict[str, Any], result: HardeningResult
     ):
         """세션 관리 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.session_timeout_minutes <= 30:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.recommendations = result.recommendations + [
                 "Reduce session timeout to 30 minutes or less"
             ]
 
     def _check_rate_limiting(self, target: Dict[str, Any], result: HardeningResult):
         """요청 제한 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.rate_limit_per_minute > 0:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
             result.remediation_actions = result.remediation_actions + [
                 f"Rate limiting set to {self.policy.rate_limit_per_minute}/min"
             ]
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.critical_issues = result.critical_issues + [
                 "No rate limiting configured"
             ]
 
     def _check_input_validation(self, target: Dict[str, Any], result: HardeningResult):
         """입력 검증 검사"""
-        total_checks = total_checks + 1
-        passed_checks = passed_checks + 1  # Assume validation is in place
+        result.total_checks += 1
+        result.passed_checks += 1  # Assume validation is in place
         result.remediation_actions = result.remediation_actions + [
             "Input validation enabled for all user inputs"
         ]
 
     def _check_error_handling(self, target: Dict[str, Any], result: HardeningResult):
         """에러 처리 검사"""
-        total_checks = total_checks + 1
-        passed_checks = passed_checks + 1
+        result.total_checks += 1
+        result.passed_checks += 1
         result.recommendations = result.recommendations + [
             "Ensure error messages don't expose sensitive information"
         ]
 
     def _check_mfa_enforcement(self, target: Dict[str, Any], result: HardeningResult):
         """MFA 강제 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.require_mfa:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.recommendations = result.recommendations + [
                 "Enable MFA for enhanced security"
             ]
@@ -375,23 +375,23 @@ class SecurityHardening:
         self, target: Dict[str, Any], result: HardeningResult
     ):
         """저장 데이터 암호화 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.require_data_encryption_at_rest:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
             result.remediation_actions = result.remediation_actions + [
                 "Data encryption at rest enabled"
             ]
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.critical_issues = result.critical_issues + [
                 "Data not encrypted at rest"
             ]
 
     def _check_threat_protection(self, target: Dict[str, Any], result: HardeningResult):
         """위협 보호 검사"""
-        total_checks = total_checks + 1
-        passed_checks = passed_checks + 1
+        result.total_checks += 1
+        result.passed_checks += 1
         result.remediation_actions = result.remediation_actions + [
             "Advanced threat protection configured"
         ]
@@ -406,8 +406,8 @@ class SecurityHardening:
         ]
 
         for header in required_headers:
-            total_checks = total_checks + 1
-            passed_checks = passed_checks + 1  # Assume headers are set
+            result.total_checks += 1
+            result.passed_checks += 1  # Assume headers are set
 
         result.remediation_actions = result.remediation_actions + [
             "Security headers configured"
@@ -415,8 +415,8 @@ class SecurityHardening:
 
     def _check_zero_trust(self, target: Dict[str, Any], result: HardeningResult):
         """제로 트러스트 검사"""
-        total_checks = total_checks + 1
-        passed_checks = passed_checks + 1
+        result.total_checks += 1
+        result.passed_checks += 1
         result.remediation_actions = result.remediation_actions + [
             "Zero trust architecture implemented"
         ]
@@ -425,35 +425,35 @@ class SecurityHardening:
         self, target: Dict[str, Any], result: HardeningResult
     ):
         """고급 암호화 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.encryption_algorithm == "AES-256":
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.recommendations = result.recommendations + ["Use AES-256 encryption"]
 
     def _check_continuous_monitoring(
         self, target: Dict[str, Any], result: HardeningResult
     ):
         """지속적 모니터링 검사"""
-        total_checks = total_checks + 1
+        result.total_checks += 1
 
         if self.policy.enable_audit_logging:
-            passed_checks = passed_checks + 1
+            result.passed_checks += 1
             result.remediation_actions = result.remediation_actions + [
                 "Continuous monitoring and audit logging enabled"
             ]
         else:
-            failed_checks = failed_checks + 1
+            result.failed_checks += 1
             result.warnings = result.warnings + [
                 "Enable audit logging for security monitoring"
             ]
 
     def _check_incident_response(self, target: Dict[str, Any], result: HardeningResult):
         """사고 대응 검사"""
-        total_checks = total_checks + 1
-        passed_checks = passed_checks + 1
+        result.total_checks += 1
+        result.passed_checks += 1
         result.remediation_actions = result.remediation_actions + [
             "Incident response plan in place"
         ]

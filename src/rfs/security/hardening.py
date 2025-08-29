@@ -646,7 +646,8 @@ class SecurityHardening:
             return 0.0
 
         latest = self._hardening_history[-1]
-        return latest.get("success_rate", 0.0)
+        success_rate: float = latest.get("success_rate", 0.0)
+        return success_rate
 
 
 # Helper functions

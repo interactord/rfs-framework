@@ -46,7 +46,7 @@ class StateMachine:
 
     def __init__(self, name="StateMachine"):
         self.name = name
-        self.states = {}
+        self.states: Dict[str, State] = {}
         self.transitions: Dict[str, List[Transition]] = {}
         self.current_state: Optional[State] = None
         self.initial_state = None
@@ -73,7 +73,7 @@ class StateMachine:
         key = f"{transition.from_state.name}:{transition.event}"
         if key not in self.transitions:
             self.transitions = {**self.transitions, key: []}
-        self.transitions[key] = transitions[key] + [transition]
+        self.transitions[key] = self.transitions[key] + [transition]
         return self
 
     def add_state_listener(self, listener: callable) -> "StateMachine":
@@ -151,13 +151,13 @@ class StateMachine:
                 except Exception as e:
                     print(f"Transition listener failed: {e}")
             if result.success:
-                total_transitions = total_transitions + 1
+                self.total_transitions = self.total_transitions + 1
                 if transition.transition_type.value == "external":
                     await self._change_state(transition.to_state)
                 self.context = {**context, **result.context}
                 return
             else:
-                failed_transitions = failed_transitions + 1
+                self.failed_transitions = self.failed_transitions + 1
 
     async def _change_state(self, new_state: State):
         """상태 변경"""

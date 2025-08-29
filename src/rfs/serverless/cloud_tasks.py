@@ -113,7 +113,7 @@ class CloudTasksClient:
         self.location = location
         self.handler_registry = TaskHandler()
         self._client = None
-        self._local_queue = []
+        self._local_queue: List[Any] = []
         self._processing = False
 
     async def initialize(self):

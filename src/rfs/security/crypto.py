@@ -247,6 +247,11 @@ class CryptoManager:
                 public_key_pem, backend=self.backend
             )
 
+            # RSA 공개키인지 확인
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+            if not isinstance(public_key, RSAPublicKey):
+                return Failure("RSA 공개키가 아닙니다")
+
             ciphertext = public_key.encrypt(
                 data,
                 padding.OAEP(
@@ -274,6 +279,11 @@ class CryptoManager:
             private_key = serialization.load_pem_private_key(
                 private_key_pem, password=None, backend=self.backend
             )
+
+            # RSA 개인키인지 확인
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+            if not isinstance(private_key, RSAPrivateKey):
+                return Failure("RSA 개인키가 아닙니다")
 
             plaintext = private_key.decrypt(
                 encrypted_data,
@@ -313,8 +323,7 @@ class CryptoManager:
                     hashes.SHA256(),
                 )
             else:
-                # 다른 키 타입에 대해서는 기본 sign 방법 사용
-                signature = private_key.sign(data)
+                return Failure("RSA 키만 지원됩니다")
 
             return Success(signature)
 
@@ -348,8 +357,7 @@ class CryptoManager:
                     hashes.SHA256(),
                 )
             else:
-                # 다른 키 타입에 대해서는 기본 verify 방법 사용
-                public_key.verify(signature, data)
+                return Failure("RSA 키만 지원됩니다")
 
             return Success(True)
 

@@ -176,7 +176,7 @@ async def initialize_cloud_run_services(
     enable_autoscaling=True,
 ) -> dict:
     """Cloud Run 서비스들 일괄 초기화"""
-    initialized_services = {}
+    initialized_services: Dict[str, Any] = {}
     try:
         if project_id is None:
             project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")

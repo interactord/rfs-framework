@@ -573,9 +573,9 @@ class AsyncResultScenarioTester:
     
     def __init__(self, test_name: str):
         self.test_name = test_name
-        self.scenarios = []
-        self.setup_functions = []
-        self.teardown_functions = []
+        self.scenarios: List[Dict[str, Any]] = []
+        self.setup_functions: List[Callable] = []
+        self.teardown_functions: List[Callable] = []
     
     def add_scenario(
         self,
@@ -708,7 +708,7 @@ class AsyncResultPerformanceTester:
                     response_times.append(execution_time)
         
         # 지정된 시간 동안 실행
-        tasks = []
+        tasks: List[asyncio.Task] = []
         while time.time() < end_time:
             if len(tasks) < max_concurrent:
                 task = asyncio.create_task(single_execution())

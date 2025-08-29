@@ -173,7 +173,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """시스템 안정성 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             validation_suite = ValidationSuite(
                 name="시스템 안정성 검증",
@@ -251,7 +251,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """성능 기준 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             optimization_suite = OptimizationSuite(
                 name="성능 기준 검증", target_types=[]
@@ -324,7 +324,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """보안 준비성 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             scan_result = await self.security_scanner.run_security_scan()
             if scan_result.is_success():
@@ -389,7 +389,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """모니터링 구성 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             logging_check = await self._check_logging_configuration()
             if logging_check:
@@ -420,7 +420,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """배포 구성 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             docker_check = await self._check_docker_configuration()
             if docker_check:
@@ -451,7 +451,7 @@ class ProductionReadinessChecker:
         self, target_level: ReadinessLevel
     ) -> List[ReadinessCheck]:
         """재해 복구 준비성 검증"""
-        checks = []
+        checks: List[ReadinessCheck] = []
         try:
             backup_check = await self._check_backup_strategy()
             if backup_check:

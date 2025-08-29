@@ -330,13 +330,13 @@ class DistributedCacheManager:
             max_memory_mb=100,
             default_ttl=3600,
         )
-        self.partitions = {}
+        self.partitions: Dict[str, LocalCache] = {}
         self.l1_cache = LocalCache(self.default_config)
-        self.l2_cache = None
-        self.warmup_tasks = {}
+        self.l2_cache: Optional[Any] = None
+        self.warmup_tasks: Dict[str, asyncio.Task] = {}
         self.prefetch_patterns: Dict[str, Dict[str, Any]] = {}
         self.global_statistics = CacheStatistics()
-        self.invalidation_listeners = []
+        self.invalidation_listeners: List[Callable[[str], None]] = []
         self._running = False
         self._tasks: Set[asyncio.Task] = set()
 
@@ -364,7 +364,7 @@ class DistributedCacheManager:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks = {}
+                _tasks: Dict[str, Any] = {}
             if self.l2_cache:
                 pass
             return Success(True)
@@ -502,9 +502,9 @@ class DistributedCacheManager:
                 if partition_id in self.partitions:
                     partition = self.partitions[partition_id]
                     total_cleared = len(partition.entries)
-                    entries = {}
+                    entries: Dict[str, Any] = {}
             else:
-                l1_cache = {}
+                l1_cache: Dict[str, Any] = {}
                 if self.l2_cache:
                     pass
                 for partition in self.partitions.values():

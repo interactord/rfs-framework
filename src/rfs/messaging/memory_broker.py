@@ -140,7 +140,7 @@ class MemoryTopic:
             return
 
         # 각 구독자에게 비동기적으로 알림
-        tasks = []
+        tasks: List[asyncio.Task] = []
         for handler in list(self.subscribers):  # 복사본으로 순회
             try:
                 if asyncio.iscoroutinefunction(handler):
@@ -176,10 +176,10 @@ class MemoryMessageBroker(MessageBroker):
         self.config: MemoryMessageConfig = config
 
         # 토픽 저장소
-        self.topics = {}
+        self.topics: Dict[str, MemoryTopic] = {}
 
         # Work Queue 구현을 위한 데이터
-        self.work_queues = {}
+        self.work_queues: Dict[str, deque] = {}
         self.work_queue_consumers: Dict[str, List[asyncio.Task]] = defaultdict(list)
 
         # 메시지 지속성 (메모리에서만)
@@ -215,11 +215,11 @@ class MemoryMessageBroker(MessageBroker):
                 if consumers:
                     await asyncio.gather(*consumers, return_exceptions=True)
 
-            work_queue_consumers = {}
-            work_queues = {}
+            work_queue_consumers: Dict[str, List[asyncio.Task]] = {}
+            work_queues: Dict[str, asyncio.Queue] = {}
 
             # 토픽 정리
-            topics = {}
+            topics: Dict[str, Any] = {}
 
             self._connected = False
             logger.info("메모리 메시지 브로커 정리 완료")
@@ -299,7 +299,7 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                subscribers = {}
+                subscribers: Dict[str, Any] = {}
                 memory_topic.stats = {**memory_topic.stats, "subscriber_count": 0}
 
             logger.info(f"메모리 구독 해제: {topic}")
@@ -406,11 +406,11 @@ class MemoryMessageBroker(MessageBroker):
                 return Success(None)  # 이미 존재
 
             # 큐 생성
-            queue = asyncio.Queue(maxsize=self.config.max_queue_size)
+            queue: asyncio.Queue = asyncio.Queue(maxsize=self.config.max_queue_size)
             self.work_queues = {**self.work_queues, topic: queue}
 
             # 워커 생성
-            consumers = []
+            consumers: List[asyncio.Task] = []
             for i in range(worker_count):
                 consumer = asyncio.create_task(
                     self._work_queue_consumer(topic, queue, f"worker-{i}")
@@ -556,7 +556,7 @@ class MemoryMessageBroker(MessageBroker):
         try:
             if topic in self.topics:
                 memory_topic = self.topics[topic]
-                messages = {}
+                messages: Dict[str, Any] = {}
                 memory_topic.stats = {**memory_topic.stats, "total_size": 0}
 
                 logger.info(f"토픽 메시지 삭제: {topic}")

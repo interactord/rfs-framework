@@ -190,7 +190,7 @@ class FileStatePersistence:
     async def list_snapshots(self) -> List[str]:
         """스냅샷 목록"""
         try:
-            snapshots = []
+            snapshots: List[str] = []
             for path in self.base_path.glob("*.json"):
                 snapshots = snapshots + [path.stem]
             return snapshots
@@ -336,7 +336,7 @@ class PersistenceManager:
 
     async def create_snapshot(self, state_machine) -> StateMachineSnapshot:
         """상태 머신에서 스냅샷 생성"""
-        event_history = []
+        event_history: List[Dict[str, Any]] = []
         for event in state_machine.event_history:
             event_dict = {
                 "name": event.name,

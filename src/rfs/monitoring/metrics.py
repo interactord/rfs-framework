@@ -252,7 +252,7 @@ class Summary:
         self.labels = labels or {}
         self.max_age = max_age
         self.max_samples = max_samples
-        self._samples = deque()
+        self._samples: deque = deque()
         self._count = 0
         self._sum = 0.0
         self._lock = threading.Lock()
@@ -376,7 +376,7 @@ class MemoryMetricsStorage(MetricsStorage):
     ) -> Result[List[Metric], str]:
         """메트릭 조회"""
         async with self._lock:
-            filtered_metrics = []
+            filtered_metrics: List[Metric] = []
             for metric in self._metrics:
                 if name_pattern and name_pattern not in metric.name:
                     continue
@@ -518,7 +518,7 @@ class MetricsCollector:
 
     async def get_all_metrics(self) -> List[Metric]:
         """모든 현재 메트릭 반환"""
-        metrics = []
+        metrics: List[Metric] = []
         for counter in self._counters.values():
             metrics = metrics + [counter.to_metric()]
         for gauge in self._gauges.values():

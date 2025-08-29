@@ -166,9 +166,9 @@ class TestSuite:
 
     def __init__(self, name: str):
         self.name = name
-        self.test_cases = []
-        self.setup_hooks = []
-        self.teardown_hooks = []
+        self.test_cases: List[Union[TestCase, Callable]] = []
+        self.setup_hooks: List[Callable] = []
+        self.teardown_hooks: List[Callable] = []
 
     def add_test(self, test_case: Union[TestCase, Callable]):
         """테스트 추가"""
@@ -283,7 +283,7 @@ class TestRunner:
         if self.verbose:
             await logger.log_info(f"테스트 스위트 시작: {test_suite.name}")
         await test_suite.run_setup_hooks()
-        results = []
+        results: List[TestResult] = []
         try:
             for test_case in test_suite.test_cases:
                 test_result = await self.run_test_case(test_case)
@@ -325,7 +325,7 @@ class TestRunner:
 
 def discover_tests(directory: str, pattern="test_*.py") -> List[TestCase]:
     """테스트 파일에서 테스트 케이스 발견"""
-    test_cases = []
+    test_cases: List[TestCase] = []
     test_files = glob.glob(os.path.join(directory, pattern))
     for test_file in test_files:
         try:

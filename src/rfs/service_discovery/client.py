@@ -202,7 +202,7 @@ class WeightedBalancer(LoadBalancer):
         """엔드포인트 선택"""
         if not endpoints:
             return None
-        weighted_endpoints = []
+        weighted_endpoints: List[ServiceEndpoint] = []
         for endpoint in endpoints:
             weight = self.weights.get(endpoint, 100)
             failures = self.failures.get(endpoint, 0)
@@ -252,9 +252,11 @@ class ServiceClient:
         self.retry_strategy = retry_strategy
         self.max_retries = max_retries
         self.timeout = timeout
-        self.endpoints = []
+        self.endpoints: List[ServiceEndpoint] = []
         self.last_discovery = None
         self.discovery_interval = timedelta(seconds=30)
+        
+        # 통계 변수 초기화
         self.total_requests = 0
         self.successful_requests = 0
         self.failed_requests = 0
@@ -292,7 +294,7 @@ class ServiceClient:
                 lambda: self._execute_call(endpoint, method, *args, **kwargs)
             )
             if type(result).__name__ == "Success":
-                successful_requests = successful_requests + 1
+                self.successful_requests = self.successful_requests + 1
                 self.load_balancer.report_success(endpoint)
                 return result
             else:
@@ -300,7 +302,7 @@ class ServiceClient:
                 last_error = result.error
                 if attempt < self.max_retries:
                     await self._wait_before_retry(attempt)
-        failed_requests = failed_requests + 1
+        self.failed_requests = self.failed_requests + 1
         return Failure(f"All retries failed: {last_error}")
 
     async def _execute_call(

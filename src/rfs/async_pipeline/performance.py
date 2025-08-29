@@ -222,7 +222,7 @@ class AsyncBackpressureController:
         self.low_water_mark = int(buffer_size * low_water_mark)
         self.backpressure_delay = backpressure_delay
         
-        self.queue = asyncio.Queue(buffer_size)
+        self.queue: asyncio.Queue = asyncio.Queue(buffer_size)
         self.is_backpressure_active = False
         self._stats = {
             'items_processed': 0,
@@ -318,9 +318,9 @@ class AsyncStreamProcessor:
         
         self.backpressure_controller = AsyncBackpressureController(buffer_size)
         self.semaphore = asyncio.Semaphore(max_concurrency)
-        self.results_queue = asyncio.Queue()
+        self.results_queue: asyncio.Queue = asyncio.Queue()
         
-        self._processing_tasks = set()
+        self._processing_tasks: set = set()
         self._is_stopped = False
     
     async def process_stream(
@@ -344,7 +344,7 @@ class AsyncStreamProcessor:
             consumer_task = asyncio.create_task(self._consume_items())
             
             # 결과 수집 태스크 시작
-            collector_task = asyncio.create_task(self._collect_results())
+            collector_task: asyncio.Task = asyncio.create_task(self._collect_results())
             
             # 모든 태스크 완료 대기
             await producer_task
@@ -470,7 +470,7 @@ class AsyncCache:
         self.cleanup_interval = cleanup_interval
         
         self._cache: Dict[str, Dict[str, Any]] = {}
-        self._access_order = deque()  # LRU용
+        self._access_order: deque = deque()  # LRU용
         self._lock = asyncio.Lock()
         self._cleanup_task = None
         self._stats = {
@@ -674,7 +674,7 @@ def async_rate_limited(calls_per_second: float):
         calls_per_second: 초당 호출 제한 수
     """
     interval = 1.0 / calls_per_second
-    last_call_times = defaultdict(float)
+    last_call_times: defaultdict = defaultdict(float)
     lock = asyncio.Lock()
     
     def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:

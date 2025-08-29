@@ -319,8 +319,10 @@ class Mono(Generic[T]):
             값 또는 None
         """
         if timeout:
-            return await asyncio.wait_for(self.source(), timeout=timeout)
-        return await self.source()
+            result: Optional[T] = await asyncio.wait_for(self.source(), timeout=timeout)  # type: ignore[misc]
+            return result
+        result: Optional[T] = await self.source()  # type: ignore[misc] 
+        return result
 
     async def to_future(self) -> T:
         """
@@ -329,7 +331,8 @@ class Mono(Generic[T]):
         Returns:
             비동기 실행 결과
         """
-        return await self.source()
+        result: T = await self.source()  # type: ignore[misc]
+        return result
 
     async def subscribe(
         self,

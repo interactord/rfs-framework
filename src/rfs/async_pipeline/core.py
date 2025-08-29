@@ -141,7 +141,7 @@ class AsyncPipeline:
         Returns:
             AsyncResult[Any, Any]: 최종 실행 결과
         """
-        current_result = AsyncResult.from_value(initial_value)
+        current_result: AsyncResult = AsyncResult.from_value(initial_value)
         
         for i, (operation, metadata) in enumerate(zip(self.operations, self._operation_metadata)):
             try:
@@ -348,7 +348,7 @@ class AsyncPipeline:
             'steps_details': []
         }
         
-        current_result = AsyncResult.from_value(initial_value)
+        current_result: AsyncResult = AsyncResult.from_value(initial_value)
         
         for i, (operation, metadata) in enumerate(zip(self.operations, self._operation_metadata)):
             step_start = time.time()

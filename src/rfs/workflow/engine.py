@@ -364,7 +364,7 @@ class WorkflowEngine:
         self, instance: WorkflowInstance, step: "WorkflowStep"
     ) -> Dict[str, Any]:
         """스텝 입력 데이터 준비"""
-        input_data = {}
+        input_data: Dict[str, Any] = {}
         if hasattr(step, "input_mapping") and step.input_mapping:
             for output_key, input_expr in step.input_mapping.items():
                 if input_expr.startswith("${") and input_expr.endswith("}"):

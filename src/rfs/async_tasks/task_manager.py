@@ -200,16 +200,16 @@ class AsyncTaskManager:
 
     def __init__(self, config: TaskManagerConfig = None):
         self.config = config or TaskManagerConfig()
-        self.tasks = {}
-        self.running_tasks = {}
+        self.tasks: Dict[str, Task] = {}
+        self.running_tasks: Dict[str, asyncio.Task] = {}
         self.pending_queue: asyncio.PriorityQueue = asyncio.PriorityQueue(
             maxsize=self.config.max_queue_size
         )
         self.semaphore = asyncio.Semaphore(self.config.max_workers)
         self.callbacks: Dict[str, List[TaskCallback]] = {}
-        self.global_callbacks = []
+        self.global_callbacks: List[TaskCallback] = []
         self.is_running = False
-        self.worker_tasks = []
+        self.worker_tasks: List[asyncio.Task] = []
         self.metrics = {
             "total_submitted": 0,
             "total_completed": 0,
@@ -240,7 +240,7 @@ class AsyncTaskManager:
         if not self.is_running:
             return
         self.is_running = False
-        cancel_tasks = []
+        cancel_tasks: List[asyncio.Task] = []
         for task_id in list(self.running_tasks.keys()):
             cancel_tasks = cancel_tasks + [self.cancel_task(task_id)]
         if cancel_tasks:
@@ -591,7 +591,7 @@ class AsyncTaskManager:
         if not self.config.enable_result_caching:
             return
         current_time = datetime.now()
-        expired_tasks = []
+        expired_tasks: List[str] = []
         for task_id, task_info in self.tasks.items():
             if (
                 task_info.is_finished

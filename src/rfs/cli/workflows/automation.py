@@ -192,6 +192,134 @@ class ActionRunner:
         except Exception as e:
             return Failure(f"스크립트 실행 오류: {str(e)}")
 
+    async def _execute_http_request(
+        self, context: Dict[str, Any]
+    ) -> Result[Dict[str, Any], str]:
+        """HTTP 요청 실행"""
+        try:
+            import aiohttp
+            
+            url = self.config.get("url", "").format(**context)
+            method = self.config.get("method", "GET").upper()
+            headers = self.config.get("headers", {})
+            data = self.config.get("data", {})
+            
+            if not url:
+                return Failure("URL이 지정되지 않았습니다")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method, url, headers=headers, json=data) as response:
+                    result = {
+                        "status_code": response.status,
+                        "headers": dict(response.headers),
+                        "body": await response.text()
+                    }
+                    if 200 <= response.status < 300:
+                        return Success(result)
+                    else:
+                        return Failure(f"HTTP 요청 실패 (코드: {response.status})")
+        except ImportError:
+            return Failure("aiohttp 라이브러리가 필요합니다: pip install aiohttp")
+        except Exception as e:
+            return Failure(f"HTTP 요청 오류: {str(e)}")
+
+    async def _execute_notification(
+        self, context: Dict[str, Any]
+    ) -> Result[Dict[str, Any], str]:
+        """알림 실행"""
+        try:
+            notification_type = self.config.get("type", "console")
+            message = self.config.get("message", "").format(**context)
+            
+            if notification_type == "console":
+                if console:
+                    console.print(f"📢 {message}")
+                else:
+                    print(f"알림: {message}")
+                return Success({"type": "console", "message": message})
+            else:
+                return Failure(f"지원하지 않는 알림 유형: {notification_type}")
+        except Exception as e:
+            return Failure(f"알림 실행 오류: {str(e)}")
+
+    async def _execute_git_operation(
+        self, context: Dict[str, Any]
+    ) -> Result[Dict[str, Any], str]:
+        """Git 작업 실행"""
+        try:
+            operation = self.config.get("operation", "status")
+            repo_path = self.config.get("repo_path", ".")
+            
+            git_commands = {
+                "status": "git status",
+                "pull": "git pull",
+                "push": "git push",
+                "add": "git add .",
+                "commit": f"git commit -m \"{self.config.get('message', 'Automated commit')}\""
+            }
+            
+            command = git_commands.get(operation)
+            if not command:
+                return Failure(f"지원하지 않는 Git 작업: {operation}")
+                
+            process = await asyncio.create_subprocess_shell(
+                command,
+                cwd=repo_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            
+            stdout, stderr = await process.communicate()
+            result = {
+                "operation": operation,
+                "return_code": process.returncode,
+                "stdout": stdout.decode() if stdout else "",
+                "stderr": stderr.decode() if stderr else "",
+            }
+            
+            if process.returncode == 0:
+                return Success(result)
+            else:
+                return Failure(f"Git 작업 실패: {result.get('stderr')}")
+        except Exception as e:
+            return Failure(f"Git 작업 오류: {str(e)}")
+
+    async def _execute_deployment(
+        self, context: Dict[str, Any]
+    ) -> Result[Dict[str, Any], str]:
+        """배포 실행"""
+        try:
+            deployment_type = self.config.get("type", "script")
+            
+            if deployment_type == "script":
+                script_path = self.config.get("script_path")
+                if not script_path:
+                    return Failure("배포 스크립트 경로가 지정되지 않았습니다")
+                
+                # 배포 스크립트 실행
+                process = await asyncio.create_subprocess_shell(
+                    f"bash {script_path}",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                
+                stdout, stderr = await process.communicate()
+                result = {
+                    "type": deployment_type,
+                    "return_code": process.returncode,
+                    "stdout": stdout.decode() if stdout else "",
+                    "stderr": stderr.decode() if stderr else "",
+                }
+                
+                if process.returncode == 0:
+                    return Success(result)
+                else:
+                    return Failure(f"배포 실패: {result.get('stderr')}")
+            else:
+                return Failure(f"지원하지 않는 배포 유형: {deployment_type}")
+        except Exception as e:
+            return Failure(f"배포 오류: {str(e)}")
+
 
 class AutomationEngine:
     """워크플로우 자동화 엔진"""
@@ -233,7 +361,7 @@ class AutomationEngine:
             )
             self.triggers = self.triggers + [trigger]
         for workflow_name, actions_config in config.get("workflows", {}).items():
-            actions = []
+            actions: List[ActionRunner] = []
             for action_config in actions_config:
                 action = ActionRunner(
                     name=action_config["name"],

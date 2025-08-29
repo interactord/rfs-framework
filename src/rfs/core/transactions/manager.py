@@ -158,7 +158,7 @@ class TransactionManager:
                 callback.before_commit(current)
             except Exception as e:
                 logger.error(f"Callback error before commit: {e}")
-        committed_resources = []
+        committed_resources: List[str] = []
         for name, resource in self.resources.items():
             result = resource.commit(current)
             if type(result).__name__ == "Failure":
@@ -179,7 +179,7 @@ class TransactionManager:
                 callback.after_commit(current)
             except Exception as e:
                 logger.error(f"Callback error after commit: {e}")
-        context = {}
+        context: Dict[str, Any] = {}
         if current.transaction_id in self.synchronizations:
             del self.synchronizations[current.transaction_id]
         return Success(None)
@@ -215,7 +215,7 @@ class TransactionManager:
                 callback.after_rollback(current)
             except Exception as e:
                 logger.error(f"Callback error after rollback: {e}")
-        context = {}
+        context: Dict[str, Any] = {}
         if current.transaction_id in self.synchronizations:
             del self.synchronizations[current.transaction_id]
         return Success(None)
@@ -348,7 +348,7 @@ class TransactionManager:
         current = self.context.get_current()
         if not current:
             return Success(None)
-        suspended_resources = {}
+        suspended_resources: Dict[str, Any] = {}
         for name, resource in self.resources.items():
             result = resource.suspend()
             if type(result).__name__ == "Failure":
@@ -358,7 +358,7 @@ class TransactionManager:
             suspended_resources[name] = {name: result.value}
         current.status = TransactionStatus.SUSPENDED
         current.resources = {**current.resources, "suspended": suspended_resources}
-        context = {}
+        context: Dict[str, Any] = {}
         return Success(current)
 
     def _resume_transaction(self, metadata: TransactionMetadata) -> Result[None, str]:

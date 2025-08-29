@@ -125,7 +125,7 @@ class InMemoryRegistry(ServiceRegistry):
                 if name not in self.service_names:
                     return Success([])
                 service_ids = self.service_names[name]
-                services = []
+                services: List[ServiceRegistration] = []
                 for service_id in list(service_ids):
                     if service_id in self.services:
                         service = self.services[service_id]
@@ -136,8 +136,8 @@ class InMemoryRegistry(ServiceRegistry):
                             services = services + [service]
                 return Success(services)
             else:
-                services = []
-                expired_ids = []
+                services: List[ServiceRegistration] = []
+                expired_ids: List[str] = []
                 for service_id, service in self.services.items():
                     if service.is_expired:
                         expired_ids = expired_ids + [service_id]
@@ -270,7 +270,7 @@ class RedisRegistry(ServiceRegistry):
                 service_ids = self.redis.smembers(name_key)
             else:
                 service_ids = self.redis.smembers(f"{self.key_prefix}all")
-            services = []
+            services: List[ServiceRegistration] = []
             for service_id in service_ids:
                 if type(service_id).__name__ == "bytes":
                     service_id = service_id.decode("utf-8")
@@ -427,7 +427,7 @@ class ConsulRegistry(ServiceRegistry):
                 _, services = self.consul.health.service(name, passing=True)
             else:
                 _, services = self.consul.agent.services()
-            service_list = []
+            service_list: List[ServiceRegistration] = []
             for consul_service in services:
                 service = self._consul_to_service_info(consul_service)
                 service_list = service_list + [service]

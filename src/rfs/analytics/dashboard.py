@@ -100,7 +100,7 @@ class Widget(ABC):
         self.widget_type = widget_type
         self.position = position
         self.style = style or WidgetStyle()
-        self.config = {}
+        self.config: Dict[str, Any] = {}
         self.data_source = None
         self.refresh_interval = None
         self.last_updated = None
@@ -355,12 +355,12 @@ class Dashboard:
         self.title = title
         self.description = description
         self.config = config or DashboardConfig()
-        self.widgets = {}
+        self.widgets: Dict[str, BaseWidget] = {}
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
-        self.tags = []
+        self.tags: List[str] = []
         self.is_public = False
-        self._refresh_tasks = {}
+        self._refresh_tasks: Dict[str, asyncio.Task] = {}
 
     def add_widget(self, widget: Widget) -> "Dashboard":
         """위젯 추가"""
@@ -416,7 +416,7 @@ class Dashboard:
     async def render(self) -> Result[Dict[str, Any], str]:
         """대시보드 렌더링"""
         try:
-            rendered_widgets = {}
+            rendered_widgets: Dict[str, Any] = {}
             for widget_id, widget in self.widgets.items():
                 widget_result = await widget.render()
                 if widget_result.is_success():
@@ -589,7 +589,7 @@ class DashboardManager:
     """대시보드 관리자"""
 
     def __init__(self) -> None:
-        self.dashboards = {}
+        self.dashboards: Dict[str, Dashboard] = {}
 
     def create_dashboard(
         self,

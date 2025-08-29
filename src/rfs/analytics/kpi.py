@@ -126,11 +126,11 @@ class KPI(ABC):
         self.description = description
         self.unit = unit
         self.data_source = data_source
-        self.thresholds = []
-        self.targets = []
-        self.history = []
-        self.metadata = {}
-        self._cache = {}
+        self.thresholds: List[KPIThreshold] = []
+        self.targets: List[KPITarget] = []
+        self.history: List[KPIDataPoint] = []
+        self.metadata: Dict[str, Any] = {}
+        self._cache: Dict[str, Any] = {}
         self._cache_timestamp = None
         self._cache_ttl = 300  # 5분 캐시
 
@@ -510,7 +510,7 @@ class TrendKPI(KPI):
                 )
             except Exception:
                 pass
-            values = []
+            values: List[Tuple[int, float]] = []
             for i, row in enumerate(data):
                 try:
                     value = float(row[self.value_column])
@@ -540,8 +540,8 @@ class KPICalculator:
     """KPI 계산기"""
 
     def __init__(self) -> None:
-        self._kpis = {}
-        self._calculation_cache = {}
+        self._kpis: Dict[str, KPI] = {}
+        self._calculation_cache: Dict[str, Any] = {}
         self._cache_ttl = 300
 
     def register_kpi(self, kpi: KPI) -> Result[bool, str]:
@@ -596,8 +596,8 @@ class KPICalculator:
         self, use_cache=True, **kwargs
     ) -> Dict[str, Result[KPIValue, str]]:
         """모든 KPI 계산"""
-        results = {}
-        tasks = []
+        results: Dict[str, Result[KPIValue, str]] = {}
+        tasks: List[Tuple[str, Any]] = []
         for kpi_id in self._kpis.keys():
             task = self.calculate_kpi(kpi_id, use_cache, **kwargs)
             tasks = tasks + [(kpi_id, task)]
@@ -650,7 +650,7 @@ class KPIDashboard:
         self.dashboard_id = dashboard_id
         self.name = name
         self.calculator = calculator
-        self.kpi_ids = []
+        self.kpi_ids: List[str] = []
         self.refresh_interval = 60
         self.auto_refresh = False
         self._last_refresh = None

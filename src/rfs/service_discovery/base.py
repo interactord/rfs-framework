@@ -71,8 +71,8 @@ class ServiceEndpoint:
     def __hash__(self) -> int:
         return hash((self.host, self.port, self.protocol))
 
-    def __eq__(self, other) -> bool:
-        if not (type(other).__name__ == "ServiceEndpoint"):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ServiceEndpoint):
             return False
         return (
             self.host == other.host
@@ -112,12 +112,12 @@ class ServiceHealth:
         self.response_time = response_time
 
         if success:
-            success_count = success_count + 1
+            self.success_count: int = getattr(self, 'success_count', 0) + 1
             self.consecutive_failures = 0
             self.status = HealthStatus.HEALTHY
         else:
-            error_count = error_count + 1
-            consecutive_failures = consecutive_failures + 1
+            self.error_count: int = getattr(self, 'error_count', 0) + 1
+            self.consecutive_failures = self.consecutive_failures + 1
 
             if self.consecutive_failures >= 3:
                 self.status = HealthStatus.CRITICAL

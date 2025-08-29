@@ -87,10 +87,10 @@ class MemoryCache(CacheBackend):
     def __init__(self, config: MemoryCacheConfig):
         super().__init__(config)
         self.config: MemoryCacheConfig = config
-        self._data = {}
+        self._data: Dict[str, Any] = {}
         self._access_order: OrderedDict = OrderedDict()
-        self._frequency = {}
-        self._insertion_order = []
+        self._frequency: Dict[str, int] = {}
+        self._insertion_order: List[str] = []
         self._ttl_heap: List[Tuple[float, str]] = []
         self._lock = RLock()
         self._current_size = 0
@@ -327,7 +327,7 @@ class MemoryCache(CacheBackend):
         try:
             with self._lock:
                 if self.namespace:
-                    keys_to_delete = []
+                    keys_to_delete: List[str] = []
                     prefix = f"{self.namespace}:"
                     for key in self._data.keys():
                         if key.startswith(prefix):

@@ -179,9 +179,9 @@ class TaskMonitor:
         self.metrics = TaskMetrics()
         self.metric_history: deque = deque(maxlen=history_size)
         self.task_history: deque = deque(maxlen=history_size)
-        self.hourly_stats = {}
-        self.daily_stats = {}
-        self.alert_handlers = []
+        self.hourly_stats: Dict[str, Any] = {}
+        self.daily_stats: Dict[str, Any] = {}
+        self.alert_handlers: List[Callable] = []
         self.thresholds = {
             "error_rate": 0.1,
             "timeout_rate": 0.05,
@@ -215,7 +215,7 @@ class TaskMonitor:
                 "timestamp": datetime.now(),
                 "duration": (
                     result.metadata.duration().total_seconds()
-                    if result.metadata and result.metadata.duration()
+                    if result.metadata and result.metadata.duration() is not None
                     else None
                 ),
             }
@@ -332,20 +332,30 @@ class TaskMonitor:
 
     def _format_prometheus(self, metrics: Dict[str, Any]) -> str:
         """Prometheus 형식으로 포맷"""
-        lines = []
-        for name, value in metrics.get("counters").items():
-            lines = lines + [f"task_{name} {value}"]
-        for name, value in metrics.get("gauges").items():
-            lines = lines + [f"task_{name}_current {value}"]
+        lines: List[str] = []
+        counters = metrics.get("counters")
+        if counters is not None:
+            for name, value in counters.items():
+                lines = lines + [f"task_{name} {value}"]
+        
+        gauges = metrics.get("gauges")
+        if gauges is not None:
+            for name, value in gauges.items():
+                lines = lines + [f"task_{name}_current {value}"]
         if metrics.get("timing")["avg_duration"]:
             lines = lines + [
                 f"task_duration_seconds {metrics.get('timing')['avg_duration']}"
             ]
-        lines = lines + [
-            f"task_throughput_per_second {metrics.get('throughput')['tasks_per_second']}"
-        ]
-        for name, value in metrics.get("rates").items():
-            lines = lines + [f"task_{name} {value}"]
+        throughput = metrics.get("throughput")
+        if throughput is not None:
+            lines = lines + [
+                f"task_throughput_per_second {throughput['tasks_per_second']}"
+            ]
+        
+        rates = metrics.get("rates")
+        if rates is not None:
+            for name, value in rates.items():
+                lines = lines + [f"task_{name} {value}"]
         return "\n".join(lines)
 
     def reset_metrics(self):

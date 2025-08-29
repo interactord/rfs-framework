@@ -104,7 +104,7 @@ class RedisTransactionResource(TransactionResource):
 
     def __init__(self, redis_client: Any):
         self.redis = redis_client
-        self.pipelines = {}
+        self.pipelines: Dict[str, Any] = {}
         self.savepoints: Dict[str, Dict[str, Any]] = {}
 
     def begin(self, metadata: TransactionMetadata) -> Result[None, str]:

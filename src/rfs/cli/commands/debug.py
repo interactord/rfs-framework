@@ -211,7 +211,7 @@ class StatusCommand(Command):
 
     async def _collect_status_info(self) -> Dict[str, Any]:
         """시스템 상태 정보 수집"""
-        status = {}
+        status: Dict[str, Any] = {}
         try:
             status = {
                 **status,

@@ -150,7 +150,8 @@ class AuditLogger:
         if end_time:
             logs = [l for l in logs if l.timestamp <= end_time]
         logs.sort(key=lambda x: x.timestamp, reverse=True)
-        return logs[:limit]
+        result_logs: List[AuditLogEntry] = logs[:limit]
+        return result_logs
 
 
 _audit_logger = AuditLogger()

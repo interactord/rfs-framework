@@ -191,7 +191,7 @@ class EventBus:
             logger.debug(f"No handlers for event: {event.event_type}")
             return
         matching_subscriptions.sort(key=lambda sub: event.priority.value, reverse=True)
-        tasks = []
+        tasks: List[asyncio.Task] = []
         for subscription in matching_subscriptions:
             task = self._execute_handler(subscription, event)
             tasks = tasks + [task]
@@ -371,7 +371,7 @@ class ReactiveEventBus:
 
     def subscribe_flux(self, event_types: List[str]) -> Flux[Event]:
         """이벤트 스트림 구독"""
-        events = []
+        events: List[Event] = []
 
         def collect_event(event: Event):
             events = events + [event]

@@ -177,7 +177,7 @@ class FileEventStore:
         import aiofiles
 
         stream_file = self._get_stream_file(stream_id)
-        events = []
+        events: List[Event] = []
         try:
             async with aiofiles.open(stream_file, "r", encoding="utf-8") as f:
                 async for line in f:

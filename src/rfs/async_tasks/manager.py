@@ -139,7 +139,7 @@ class AsyncTaskManager:
         async with self._lock:
             self.tasks = {**self.tasks, metadata.task_id: metadata}
             self.task_instances = {**self.task_instances, metadata.task_id: task}
-            future = asyncio.Future()
+            future: asyncio.Future = asyncio.Future()
             self.task_futures = {**self.task_futures, metadata.task_id: future}
             if depends_on:
                 for dep_id in depends_on:
@@ -229,7 +229,7 @@ class AsyncTaskManager:
         done, pending = await asyncio.wait(
             futures, timeout=timeout, return_when=return_when
         )
-        results = []
+        results: List[Any] = []
         for task_id in task_ids:
             if task_id in self.task_futures:
                 future = self.task_futures[task_id]

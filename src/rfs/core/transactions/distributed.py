@@ -78,8 +78,8 @@ class TwoPhaseCommit:
     """
 
     def __init__(self, timeout: timedelta = timedelta(seconds=30)):
-        self.participants = {}
-        self.coordinators = {}
+        self.participants: Dict[str, TransactionParticipant] = {}
+        self.coordinators: Dict[str, TransactionCoordinator] = {}
         self.timeout = timeout
         self.transaction_id = str(uuid.uuid4())
         self.status = TransactionStatus.ACTIVE
@@ -125,7 +125,7 @@ class TwoPhaseCommit:
 
     def _prepare_phase(self) -> Result[None, str]:
         """준비 단계 실행"""
-        errors = []
+        errors: List[str] = []
         for participant_id, participant in self.participants.items():
             coordinator = self.coordinators[participant_id]
             try:
@@ -148,7 +148,7 @@ class TwoPhaseCommit:
 
     def _commit_phase(self) -> Result[None, str]:
         """커밋 단계 실행"""
-        errors = []
+        errors: List[str] = []
         for participant_id, participant in self.participants.items():
             if participant.status != ParticipantStatus.PREPARED:
                 continue
@@ -231,7 +231,7 @@ class SagaTransaction:
         각 단계를 순차적으로 실행하고,
         실패 시 보상 트랜잭션 실행
         """
-        results = []
+        results: List[Result[Any, str]] = []
         self.event_bus.publish(
             Event(event_type="saga.started", source=self.name, data={"saga_id": self.saga_id})
         )
@@ -240,7 +240,7 @@ class SagaTransaction:
                 logger.info(f"Executing saga step: {step.name}")
                 self.event_bus.publish(
                     Event(
-                        type="saga.step.started",
+                        event_type="saga.step.started",
                         source=self.name,
                         data={"saga_id": self.saga_id, "step": step.name},
                     )
@@ -253,7 +253,7 @@ class SagaTransaction:
                     results = results + [result.value]
                     self.event_bus.publish(
                         Event(
-                            type="saga.step.completed",
+                            event_type="saga.step.completed",
                             source=self.name,
                             data={
                                 "saga_id": self.saga_id,
@@ -266,7 +266,7 @@ class SagaTransaction:
                     logger.error(f"Saga step {step.name} failed: {result.error}")
                     self.event_bus.publish(
                         Event(
-                            type="saga.step.failed",
+                            event_type="saga.step.failed",
                             source=self.name,
                             data={
                                 "saga_id": self.saga_id,
@@ -295,7 +295,7 @@ class SagaTransaction:
                 return Failure(f"Saga failed at step {step.name}: {str(e)}")
         self.event_bus.publish(
             Event(
-                type="saga.completed",
+                event_type="saga.completed",
                 source=self.name,
                 data={"saga_id": self.saga_id, "results": results},
             )
@@ -308,12 +308,12 @@ class SagaTransaction:
         logger.info(f"Starting compensation for saga {self.saga_id}")
         self.event_bus.publish(
             Event(
-                type="saga.compensation.started",
+                event_type="saga.compensation.started",
                 source=self.name,
                 data={"saga_id": self.saga_id},
             )
         )
-        errors = []
+        errors: List[str] = []
         for step in reversed(self.completed_steps):
             if step.compensated:
                 continue
@@ -321,7 +321,7 @@ class SagaTransaction:
                 logger.info(f"Compensating step: {step.name}")
                 self.event_bus.publish(
                     Event(
-                        type="saga.compensation.step",
+                        event_type="saga.compensation.step",
                         source=self.name,
                         data={"saga_id": self.saga_id, "step": step.name},
                     )
@@ -346,7 +346,7 @@ class SagaTransaction:
         if errors:
             self.event_bus.publish(
                 Event(
-                    type="saga.compensation.failed",
+                    event_type="saga.compensation.failed",
                     source=self.name,
                     data={"saga_id": self.saga_id, "errors": errors},
                 )
@@ -354,7 +354,7 @@ class SagaTransaction:
             return Failure("; ".join(errors))
         self.event_bus.publish(
             Event(
-                type="saga.compensation.completed",
+                event_type="saga.compensation.completed",
                 source=self.name,
                 data={"saga_id": self.saga_id},
             )
@@ -363,7 +363,7 @@ class SagaTransaction:
 
     async def execute_async(self) -> Result[Any, str]:
         """비동기 Saga 실행"""
-        results = []
+        results: List[Result[Any, str]] = []
         for step in self.steps:
             try:
                 if asyncio.iscoroutinefunction(step.action):
@@ -398,7 +398,7 @@ class SagaTransaction:
 
     async def _compensate_async(self) -> Result[None, str]:
         """비동기 보상 트랜잭션 실행"""
-        errors = []
+        errors: List[str] = []
         for step in reversed(self.completed_steps):
             if step.compensated:
                 continue

@@ -270,7 +270,7 @@ class HandlerRegistry:
         """이벤트에 대한 핸들러 조회"""
         event_type = type(event)
         handler_ids = self._handlers_by_type.get(event_type, [])
-        valid_handlers = []
+        valid_handlers: List[EventHandler] = []
         for handler_id in handler_ids:
             handler = self._handlers.get(handler_id)
             if handler and handler.can_handle(event):
@@ -293,8 +293,8 @@ class HandlerRegistry:
     def get_statistics(self) -> Dict[str, Any]:
         """레지스트리 통계"""
         total_handlers = len(self._handlers)
-        handlers_by_priority = defaultdict(int)
-        handlers_by_mode = defaultdict(int)
+        handlers_by_priority: Dict[int, int] = defaultdict(int)
+        handlers_by_mode: Dict[str, int] = defaultdict(int)
         for metadata in self._handler_metadata.values():
             handlers_by_priority = {
                 **handlers_by_priority,
@@ -320,7 +320,7 @@ class EventProcessor:
     def __init__(self, registry: HandlerRegistry):
         self.registry = registry
         self._execution_history: deque = deque(maxlen=1000)
-        self._active_executions = {}
+        self._active_executions: Dict[str, HandlerExecution] = {}
 
     async def process_event(
         self, event: Event, filter_tags: Optional[Set[str]] = None
@@ -333,7 +333,7 @@ class EventProcessor:
             ]
         if not handlers:
             return []
-        results = []
+        results: List[Result[Any, str]] = []
         for handler in handlers:
             result = await self._execute_handler(handler, event)
             results = results + [result]
@@ -352,7 +352,7 @@ class EventProcessor:
             return []
         tasks = [self._execute_handler(handler, event) for handler in handlers]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        processed_results = []
+        processed_results: List[Result[Any, str]] = []
         for result in results:
             if type(result).__name__ == "Exception":
                 processed_results = processed_results + [
@@ -407,7 +407,7 @@ class EventProcessor:
                         continue
                     else:
                         break
-            failure_result = Failure(
+            failure_result: Result[Any, str] = Failure(
                 f"Handler failed after {max_retries} attempts: {last_error}"
             )
             execution.mark_completed(failure_result)
@@ -456,7 +456,7 @@ class HandlerChain:
 
     async def process(self, event: Event) -> Result[List[Any], str]:
         """체인 처리"""
-        results = []
+        results: List[Result[Any, str]] = []
         for handler in self.handlers:
             if not handler.can_handle(event):
                 continue
@@ -466,7 +466,7 @@ class HandlerChain:
                 if self.break_on_failure and result.is_failure():
                     break
             except Exception as e:
-                failure = Failure(f"Handler chain error: {e}")
+                failure: Result[Any, str] = Failure(f"Handler chain error: {e}")
                 results = results + [failure]
                 if self.break_on_failure:
                     break

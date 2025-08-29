@@ -68,8 +68,8 @@ class CloudRunOptimizer:
             "INSTANCE_ID", f"instance_{int(time.time())}"
         )
         self._is_first_request = True
-        self._cache = {}
-        self._cache_ttl = {}
+        self._cache: Dict[str, Any] = {}
+        self._cache_ttl: Dict[str, datetime] = {}
 
     async def initialize(self):
         """인스턴스 초기화"""

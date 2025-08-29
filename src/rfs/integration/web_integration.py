@@ -328,7 +328,7 @@ class WebIntegrationManager:
                 self._session = None
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks = {}
+                _tasks: Dict[str, Any] = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop integration manager: {e}")
@@ -686,7 +686,7 @@ class WebIntegrationManager:
         self, auth_type: AuthType, auth_config: Dict[str, Any]
     ) -> Dict[str, str]:
         """인증 헤더 생성"""
-        headers = {}
+        headers: Dict[str, str] = {}
         match auth_type:
             case AuthType.API_KEY:
                 headers = {

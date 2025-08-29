@@ -292,7 +292,7 @@ class LoadBalancer:
 
     def __init__(self, strategy: LoadBalanceStrategy):
         self.strategy = strategy
-        self.round_robin_indexes = {}
+        self.round_robin_indexes: Dict[str, int] = {}
 
     def select_backend(
         self, route_id: str, backends: List[Backend], client_ip: str = None
@@ -334,7 +334,7 @@ class LoadBalancer:
 
     def _weighted_round_robin(self, route_id: str, backends: List[Backend]) -> Backend:
         """가중치 라운드 로빈"""
-        weighted_backends = []
+        weighted_backends: List[Backend] = []
         for backend in backends:
             weighted_backends = weighted_backends + [backend] * backend.weight
         return self._round_robin(route_id, weighted_backends)
@@ -397,7 +397,7 @@ class APIGatewayEnhancer:
             self._running = False
             if self._tasks:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
-                _tasks = {}
+                _tasks: Dict[str, asyncio.Task] = {}
             return Success(True)
         except Exception as e:
             return Failure(f"Failed to stop API gateway: {e}")
@@ -764,7 +764,7 @@ class APIGatewayEnhancer:
         error_rate = (
             self.error_count / self.request_count * 100 if self.request_count > 0 else 0
         )
-        backend_stats = {}
+        backend_stats: Dict[str, Any] = {}
         for route in self.routes.values():
             for backend in route.backends:
                 backend_stats = {

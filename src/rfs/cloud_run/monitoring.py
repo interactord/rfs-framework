@@ -229,9 +229,9 @@ class CloudMonitoringClient:
                 self.logging_client = cloud_logging.Client(project=project_id)
             except Exception as e:
                 logger.warning(f"Google Cloud 클라이언트 초기화 실패: {e}")
-        self.registered_metrics = {}
+        self.registered_metrics: Dict[str, Any] = {}
         self.metrics_buffer: List[Dict[str, Any]] = []
-        self.logs_buffer = []
+        self.logs_buffer: List[Dict[str, Any]] = []
         self.buffer_size = 100
         self.flush_interval = 30
         self.flush_task = None
@@ -506,7 +506,7 @@ class PerformanceMonitor:
 
     def __init__(self, monitoring_client: CloudMonitoringClient):
         self.client = monitoring_client
-        self.active_requests = {}
+        self.active_requests: Dict[str, Dict[str, Any]] = {}
 
     def start_request_monitoring(self, request_id: str, method: str, path: str) -> None:
         """요청 모니터링 시작"""

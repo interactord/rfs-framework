@@ -67,7 +67,7 @@ class CloudRunServiceDiscovery(metaclass=SingletonMeta):
     """Cloud Run 서비스 디스커버리"""
 
     def __init__(self) -> None:
-        self._services = {}
+        self._services: dict[str, str] = {}
         self._initialized = False
 
     async def initialize(self):
@@ -129,7 +129,7 @@ async def discover_services(pattern="*") -> List[ServiceEndpoint]:
     """
     discovery = get_service_discovery()
     await discovery.initialize()
-    services = []
+    services: list[dict[str, str]] = []
     for name in discovery.list_services():
         if pattern == "*" or pattern in name:
             endpoint = discovery.get_service(name)
@@ -422,7 +422,7 @@ class AutoScalingOptimizer(metaclass=SingletonMeta):
     def get_recommendations(self) -> List[str]:
         """스케일링 권장사항"""
         analysis = self.analyze_metrics()
-        recommendations = []
+        recommendations: List[str] = []
         if analysis["should_scale_up"]:
             recommendations = recommendations + [
                 f"Scale up to {analysis.get('recommended_instances')} instances"

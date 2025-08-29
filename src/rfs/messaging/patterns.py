@@ -27,7 +27,7 @@ class RequestResponse:
     def __init__(self, broker_name: Optional[str] = None, timeout: float = 30.0):
         self.broker_name = broker_name
         self.timeout = timeout
-        self._pending_requests = {}
+        self._pending_requests: Dict[str, asyncio.Future] = {}
         self._response_subscriber = None
         self._reply_topic = f"reply.{uuid.uuid4().hex[:8]}"
         asyncio.create_task(self._setup_response_handler())
@@ -64,7 +64,7 @@ class RequestResponse:
         try:
             timeout = timeout or self.timeout
             correlation_id = str(uuid.uuid4())
-            response_future = asyncio.Future()
+            response_future: asyncio.Future[Any] = asyncio.Future()
             self._pending_requests = {
                 **self._pending_requests,
                 correlation_id: response_future,
@@ -150,8 +150,8 @@ class WorkQueue:
         self.broker_name = broker_name
         self.worker_count = worker_count
         self._publisher = Publisher(broker_name, topic)
-        self._subscribers = []
-        self._task_handlers = {}
+        self._subscribers: List[Subscriber] = []
+        self._task_handlers: Dict[str, Callable] = {}
         self._running = False
 
     async def start_workers(self, task_handler: Callable):
@@ -224,7 +224,7 @@ class EventBus:
     def __init__(self, broker_name: str = None):
         self.broker_name = broker_name
         self._event_handlers: Dict[str, List[Callable]] = {}
-        self._subscribers = {}
+        self._subscribers: Dict[str, Subscriber] = {}
         self._publisher = Publisher(broker_name)
 
     async def subscribe_event(
@@ -290,7 +290,7 @@ class EventBus:
         try:
             event_type = message.topic
             handlers = self._event_handlers.get(event_type, [])
-            tasks = []
+            tasks: List[asyncio.Task] = []
             for handler in handlers:
                 if asyncio.iscoroutinefunction(handler):
                     task = asyncio.create_task(handler(message))
@@ -354,10 +354,10 @@ class Saga:
     def __init__(self, saga_id: str, broker_name: str = None):
         self.saga_id = saga_id
         self.broker_name = broker_name
-        self.steps = []
+        self.steps: List[SagaStep] = []
         self.context = SagaContext(saga_id=saga_id)
         self._publisher = Publisher(broker_name)
-        self._compensation_stack = []
+        self._compensation_stack: List[Callable] = []
 
     def add_step(
         self,
@@ -532,7 +532,7 @@ class MessageRouter:
     def __init__(self, broker_name: str = None):
         self.broker_name = broker_name
         self._routes: Dict[str, List[Callable]] = {}
-        self._subscribers = {}
+        self._subscribers: Dict[str, Subscriber] = {}
         self._publisher = Publisher(broker_name)
 
     def add_route(self, pattern: str, handler: Callable) -> "MessageRouter":

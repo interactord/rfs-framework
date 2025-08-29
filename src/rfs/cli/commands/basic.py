@@ -85,9 +85,11 @@ class StatusCommand(Command):
                     f"Environment: [cyan]{status.get('environment')}[/cyan]"
                 )
                 ctx.console.print("\n[bold]Dependencies:[/bold]")
-                for dep, available in status.get("dependencies").items():
-                    icon = "✅" if available else "❌"
-                    ctx.console.print(f"  {icon} {dep}")
+                dependencies = status.get("dependencies")
+                if dependencies is not None:
+                    for dep, available in dependencies.items():
+                        icon = "✅" if available else "❌"
+                        ctx.console.print(f"  {icon} {dep}")
             else:
                 print("RFS Framework Status")
                 print(f"Framework: {status.get('framework')}")

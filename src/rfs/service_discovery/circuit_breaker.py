@@ -64,10 +64,10 @@ class CircuitBreakerConfig:
 class CircuitBreakerMetrics:
     """서킷 브레이커 메트릭"""
 
-    total_requests = 0
-    successful_requests = 0
-    failed_requests = 0
-    rejected_requests = 0
+    total_requests: int = 0
+    successful_requests: int = 0
+    failed_requests: int = 0
+    rejected_requests: int = 0
 
     total_response_time: float = 0.0
     last_failure_time: Optional[datetime] = None
@@ -146,9 +146,9 @@ class CircuitBreaker:
     def _record_success(self, response_time: float) -> None:
         """성공 기록"""
         with self.lock:
-            successful_requests = successful_requests + 1
-            total_requests = total_requests + 1
-            total_response_time = total_response_time + response_time
+            self.metrics.successful_requests = self.metrics.successful_requests + 1
+            self.metrics.total_requests = self.metrics.total_requests + 1
+            self.metrics.total_response_time = self.metrics.total_response_time + response_time
             self.metrics.last_success_time = datetime.now()
 
             # 슬라이딩 윈도우 업데이트
@@ -183,8 +183,8 @@ class CircuitBreaker:
                 ):
                     return
 
-            failed_requests = failed_requests + 1
-            total_requests = total_requests + 1
+            self.metrics.failed_requests = self.metrics.failed_requests + 1
+            self.metrics.total_requests = self.metrics.total_requests + 1
             self.metrics.last_failure_time = datetime.now()
 
             # 슬라이딩 윈도우 업데이트
@@ -213,7 +213,7 @@ class CircuitBreaker:
     def _record_rejection(self) -> None:
         """거부 기록"""
         with self.lock:
-            rejected_requests = rejected_requests + 1
+            self.metrics.rejected_requests = self.metrics.rejected_requests + 1
 
     def _clean_old_requests(self) -> None:
         """오래된 요청 기록 정리"""

@@ -238,7 +238,7 @@ class WeightedRoundRobinAlgorithm(LoadBalancingAlgorithm):
 
     def reset(self) -> None:
         """가중치 리셋"""
-        current_weights = {}
+        current_weights: Dict[str, int] = {}
 
 
 class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
@@ -255,7 +255,7 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
 
     def _build_ring(self, instances: List[ServiceInstance]) -> None:
         """해시 링 구축"""
-        ring = {}
+        ring: Dict[int, ServiceInstance] = {}
 
         for instance in instances:
             if instance.is_available():
@@ -305,8 +305,8 @@ class ConsistentHashAlgorithm(LoadBalancingAlgorithm):
 
     def reset(self) -> None:
         """링 리셋"""
-        ring = {}
-        sorted_keys = {}
+        ring: Dict[int, ServiceInstance] = {}
+        sorted_keys: Dict[str, Any] = {}
 
 
 class LeastResponseTimeAlgorithm(LoadBalancingAlgorithm):
@@ -340,20 +340,20 @@ class LoadBalancer:
         self.config = config or LoadBalancerConfig()
 
         # 인스턴스 관리
-        self.instances = {}
+        self.instances: Dict[str, ServiceInstance] = {}
         self.lock = threading.RLock()
 
         # 알고리즘 선택
         self.algorithm = self._create_algorithm(self.config.strategy)
 
         # 서킷 브레이커
-        self.circuit_breakers = {}
+        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
 
         # 헬스체크 태스크
         self.health_check_task = None
 
         # 세션 고정
-        self.session_affinity = {}  # session_id -> instance_id
+        self.session_affinity: Dict[str, str] = {}  # session_id -> instance_id
 
         # 통계
         self.total_requests = 0

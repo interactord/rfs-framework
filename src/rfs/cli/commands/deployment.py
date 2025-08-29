@@ -274,7 +274,7 @@ class MonitorCommand(Command):
         while True:
             metrics = await self._collect_metrics(config)
             dashboard = self._create_dashboard_table(metrics)
-            console = {}
+            console: Dict[str, Any] = {}
             console.print(dashboard)
             console.print(
                 f"\n🔄 마지막 업데이트: {datetime.now().strftime('%H:%M:%S')} | Ctrl+C로 종료"
@@ -370,13 +370,14 @@ class LogsCommand(Command):
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             if options.get("follow"):
-                while True:
-                    line = await process.stdout.readline()
-                    if not line:
-                        break
-                    log_entry = line.decode().strip()
-                    if log_entry:
-                        self._display_log_entry(log_entry)
+                if process.stdout is not None:
+                    while True:
+                        line = await process.stdout.readline()
+                        if not line:
+                            break
+                        log_entry = line.decode().strip()
+                        if log_entry:
+                            self._display_log_entry(log_entry)
             else:
                 stdout, stderr = await process.communicate()
                 if process.returncode == 0:

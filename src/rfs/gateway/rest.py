@@ -509,8 +509,8 @@ class RestGateway:
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or RouterConfig()
-        self.routes = []
-        self.global_middleware = []
+        self.routes: List[RestRoute] = []
+        self.global_middleware: List[RestMiddleware] = []
 
     def add_route(
         self,

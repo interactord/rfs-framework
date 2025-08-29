@@ -183,7 +183,7 @@ class MigrationManager(ABC):
                     f"마이그레이션 디렉토리가 없습니다: {self.migrations_dir}"
                 )
                 return Success([])
-            migrations = []
+            migrations: List[Migration] = []
             for filename in sorted(os.listdir(self.migrations_dir)):
                 if filename.endswith(".py") and filename != "__init__.py":
                     result = await self._load_migration_file(filename)
@@ -231,13 +231,13 @@ class MigrationManager(ABC):
             if not applied_result.is_success():
                 return Failure(applied_result.unwrap_err())
             applied_versions = set(applied_result.unwrap())
-            pending_migrations = []
+            pending_migrations: List[Migration] = []
             for migration in sorted(all_migrations, key=lambda m: m.info.version):
                 if migration.info.version not in applied_versions:
                     pending_migrations = pending_migrations + [migration]
                     if target_version and migration.info.version == target_version:
                         break
-            applied_migrations = []
+            applied_migrations: List[Migration] = []
             for migration in pending_migrations:
                 logger.info(f"마이그레이션 실행 중: {migration.info.name}")
                 migration.info.status = MigrationStatus.RUNNING
@@ -270,7 +270,7 @@ class MigrationManager(ABC):
             if not applied_result.is_success():
                 return Failure(applied_result.unwrap_err())
             applied_versions = applied_result.unwrap()
-            rollback_migrations = []
+            rollback_migrations: List[Migration] = []
             for version in reversed(sorted(applied_versions)):
                 if version in self.migrations:
                     rollback_migrations = rollback_migrations + [
@@ -278,7 +278,7 @@ class MigrationManager(ABC):
                     ]
                     if target_version and version == target_version:
                         break
-            rolled_back = []
+            rolled_back: List[str] = []
             for migration in rollback_migrations:
                 logger.info(f"마이그레이션 롤백 중: {migration.info.name}")
                 down_result = await migration.down()

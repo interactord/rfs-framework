@@ -199,11 +199,11 @@ class CRUDRepository(BaseRepository[T]):
     ) -> Result[List[T], str]:
         """대량 생성"""
         try:
-            models = []
+            models: List[T] = []
             batch_size = self.config.batch_size
             for i in range(0, len(data_list), batch_size):
                 batch = data_list[i : i + batch_size]
-                batch_models = []
+                batch_models: List[T] = []
                 for data in batch:
                     create_result = await self.create(data)
                     if not create_result.is_success():
@@ -221,11 +221,11 @@ class CRUDRepository(BaseRepository[T]):
     async def bulk_update(self, updates: List[Dict[str, Any]]) -> Result[List[T], str]:
         """대량 업데이트"""
         try:
-            models = []
+            models: List[T] = []
             batch_size = self.config.batch_size
             for i in range(0, len(updates), batch_size):
                 batch = updates[i : i + batch_size]
-                batch_models = []
+                batch_models: List[T] = []
                 for update_data in batch:
                     if "id" not in update_data:
                         return Failure("업데이트 데이터에 id가 필요합니다")

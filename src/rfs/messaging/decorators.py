@@ -148,7 +148,7 @@ def dead_letter_queue(dlq_topic: Optional[str] = None, max_failures: int = 5, br
     """Dead Letter Queue 데코레이터"""
 
     def decorator(func: Callable) -> Callable:
-        failure_count = {}
+        failure_count: Dict[str, int] = {}
 
         @functools.wraps(func)
         async def wrapper(message: Message, *args, **kwargs):
@@ -262,7 +262,7 @@ def rate_limit(
     key_func: Optional[Callable[[Message], str]] = None,
 ):
     """속도 제한 데코레이터"""
-    call_history = {}
+    call_history: Dict[str, List[datetime]] = {}
 
     def get_key(message: Message) -> str:
         if key_func:

@@ -98,7 +98,7 @@ class ServerlessFunction:
         self.execution_count = 0
         self.error_count = 0
         self.last_execution: Optional[datetime] = None
-        self.middlewares = []
+        self.middlewares: List[Callable] = []
 
     def add_middleware(self, middleware: Callable):
         """미들웨어 추가"""

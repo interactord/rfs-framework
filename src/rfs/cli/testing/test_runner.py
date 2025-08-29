@@ -193,13 +193,14 @@ class TestRunner:
                         stderr=asyncio.subprocess.STDOUT,
                         env=env,
                     )
-                    output_lines = []
-                    while True:
-                        line = await process.stdout.readline()
-                        if not line:
-                            break
-                        line_str = line.decode().strip()
-                        output_lines = output_lines + [line_str]
+                    output_lines: List[str] = []
+                    if process.stdout is not None:
+                        while True:
+                            line = await process.stdout.readline()
+                            if not line:
+                                break
+                            line_str = line.decode().strip()
+                            output_lines = output_lines + [line_str]
                     await process.wait()
                     progress.remove_task(task)
             test_result = await self._parse_pytest_results(
@@ -239,14 +240,12 @@ class TestRunner:
                                 "classname": testcase.get("classname", ""),
                                 "time": float(testcase.get("time", 0)),
                                 "message": (
-                                    (failure or error).get("message", "")
-                                    if (failure or error) is not None
-                                    else ""
+                                    (failure.get("message", "") if failure is not None else "") or
+                                    (error.get("message", "") if error is not None else "")
                                 ),
                                 "details": (
-                                    (failure or error).text
-                                    if (failure or error) is not None
-                                    else ""
+                                    (failure.text if failure is not None else "") or
+                                    (error.text if error is not None else "")
                                 ),
                             }
                         ]

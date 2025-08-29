@@ -218,7 +218,7 @@ class AnnotationProcessor:
         Returns:
             검증 오류 메시지 리스트
         """
-        errors = []
+        errors: List[str] = []
         metadata = get_component_metadata(cls)
         if not metadata:
             return errors
@@ -292,10 +292,10 @@ def validate_configuration() -> List[str]:
     Returns:
         검증 오류 메시지 리스트
     """
-    errors = []
+    errors: List[str] = []
     processor = get_annotation_processor()
     registry = get_annotation_registry()
-    all_components = []
+    all_components: List[Any] = []
     for storage in [
         registry.components,
         registry.services,

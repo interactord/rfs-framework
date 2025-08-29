@@ -122,8 +122,8 @@ class ProfileResult:
 class CPUMetrics:
     """CPU 메트릭"""
 
-    snapshots: List[str] = field(default_factory=list)
-    profile_results: List[str] = field(default_factory=list)
+    snapshots: List[CPUSnapshot] = field(default_factory=list)
+    profile_results: List[ProfileResult] = field(default_factory=list)
     cpu_bound_detections: List[Dict[str, Any]] = field(default_factory=list)
 
     def add_snapshot(self, snapshot: CPUSnapshot):

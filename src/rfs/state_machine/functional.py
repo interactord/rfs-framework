@@ -180,8 +180,7 @@ def can_execute_transition(transition: Transition, context: Dict[str, Any]) -> b
     """순수 함수: 전이 실행 가능 여부"""
     if not transition.guard:
         return True
-        return transition.guard(context)
-        return Failure("Operation failed")
+    return transition.guard(context)
 
 
 def update_transition_stats(

@@ -207,8 +207,8 @@ class CloudTaskQueue:
                 self.client = tasks_v2.CloudTasksClient()
             except Exception as e:
                 logger.warning(f"Cloud Tasks 클라이언트 초기화 실패: {e}")
-        self.queues = {}
-        self.task_handlers = {}
+        self.queues: Dict[str, Any] = {}
+        self.task_handlers: Dict[str, Callable] = {}
         self.task_stats = {"submitted": 0, "completed": 0, "failed": 0, "retried": 0}
 
     async def initialize(self):
@@ -340,7 +340,7 @@ class CloudTaskQueue:
     ) -> Dict[str, Result[str, str]]:
         """배치 작업 제출"""
         results = {}
-        submit_tasks = []
+        submit_tasks: List[tuple] = []
         for task in tasks:
             submit_task = asyncio.create_task(self.submit_task(task))
             submit_tasks = submit_tasks + [(task.task_id, submit_task)]

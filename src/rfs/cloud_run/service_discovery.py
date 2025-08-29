@@ -245,8 +245,8 @@ class CloudRunServiceDiscovery:
         self.project_id = project_id
         self.region = region
         self.health_check_interval = health_check_interval
-        self.services = {}
-        self.circuit_breakers = {}
+        self.services: Dict[str, ServiceEndpoint] = {}
+        self.circuit_breakers: Dict[str, Any] = {}
         self.session = None
         self.cloud_run_client = None
         if GOOGLE_CLOUD_AVAILABLE:
@@ -612,7 +612,7 @@ class EnhancedServiceDiscovery(CloudRunServiceDiscovery):
 
     def query_services(self, query: ServiceQuery) -> List[ServiceEndpoint]:
         """고급 서비스 검색"""
-        results = []
+        results: List[ServiceEndpoint] = []
         for service in self.services.values():
             if query.matches(service):
                 results = results + [service]
@@ -748,7 +748,7 @@ async def call_service(
 async def health_check_all() -> Dict[str, bool]:
     """모든 서비스 헬스 체크"""
     discovery = await get_service_discovery()
-    results = {}
+    results: Dict[str, bool] = {}
     for service_name in discovery.services.keys():
         result = await discovery.health_check(service_name)
         match result:

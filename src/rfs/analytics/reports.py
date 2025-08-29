@@ -110,10 +110,10 @@ class Report(ABC):
         self.report_id = report_id
         self.template = template
         self.config = config
-        self.sections = []
-        self.variables = {}
+        self.sections: List[Any] = []
+        self.variables: Dict[str, Any] = {}
         self.generated_at = None
-        self._cache = {}
+        self._cache: Dict[str, Any] = {}
         self._cache_timestamp = None
         self._cache_ttl = 600  # 10분 캐시
 
@@ -281,7 +281,7 @@ class PDFReport(Report):
                 spaceAfter=30,
                 alignment=1,
             )
-            story = []
+            story: List[Any] = []
             if self.config.title:
                 story = story + [Paragraph(self.config.title, title_style)]
                 story = story + [Spacer(1, 20)]
@@ -291,7 +291,7 @@ class PDFReport(Report):
                 ]
                 story = story + [Spacer(1, 20)]
             if self.config.author or self.config.organization:
-                meta_text = []
+                meta_text: List[str] = []
                 if self.config.author:
                     meta_text = meta_text + [f"Author: {self.config.author}"]
                 if self.config.organization:
@@ -390,7 +390,7 @@ class HTMLReport(Report):
     async def generate(self) -> Result[bytes, str]:
         """HTML 리포트 생성"""
         try:
-            html_parts = []
+            html_parts: List[str] = []
             html_parts = html_parts + [self._generate_html_header()]
             html_parts = html_parts + [self._generate_title_section()]
             sections_result = await self._process_sections()
@@ -414,12 +414,12 @@ class HTMLReport(Report):
 
     def _generate_title_section(self) -> str:
         """제목 섹션 생성"""
-        parts = []
+        parts: List[str] = []
         if self.config.title:
             parts = parts + [f'<h1 class="report-title">{self.config.title}</h1>']
         if self.config.subtitle:
             parts = parts + [f'<h2 class="report-subtitle">{self.config.subtitle}</h2>']
-        meta_parts = []
+        meta_parts: List[str] = []
         if self.config.author:
             meta_parts = meta_parts + [f"Author: {self.config.author}"]
         if self.config.organization:
@@ -583,7 +583,7 @@ class ReportBuilder:
         self._template = None
         self._config = None
         self._format: ReportFormat = ReportFormat.HTML
-        self._data_sources = {}
+        self._data_sources: Dict[str, Any] = {}
 
     def template(self, template: ReportTemplate) -> "ReportBuilder":
         """템플릿 설정"""

@@ -280,7 +280,7 @@ class AnnotationRegistry(ServiceRegistry):
         # reduce를 사용한 에러 메시지 결합
         from functools import reduce
 
-        errors = reduce(lambda acc, fn: acc + fn(), validation_functions, [])
+        errors: List[str] = reduce(lambda acc, fn: acc + fn(), validation_functions, [])
         return errors
 
     def _validate_dependencies(self) -> List[str]:
@@ -345,7 +345,7 @@ class AnnotationRegistry(ServiceRegistry):
             acc["reverse_edges"][name] = []
             return acc
 
-        initial_graph = {"nodes": {}, "edges": {}, "reverse_edges": {}}
+        initial_graph: Dict[str, Dict[str, Any]] = {"nodes": {}, "edges": {}, "reverse_edges": {}}
         graph_data = reduce(add_node, self._annotation_metadata.items(), initial_graph)
 
         graph.nodes = graph_data["nodes"]
@@ -369,7 +369,7 @@ class AnnotationRegistry(ServiceRegistry):
         """순환 의존성 검출"""
         visited: Set[Any] = set()
         rec_stack: Set[Any] = set()
-        cycles = []
+        cycles: List[List[str]] = []
 
         def dfs(node: str, path: List[str]):
             nonlocal cycles  # cycles를 외부 스코프에서 수정

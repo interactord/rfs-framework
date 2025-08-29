@@ -90,7 +90,7 @@ class SystemMetrics:
     """시스템 메트릭"""
 
     system_info: SystemInfo
-    resource_history: List[str] = field(default_factory=list)
+    resource_history: List[ResourceUsage] = field(default_factory=list)
     uptime: timedelta = field(default_factory=lambda: timedelta(0))
 
     def add_usage(self, usage: ResourceUsage):

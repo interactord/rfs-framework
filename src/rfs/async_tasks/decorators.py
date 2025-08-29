@@ -403,7 +403,7 @@ def rate_limited(max_calls: int, period: timedelta):
         async def api_call():
             pass
     """
-    calls = []
+    calls: List[Callable] = []
 
     def decorator(func: Callable) -> Callable:
 

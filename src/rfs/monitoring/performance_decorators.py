@@ -137,7 +137,7 @@ class PerformanceMonitor:
 
     def _check_alerts(self, metrics: PerformanceMetrics) -> None:
         """알림 체크"""
-        alerts = []
+        alerts: List[str] = []
         if metrics.duration_ms > self.alert_thresholds["duration_ms"]:
             alerts = alerts + [f"Slow performance: {metrics.duration_ms:.2f}ms"]
         if metrics.memory_delta_mb > self.alert_thresholds["memory_delta_mb"]:

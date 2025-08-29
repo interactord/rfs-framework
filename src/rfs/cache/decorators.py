@@ -44,7 +44,7 @@ class CacheKeyBuilder:
 
     def _format_key(self, key: str) -> str:
         """키 포맷팅"""
-        parts = []
+        parts: List[str] = []
         if self.namespace:
             parts = parts + [self.namespace]
         if self.prefix:

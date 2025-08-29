@@ -108,7 +108,7 @@ class Subscriber:
         self._subscriptions: Dict[str, Dict[str, Any]] = (
             {}
         )  # topic -> subscription_info
-        self._handlers = {}  # topic -> handler
+        self._handlers: Dict[str, Any] = {}  # topic -> handler
         self._processing_tasks: Dict[str, Set[asyncio.Task]] = {}  # topic -> tasks
 
         self._stats = {
@@ -498,7 +498,7 @@ class BatchSubscriber(Subscriber):
                 return
 
             # 배치를 개별적으로 처리 (병렬)
-            tasks = []
+            tasks: List[asyncio.Task] = []
             for message in batch:
                 task = asyncio.create_task(self._handle_message(topic, message, config))
                 tasks = [*tasks, task]
@@ -566,7 +566,7 @@ class WorkQueueSubscriber(Subscriber):
         super().__init__(broker_name, config)
         self.worker_count = worker_count
         self._work_queue = None
-        self._workers = []
+        self._workers: List[asyncio.Task] = []
 
     async def start_workers(self, topic: str, handler: Union[MessageHandler, Callable]):
         """워커 시작"""

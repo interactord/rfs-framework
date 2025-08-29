@@ -224,7 +224,7 @@ class MetricsCollector(metaclass=SingletonMeta):
 
     async def _check_alerts(self, cache_name: str, metrics: CacheMetrics):
         """알림 확인"""
-        alerts = []
+        alerts: List[Dict[str, Any]] = []
         if metrics.hit_rate < self.alert_thresholds["hit_rate_min"]:
             alerts = alerts + [
                 {
@@ -278,7 +278,7 @@ class MetricsCollector(metaclass=SingletonMeta):
         """메트릭스 히스토리 조회"""
         history = self.metrics_history.get(cache_name, deque())
         cutoff_time = datetime.now() - timedelta(hours=hours)
-        filtered_history = []
+        filtered_history: List[Dict] = []
         for entry in history:
             entry_time = datetime.strptime(entry["timestamp"], "%Y-%m-%d %H:%M")
             if entry_time >= cutoff_time:
@@ -303,7 +303,7 @@ class MetricsCollector(metaclass=SingletonMeta):
                     "hot_keys": metrics.hot_keys,
                 }
             else:
-                report = {"summary": {}, "caches": {}, "alerts": []}
+                report: Dict[str, Any] = {"summary": {}, "caches": {}, "alerts": []}
                 total_metrics = CacheMetrics()
                 for name, cache_backend in cache_manager.caches.items():
                     metrics = asyncio.run(
@@ -374,7 +374,7 @@ def reset_cache_metrics(cache_name: str = None) -> Result[None, str]:
         else:
             metrics_history = {}
             operation_times = {}
-            key_access_count = {}
+            key_access_count: Dict[str, int] = {}
         return Success(None)
     except Exception as e:
         return Failure(f"메트릭스 초기화 실패: {str(e)}")

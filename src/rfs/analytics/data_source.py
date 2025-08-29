@@ -233,7 +233,7 @@ class DatabaseDataSource(DataSource):
                 if rows.is_failure():
                     return rows
                 rows = rows.unwrap()
-            columns = {}
+            columns: Dict[str, Any] = {}
             for row in rows:
                 if self.driver == "postgresql":
                     columns = {
@@ -537,7 +537,7 @@ class MetricsDataSource(DataSource):
         start_time = end_time - duration
         import random
 
-        data = []
+        data: List[Dict[str, Any]] = []
         current_time = start_time
         while current_time <= end_time:
             data = data + [
@@ -586,8 +586,8 @@ class DataSourceManager:
     """데이터 소스 관리자"""
 
     def __init__(self) -> None:
-        self._sources = {}
-        self._connected_sources = {}
+        self._sources: Dict[str, DataSource] = {}
+        self._connected_sources: Dict[str, DataSource] = {}
 
     def register_source(self, source: DataSource) -> Result[bool, str]:
         """데이터 소스 등록"""
@@ -700,5 +700,5 @@ def create_api_source(
 
 def create_metrics_source(source_id: str, name: str) -> MetricsDataSource:
     """메트릭 데이터 소스 생성"""
-    config = {"metrics": {}}
+    config: Dict[str, Any] = {"metrics": {}}
     return MetricsDataSource(source_id, name, config)

@@ -308,7 +308,7 @@ async def publish_batch(
         broker = get_message_broker(broker_name)
         if not broker:
             return Failure("메시지 브로커를 찾을 수 없습니다")
-        message_objects = []
+        message_objects: List[Message] = []
         for msg_data in messages:
             message = Message(
                 topic=topic,
@@ -338,7 +338,7 @@ class ScheduledPublisher(Publisher):
 
     def __init__(self, broker_name: str = None, topic: str = None):
         super().__init__(broker_name, topic)
-        self._scheduled_tasks = {}
+        self._scheduled_tasks: Dict[str, asyncio.Task] = {}
 
     async def schedule_message(
         self,
@@ -428,7 +428,7 @@ class PriorityPublisher(Publisher):
 
     def __init__(self, broker_name: str = None, topic: str = None):
         super().__init__(broker_name, topic)
-        self._priority_queues = {
+        self._priority_queues: Dict[MessagePriority, asyncio.Queue] = {
             MessagePriority.CRITICAL: asyncio.Queue(),
             MessagePriority.HIGH: asyncio.Queue(),
             MessagePriority.NORMAL: asyncio.Queue(),

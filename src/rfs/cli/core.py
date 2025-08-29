@@ -34,15 +34,15 @@ try:
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
-    Console = None
-    click = None
+    Console = None  # type: ignore[assignment]
+    click = None  # type: ignore[assignment]
 try:
     from pydantic import BaseModel, ConfigDict, Field
 
     PYDANTIC_AVAILABLE = True
 except ImportError:
-    BaseModel = object
-    Field = lambda default=None, **kwargs: default
+    BaseModel = object  # type: ignore[assignment]
+    Field = lambda default=None, **kwargs: default  # type: ignore[assignment]
     PYDANTIC_AVAILABLE = False
 from ..core.config import get_config
 from ..core.config_profiles import detect_current_environment
@@ -70,9 +70,9 @@ class Command(ABC):
     def __init__(self, name: str, description=""):
         self.name = name
         self.description = description
-        self.aliases = []
-        self.options = {}
-        self.subcommands = {}
+        self.aliases: List[str] = []
+        self.options: Dict[str, Any] = {}
+        self.subcommands: Dict[str, 'BaseCommand'] = {}
 
     @abstractmethod
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
@@ -102,7 +102,7 @@ class CommandGroup(Command):
 
     def __init__(self, name: str, description=""):
         super().__init__(name, description)
-        self._commands = {}
+        self._commands: Dict[str, 'BaseCommand'] = {}
 
     async def execute(self, ctx: CommandContext) -> Result[Any, str]:
         """그룹 실행 - 도움말 표시"""
@@ -253,7 +253,7 @@ class RFSCli:
     def _parse_global_args(self, args: List[str]) -> tuple[Dict[str, Any], List[str]]:
         """전역 인자 파싱"""
         global_args = {}
-        command_args = []
+        command_args: List[str] = []
         i = 0
         while i < len(args):
             arg = args[i]
@@ -287,14 +287,14 @@ class RFSCli:
             if arg.startswith("--"):
                 option_name = arg[2:]
                 if i + 1 < len(args) and (not args[i + 1].startswith("-")):
-                    parsed_args[option_name] = args[i + 1]
+                    parsed_args[option_name] = args[i + 1]  # type: ignore[assignment]
                     i = i + 1
                 else:
                     parsed_args[option_name] = True
             elif arg.startswith("-"):
                 option_name = arg[1:]
                 if i + 1 < len(args) and (not args[i + 1].startswith("-")):
-                    parsed_args[option_name] = args[i + 1]
+                    parsed_args[option_name] = args[i + 1]  # type: ignore[assignment]
                     i = i + 1
                 else:
                     parsed_args[option_name] = True

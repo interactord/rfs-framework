@@ -52,13 +52,13 @@ class SagaStep:
     step_id: str
     action: Callable[[Dict[str, Any]], Any]
     compensation: Optional[Callable[[Dict[str, Any]], Any]] = None
-    retry_count = 3
-    timeout_seconds = 30
+    retry_count: int = 3
+    timeout_seconds: int = 30
     status: StepStatus = StepStatus.PENDING
-    attempts = 0
-    error = None
-    started_at = None
-    completed_at = None
+    attempts: int = 0
+    error: Optional[Exception] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     result: Any = None
     compensation_result: Any = None
 
@@ -70,9 +70,9 @@ class SagaContext:
     saga_id: str
     correlation_id: str
     data: Dict[str, Any] = field(default_factory=dict)
-    current_step = 0
+    current_step: int = 0
     completed_steps: List[str] = field(default_factory=list)
-    failed_step = None
+    failed_step: Optional[str] = None
 
     def with_data(self, **data) -> "SagaContext":
         """데이터 추가"""
@@ -90,13 +90,13 @@ class SagaContext:
 class Saga:
     """사가 정의"""
 
-    def __init__(self, saga_id: str, name: str = None):
+    def __init__(self, saga_id: str, name: Optional[str] = None):
         self.saga_id = saga_id
         self.name = name or saga_id
-        self.steps = []
+        self.steps: List[SagaStep] = []
         self.status = SagaStatus.PENDING
         self.created_at = datetime.now()
-        self.started_at = None
+        self.started_at: Optional[datetime] = None
         self.completed_at = None
         self.total_duration = None
         self.execution_count = 0
@@ -355,7 +355,7 @@ def build_saga_from_functions(saga_id: str, functions: List[Callable]) -> Saga:
     """함수들로부터 사가 빌드"""
     saga = create_saga(saga_id)
     steps = {}
-    compensations = {}
+    compensations: Dict[str, Any] = {}
     for func in functions:
         if hasattr(func, "_saga_step_id"):
             steps[func._saga_step_id] = {func._saga_step_id: func}

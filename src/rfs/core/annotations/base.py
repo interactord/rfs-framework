@@ -87,6 +87,13 @@ class ComponentMetadata:
     component_id: Optional[str] = None
     profile: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    constructor_dependencies: List[DependencyMetadata] = field(default_factory=list)
+    field_dependencies: Dict[str, DependencyMetadata] = field(default_factory=dict)
+    setter_dependencies: Dict[str, DependencyMetadata] = field(default_factory=dict)
+    post_construct: Optional[Callable] = None
+    pre_destroy: Optional[Callable] = None
+    lazy_init: bool = False
+    add_dependency: Optional[Callable] = None
 
     def to_service_scope(self) -> ServiceScope:
         """ServiceScope 반환"""

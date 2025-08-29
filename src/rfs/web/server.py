@@ -90,8 +90,8 @@ class RFSWebServer:
         self.app: Optional[Union[FastAPI, Flask]] = None
         self.framework = None
         self._server_task = None
-        self._startup_handlers = []
-        self._shutdown_handlers = []
+        self._startup_handlers: List[Callable] = []
+        self._shutdown_handlers: List[Callable] = []
 
         # 프레임워크 결정
         self._determine_framework()

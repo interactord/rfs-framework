@@ -60,7 +60,7 @@ class RouteGroup:
         self.prefix = prefix
         self.tags = tags or []
         self.middleware = middleware or []
-        self.routes = []
+        self.routes: List[Route] = []
 
     def add_route(
         self, path: str, method: HTTPMethod, handler: Callable, **kwargs
@@ -130,7 +130,7 @@ class Router:
     """메인 라우터"""
 
     def __init__(self):
-        self.routes = []
+        self.routes: List[Route] = []
         self.groups = []
 
     def add_route(

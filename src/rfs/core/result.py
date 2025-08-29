@@ -544,7 +544,7 @@ async def traverse_async(
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # 예외를 Failure로 변환 - 함수형 패턴 적용
-    processed_results = []
+    processed_results: list[Result[T, Exception]] = []
     for result in results:
         # 함수형 패턴: isinstance 대신 type 비교 및 hasattr 사용
         # 함수형 패턴: append 대신 리스트 연결
@@ -828,7 +828,8 @@ class ResultAsync(Generic[T, E]):
                             result_value: "Result[U, E]" = await next_result._get_result()  # type: ignore
                             return result_value
                         elif hasattr(next_result, "__await__"):
-                            return await next_result
+                            awaited_result: "Result[U, E]" = await next_result  # type: ignore[misc]
+                            return awaited_result
                         else:
                             return next_result
                     except Exception as e:

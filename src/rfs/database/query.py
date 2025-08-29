@@ -411,7 +411,7 @@ class TransactionalQueryBuilder(AdvancedQueryBuilder):
     async def execute_batch(self, queries: List[Query]) -> Result[List[Any], str]:
         """배치 쿼리 실행"""
         try:
-            results = []
+            results: List[Any] = []
             if self.transaction_manager:
                 async with self.transaction_manager.transaction():
                     for query in queries:

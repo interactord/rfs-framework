@@ -284,7 +284,7 @@ class TokenManager:
 
     def __init__(self, jwt_provider: JWTAuthProvider):
         self.jwt_provider = jwt_provider
-        self.refresh_tokens = {}
+        self.refresh_tokens: Dict[str, Any] = {}
 
     def generate_access_token(self, user: User, expires_in=3600) -> JWTToken:
         """액세스 토큰 생성"""

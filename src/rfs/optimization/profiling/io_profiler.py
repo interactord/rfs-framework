@@ -187,7 +187,7 @@ class IOBottleneck:
 class IOMetrics:
     """I/O 메트릭"""
 
-    snapshots: List[str] = field(default_factory=list)
+    snapshots: List[IOSnapshot] = field(default_factory=list)
     detected_bottlenecks: List[str] = field(default_factory=list)
 
     def add_snapshot(self, snapshot: IOSnapshot):

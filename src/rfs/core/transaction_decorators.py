@@ -429,7 +429,7 @@ def saga_transaction(**kwargs):
 class TransactionStatus:
     """트랜잭션 상태 추적 유틸리티"""
 
-    _active_transactions = {}
+    _active_transactions: Dict[str, Any] = {}
 
     @classmethod
     def register_transaction(cls, context: TransactionContext):

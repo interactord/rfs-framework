@@ -124,7 +124,8 @@ class TransactionContext:
         # Async context 확인
         if self._async_context:
             try:
-                return self._async_context.get()
+                transaction: Optional[TransactionMetadata] = self._async_context.get()
+                return transaction
             except LookupError:
                 pass
 

@@ -139,7 +139,7 @@ class PerformanceOptimizer:
             if console:
                 console.print("📊 기준 성능 측정 중...")
             await self._measure_baseline_performance()
-            optimization_tasks = []
+            optimization_tasks: List[Any] = []
             if not suite.target_types or OptimizationType.MEMORY in suite.target_types:
                 optimization_tasks = optimization_tasks + [
                     self._analyze_memory_optimization(suite)
@@ -239,12 +239,12 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """메모리 최적화 분석"""
-        results = []
+        results: List[OptimizationResult] = []
         try:
             if "memory" in self.baseline_metrics:
                 memory_mb = self.baseline_metrics["memory"]["rss_mb"]
                 if memory_mb > 100:
-                    cache = {}
+                    cache: Dict[str, Any] = {}
                 gc_stats = self.baseline_metrics.get("gc", {})
                 if gc_stats and any(
                     (
@@ -285,7 +285,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """CPU 최적화 분석"""
-        results = []
+        results: List[OptimizationResult] = []
         try:
             if "cpu" in self.baseline_metrics:
                 num_threads = self.baseline_metrics["cpu"]["num_threads"]
@@ -344,7 +344,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """I/O 최적화 분석"""
-        results = []
+        results: List[OptimizationResult] = []
         try:
             results = results + [
                 OptimizationResult(
@@ -400,7 +400,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """시작 시간 최적화 분석"""
-        results = []
+        results: List[OptimizationResult] = []
         try:
             if "startup" in self.baseline_metrics:
                 import_time = self.baseline_metrics["startup"]["import_time"]
@@ -463,7 +463,7 @@ class PerformanceOptimizer:
         self, suite: OptimizationSuite
     ) -> List[OptimizationResult]:
         """Cloud Run 최적화 분석"""
-        results = []
+        results: List[OptimizationResult] = []
         try:
             is_cloud_run = os.getenv("K_SERVICE") is not None
             results = results + [

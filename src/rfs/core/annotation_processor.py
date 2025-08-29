@@ -71,8 +71,8 @@ class AnnotationProcessor:
 
     def __init__(self, registry: AnnotationRegistry = None):
         self.registry = registry or AnnotationRegistry()
-        self._discovered_classes = {}
-        self._processing_cache = {}
+        self._discovered_classes: Dict[str, type] = {}
+        self._processing_cache: Dict[str, ProcessingResult] = {}
 
     def scan_package(
         self, package_name: str, context: ProcessingContext
@@ -94,7 +94,7 @@ class AnnotationProcessor:
         try:
             package = importlib.import_module(package_name)
             package_path = package.__path__
-            discovered_modules = []
+            discovered_modules: List[Any] = []
             for importer, modname, ispkg in pkgutil.walk_packages(
                 package_path, prefix=f"{package_name}.", onerror=lambda x: None
             ):
@@ -189,7 +189,7 @@ class AnnotationProcessor:
 
         start_time = time.time()
         result = ProcessingResult()
-        annotated_classes = {}
+        annotated_classes: Dict[str, Dict[str, type]] = {}
         for cls in classes:
             if has_annotation(cls):
                 annotated_classes = {
@@ -228,7 +228,7 @@ class AnnotationProcessor:
         self, context: ProcessingContext
     ) -> List[RegistrationResult]:
         """발견된 클래스들을 등록"""
-        results = []
+        results: List[RegistrationResult] = []
         if context.resolve_dependencies:
             ordered_classes = self._resolve_registration_order()
         else:
@@ -249,9 +249,9 @@ class AnnotationProcessor:
         """
         의존성을 고려한 등록 순서 해결 (Topological Sort)
         """
-        dependency_graph = defaultdict(list)
+        dependency_graph: Dict[str, List[str]] = defaultdict(list)
         in_degree = defaultdict(int)
-        class_by_name = {}
+        class_by_name: Dict[str, type] = {}
         for cls in self._discovered_classes.values():
             component_metadata = get_component_metadata(cls)
             if not component_metadata:
@@ -267,7 +267,7 @@ class AnnotationProcessor:
                 for dep in deps:
                     dependency_graph[dep] = dependency_graph[dep] + [name]
         queue = deque([name for name, degree in in_degree.items() if degree == 0])
-        ordered_names = []
+        ordered_names: List[str] = []
         while queue:
             current = queue.popleft()
             ordered_names = ordered_names + [current]
@@ -279,7 +279,7 @@ class AnnotationProcessor:
             remaining = set(class_by_name.keys()) - set(ordered_names)
             logger.warning(f"Circular dependencies detected in: {remaining}")
             ordered_names = ordered_names + remaining
-        ordered_classes = []
+        ordered_classes: List[type] = []
         for name in ordered_names:
             if name in class_by_name:
                 ordered_classes = ordered_classes + [class_by_name[name]]

@@ -176,7 +176,8 @@ class AnnotationRegistry(StatelessRegistry):
             self.components,
         ]:
             if component_id in storage:
-                return storage[component_id]
+                component_class: Type = storage[component_id]
+                return component_class
         if component_id in self.adapters:
             adapters = self.adapters[component_id]
             if qualifier:
@@ -200,7 +201,7 @@ class AnnotationRegistry(StatelessRegistry):
         metadata = get_component_metadata(cls)
         if not metadata:
             return cls()
-        constructor_deps = {}
+        constructor_deps: Dict[str, Any] = {}
         for dep in metadata.constructor_dependencies:
             dep_instance = self.get_component(dep.name, dep.qualifier)
             if type(dep_instance).__name__ == "Success":
@@ -285,7 +286,7 @@ class AnnotationRegistry(StatelessRegistry):
         Returns:
             컴포넌트 인스턴스 리스트
         """
-        components = []
+        components: List[Any] = []
         match component_type:
             case "port":
                 storage = self.ports

@@ -659,8 +659,8 @@ class AsyncErrorMonitor:
                 return {'total_errors': 0}
             
             # 심각도별 분포
-            severity_distribution = {}
-            operation_distribution = {}
+            severity_distribution: Dict[str, int] = {}
+            operation_distribution: Dict[str, int] = {}
             
             for error in self.error_history:
                 severity = error.severity.value

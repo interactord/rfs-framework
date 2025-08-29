@@ -112,7 +112,7 @@ class MemoryAuditStorage(AuditStorage):
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            filtered_events = []
+            filtered_events: List[AuditEvent] = []
             for event in self.events:
                 match = True
                 for key, value in filters.items():
@@ -184,7 +184,7 @@ class FileAuditStorage(AuditStorage):
     ) -> Result[List[AuditEvent], str]:
         """이벤트 조회"""
         try:
-            events = []
+            events: List[AuditEvent] = []
             with open(self.log_file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     try:

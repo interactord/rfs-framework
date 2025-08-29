@@ -284,14 +284,15 @@ class TestCommand(Command):
             process = await asyncio.create_subprocess_exec(
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
             )
-            output_lines = []
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-                output = line.decode().strip()
-                if output:
-                    output_lines = output_lines + [output]
+            output_lines: List[str] = []
+            if process.stdout is not None:
+                while True:
+                    line = await process.stdout.readline()
+                    if not line:
+                        break
+                    output = line.decode().strip()
+                    if output:
+                        output_lines = output_lines + [output]
                     if console:
                         if "PASSED" in output:
                             console.print(output, style="green")

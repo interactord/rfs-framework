@@ -160,7 +160,7 @@ class SystemValidator:
                         border_style="blue",
                     )
                 )
-            validation_tasks = []
+            validation_tasks: List[asyncio.Task] = []
             if suite.should_run_category(ValidationCategory.FUNCTIONAL):
                 validation_tasks = validation_tasks + [
                     self._run_category_validation(
@@ -242,7 +242,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """기능 검증 실행"""
-        results = []
+        results: List[ValidationResult] = []
         try:
             core_modules = [
                 "rfs.core",
@@ -279,8 +279,8 @@ class SystemValidator:
             try:
                 from ..core.result import Failure, Result, Success
 
-                success_result = Success("test")
-                failure_result = Failure("error")
+                success_result: Result[str, str] = Success("test")
+                failure_result: Result[str, str] = Failure("error")
                 assert success_result.is_success()
                 assert not failure_result.is_success()
                 assert success_result.unwrap() == "test"
@@ -346,7 +346,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """통합 검증 실행"""
-        results = []
+        results: List[ValidationResult] = []
         try:
             try:
                 from ..cli.core import RFSCli
@@ -413,7 +413,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """성능 검증 실행"""
-        results = []
+        results: List[ValidationResult] = []
         try:
             import time
 
@@ -501,11 +501,11 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """보안 검증 실행"""
-        results = []
+        results: List[ValidationResult] = []
         try:
             import os
 
-            sensitive_vars = []
+            sensitive_vars: List[str] = []
             for key, value in os.environ.items():
                 if any(
                     (
@@ -598,7 +598,7 @@ class SystemValidator:
         self, suite: ValidationSuite
     ) -> List[ValidationResult]:
         """호환성 검증 실행"""
-        results = []
+        results: List[ValidationResult] = []
         try:
             python_version = sys.version_info
             if python_version >= (3, 10):
@@ -684,7 +684,7 @@ class SystemValidator:
             [r for r in self.validation_results if r.status == ValidationStatus.ERROR]
         )
         critical_issues = len([r for r in self.validation_results if r.is_critical])
-        category_stats = {}
+        category_stats: Dict[ValidationCategory, Dict[str, Any]] = {}
         for category in ValidationCategory:
             category_results = [
                 r for r in self.validation_results if r.category == category
@@ -724,7 +724,7 @@ class SystemValidator:
                         }
                     },
                 }
-        all_recommendations = []
+        all_recommendations: List[str] = []
         for result in self.validation_results:
             all_recommendations = all_recommendations + result.recommendations
         success_rate = passed_tests / total_tests * 100 if total_tests > 0 else 0
@@ -830,19 +830,21 @@ class SystemValidator:
             category_table.add_column("통과", justify="right")
             category_table.add_column("실패", justify="right")
             category_table.add_column("성공률", justify="right")
-            for category, stats in report.get("category_stats").items():
-                success_rate_color = (
-                    "green"
-                    if stats["success_rate"] >= 90
-                    else "yellow" if stats["success_rate"] >= 70 else "red"
-                )
-                category_table.add_row(
-                    category.title(),
-                    str(stats.get("total")),
-                    str(stats.get("passed")),
-                    str(stats.get("failed")) if stats.get("failed") > 0 else "-",
-                    f"[{success_rate_color}]{stats.get('success_rate'):.1f}%[/{success_rate_color}]",
-                )
+            category_stats = report.get("category_stats")
+            if category_stats is not None:
+                for category, stats in category_stats.items():
+                    success_rate_color = (
+                        "green"
+                        if stats["success_rate"] >= 90
+                        else "yellow" if stats["success_rate"] >= 70 else "red"
+                    )
+                    category_table.add_row(
+                        category.title(),
+                        str(stats.get("total")),
+                        str(stats.get("passed")),
+                        str(stats.get("failed")) if stats.get("failed") > 0 else "-",
+                        f"[{success_rate_color}]{stats.get('success_rate'):.1f}%[/{success_rate_color}]",
+                    )
             console.print(category_table)
         failed_results = [
             r for r in report["detailed_results"] if r["status"] in ["fail", "error"]

@@ -190,7 +190,7 @@ def set_current_user(user: User) -> None:
 
 def clear_auth_context() -> None:
     """인증 컨텍스트 초기화"""
-    _auth_context = {}
+    _auth_context: Dict[str, Any] = {}
 
 
 def RequiresAuthentication(allow_service_account=True, check_verified=False):

@@ -19,13 +19,13 @@ try:
 
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
-    create_engine = None
-    create_async_engine = None
-    AsyncSession = None
-    sessionmaker = None
-    declarative_base = None
-    QueuePool = None
-    MetaData = None
+    create_engine: Any = None
+    create_async_engine: Any = None
+    AsyncSession: Any = None
+    sessionmaker: Any = None
+    declarative_base: Any = None
+    QueuePool: Any = None
+    MetaData: Any = None
     SQLALCHEMY_AVAILABLE = False
 
 try:
@@ -35,9 +35,9 @@ try:
 
     TORTOISE_AVAILABLE = True
 except ImportError:
-    Tortoise = None
-    connections = None
-    in_transaction = None
+    Tortoise: Any = None
+    connections: Any = None
+    in_transaction: Any = None
     TORTOISE_AVAILABLE = False
 
 from ..core.enhanced_logging import get_logger
@@ -153,8 +153,8 @@ class ConnectionPool:
         self._async_engine = None
         self._session_factory = None
         self._async_session_factory = None
-        self._connections = []  # 연결 풀 저장소
-        self._available = []  # 사용 가능한 연결들 (테스트 호환성)
+        self._connections: List[Any] = []  # 연결 풀 저장소
+        self._available: List[Any] = []  # 사용 가능한 연결들 (테스트 호환성)
         self._in_use: Set[Any] = set()  # 사용 중인 연결들 (테스트 호환성)
         self._lock = asyncio.Lock()  # 스레드 안전성
         self._closed = False  # 종료 상태

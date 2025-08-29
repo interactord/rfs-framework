@@ -246,7 +246,7 @@ class DocumentationGenerator:
 
     async def _analyze_python_modules(self) -> List[Dict[str, Any]]:
         """Python 모듈 분석"""
-        modules = []
+        modules: List[Dict[str, Any]] = []
         try:
             python_files = list(self.project_path.rglob("*.py"))
             for py_file in python_files:
@@ -271,7 +271,7 @@ class DocumentationGenerator:
         try:
             content = py_file.read_text(encoding="utf-8")
             tree = ast.parse(content)
-            module_info = {
+            module_info: Dict[str, Any] = {
                 "name": py_file.stem,
                 "path": str(py_file.relative_to(self.project_path)),
                 "docstring": ast.get_docstring(tree),
@@ -447,7 +447,7 @@ class DocumentationGenerator:
     def _simple_markdown_to_html(self, text: str) -> str:
         """간단한 Markdown -> HTML 변환"""
         lines = text.split("\n")
-        html_lines = []
+        html_lines: List[str] = []
         for line in lines:
             line = line.strip()
             if not line:

@@ -247,7 +247,7 @@ class LineChart(Chart):
                 if key in first_item:
                     y_key = key
                     break
-            series_data = {}
+            series_data: Dict[str, Any] = {}
             labels: Set[Any] = set()
             for item in raw_data:
                 x_val = str(item.get(x_key, ""))
@@ -289,8 +289,8 @@ class BarChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            categories = []
-            values = []
+            categories: List[str] = []
+            values: List[float] = []
             for item in raw_data:
                 category = None
                 for key in ["category", "name", "label", "x"]:
@@ -331,9 +331,9 @@ class PieChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            labels = []
-            values = []
-            colors = []
+            labels: List[str] = []
+            values: List[float] = []
+            colors: List[str] = []
             for i, item in enumerate(raw_data):
                 label = None
                 for key in ["label", "name", "category", "x"]:
@@ -368,7 +368,7 @@ class ScatterChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            scatter_data = []
+            scatter_data: List[Dict[str, Any]] = []
             for item in raw_data:
                 x_val = item.get("x", 0)
                 y_val = item.get("y", 0)
@@ -398,7 +398,7 @@ class HistogramChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            values = []
+            values: List[float] = []
             for item in raw_data:
                 for key in ["value", "data", "amount", "count"]:
                     if key in item:
@@ -409,8 +409,8 @@ class HistogramChart(Chart):
             min_val = min(values)
             max_val = max(values)
             bin_width = (max_val - min_val) / self.bins
-            bins = []
-            counts = []
+            bins: List[str] = []
+            counts: List[int] = []
             for i in range(self.bins):
                 bin_start = min_val + i * bin_width
                 bin_end = min_val + (i + 1) * bin_width
@@ -438,7 +438,7 @@ class HeatmapChart(Chart):
         try:
             if not raw_data:
                 return Success(ChartData())
-            heatmap_data = []
+            heatmap_data: List[Dict[str, Any]] = []
             x_labels: Set[Any] = set()
             y_labels: Set[Any] = set()
             for item in raw_data:

@@ -254,7 +254,7 @@ class TaskScheduler:
         while self._running and (not self._shutdown_event.is_set()):
             try:
                 current_time = datetime.now()
-                ready_tasks = []
+                ready_tasks: List[ScheduledTask] = []
                 while (
                     self._scheduled_tasks
                     and self._scheduled_tasks[0].next_run_time <= current_time
@@ -372,7 +372,7 @@ class TaskScheduler:
 
     async def _cleanup_completed_tasks(self) -> None:
         """완료된 작업 정리"""
-        completed_tasks = []
+        completed_tasks: List[str] = []
         for task_name, task in self._running_tasks.items():
             if task.done():
                 completed_tasks = completed_tasks + [task_name]

@@ -194,7 +194,7 @@ class TrafficPatternAnalyzer:
 
     def __init__(self, history_size: int = 1440) -> None:
         self.history_size = history_size
-        self.metric_history = []
+        self.metric_history: List[MetricSnapshot] = []
 
     def add_snapshot(self, snapshot: MetricSnapshot):
         """메트릭 스냅샷 추가"""
@@ -230,14 +230,14 @@ class TrafficPatternAnalyzer:
         """주기성 감지 (간단한 구현)"""
         if len(values) < 120:
             return False
-        hourly_averages = []
+        hourly_averages: List[float] = []
         for i in range(0, len(values) - 60, 60):
             hour_data = values[i : i + 60]
             if hour_data:
                 hourly_averages = hourly_averages + [statistics.mean(hour_data)]
         if len(hourly_averages) < 24:
             return False
-        daily_patterns = []
+        daily_patterns: List[List[float]] = []
         for i in range(0, len(hourly_averages) - 24, 24):
             daily_patterns = daily_patterns + [hourly_averages[i : i + 24]]
         if len(daily_patterns) < 2:
@@ -253,7 +253,7 @@ class TrafficPatternAnalyzer:
         if len(self.metric_history) < 168:
             return None
         current_hour = datetime.now().hour
-        same_hour_data = []
+        same_hour_data: List[float] = []
         for i in range(len(self.metric_history) - 24, 0, -24):
             if i >= 0 and self.metric_history[i].timestamp.hour == current_hour:
                 same_hour_data = same_hour_data + [self.metric_history[i].request_count]

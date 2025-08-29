@@ -285,7 +285,7 @@ class TaskResultStore:
         self, start_time: datetime, end_time: datetime
     ) -> List[TaskResult]:
         """시간 범위내 결과 조회"""
-        results = []
+        results: List[TaskResult] = []
         for task_id in self._task_ids_by_time:
             result = self._results.get(task_id)
             if result and start_time <= result.start_time <= end_time:
@@ -363,7 +363,7 @@ class TaskResultStore:
             return
         if len(self._results) > self.max_results:
             removal_count = len(self._results) - self.max_results
-            candidates = []
+            candidates: List[str] = []
             for task_id in self._task_ids_by_time:
                 result = self._results.get(task_id)
                 if result and result.status == ResultStatus.SUCCESS:
@@ -500,8 +500,8 @@ class ResultAnalyzer:
         ]
         if not failed_results:
             return {"error": "No failures found"}
-        failure_by_type = {}
-        failure_by_task = {}
+        failure_by_type: Dict[str, List[TaskResult]] = {}
+        failure_by_task: Dict[str, List[TaskResult]] = {}
         for result in failed_results:
             error_type = result.error_type or "Unknown"
             if error_type not in failure_by_type:

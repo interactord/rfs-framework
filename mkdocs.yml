@@ -3,6 +3,7 @@ site_name: RFS Framework
 site_description: Enterprise-Grade Reactive Functional Serverless Framework for Python
 site_author: RFS Framework Team
 site_url: https://interactord.github.io/rfs-framework/
+site_dir: site
 repo_name: interactord/rfs-framework
 repo_url: https://github.com/interactord/rfs-framework
 edit_uri: edit/main/docs/
@@ -106,6 +107,7 @@ plugins:
       type: timeago
       timezone: Asia/Seoul
       locale: ko
+      enable_git_follow: false
   - git-committers:
       repository: interactord/rfs-framework
       branch: main
@@ -213,6 +215,13 @@ nav:
     - 13-load-balancing.md
     - 14-cli-interface.md
     - 20-code-quality.md
+    - 15-configuration-injection.md
+    - 16-hof-usage-guide.md
+    - 17-functional-development-rules.md
+  
+  - LLM 통합:
+    - LLM 통합 가이드: 28-llm-integration-guide.md
+    - LLM 설정 가이드: 18-llm-configuration-guide.md
   
   - API 레퍼런스:
     - API 개요: api/index.md
@@ -236,6 +245,10 @@ nav:
       - Core Functions: api/hof/core.md
       - Collections: api/hof/collections.md
       - Monads: api/hof/monads.md
+    - LLM:
+      - LLM Manager: api/llm/manager.md
+      - Providers: api/llm/providers.md
+      - Configuration: api/llm/config.md
   
   - 가이드:
     - 사용자 가이드: USER_GUIDE.md
@@ -243,6 +256,7 @@ nav:
     - 릴리스 노트: RELEASE_NOTES.md
     - 마이그레이션: MIGRATION_GUIDE.md
     - 기여 가이드: CONTRIBUTING.md
+    - 문서 배포: deployment-guide.md
     
   - 프로젝트:
     - 구현 현황: 99-implementation-status.md

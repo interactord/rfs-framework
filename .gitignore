@@ -121,12 +121,18 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Environment backups (보안을 위해 백업 파일도 제외)
+.env.backup
+.env.local
+.env.production
 
 # Spyder project settings
 .spyderproject

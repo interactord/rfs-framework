@@ -1,196 +1,88 @@
 """
-RFS Testing Framework (RFS v4.1)
+RFS Framework 테스팅 시스템
 
-테스트 프레임워크 - 단위/통합 테스트 도구
+Result 패턴 전용 테스팅 도구와 유틸리티를 제공합니다.
+Phase 3 구현: 테스트 작성 효율성 극대화
 """
 
-from .assertions import (  # 기본 어설션; 컬렉션 어설션; 예외 어설션; Result 어설션; 비동기 어설션; 커스텀 어설션
-    AssertionError,
-    assert_empty,
-    assert_equal,
-    assert_eventually,
-    assert_failure,
-    assert_false,
-    assert_in,
-    assert_length,
-    assert_none,
-    assert_not_empty,
-    assert_not_equal,
-    assert_not_in,
-    assert_not_none,
-    assert_not_raises,
-    assert_raises,
-    assert_result_error,
+from .result_helpers import (
+    # 모킹 시스템
+    ResultServiceMocker,
+    mock_result_service,
+    
+    # 어설션 함수들
+    assert_result_success,
+    assert_result_failure,
     assert_result_value,
-    assert_success,
-    assert_timeout,
-    assert_true,
-    create_assertion,
-)
-from .coverage import (  # 커버리지 측정; 커버리지 분석
-    CoverageCollector,
-    CoverageReport,
-    analyze_coverage,
-    generate_coverage_html,
-    get_coverage_report,
-    start_coverage,
-    stop_coverage,
-)
-from .fixtures import (  # 픽스처 관리; 픽스처 스코프; 데이터베이스 픽스처; 웹 픽스처
-    FixtureScope,
-    database_fixture,
-    fixture,
-    mock_server_fixture,
-    redis_fixture,
-    setup_fixture,
-    teardown_fixture,
-    web_client_fixture,
-)
-from .integration import (  # 통합 테스트; 테스트 환경; 테스트 데이터
-    DatabaseIntegrationTest,
-    IntegrationTest,
-    MessageIntegrationTest,
-    TestDataFactory,
-    TestEnvironment,
-    WebIntegrationTest,
-    cleanup_test_data,
-    cleanup_test_environment,
-    create_test_data,
-    setup_test_environment,
-)
-from .mocks import (  # Mock 객체; Mock 헬퍼; Mock 검증; Stub 객체; Fake 객체
-    AsyncMock,
-    FakeDatabase,
-    FakeMessageBroker,
-    FakeRedis,
-    MagicMock,
-    Mock,
-    Stub,
-    assert_called,
-    assert_called_once,
-    assert_called_with,
-    assert_not_called,
-    create_stub,
-    patch,
-    patch_method,
-    patch_object,
-)
-from .performance import (  # 성능 테스트; 성능 측정; 성능 어설션
-    LoadTest,
-    PerformanceTest,
-    StressTest,
-    assert_memory_usage,
-    assert_performance,
-    assert_response_time,
-    assert_throughput,
-    benchmark,
-    measure_performance,
-    profile_function,
-)
-from .test_runner import (  # 테스트 러너; 테스트 케이스; 테스트 실행; 테스트 결과
-    AsyncTestCase,
-    TestCase,
-    TestMetrics,
-    TestReport,
-    TestResult,
-    TestRunner,
-    TestStatus,
-    TestSuite,
-    coverage_report,
-    discover_tests,
-    run_test,
-    run_test_suite,
+    assert_result_error,
+    
+    # MonoResult 어설션
+    assert_mono_result_success,
+    assert_mono_result_failure,
+    assert_mono_result_value,
+    
+    # FluxResult 어설션
+    assert_flux_success_count,
+    assert_flux_failure_count,
+    assert_flux_total_count,
+    assert_flux_success_rate,
+    assert_flux_success_values,
+    
+    # 테스트 데이터 팩토리
+    ResultTestDataFactory,
+    
+    # 성능 테스트 헬퍼
+    PerformanceTestHelper,
+    
+    # 통합 테스트 컨텍스트
+    result_test_context,
+    
+    # 커스텀 마커
+    result_test,
+    mono_test,
+    flux_test,
+    performance_test
 )
 
 __all__ = [
-    # Test Runner
-    "TestRunner",
-    "TestSuite",
-    "TestResult",
-    "TestStatus",
-    "TestCase",
-    "AsyncTestCase",
-    "run_test",
-    "run_test_suite",
-    "discover_tests",
-    "TestReport",
-    "TestMetrics",
-    "coverage_report",
-    # Fixtures
-    "fixture",
-    "setup_fixture",
-    "teardown_fixture",
-    "FixtureScope",
-    "database_fixture",
-    "redis_fixture",
-    "web_client_fixture",
-    "mock_server_fixture",
-    # Assertions
-    "assert_equal",
-    "assert_not_equal",
-    "assert_true",
-    "assert_false",
-    "assert_none",
-    "assert_not_none",
-    "assert_in",
-    "assert_not_in",
-    "assert_empty",
-    "assert_not_empty",
-    "assert_length",
-    "assert_raises",
-    "assert_not_raises",
-    "assert_success",
-    "assert_failure",
+    # 모킹 시스템
+    "ResultServiceMocker",
+    "mock_result_service",
+    
+    # 어설션 함수들
+    "assert_result_success",
+    "assert_result_failure", 
     "assert_result_value",
     "assert_result_error",
-    "assert_eventually",
-    "assert_timeout",
-    "AssertionError",
-    "create_assertion",
-    # Mocks
-    "Mock",
-    "AsyncMock",
-    "MagicMock",
-    "patch",
-    "patch_object",
-    "patch_method",
-    "assert_called",
-    "assert_called_with",
-    "assert_called_once",
-    "assert_not_called",
-    "Stub",
-    "create_stub",
-    "FakeDatabase",
-    "FakeRedis",
-    "FakeMessageBroker",
-    # Integration Testing
-    "IntegrationTest",
-    "DatabaseIntegrationTest",
-    "WebIntegrationTest",
-    "MessageIntegrationTest",
-    "TestEnvironment",
-    "setup_test_environment",
-    "cleanup_test_environment",
-    "TestDataFactory",
-    "create_test_data",
-    "cleanup_test_data",
-    # Performance Testing
-    "PerformanceTest",
-    "LoadTest",
-    "StressTest",
-    "measure_performance",
-    "benchmark",
-    "profile_function",
-    "assert_performance",
-    "assert_response_time",
-    "assert_throughput",
-    "assert_memory_usage",
-    # Coverage
-    "CoverageCollector",
-    "start_coverage",
-    "stop_coverage",
-    "get_coverage_report",
-    "CoverageReport",
-    "analyze_coverage",
-    "generate_coverage_html",
+    
+    # MonoResult 어설션
+    "assert_mono_result_success",
+    "assert_mono_result_failure",
+    "assert_mono_result_value",
+    
+    # FluxResult 어설션
+    "assert_flux_success_count",
+    "assert_flux_failure_count",
+    "assert_flux_total_count",
+    "assert_flux_success_rate",
+    "assert_flux_success_values",
+    
+    # 테스트 데이터 팩토리
+    "ResultTestDataFactory",
+    
+    # 성능 테스트 헬퍼
+    "PerformanceTestHelper",
+    
+    # 통합 테스트 컨텍스트
+    "result_test_context",
+    
+    # 커스텀 마커
+    "result_test",
+    "mono_test",
+    "flux_test",
+    "performance_test"
 ]
+
+__version__ = "3.0.0"
+__author__ = "RFS Framework Team"
+__description__ = "Result 패턴 전용 테스팅 시스템"

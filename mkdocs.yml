@@ -196,6 +196,10 @@ nav:
     - 04-transactions.md
     - 16-hot-library.md
     - Readable HOF: 19-readable-hof-guide.md
+    - MonoResult/FluxResult: 20-monoresult-guide.md
+    - FastAPI 통합: 21-fastapi-integration.md
+    - 모니터링: 22-monitoring-observability.md
+    - 테스팅: 23-testing-guide.md
     - 16-event-system.md
     - 17-profiles.md
     - 17-state-machine.md
@@ -228,6 +232,8 @@ nav:
     - Reactive:
       - Mono: api/reactive/mono.md
       - Flux: api/reactive/flux.md
+      - MonoResult: api/reactive/mono-result.md
+      - FluxResult: api/reactive/flux-result.md
     - HOF:
       - Core Functions: api/hof/core.md
       - Collections: api/hof/collections.md

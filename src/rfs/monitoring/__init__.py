@@ -1,176 +1,67 @@
 """
-RFS Monitoring System (RFS v4.1)
+RFS Framework 모니터링 시스템
 
-모니터링 및 메트릭스 시스템
+Result 패턴 기반 로깅, 메트릭 수집, 성능 모니터링을 제공합니다.
+Phase 3 구현: 운영 관측가능성(Observability) 완성
 """
 
-from .alerts import (  # 알림 시스템; 알림 채널; 알림 데코레이터; 알림 헬퍼
-    Alert,
-    AlertChannel,
-    AlertLevel,
-    AlertManager,
-    AlertRule,
-    EmailChannel,
-    SlackChannel,
-    WebhookChannel,
-    create_alert_rule,
-    monitor_alerts,
-    send_alert,
+from .result_logging import (
+    ResultLogger,
+    CorrelationContext,
+    log_result_operation,
+    with_correlation_id,
+    get_correlation_id,
+    LoggingMonoResult,
+    create_logging_mono,
+    log_flux_results,
+    configure_result_logging,
+    LogLevel
 )
-from .dashboards import (  # 대시보드; 대시보드 생성기; 위젯 타입
-    ChartType,
-    Dashboard,
-    DashboardBuilder,
-    DashboardWidget,
-    GraphWidget,
-    MetricWidget,
-    StatusWidget,
-    TableWidget,
-    create_dashboard,
-)
-from .health import (  # 헬스 체크; 헬스 체크 등록; 기본 헬스 체크
-    ComponentHealth,
-    DatabaseHealthCheck,
-    HealthCheck,
-    HealthChecker,
-    HealthStatus,
-    MessageBrokerHealthCheck,
-    RedisHealthCheck,
-    get_health_status,
-    register_health_check,
-)
-from .metrics import (  # 메트릭스 수집; 메트릭스 저장소; 메트릭스 헬퍼
-    Counter,
-    Gauge,
-    Histogram,
-    MemoryMetricsStorage,
-    Metric,
-    MetricsCollector,
-    MetricsStorage,
+from .metrics import (
+    ResultMetricsCollector,
+    ResultAlertManager,
     MetricType,
-    PrometheusStorage,
-    Summary,
-    get_metrics_collector,
-    record_counter,
-    record_gauge,
-    record_histogram,
-    record_summary,
-)
-
-# Performance decorators
-from .performance_decorators import (
-    Cached,
-    PerformanceLevel,
-    PerformanceMetrics,
-    PerformanceMonitor,
-    PerformanceMonitored,
-    get_performance_monitor,
-    get_performance_statistics,
-    set_alert_thresholds,
-)
-from .profiler import (  # 성능 프로파일러; 프로파일링 데코레이터; 프로파일링 분석
-    Profiler,
-    ProfileResult,
-    ProfileType,
-    analyze_profile,
-    generate_flame_graph,
-    profile,
-    profile_cpu,
-    profile_memory,
-)
-from .tracing import (  # 분산 추적; 추적 저장소; 추적 데코레이터; 추적 헬퍼
-    JaegerStorage,
-    MemoryTracingStorage,
-    Span,
-    SpanContext,
-    TraceContext,
-    Tracer,
-    TracingStorage,
-    create_child_span,
-    get_current_span,
-    start_span,
-    trace,
-    trace_async,
+    AlertCondition,
+    collect_metric,
+    create_alert_rule,
+    get_metrics_summary,
+    start_monitoring,
+    stop_monitoring,
+    collect_result_metric,
+    collect_flux_result_metric,
+    setup_default_alerts,
+    get_dashboard_data
 )
 
 __all__ = [
-    # Metrics
-    "MetricsCollector",
+    # 로깅 시스템
+    "ResultLogger",
+    "CorrelationContext", 
+    "log_result_operation",
+    "with_correlation_id",
+    "get_correlation_id",
+    "LoggingMonoResult",
+    "create_logging_mono",
+    "log_flux_results",
+    "configure_result_logging",
+    "LogLevel",
+    
+    # 메트릭 시스템
+    "ResultMetricsCollector",
+    "ResultAlertManager",
     "MetricType",
-    "Metric",
-    "Counter",
-    "Gauge",
-    "Histogram",
-    "Summary",
-    "MetricsStorage",
-    "MemoryMetricsStorage",
-    "PrometheusStorage",
-    "record_counter",
-    "record_gauge",
-    "record_histogram",
-    "record_summary",
-    "get_metrics_collector",
-    # Tracing
-    "Tracer",
-    "Span",
-    "SpanContext",
-    "TraceContext",
-    "TracingStorage",
-    "MemoryTracingStorage",
-    "JaegerStorage",
-    "trace",
-    "trace_async",
-    "start_span",
-    "get_current_span",
-    "create_child_span",
-    # Health
-    "HealthChecker",
-    "HealthStatus",
-    "HealthCheck",
-    "ComponentHealth",
-    "register_health_check",
-    "get_health_status",
-    "DatabaseHealthCheck",
-    "RedisHealthCheck",
-    "MessageBrokerHealthCheck",
-    # Alerts
-    "AlertManager",
-    "Alert",
-    "AlertLevel",
-    "AlertRule",
-    "AlertChannel",
-    "EmailChannel",
-    "SlackChannel",
-    "WebhookChannel",
-    "monitor_alerts",
-    "send_alert",
+    "AlertCondition",
+    "collect_metric",
     "create_alert_rule",
-    # Dashboards
-    "Dashboard",
-    "DashboardWidget",
-    "ChartType",
-    "DashboardBuilder",
-    "create_dashboard",
-    "MetricWidget",
-    "GraphWidget",
-    "TableWidget",
-    "StatusWidget",
-    # Profiler
-    "Profiler",
-    "ProfileResult",
-    "ProfileType",
-    "profile",
-    "profile_memory",
-    "profile_cpu",
-    "analyze_profile",
-    "generate_flame_graph",
-    # Performance decorators
-    "PerformanceMonitored",
-    "Cached",
-    "PerformanceMetrics",
-    "PerformanceLevel",
-    "PerformanceMonitor",
-    "get_performance_monitor",
-    "get_performance_statistics",
-    "set_alert_thresholds",
+    "get_metrics_summary",
+    "start_monitoring",
+    "stop_monitoring",
+    "collect_result_metric",
+    "collect_flux_result_metric",
+    "setup_default_alerts",
+    "get_dashboard_data"
 ]
+
+__version__ = "3.0.0"
+__author__ = "RFS Framework Team"
+__description__ = "Result 패턴 통합 모니터링 시스템"

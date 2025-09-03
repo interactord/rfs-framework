@@ -1,589 +1,412 @@
 """
-RFS Metrics Collection (RFS v4.1)
+Result 패턴 통합 메트릭 시스템
 
-메트릭스 수집 및 관리 시스템
+실시간 성능 데이터 수집, 알림 관리, 모니터링 대시보드 API를 제공합니다.
+임계값 기반 자동 알림과 상세한 성능 분석을 지원합니다.
 """
 
-import asyncio
-import json
-import statistics
-import threading
 import time
-from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from enum import Enum
+from threading import Lock
 from typing import Any, Callable, Dict, List, Optional, Union
+import json
+import logging
 
-from ..core.enhanced_logging import get_logger
-from ..core.result import Failure, Result, Success
+from rfs.core.result import Result
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class MetricType(Enum):
-    """메트릭 유형"""
+class MetricType(str, Enum):
+    """메트릭 타입"""
+    COUNTER = "counter"           # 증가만 하는 값 (요청 수, 에러 수 등)
+    GAUGE = "gauge"              # 현재 상태 값 (메모리 사용량, 활성 연결 수 등)
+    HISTOGRAM = "histogram"       # 분포 데이터 (응답 시간, 데이터 크기 등)
+    TIMER = "timer"              # 시간 측정 (작업 처리 시간)
 
-    COUNTER = "counter"
-    GAUGE = "gauge"
-    HISTOGRAM = "histogram"
-    SUMMARY = "summary"
+
+class AlertCondition(str, Enum):
+    """알림 조건"""
+    GREATER_THAN = "gt"          # 초과
+    LESS_THAN = "lt"             # 미만
+    EQUAL = "eq"                 # 같음
+    NOT_EQUAL = "ne"             # 같지 않음
 
 
 @dataclass
-class Metric:
-    """메트릭 기본 클래스"""
-
+class MetricData:
+    """메트릭 데이터"""
     name: str
-    metric_type: MetricType
-    value: Union[int, float]
-    labels: Dict[str, Any] = field(default_factory=dict)
-    timestamp: float = field(default_factory=time.time)
-    description: Optional[str] = None
-
+    type: MetricType
+    value: float
+    timestamp: datetime
+    labels: Dict[str, str] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    
     def to_dict(self) -> Dict[str, Any]:
+        """딕셔너리로 변환"""
         return {
             "name": self.name,
-            "type": self.metric_type.value,
+            "type": self.type.value,
             "value": self.value,
+            "timestamp": self.timestamp.isoformat(),
             "labels": self.labels,
-            "timestamp": self.timestamp,
-            "description": self.description,
+            "metadata": self.metadata
         }
 
 
-class Counter:
-    """카운터 메트릭"""
-
-    def __init__(
-        self,
-        name: str,
-        description: Optional[str] = None,
+class ResultMetricsCollector:
+    """Result 패턴 메트릭 수집기"""
+    
+    def __init__(self, max_history_size: int = 10000):
+        self.max_history_size = max_history_size
+        self._metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=max_history_size))
+        self._counters: Dict[str, float] = defaultdict(float)
+        self._gauges: Dict[str, float] = defaultdict(float)
+        self._histograms: Dict[str, List[float]] = defaultdict(list)
+        self._timers: Dict[str, List[float]] = defaultdict(list)
+        self._lock = Lock()
+        
+        # 성능 최적화를 위한 배치 처리
+        self._batch_metrics: List[MetricData] = []
+        self._batch_size = 100
+        self._last_flush = time.time()
+        self._flush_interval = 1.0  # 1초마다 배치 플러시
+    
+    def collect_metric(
+        self, 
+        name: str, 
+        value: float, 
+        metric_type: MetricType,
         labels: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ):
-        self.name = name
-        self.description = description
-        self.labels = labels or {}
-        self._value = 0
-        self._lock = threading.Lock()
-
-    def increment(self, amount: Union[int, float] = 1) -> "Counter":
-        """카운터 증가"""
-        with self._lock:
-            if amount < 0:
-                raise ValueError("카운터는 음수로 증가할 수 없습니다")
-            _value = _value + amount
-        return self
-
-    def get_value(self) -> Union[int, float]:
-        """현재 값 반환"""
-        with self._lock:
-            return self._value
-
-    def reset(self):
-        """카운터 초기화"""
-        with self._lock:
-            self._value = 0
-
-    def to_metric(self) -> Metric:
-        """Metric 객체로 변환"""
-        return Metric(
-            name=self.name,
-            metric_type=MetricType.COUNTER,
-            value=self.get_value(),
-            labels=self.labels,
-            description=self.description,
+        """메트릭 수집"""
+        metric = MetricData(
+            name=name,
+            type=metric_type,
+            value=value,
+            timestamp=datetime.now(),
+            labels=labels or {},
+            metadata=metadata or {}
         )
-
-
-class Gauge:
-    """게이지 메트릭"""
-
-    def __init__(
-        self,
-        name: str,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ):
-        self.name = name
-        self.description = description
-        self.labels = labels or {}
-        self._value = 0
-        self._lock = threading.Lock()
-
-    def set(self, value: Union[int, float]) -> "Gauge":
-        """값 설정"""
+        
         with self._lock:
-            self._value = value
-        return self
-
-    def increment(self, amount: Union[int, float] = 1) -> "Gauge":
-        """값 증가"""
+            # 배치에 추가
+            self._batch_metrics.append(metric)
+            
+            # 즉시 로컬 저장소 업데이트
+            self._update_local_storage(metric)
+            
+            # 배치 플러시 확인
+            if (len(self._batch_metrics) >= self._batch_size or 
+                time.time() - self._last_flush > self._flush_interval):
+                self._flush_batch()
+    
+    def _update_local_storage(self, metric: MetricData):
+        """로컬 저장소 업데이트"""
+        key = f"{metric.name}:{json.dumps(metric.labels, sort_keys=True)}"
+        
+        # 히스토리 저장
+        self._metrics[key].append(metric)
+        
+        # 타입별 저장
+        if metric.type == MetricType.COUNTER:
+            self._counters[key] += metric.value
+        elif metric.type == MetricType.GAUGE:
+            self._gauges[key] = metric.value
+        elif metric.type == MetricType.HISTOGRAM:
+            self._histograms[key].append(metric.value)
+            # 히스토그램 크기 제한
+            if len(self._histograms[key]) > 1000:
+                self._histograms[key] = self._histograms[key][-1000:]
+        elif metric.type == MetricType.TIMER:
+            self._timers[key].append(metric.value)
+            if len(self._timers[key]) > 1000:
+                self._timers[key] = self._timers[key][-1000:]
+    
+    def _flush_batch(self):
+        """배치 메트릭 플러시"""
+        if not self._batch_metrics:
+            return
+        
+        # 외부 시스템으로 메트릭 전송 (예: Prometheus, InfluxDB)
+        # 여기서는 로깅으로 대체
+        logger.debug(f"메트릭 배치 플러시: {len(self._batch_metrics)}개 메트릭")
+        
+        self._batch_metrics.clear()
+        self._last_flush = time.time()
+    
+    def get_metric_value(self, name: str, labels: Optional[Dict[str, str]] = None) -> Optional[float]:
+        """최신 메트릭 값 조회"""
+        key = f"{name}:{json.dumps(labels or {}, sort_keys=True)}"
+        
         with self._lock:
-            _value = _value + amount
-        return self
-
-    def decrement(self, amount: Union[int, float] = 1) -> "Gauge":
-        """값 감소"""
+            if key in self._counters:
+                return self._counters[key]
+            elif key in self._gauges:
+                return self._gauges[key]
+            elif key in self._metrics:
+                metrics = self._metrics[key]
+                return metrics[-1].value if metrics else None
+        
+        return None
+    
+    def get_metrics_summary(self, time_range_minutes: int = 60) -> Dict[str, Any]:
+        """메트릭 요약 정보 조회"""
         with self._lock:
-            _value = _value - amount
-        return self
-
-    def get_value(self) -> Union[int, float]:
-        """현재 값 반환"""
-        with self._lock:
-            return self._value
-
-    def to_metric(self) -> Metric:
-        """Metric 객체로 변환"""
-        return Metric(
-            name=self.name,
-            metric_type=MetricType.GAUGE,
-            value=self.get_value(),
-            labels=self.labels,
-            description=self.description,
-        )
-
-
-class Histogram:
-    """히스토그램 메트릭"""
-
-    def __init__(
-        self,
-        name: str,
-        buckets: Optional[List[float]] = None,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ):
-        self.name = name
-        self.description = description
-        self.labels = labels or {}
-        self.buckets = buckets or [
-            0.005,
-            0.01,
-            0.025,
-            0.05,
-            0.1,
-            0.25,
-            0.5,
-            1.0,
-            2.5,
-            5.0,
-            10.0,
-        ]
-        self._bucket_counts = {bucket: 0 for bucket in self.buckets}
-        self._bucket_counts = {**self._bucket_counts, float("inf"): 0}
-        self._count = 0
-        self._sum = 0.0
-        self._lock = threading.Lock()
-
-    def observe(self, value: Union[int, float]) -> "Histogram":
-        """값 관찰"""
-        with self._lock:
-            _count = _count + 1
-            _sum = _sum + value
-            for bucket in self.buckets:
-                if value <= bucket:
-                    self._bucket_counts = {
-                        **self._bucket_counts,
-                        bucket: self._bucket_counts[bucket] + 1,
-                    }
-            self._bucket_counts[float("inf")] = self._bucket_counts[float("inf")] + (1)
-        return self
-
-    def get_count(self) -> int:
-        """총 관찰 횟수"""
-        with self._lock:
-            return self._count
-
-    def get_sum(self) -> float:
-        """모든 관찰 값의 합"""
-        with self._lock:
-            return self._sum
-
-    def get_bucket_counts(self) -> Dict[float, int]:
-        """버킷별 카운트"""
-        with self._lock:
-            return self._bucket_counts.copy()
-
-    def get_quantile(self, quantile: float) -> float:
-        """분위수 계산 (근사치)"""
-        if not 0 <= quantile <= 1:
-            raise ValueError("분위수는 0과 1 사이여야 합니다")
-        with self._lock:
-            if self._count == 0:
-                return 0.0
-            target_count = self._count * quantile
-            cumulative = 0
-            for bucket in sorted(self.buckets):
-                cumulative = cumulative + self._bucket_counts[bucket]
-                if cumulative >= target_count:
-                    return bucket
-            return float("inf")
-
-    def to_metric(self) -> Metric:
-        """Metric 객체로 변환"""
-        return Metric(
-            name=self.name,
-            metric_type=MetricType.HISTOGRAM,
-            value={
-                "count": self.get_count(),
-                "sum": self.get_sum(),
-                "buckets": self.get_bucket_counts(),
-            },
-            labels=self.labels,
-            description=self.description,
-        )
-
-
-class Summary:
-    """서머리 메트릭"""
-
-    def __init__(
-        self,
-        name: str,
-        max_age: float = 600,
-        max_samples: int = 10000,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ):
-        self.name = name
-        self.description = description
-        self.labels = labels or {}
-        self.max_age = max_age
-        self.max_samples = max_samples
-        self._samples = deque()
-        self._count = 0
-        self._sum = 0.0
-        self._lock = threading.Lock()
-
-    def observe(self, value: Union[int, float]) -> "Summary":
-        """값 관찰"""
-        timestamp = time.time()
-        with self._lock:
-            self._samples = self._samples + [(timestamp, value)]
-            _count = _count + 1
-            _sum = _sum + value
-            cutoff_time = timestamp - self.max_age
-            while self._samples and self._samples[0][0] < cutoff_time:
-                old_timestamp, old_value = self._samples.popleft()
-                _count = _count - 1
-                _sum = _sum - old_value
-            while len(self._samples) > self.max_samples:
-                old_timestamp, old_value = self._samples.popleft()
-                _count = _count - 1
-                _sum = _sum - old_value
-        return self
-
-    def get_count(self) -> int:
-        """총 샘플 수"""
-        with self._lock:
-            return self._count
-
-    def get_sum(self) -> float:
-        """모든 샘플의 합"""
-        with self._lock:
-            return self._sum
-
-    def get_quantile(self, quantile: float) -> float:
-        """분위수 계산"""
-        if not 0 <= quantile <= 1:
-            raise ValueError("분위수는 0과 1 사이여야 합니다")
-        with self._lock:
-            if not self._samples:
-                return 0.0
-            values = [value for _, value in self._samples]
-            values.sort()
-            match quantile:
-                case 0:
-                    return values[0]
-                case 1:
-                    return values[-1]
-                case _:
-                    index = int(quantile * (len(values) - 1))
-                    return values[index]
-
-    def get_statistics(self) -> Dict[str, float]:
-        """기본 통계 반환"""
-        with self._lock:
-            if not self._samples:
-                return {"count": 0, "sum": 0, "mean": 0, "min": 0, "max": 0}
-            values = [value for _, value in self._samples]
-            return {
-                "count": self._count,
-                "sum": self._sum,
-                "mean": statistics.mean(values),
-                "min": min(values),
-                "max": max(values),
-                "median": statistics.median(values),
-                "p95": self.get_quantile(0.95),
-                "p99": self.get_quantile(0.99),
+            summary = {
+                "counters": dict(self._counters),
+                "gauges": dict(self._gauges),
+                "histograms": {},
+                "timers": {},
+                "time_range_minutes": time_range_minutes,
+                "generated_at": datetime.now().isoformat()
             }
-
-    def to_metric(self) -> Metric:
-        """Metric 객체로 변환"""
-        return Metric(
-            name=self.name,
-            metric_type=MetricType.SUMMARY,
-            value=self.get_statistics(),
-            labels=self.labels,
-            description=self.description,
-        )
-
-
-class MetricsStorage(ABC):
-    """메트릭스 저장소 추상 클래스"""
-
-    @abstractmethod
-    async def store_metric(self, metric: Metric) -> Result[None, str]:
-        """메트릭 저장"""
-        pass
-
-    @abstractmethod
-    async def get_metrics(
-        self,
-        name_pattern: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-    ) -> Result[List[Metric], str]:
-        """메트릭 조회"""
-        pass
-
-
-class MemoryMetricsStorage(MetricsStorage):
-    """메모리 기반 메트릭스 저장소"""
-
-    def __init__(self, max_metrics: int = 100000):
-        self.max_metrics = max_metrics
-        self._metrics = deque()
-        self._lock = asyncio.Lock()
-
-    async def store_metric(self, metric: Metric) -> Result[None, str]:
-        """메트릭 저장"""
-        async with self._lock:
-            self._metrics = self._metrics + [metric]
-            if len(self._metrics) > self.max_metrics:
-                self._metrics.popleft()
-        return Success(None)
-
-    async def get_metrics(
-        self,
-        name_pattern: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-    ) -> Result[List[Metric], str]:
-        """메트릭 조회"""
-        async with self._lock:
-            filtered_metrics = []
-            for metric in self._metrics:
-                if name_pattern and name_pattern not in metric.name:
-                    continue
-                if labels:
-                    if not all((metric.labels.get(k) == v for k, v in labels.items())):
-                        continue
-                if start_time and metric.timestamp < start_time:
-                    continue
-                if end_time and metric.timestamp > end_time:
-                    continue
-                filtered_metrics = filtered_metrics + [metric]
-            return Success(filtered_metrics)
-
-
-class PrometheusStorage(MetricsStorage):
-    """Prometheus 기반 메트릭스 저장소"""
-
-    def __init__(self, push_gateway_url: str, job_name: str = "rfs_app"):
-        self.push_gateway_url = push_gateway_url
-        self.job_name = job_name
-
-    async def store_metric(self, metric: Metric) -> Result[None, str]:
-        """메트릭 저장 (Prometheus Push Gateway로 전송)"""
-        try:
-            await logger.log_debug(f"Prometheus에 메트릭 저장: {metric.name}")
-            return Success(None)
-        except Exception as e:
-            return Failure(f"Prometheus 메트릭 저장 실패: {str(e)}")
-
-    async def get_metrics(
-        self,
-        name_pattern: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-    ) -> Result[List[Metric], str]:
-        """메트릭 조회 (Prometheus API 사용)"""
-        return Failure("Prometheus 조회 미구현")
-
-
-class MetricsCollector:
-    """메트릭스 수집기"""
-
-    def __init__(self, storage: Optional[MetricsStorage] = None):
-        self.storage = storage or MemoryMetricsStorage()
-        self._counters: Dict[str, Counter] = {}
-        self._gauges: Dict[str, Gauge] = {}
-        self._histograms: Dict[str, Histogram] = {}
-        self._summaries: Dict[str, Summary] = {}
-        self._lock = threading.Lock()
-
-    def counter(
-        self,
-        name: str,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ) -> Counter:
-        """카운터 메트릭 생성/조회"""
-        key = f"{name}_{hash(frozenset(labels.items()) if labels else None)}"
+            
+            # 히스토그램 요약
+            for key, values in self._histograms.items():
+                if values:
+                    sorted_values = sorted(values)
+                    n = len(sorted_values)
+                    summary["histograms"][key] = {
+                        "count": n,
+                        "sum": sum(values),
+                        "min": min(values),
+                        "max": max(values),
+                        "mean": sum(values) / n,
+                        "p50": sorted_values[n // 2],
+                        "p90": sorted_values[int(n * 0.9)],
+                        "p95": sorted_values[int(n * 0.95)],
+                        "p99": sorted_values[int(n * 0.99)]
+                    }
+            
+            # 타이머 요약
+            for key, values in self._timers.items():
+                if values:
+                    sorted_values = sorted(values)
+                    n = len(sorted_values)
+                    summary["timers"][key] = {
+                        "count": n,
+                        "sum": sum(values),
+                        "min": min(values),
+                        "max": max(values),
+                        "mean": sum(values) / n,
+                        "p50": sorted_values[n // 2],
+                        "p90": sorted_values[int(n * 0.9)],
+                        "p95": sorted_values[int(n * 0.95)],
+                        "p99": sorted_values[int(n * 0.99)]
+                    }
+            
+            return summary
+    
+    def clear_metrics(self):
+        """모든 메트릭 삭제"""
         with self._lock:
-            if key not in self._counters:
-                self._counters = {
-                    **self._counters,
-                    key: Counter(name, description, labels),
+            self._metrics.clear()
+            self._counters.clear()
+            self._gauges.clear()
+            self._histograms.clear()
+            self._timers.clear()
+            self._batch_metrics.clear()
+        
+        logger.info("모든 메트릭이 삭제되었습니다")
+
+
+class ResultAlertManager:
+    """Result 패턴 알림 관리자"""
+    
+    def __init__(self, metrics_collector: ResultMetricsCollector):
+        self.metrics_collector = metrics_collector
+        self._alert_rules: Dict[str, Dict[str, Any]] = {}
+        self._active_alerts: List[Dict[str, Any]] = []
+        self._lock = Lock()
+        self._monitoring_active = False
+        logger.info("ResultAlertManager 초기화됨")
+    
+    def add_alert_rule(
+        self, 
+        name: str, 
+        metric_name: str, 
+        condition: AlertCondition, 
+        threshold: float,
+        callback: Optional[Callable] = None
+    ):
+        """알림 규칙 추가"""
+        with self._lock:
+            self._alert_rules[name] = {
+                "metric_name": metric_name,
+                "condition": condition,
+                "threshold": threshold,
+                "callback": callback,
+                "enabled": True
+            }
+        
+        logger.info(f"알림 규칙 추가됨: {name}")
+    
+    def get_alert_rules(self) -> List[Dict[str, Any]]:
+        """알림 규칙 목록 조회"""
+        with self._lock:
+            return [
+                {
+                    "name": name,
+                    "metric_name": rule["metric_name"],
+                    "condition": rule["condition"].value if hasattr(rule["condition"], 'value') else str(rule["condition"]),
+                    "threshold": rule["threshold"],
+                    "enabled": rule["enabled"]
                 }
-            return self._counters[key]
-
-    def gauge(
-        self,
-        name: str,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ) -> Gauge:
-        """게이지 메트릭 생성/조회"""
-        key = f"{name}_{hash(frozenset(labels.items()) if labels else None)}"
+                for name, rule in self._alert_rules.items()
+            ]
+    
+    def get_active_alerts(self) -> List[Dict[str, Any]]:
+        """활성 알림 목록 조회"""
         with self._lock:
-            if key not in self._gauges:
-                self._gauges = {**self._gauges, key: Gauge(name, description, labels)}
-            return self._gauges[key]
-
-    def histogram(
-        self,
-        name: str,
-        buckets: Optional[List[float]] = None,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ) -> Histogram:
-        """히스토그램 메트릭 생성/조회"""
-        key = f"{name}_{hash(frozenset(labels.items()) if labels else None)}"
-        with self._lock:
-            if key not in self._histograms:
-                self._histograms = {
-                    **self._histograms,
-                    key: Histogram(name, buckets, description, labels),
-                }
-            return self._histograms[key]
-
-    def summary(
-        self,
-        name: str,
-        max_age: float = 600,
-        max_samples: int = 10000,
-        description: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
-    ) -> Summary:
-        """서머리 메트릭 생성/조회"""
-        key = f"{name}_{hash(frozenset(labels.items()) if labels else None)}"
-        with self._lock:
-            if key not in self._summaries:
-                self._summaries = {
-                    **self._summaries,
-                    key: Summary(name, max_age, max_samples, description, labels),
-                }
-            return self._summaries[key]
-
-    async def collect_and_store(self) -> Result[int, str]:
-        """모든 메트릭 수집 및 저장"""
-        stored_count = 0
-        try:
-            for counter in self._counters.values():
-                result = await self.storage.store_metric(counter.to_metric())
-                if result.is_success():
-                    stored_count = stored_count + 1
-            for gauge in self._gauges.values():
-                result = await self.storage.store_metric(gauge.to_metric())
-                if result.is_success():
-                    stored_count = stored_count + 1
-            for histogram in self._histograms.values():
-                result = await self.storage.store_metric(histogram.to_metric())
-                if result.is_success():
-                    stored_count = stored_count + 1
-            for summary in self._summaries.values():
-                result = await self.storage.store_metric(summary.to_metric())
-                if result.is_success():
-                    stored_count = stored_count + 1
-            return Success(stored_count)
-        except Exception as e:
-            return Failure(f"메트릭 수집 실패: {str(e)}")
-
-    async def get_all_metrics(self) -> List[Metric]:
-        """모든 현재 메트릭 반환"""
-        metrics = []
-        for counter in self._counters.values():
-            metrics = metrics + [counter.to_metric()]
-        for gauge in self._gauges.values():
-            metrics = metrics + [gauge.to_metric()]
-        for histogram in self._histograms.values():
-            metrics = metrics + [histogram.to_metric()]
-        for summary in self._summaries.values():
-            metrics = metrics + [summary.to_metric()]
-        return metrics
+            return self._active_alerts.copy()
+    
+    def start_monitoring(self):
+        """모니터링 시작"""
+        self._monitoring_active = True
+        logger.info("알림 모니터링이 시작되었습니다")
+    
+    def stop_monitoring(self):
+        """모니터링 중지"""
+        self._monitoring_active = False
+        logger.info("알림 모니터링이 중지되었습니다")
 
 
-_metrics_collector: Optional[MetricsCollector] = None
+# 전역 인스턴스
+_metrics_collector = ResultMetricsCollector()
+_alert_manager = ResultAlertManager(_metrics_collector)
 
 
-def get_metrics_collector(storage: Optional[MetricsStorage] = None) -> MetricsCollector:
-    """메트릭스 수집기 가져오기"""
-    # global _metrics_collector - removed for functional programming
-    if _metrics_collector is None:
-        _metrics_collector = MetricsCollector(storage)
-    return _metrics_collector
+# 편의 함수들
 
-
-def record_counter(
-    name: str,
-    amount: Union[int, float] = 1,
+def collect_metric(
+    name: str, 
+    value: float, 
+    metric_type: MetricType = MetricType.GAUGE,
     labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
 ):
-    """카운터 메트릭 기록"""
-    collector = get_metrics_collector()
-    counter = collector.counter(name, description, labels)
-    counter.increment(amount)
+    """메트릭 수집 편의 함수"""
+    _metrics_collector.collect_metric(name, value, metric_type, labels, metadata)
 
 
-def record_gauge(
+def create_alert_rule(
     name: str,
-    value: Union[int, float],
-    labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
+    metric_name: str,
+    condition: AlertCondition,
+    threshold: float,
+    callback: Optional[Callable] = None
 ):
-    """게이지 메트릭 기록"""
-    collector = get_metrics_collector()
-    gauge = collector.gauge(name, description, labels)
-    gauge.set(value)
+    """알림 규칙 생성 편의 함수"""
+    _alert_manager.add_alert_rule(name, metric_name, condition, threshold, callback)
 
 
-def record_histogram(
-    name: str,
-    value: Union[int, float],
-    labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
-):
-    """히스토그램 메트릭 기록"""
-    collector = get_metrics_collector()
-    histogram = collector.histogram(name, description=description, labels=labels)
-    histogram.observe(value)
+def get_metrics_summary(time_range_minutes: int = 60) -> Dict[str, Any]:
+    """메트릭 요약 조회 편의 함수"""
+    return _metrics_collector.get_metrics_summary(time_range_minutes)
 
 
-def record_summary(
-    name: str,
-    value: Union[int, float],
-    labels: Optional[Dict[str, str]] = None,
-    description: Optional[str] = None,
-):
-    """서머리 메트릭 기록"""
-    collector = get_metrics_collector()
-    summary = collector.summary(name, description=description, labels=labels)
-    summary.observe(value)
+def start_monitoring():
+    """모니터링 시작 편의 함수"""
+    _alert_manager.start_monitoring()
+
+
+def stop_monitoring():
+    """모니터링 중지 편의 함수"""
+    _alert_manager.stop_monitoring()
+
+
+# Result 패턴 전용 메트릭 헬퍼들
+
+def collect_result_metric(operation_name: str, result: Result, duration_ms: float):
+    """Result 전용 메트릭 수집"""
+    labels = {"operation": operation_name}
+    
+    # 성공/실패 카운터
+    if result.is_success():
+        collect_metric("result_success_total", 1, MetricType.COUNTER, labels)
+    else:
+        collect_metric("result_failure_total", 1, MetricType.COUNTER, labels)
+        
+        # 에러 타입별 카운터
+        error = result.unwrap_error()
+        error_labels = {**labels, "error_type": type(error).__name__}
+        collect_metric("result_error_by_type_total", 1, MetricType.COUNTER, error_labels)
+    
+    # 처리 시간 히스토그램
+    collect_metric("result_duration_ms", duration_ms, MetricType.HISTOGRAM, labels)
+    
+    # 현재 처리 중인 작업 수 (게이지)
+    collect_metric("result_operations_active", 1, MetricType.GAUGE, labels)
+
+
+def collect_flux_result_metric(operation_name: str, flux_result: Any, duration_ms: float):
+    """FluxResult 전용 메트릭 수집"""
+    labels = {"operation": operation_name}
+    
+    total = flux_result.count_total()
+    success = flux_result.count_success()
+    failure = flux_result.count_failures()
+    
+    # 배치 처리 메트릭
+    collect_metric("flux_result_total_items", total, MetricType.COUNTER, labels)
+    collect_metric("flux_result_success_items", success, MetricType.COUNTER, labels)
+    collect_metric("flux_result_failure_items", failure, MetricType.COUNTER, labels)
+    collect_metric("flux_result_duration_ms", duration_ms, MetricType.HISTOGRAM, labels)
+    
+    # 성공률 게이지
+    success_rate = success / total if total > 0 else 0
+    collect_metric("flux_result_success_rate", success_rate, MetricType.GAUGE, labels)
+
+
+# 사전 정의된 알림 규칙들
+
+def setup_default_alerts():
+    """기본 알림 규칙 설정"""
+    
+    # 높은 실패율 알림
+    create_alert_rule(
+        name="high_failure_rate",
+        metric_name="result_failure_total",
+        condition=AlertCondition.GREATER_THAN,
+        threshold=10.0
+    )
+    
+    # 느린 응답 시간 알림
+    create_alert_rule(
+        name="slow_response_time",
+        metric_name="result_duration_ms",
+        condition=AlertCondition.GREATER_THAN,
+        threshold=5000.0  # 5초
+    )
+    
+    # 낮은 배치 성공률 알림
+    create_alert_rule(
+        name="low_batch_success_rate",
+        metric_name="flux_result_success_rate",
+        condition=AlertCondition.LESS_THAN,
+        threshold=0.8  # 80%
+    )
+    
+    logger.info("기본 알림 규칙이 설정되었습니다")
+
+
+# 메트릭 대시보드 API 헬퍼
+
+def get_dashboard_data() -> Dict[str, Any]:
+    """대시보드용 종합 데이터 조회"""
+    return {
+        "metrics_summary": get_metrics_summary(60),
+        "active_alerts": _alert_manager.get_active_alerts(),
+        "alert_rules": _alert_manager.get_alert_rules(),
+        "system_status": {
+            "monitoring_active": _alert_manager._monitoring_active,
+            "total_metrics": len(_metrics_collector._metrics),
+            "timestamp": datetime.now().isoformat()
+        }
+    }

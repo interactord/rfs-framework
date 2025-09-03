@@ -474,3 +474,134 @@ def iterate(
             result = func(result)
         return result
     return iterated
+
+
+def with_fallback(
+    primary: Callable[..., T],
+    fallback: Callable[[Exception], T]
+) -> Callable[..., T]:
+    """
+    주 함수가 실패하면 폴백 함수를 실행하는 고차함수.
+    
+    서버 초기화나 중요한 연산에서 graceful degradation을 구현할 때 유용합니다.
+    
+    Args:
+        primary: 먼저 실행할 주 함수
+        fallback: 주 함수 실패 시 실행할 폴백 함수 (Exception을 인자로 받음)
+        
+    Returns:
+        주 함수를 시도하고 실패 시 폴백을 실행하는 함수
+        
+    Example:
+        >>> def load_config():
+        ...     raise FileNotFoundError("Config not found")
+        >>> def default_config(error):
+        ...     print(f"Using default config due to: {error}")
+        ...     return {"debug": True}
+        >>> safe_load = with_fallback(load_config, default_config)
+        >>> config = safe_load()
+        Using default config due to: Config not found
+        >>> config
+        {'debug': True}
+        
+        # 파이프라인에서 사용
+        >>> from rfs.hof.core import pipe
+        >>> pipeline = pipe(
+        ...     with_fallback(load_external_data, lambda e: []),
+        ...     lambda data: len(data)
+        ... )
+    """
+    @wraps(primary)
+    def with_fallback_wrapper(*args, **kwargs) -> T:
+        try:
+            return primary(*args, **kwargs)
+        except Exception as e:
+            return fallback(e)
+    return with_fallback_wrapper
+
+
+def safe_call(
+    func: Callable[..., T],
+    default: T,
+    exceptions: tuple = (Exception,)
+) -> Callable[..., T]:
+    """
+    함수 호출을 안전하게 감싸서 예외 발생 시 기본값을 반환.
+    
+    Args:
+        func: 호출할 함수
+        default: 예외 발생 시 반환할 기본값
+        exceptions: 처리할 예외 타입들 (기본: 모든 예외)
+        
+    Returns:
+        안전하게 감싸진 함수
+        
+    Example:
+        >>> safe_int = safe_call(int, 0, (ValueError, TypeError))
+        >>> safe_int("123")
+        123
+        >>> safe_int("abc")
+        0
+        >>> safe_int(None)
+        0
+    """
+    @wraps(func)
+    def safe_wrapper(*args, **kwargs) -> T:
+        try:
+            return func(*args, **kwargs)
+        except exceptions:
+            return default
+    return safe_wrapper
+
+
+def retry_with_fallback(
+    primary: Callable[..., T],
+    fallback: Callable[[Exception], T],
+    max_attempts: int = 3,
+    delay: float = 0.1
+) -> Callable[..., T]:
+    """
+    재시도 로직과 폴백을 결합한 고차함수.
+    
+    Args:
+        primary: 재시도할 주 함수
+        fallback: 모든 재시도 실패 후 실행할 폴백 함수
+        max_attempts: 최대 시도 횟수
+        delay: 재시도 간 지연 시간 (초)
+        
+    Returns:
+        재시도 로직과 폴백이 적용된 함수
+        
+    Example:
+        >>> import time
+        >>> attempt_count = 0
+        >>> def flaky_service():
+        ...     global attempt_count
+        ...     attempt_count += 1
+        ...     if attempt_count < 3:
+        ...         raise ConnectionError("Service unavailable")
+        ...     return "success"
+        >>> def fallback_service(error):
+        ...     return "fallback_result"
+        >>> reliable_service = retry_with_fallback(flaky_service, fallback_service, 5)
+        >>> result = reliable_service()
+        >>> result
+        'success'
+    """
+    import time
+    
+    @wraps(primary)
+    def retry_wrapper(*args, **kwargs) -> T:
+        last_exception = None
+        for attempt in range(max_attempts):
+            try:
+                return primary(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                if attempt < max_attempts - 1:  # 마지막 시도가 아니라면 지연
+                    time.sleep(delay)
+        
+        # 모든 재시도 실패 시 폴백 실행
+        return fallback(last_exception)
+    
+    return retry_wrapper

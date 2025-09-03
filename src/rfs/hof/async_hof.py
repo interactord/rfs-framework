@@ -527,3 +527,166 @@ async def async_memoize(
     
     wrapper.cache_clear = lambda: cache.clear()
     return wrapper
+
+
+# ==================== 비동기 Fallback 패턴 ====================
+
+def async_with_fallback(
+    primary: Callable[..., Awaitable[T]],
+    fallback: Callable[[Exception], Awaitable[T]]
+) -> Callable[..., Awaitable[T]]:
+    """
+    비동기 함수가 실패하면 폴백 함수를 실행하는 고차함수.
+    
+    서버 초기화나 중요한 비동기 연산에서 graceful degradation을 구현할 때 유용합니다.
+    
+    Args:
+        primary: 먼저 실행할 비동기 주 함수
+        fallback: 주 함수 실패 시 실행할 비동기 폴백 함수 (Exception을 인자로 받음)
+        
+    Returns:
+        주 함수를 시도하고 실패 시 폴백을 실행하는 비동기 함수
+        
+    Example:
+        >>> async def load_remote_config():
+        ...     raise ConnectionError("Remote server unavailable")
+        >>> async def default_config(error):
+        ...     print(f"Using default config due to: {error}")
+        ...     return {"debug": True}
+        >>> safe_load = async_with_fallback(load_remote_config, default_config)
+        >>> config = await safe_load()
+        Using default config due to: Remote server unavailable
+        >>> config
+        {'debug': True}
+        
+        # 비동기 파이프라인에서 사용
+        >>> pipeline = async_pipe(
+        ...     async_with_fallback(load_external_data, lambda e: []),
+        ...     lambda data: len(data)
+        ... )
+    """
+    @wraps(primary)
+    async def async_with_fallback_wrapper(*args, **kwargs) -> T:
+        try:
+            return await primary(*args, **kwargs)
+        except Exception as e:
+            return await fallback(e)
+    return async_with_fallback_wrapper
+
+
+async def async_safe_call(
+    func: Callable[..., Awaitable[T]],
+    default: T,
+    exceptions: tuple = (Exception,)
+) -> T:
+    """
+    비동기 함수 호출을 안전하게 감싸서 예외 발생 시 기본값을 반환.
+    
+    Args:
+        func: 호출할 비동기 함수
+        default: 예외 발생 시 반환할 기본값
+        exceptions: 처리할 예외 타입들 (기본: 모든 예외)
+        
+    Returns:
+        안전하게 처리된 결과값 또는 기본값
+        
+    Example:
+        >>> async def risky_operation():
+        ...     raise ValueError("Something went wrong")
+        >>> result = await async_safe_call(risky_operation, "default")
+        >>> result
+        'default'
+    """
+    try:
+        return await func()
+    except exceptions:
+        return default
+
+
+def async_retry_with_fallback(
+    primary: Callable[..., Awaitable[T]],
+    fallback: Callable[[Exception], Awaitable[T]],
+    max_attempts: int = 3,
+    delay: float = 0.1
+) -> Callable[..., Awaitable[T]]:
+    """
+    비동기 재시도 로직과 폴백을 결합한 고차함수.
+    
+    Args:
+        primary: 재시도할 비동기 주 함수
+        fallback: 모든 재시도 실패 후 실행할 비동기 폴백 함수
+        max_attempts: 최대 시도 횟수
+        delay: 재시도 간 지연 시간 (초)
+        
+    Returns:
+        재시도 로직과 폴백이 적용된 비동기 함수
+        
+    Example:
+        >>> attempt_count = 0
+        >>> async def flaky_service():
+        ...     global attempt_count
+        ...     attempt_count += 1
+        ...     if attempt_count < 3:
+        ...         raise ConnectionError("Service unavailable")
+        ...     return "success"
+        >>> async def fallback_service(error):
+        ...     return "fallback_result"
+        >>> reliable_service = async_retry_with_fallback(flaky_service, fallback_service, 5)
+        >>> result = await reliable_service()
+        >>> result
+        'success'
+    """
+    @wraps(primary)
+    async def async_retry_wrapper(*args, **kwargs) -> T:
+        last_exception = None
+        for attempt in range(max_attempts):
+            try:
+                return await primary(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                if attempt < max_attempts - 1:  # 마지막 시도가 아니라면 지연
+                    await asyncio.sleep(delay)
+        
+        # 모든 재시도 실패 시 폴백 실행
+        return await fallback(last_exception)
+    
+    return async_retry_wrapper
+
+
+def async_timeout_with_fallback(
+    primary: Callable[..., Awaitable[T]],
+    fallback: Callable[[Exception], Awaitable[T]],
+    timeout: float
+) -> Callable[..., Awaitable[T]]:
+    """
+    타임아웃과 폴백을 결합한 비동기 고차함수.
+    
+    Args:
+        primary: 실행할 비동기 주 함수
+        fallback: 타임아웃 시 실행할 폴백 함수
+        timeout: 타임아웃 시간 (초)
+        
+    Returns:
+        타임아웃과 폴백이 적용된 비동기 함수
+        
+    Example:
+        >>> async def slow_operation():
+        ...     await asyncio.sleep(2)
+        ...     return "slow_result"
+        >>> async def fast_fallback(error):
+        ...     return "fast_result"
+        >>> fast_op = async_timeout_with_fallback(slow_operation, fast_fallback, 1.0)
+        >>> result = await fast_op()
+        >>> result
+        'fast_result'
+    """
+    @wraps(primary)
+    async def timeout_wrapper(*args, **kwargs) -> T:
+        try:
+            return await asyncio.wait_for(primary(*args, **kwargs), timeout=timeout)
+        except asyncio.TimeoutError as e:
+            return await fallback(e)
+        except Exception as e:
+            return await fallback(e)
+    
+    return timeout_wrapper

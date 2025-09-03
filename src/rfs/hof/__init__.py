@@ -43,6 +43,9 @@ from .combinators import (
     cond,
     always,
     complement,
+    with_fallback,
+    safe_call,
+    retry_with_fallback,
 )
 
 from .decorators import (
@@ -85,6 +88,10 @@ from .async_hof import (
     async_timeout,
     async_parallel,
     async_sequential,
+    async_with_fallback,
+    async_safe_call,
+    async_retry_with_fallback,
+    async_timeout_with_fallback,
 )
 
 # Readable HOF - 자연어에 가까운 선언적 패턴들 (선택적 import)
@@ -147,6 +154,9 @@ _base_all = [
     'cond',
     'always',
     'complement',
+    'with_fallback',
+    'safe_call',
+    'retry_with_fallback',
     # Decorators
     'memoize',
     'throttle',
@@ -183,6 +193,10 @@ _base_all = [
     'async_timeout',
     'async_parallel',
     'async_sequential',
+    'async_with_fallback',
+    'async_safe_call',
+    'async_retry_with_fallback',
+    'async_timeout_with_fallback',
 ]
 
 # Readable HOF가 사용 가능한 경우 추가

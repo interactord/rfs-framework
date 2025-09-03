@@ -584,10 +584,55 @@ class ResultAsync(Generic[T, E]):
     - 모든 연산이 비동기
     - 자동 에러 핸들링
     - 체이닝 최적화
+    - 편의 클래스 메서드 및 확장 메서드 제공
     """
 
     def __init__(self, result: Awaitable["Result[T, E]"]):
         self._result = result
+
+    # ==================== 클래스 메서드 (Static Factory) ====================
+
+    @classmethod
+    def from_error(cls, error: E) -> "ResultAsync[T, E]":
+        """
+        에러로부터 ResultAsync 생성
+        
+        Args:
+            error: 에러 값
+            
+        Returns:
+            실패 상태의 ResultAsync
+            
+        Example:
+            >>> async_result = ResultAsync.from_error("connection failed")
+            >>> result = await async_result.to_result()
+            >>> result.is_failure()
+            True
+        """
+        async def create_failure() -> "Result[T, E]":
+            return Failure(error)
+        return cls(create_failure())
+
+    @classmethod  
+    def from_value(cls, value: T) -> "ResultAsync[T, E]":
+        """
+        값으로부터 ResultAsync 생성
+        
+        Args:
+            value: 성공 값
+            
+        Returns:
+            성공 상태의 ResultAsync
+            
+        Example:
+            >>> async_result = ResultAsync.from_value("success")
+            >>> result = await async_result.to_result()
+            >>> result.is_success()
+            True
+        """
+        async def create_success() -> "Result[T, E]":
+            return Success(value)
+        return cls(create_success())
 
     async def is_success(self) -> bool:
         """비동기 성공 여부 확인"""
@@ -658,6 +703,104 @@ class ResultAsync(Generic[T, E]):
     async def to_result(self) -> "Result[T, E]":
         """동기 Result로 변환"""
         return await self._result
+
+    # ==================== 확장 메서드 (Enhanced Methods) ====================
+
+    async def unwrap_or_async(self, default: T) -> T:
+        """
+        비동기적으로 값을 언래핑하거나 기본값 반환
+        
+        Args:
+            default: 실패 시 반환할 기본값
+            
+        Returns:
+            성공 시 값, 실패 시 기본값
+            
+        Example:
+            >>> success_result = ResultAsync.from_value("data")
+            >>> value = await success_result.unwrap_or_async("default")
+            >>> value
+            'data'
+            
+            >>> failure_result = ResultAsync.from_error("error")
+            >>> value = await failure_result.unwrap_or_async("default")
+            >>> value
+            'default'
+        """
+        result = await self._result
+        if result.is_success():
+            return result.unwrap()
+        return default
+
+    def bind_async(self, func: Callable[[T], Awaitable["Result[U, E]"]]) -> "ResultAsync[U, E]":
+        """
+        비동기 bind 연산 - 함수가 비동기 Result를 반환하는 경우
+        
+        Args:
+            func: T를 받아 Awaitable[Result[U, E]]를 반환하는 함수
+            
+        Returns:
+            바인드된 ResultAsync
+            
+        Example:
+            >>> async def process_data(data: str) -> Result[str, str]:
+            ...     if len(data) > 0:
+            ...         return Success(f"processed_{data}")
+            ...     return Failure("empty_data")
+            
+            >>> result = ResultAsync.from_value("test")
+            >>> processed = result.bind_async(process_data)
+            >>> final = await processed.to_result()
+            >>> final.unwrap()
+            'processed_test'
+        """
+        async def bound() -> "Result[U, E]":
+            result = await self._result
+            match result:
+                case Success() as s:
+                    try:
+                        return await func(s.value)
+                    except Exception as e:
+                        return Failure(e)
+                case Failure() as f:
+                    return Failure(f.error)
+
+        return ResultAsync(bound())
+
+    def map_async(self, func: Callable[[T], Awaitable[U]]) -> "ResultAsync[U, E]":
+        """
+        비동기 map 연산 - 함수가 비동기 값을 반환하는 경우
+        
+        Args:
+            func: T를 받아 Awaitable[U]를 반환하는 함수
+            
+        Returns:
+            매핑된 ResultAsync
+            
+        Example:
+            >>> async def transform_data(data: str) -> str:
+            ...     await asyncio.sleep(0.1)  # 비동기 작업 시뮬레이션
+            ...     return data.upper()
+            
+            >>> result = ResultAsync.from_value("hello")
+            >>> transformed = result.map_async(transform_data)
+            >>> final = await transformed.to_result()
+            >>> final.unwrap()
+            'HELLO'
+        """
+        async def mapped() -> "Result[U, E]":
+            result = await self._result
+            match result:
+                case Success() as s:
+                    try:
+                        mapped_value = await func(s.value)
+                        return Success(mapped_value)
+                    except Exception as e:
+                        return Failure(e)
+                case Failure() as f:
+                    return Failure(f.error)
+
+        return ResultAsync(mapped())
 
 
 def async_success(value: T) -> "ResultAsync[T, Any]":

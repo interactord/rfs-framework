@@ -11,6 +11,7 @@ Modules:
     - decorators: Function decorators (memoize, throttle, debounce, retry)
     - collections: Collection operations (map, filter, reduce, fold)
     - async_hof: Async HOF patterns (async_compose, async_pipe)
+    - readable: 자연어에 가까운 선언적 HOF 패턴 (apply_rules_to, validate_config, scan_for)
 """
 
 from .core import (
@@ -86,7 +87,41 @@ from .async_hof import (
     async_sequential,
 )
 
-__all__ = [
+# Readable HOF - 자연어에 가까운 선언적 패턴들 (선택적 import)
+try:
+    from .readable import (
+        # 핵심 함수들
+        apply_rules_to,
+        validate_config,
+        scan_for,
+        extract_from,
+        
+        # 유틸리티 함수들
+        quick_validate,
+        quick_scan,
+        quick_process,
+        
+        # 규칙 생성 함수들
+        required,
+        range_check,
+        format_check,
+        email_check,
+        url_check,
+        
+        # 기본 클래스들
+        ChainableResult,
+        success,
+        failure,
+    )
+    
+    _READABLE_AVAILABLE = True
+    
+except ImportError:
+    # readable 모듈이 없어도 기본 HOF는 동작하도록 함
+    _READABLE_AVAILABLE = False
+
+# 기본 __all__ 리스트
+_base_all = [
     # Core
     'compose',
     'pipe',
@@ -149,5 +184,37 @@ __all__ = [
     'async_parallel',
     'async_sequential',
 ]
+
+# Readable HOF가 사용 가능한 경우 추가
+_readable_all = [
+    # Readable HOF - 핵심 함수들
+    'apply_rules_to',
+    'validate_config', 
+    'scan_for',
+    'extract_from',
+    
+    # 유틸리티 함수들
+    'quick_validate',
+    'quick_scan',
+    'quick_process',
+    
+    # 규칙 생성 함수들
+    'required',
+    'range_check',
+    'format_check',
+    'email_check',
+    'url_check',
+    
+    # 기본 클래스들
+    'ChainableResult',
+    'success',
+    'failure',
+]
+
+# 최종 __all__ 구성
+if _READABLE_AVAILABLE:
+    __all__ = _base_all + _readable_all
+else:
+    __all__ = _base_all
 
 __version__ = '1.0.0'

@@ -195,6 +195,7 @@ nav:
     - 03-configuration.md
     - 04-transactions.md
     - 16-hot-library.md
+    - Readable HOF: 19-readable-hof-guide.md
     - 16-event-system.md
     - 17-profiles.md
     - 17-state-machine.md
@@ -231,15 +232,22 @@ nav:
       - Core Functions: api/hof/core.md
       - Collections: api/hof/collections.md
       - Monads: api/hof/monads.md
+      - Readable HOF: api/hof/readable.md
   
   - 가이드:
     - 사용자 가이드: USER_GUIDE.md
     - API 레퍼런스: API_REFERENCE.md
     - 릴리스 노트: RELEASE_NOTES.md
     - 마이그레이션: MIGRATION_GUIDE.md
-    - 기여 가이드: CONTRIBUTING.md
-    
+  
+  - 예제:
+    - Readable HOF:
+      - 보안 감사 시스템: examples/readable-hof/security-audit.md
+      - 데이터 파이프라인 모니터링: examples/readable-hof/data-pipeline.md
+      - 설정 검증 시스템: examples/readable-hof/config-validation.md
+  
   - 프로젝트:
+    - 기여 가이드: CONTRIBUTING.md
     - 구현 현황: 99-implementation-status.md
     - TODO: TODO.md
     - 태그: tags.md

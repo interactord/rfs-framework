@@ -7,7 +7,7 @@
 **Enterprise-Grade Reactive Functional Serverless Framework for Python**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/Version-4.3.0-green.svg)](https://pypi.org/project/rfs-framework/)
+[![Version](https://img.shields.io/badge/Version-4.3.3-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://interactord.github.io/rfs-framework/)
 
@@ -22,6 +22,7 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 ### 🎯 함수형 프로그래밍
 - **Result Pattern**: 예외 없는 안전한 에러 처리
 - **HOF Library**: Swift/Haskell 영감의 고차 함수
+- **Readable HOF**: 자연어에 가까운 선언적 코드 패턴
 - **Monads**: Maybe, Either, Result 모나드 지원
 - **불변성**: 순수 함수와 불변 데이터 구조
 
@@ -51,7 +52,7 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 | **메모리 사용** | ~25MB | 기본 실행 |
 | **응답 시간** | <100ms | API 호출 |
 | **처리량** | 1200 RPS | 벤치마크 |
-| **완성도** | 93% | v4.3.0 |
+| **완성도** | 93% | v4.3.3 |
 
 ## 🚀 빠른 시작
 
@@ -76,22 +77,44 @@ RFS Framework는 현대적인 엔터프라이즈 Python 애플리케이션을 �
 
 ### 첫 번째 예제
 
-```python
-from rfs import Result, Success, Failure
+=== "Result Pattern"
 
-def divide(a: int, b: int) -> Result[float, str]:
-    """안전한 나눗셈 연산"""
-    if b == 0:
-        return Failure("Cannot divide by zero")
-    return Success(a / b)
+    ```python
+    from rfs import Result, Success, Failure
 
-# 사용 예제
-result = divide(10, 2)
-if result.is_success:
-    print(f"결과: {result.unwrap()}")  # 결과: 5.0
-else:
-    print(f"오류: {result.unwrap_err()}")
-```
+    def divide(a: int, b: int) -> Result[float, str]:
+        """안전한 나눗셈 연산"""
+        if b == 0:
+            return Failure("Cannot divide by zero")
+        return Success(a / b)
+
+    # 사용 예제
+    result = divide(10, 2)
+    if result.is_success:
+        print(f"결과: {result.unwrap()}")  # 결과: 5.0
+    else:
+        print(f"오류: {result.unwrap_err()}")
+    ```
+
+=== "Readable HOF"
+
+    ```python
+    from rfs.hof.readable import validate_config, required, range_check
+
+    # 자연어 같은 선언적 검증
+    config = {"api_key": "secret", "timeout": 30, "port": 8080}
+    
+    result = validate_config(config).against_rules([
+        required("api_key", "API 키가 필요합니다"),
+        range_check("timeout", 1, 300, "타임아웃은 1-300초 사이"),
+        range_check("port", 1, 65535, "포트 범위 오류")
+    ])
+    
+    if result.is_success():
+        print("✅ 설정이 유효합니다")
+    else:
+        print(f"❌ {result.unwrap_error()}")
+    ```
 
 ## 📚 문서 구조
 

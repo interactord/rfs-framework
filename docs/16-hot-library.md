@@ -13,6 +13,7 @@ RFS HOF 라이브러리는 Python에서 함수형 프로그래밍을 위한 포�
 5. [Combinators](#combinators)
 6. [Decorators](#decorators)
 7. [Async HOF](#async-hof)
+8. [Readable HOF](#readable-hof)
 
 ---
 
@@ -707,6 +708,156 @@ users = await enrich_users([1, 2, 3, 4, 5])
 5. **Guard 패턴 활용**: 복잡한 검증 로직은 guard 패턴으로 단순화하세요.
 6. **메모이제이션 활용**: 비싼 연산은 memoize로 최적화하세요.
 7. **비동기 조합**: 비동기 작업은 async_parallel로 병렬화하여 성능을 향상시키세요.
+
+---
+
+---
+
+## Readable HOF
+
+Readable HOF는 자연어에 가까운 선언적 코드 작성을 위한 고차 함수 라이브러리입니다. 복잡한 중첩 루프와 규칙 기반 로직을 읽기 쉬운 체이닝 패턴으로 변환합니다.
+
+### 핵심 구성 요소
+
+#### 1. Rule Application System
+데이터에 규칙을 적용하고 위반사항을 검출하는 시스템입니다.
+
+```python
+from rfs.hof.readable import apply_rules_to
+
+# 보안 규칙 정의
+security_rules = [
+    lambda text: "password" in text.lower(),
+    lambda text: "api_key" in text.lower(),
+]
+
+# 자연어 같은 규칙 적용
+violations = (apply_rules_to(source_code)
+              .using(security_rules)
+              .collect_violations())
+
+print(f"발견된 보안 위반: {len(violations)}개")
+```
+
+#### 2. Validation DSL
+구조화된 데이터 검증을 위한 Domain Specific Language입니다.
+
+```python
+from rfs.hof.readable import validate_config, required, range_check, email_check
+
+# 선언적 설정 검증
+config = {"api_key": "secret", "timeout": 30, "email": "user@example.com"}
+
+result = validate_config(config).against_rules([
+    required("api_key", "API 키가 필요합니다"),
+    range_check("timeout", 1, 300, "타임아웃은 1-300초 사이"),
+    email_check("email", "유효한 이메일이 필요합니다")
+])
+
+if result.is_success():
+    print("✅ 설정이 유효합니다")
+```
+
+#### 3. Scanning System
+텍스트나 데이터에서 패턴을 검색하는 시스템입니다.
+
+```python
+import re
+from rfs.hof.readable import scan_for, create_security_violation
+
+# 보안 패턴 스캔
+patterns = [
+    re.compile(r'password\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE),
+    re.compile(r'api_key\s*[:=]\s*["\']([^"\']+)["\']', re.IGNORECASE),
+]
+
+results = (scan_for(patterns)
+           .in_text(code_content)
+           .extract(create_security_violation)
+           .filter_above_threshold("medium")
+           .sort_by_risk())
+
+for violation in results.collect():
+    print(f"🚨 보안 위험: {violation}")
+```
+
+#### 4. Batch Processing
+대량 데이터의 효율적 처리를 위한 시스템입니다.
+
+```python
+from rfs.hof.readable import extract_from
+
+# API 응답 배치 처리
+api_responses = [
+    {"status": "success", "data": {"id": 1, "name": "Alice"}},
+    {"status": "error", "message": "Not found"},
+    {"status": "success", "data": {"id": 2, "name": "Bob"}},
+]
+
+# 자연어 같은 배치 처리
+users = (extract_from(api_responses)
+         .flatten_batches()
+         .successful_only()
+         .extract_content()
+         .transform_to(lambda item: {
+             "user_id": item["id"],
+             "display_name": item["name"].title()
+         })
+         .collect())
+
+print(f"처리된 사용자: {len(users)}명")
+```
+
+### 실전 활용 예제
+
+#### 종합 보안 감사 시스템
+```python
+from rfs.hof.readable import apply_rules_to, scan_for, validate_config
+
+def comprehensive_security_audit(project_path: str):
+    """프로젝트 전체 보안 감사"""
+    
+    # 1. 코드 규칙 검사
+    code_violations = (apply_rules_to(source_files)
+                      .using(security_rules)
+                      .collect_violations()
+                      .filter_above_threshold("medium"))
+    
+    # 2. 패턴 스캔
+    security_issues = (scan_for(vulnerability_patterns)
+                      .in_directory(project_path)
+                      .extract(create_security_violation)
+                      .sort_by_severity())
+    
+    # 3. 설정 검증
+    config_issues = validate_config(app_config).against_rules([
+        required("database.host"),
+        required("api.secret_key"),
+        custom_check("api.secret_key", 
+                    lambda key: len(key) >= 32,
+                    "API 키는 32자 이상")
+    ])
+    
+    return {
+        "code_violations": code_violations.collect(),
+        "security_issues": security_issues.collect(),
+        "config_valid": config_issues.is_success()
+    }
+```
+
+### 장점
+
+1. **가독성**: 자연어에 가까운 선언적 표현
+2. **재사용성**: 작은 함수들의 조합으로 복잡한 로직 구성
+3. **타입 안전성**: Result 패턴과 통합된 안전한 에러 처리
+4. **성능**: 지연 평가와 병렬 처리 지원
+5. **테스트 용이성**: 각 단계를 독립적으로 테스트 가능
+
+### 관련 문서
+
+- [Readable HOF 완전 가이드](19-readable-hof-guide.md)
+- [Readable HOF API 레퍼런스](api/hof/readable.md)
+- [함수형 개발 규칙](01-core-patterns.md)
 
 ---
 

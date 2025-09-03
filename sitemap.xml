@@ -2,226 +2,198 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://interactord.github.io/rfs-framework/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/01-core-patterns/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/02-dependency-injection/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/03-configuration/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/04-transactions/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/05-deployment/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/06-rollback/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/07-logging/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/08-monitoring/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/09-validation/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/10-access-control/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/11-security/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/12-circuit-breaker/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/13-load-balancing/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/14-cli-interface/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/15-configuration-injection/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/15-code-quality/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/16-hof-usage-guide/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/16-event-system/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/17-functional-development-rules/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/16-hot-library/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/17-profiles/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/17-state-machine/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/18-database/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/20-code-quality/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/21-event-system/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/22-hot-library/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/23-profiles/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/24-state-machine/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/25-async-pipeline/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/26-asyncresult-web-integration/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/27-reactive-programming-guide/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/19-readable-hof-guide/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/99-implementation-status/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/API_REFERENCE/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/CONTRIBUTING/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/ENTERPRISE_SERVER_ARCHITECTURE/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/LICENSE/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/MIGRATION_GUIDE/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/RELEASE_NOTES/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/ROADMAP/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/TODO/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/USER_GUIDE/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/changelog/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/getting-started/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/installation/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/tags/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/api/async-pipeline/async-result/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/core/config/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/core/registry/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/core/result/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/hof/collections/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/hof/core/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/hof/monads/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/api/logging/async-logging/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/api/hof/readable/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/reactive/flux/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/api/reactive/mono/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/api/testing/async-result-testing/</loc>
-         <lastmod>2025-08-28</lastmod>
-    </url>
-    <url>
-         <loc>https://interactord.github.io/rfs-framework/api/web/fastapi-helpers/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/archive/readable-hof-project-overview/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
          <loc>https://interactord.github.io/rfs-framework/core/annotations/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <lastmod>2025-09-03</lastmod>
     </url>
     <url>
-         <loc>https://interactord.github.io/rfs-framework/includes/abbreviations/</loc>
-         <lastmod>2025-08-28</lastmod>
+         <loc>https://interactord.github.io/rfs-framework/examples/readable-hof/config-validation/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/examples/readable-hof/data-pipeline/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/examples/readable-hof/security-audit/</loc>
+         <lastmod>2025-09-03</lastmod>
     </url>
 </urlset>

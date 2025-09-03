@@ -5,6 +5,11 @@ RFS Framework의 모든 주요 변경사항이 이 파일에 기록됩니다.
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)을 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 준수합니다.
 
+## [4.4.1] - 2025-09-03
+
+### 🔧 패키지 배포 수정
+- PyPI 배포를 위한 마이너 버전 업데이트
+
 ## [4.4.0] - 2025-09-03
 
 ### 🚀 주요 기능 추가 - "AsyncResult 웹 통합 완성"

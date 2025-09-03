@@ -89,6 +89,22 @@
          <lastmod>2025-09-03</lastmod>
     </url>
     <url>
+         <loc>https://interactord.github.io/rfs-framework/20-monoresult-guide/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/21-fastapi-integration/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/22-monitoring-observability/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/23-testing-guide/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
          <loc>https://interactord.github.io/rfs-framework/99-implementation-status/</loc>
          <lastmod>2025-09-03</lastmod>
     </url>
@@ -133,6 +149,10 @@
          <lastmod>2025-09-03</lastmod>
     </url>
     <url>
+         <loc>https://interactord.github.io/rfs-framework/server-startup-utilities/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
          <loc>https://interactord.github.io/rfs-framework/tags/</loc>
          <lastmod>2025-09-03</lastmod>
     </url>
@@ -169,7 +189,15 @@
          <lastmod>2025-09-03</lastmod>
     </url>
     <url>
+         <loc>https://interactord.github.io/rfs-framework/api/reactive/flux-result/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
          <loc>https://interactord.github.io/rfs-framework/api/reactive/flux/</loc>
+         <lastmod>2025-09-03</lastmod>
+    </url>
+    <url>
+         <loc>https://interactord.github.io/rfs-framework/api/reactive/mono-result/</loc>
          <lastmod>2025-09-03</lastmod>
     </url>
     <url>

@@ -15,6 +15,7 @@ class TestAsyncTasksBase:
         """Test that async_tasks module can be imported"""
         try:
             import rfs.async_tasks.base as base
+
             assert hasattr(base, "__file__")
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")
@@ -23,11 +24,11 @@ class TestAsyncTasksBase:
         """Test base module contents"""
         try:
             import rfs.async_tasks.base as base
-            
+
             # Check for common base classes/functions
             module_attrs = dir(base)
             assert len(module_attrs) > 0
-            
+
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")
 
@@ -39,6 +40,7 @@ class TestAsyncTasksDecorators:
         """Test decorator imports"""
         try:
             import rfs.async_tasks.decorators as decorators
+
             assert hasattr(decorators, "__file__")
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")
@@ -51,6 +53,7 @@ class TestAsyncTasksExecutor:
         """Test executor imports"""
         try:
             import rfs.async_tasks.executor as executor
+
             assert hasattr(executor, "__file__")
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")
@@ -63,6 +66,7 @@ class TestAsyncTasksManager:
         """Test manager imports"""
         try:
             import rfs.async_tasks.manager as manager
+
             assert hasattr(manager, "__file__")
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")
@@ -75,6 +79,7 @@ class TestAsyncTasksMonitoring:
         """Test monitoring imports"""
         try:
             import rfs.async_tasks.monitoring as monitoring
+
             assert hasattr(monitoring, "__file__")
         except ImportError as e:
             pytest.skip(f"Module not importable: {e}")

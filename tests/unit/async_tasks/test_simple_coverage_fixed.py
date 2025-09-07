@@ -35,7 +35,7 @@ class TestTaskErrors:
         error = TaskError("Test error message", task_id="task-123")
         assert str(error) == "Test error message"
         assert error.task_id == "task-123"
-        
+
         # Test without task_id
         error2 = TaskError("No task ID")
         assert str(error2) == "No task ID"
@@ -69,43 +69,47 @@ class TestCallableTaskFixed:
     @pytest.mark.asyncio
     async def test_callable_task_async_function_no_args(self):
         """Test CallableTask with async function without args"""
+
         async def async_func():
             await asyncio.sleep(0.001)
             return "async_result"
-        
+
         task = CallableTask(async_func)
         result = await task.execute({})
-        
+
         assert result == "async_result"
 
     @pytest.mark.asyncio
     async def test_callable_task_async_function_with_kwargs(self):
         """Test CallableTask with async function using kwargs"""
+
         async def async_func(**kwargs):
             await asyncio.sleep(0.001)
             return f"result_{kwargs.get('test_key', 'default')}"
-        
+
         task = CallableTask(async_func)
         result = await task.execute({"test_key": "value"})
-        
+
         assert result == "result_value"
 
     def test_callable_task_validate(self):
         """Test CallableTask validate method"""
+
         def dummy_func():
             return "test"
-        
+
         task = CallableTask(dummy_func)
         result = task.validate({"test": "context"})
-        
+
         assert isinstance(result, Success)
         assert result.value is None
 
     def test_callable_task_cleanup(self):
         """Test CallableTask cleanup method"""
+
         def dummy_func():
             return "test"
-        
+
         task = CallableTask(dummy_func)
         # Should not raise any exception
         task.cleanup({"test": "context"})
@@ -122,7 +126,7 @@ class TestTaskAbstract:
 
 class TestBackoffStrategyValues:
     """Test BackoffStrategy enum values"""
-    
+
     def test_backoff_strategy_values(self):
         """Test all BackoffStrategy values"""
         assert BackoffStrategy.FIXED.value == "fixed"
@@ -133,11 +137,11 @@ class TestBackoffStrategyValues:
 
 class TestRetryPolicySimple:
     """Test RetryPolicy basic functionality"""
-    
+
     def test_retry_policy_creation(self):
         """Test RetryPolicy creation with defaults"""
         policy = RetryPolicy()
-        
+
         assert policy.max_attempts == 3
         assert policy.delay == timedelta(seconds=1)
         assert policy.backoff_strategy == BackoffStrategy.EXPONENTIAL
@@ -147,25 +151,24 @@ class TestRetryPolicySimple:
     def test_should_retry_max_attempts(self):
         """Test should_retry with max attempts"""
         policy = RetryPolicy(max_attempts=2)
-        
+
         exception = ValueError("test")
-        
+
         # First attempt should allow retry
         assert policy.should_retry(exception, 1) is True
-        
+
         # At max attempts should not retry
         assert policy.should_retry(exception, 2) is False
-        
+
         # Beyond max attempts should not retry
         assert policy.should_retry(exception, 3) is False
 
     def test_get_delay_fixed(self):
         """Test get_delay with FIXED strategy"""
         policy = RetryPolicy(
-            delay=timedelta(seconds=5),
-            backoff_strategy=BackoffStrategy.FIXED
+            delay=timedelta(seconds=5), backoff_strategy=BackoffStrategy.FIXED
         )
-        
+
         # All attempts should have same delay
         assert policy.get_delay(1) == timedelta(seconds=5)
         assert policy.get_delay(3) == timedelta(seconds=5)
@@ -174,10 +177,9 @@ class TestRetryPolicySimple:
     def test_get_delay_linear(self):
         """Test get_delay with LINEAR strategy"""
         policy = RetryPolicy(
-            delay=timedelta(seconds=2),
-            backoff_strategy=BackoffStrategy.LINEAR
+            delay=timedelta(seconds=2), backoff_strategy=BackoffStrategy.LINEAR
         )
-        
+
         assert policy.get_delay(1) == timedelta(seconds=2)
         assert policy.get_delay(2) == timedelta(seconds=4)
         assert policy.get_delay(3) == timedelta(seconds=6)
@@ -187,9 +189,9 @@ class TestRetryPolicySimple:
         policy = RetryPolicy(
             delay=timedelta(seconds=1),
             backoff_strategy=BackoffStrategy.EXPONENTIAL,
-            backoff_multiplier=2.0
+            backoff_multiplier=2.0,
         )
-        
+
         assert policy.get_delay(1) == timedelta(seconds=1)
         assert policy.get_delay(2) == timedelta(seconds=2)
         assert policy.get_delay(3) == timedelta(seconds=4)
@@ -200,9 +202,9 @@ class TestRetryPolicySimple:
             delay=timedelta(seconds=10),
             backoff_strategy=BackoffStrategy.EXPONENTIAL,
             backoff_multiplier=10.0,
-            max_delay=timedelta(seconds=30)
+            max_delay=timedelta(seconds=30),
         )
-        
+
         # Should be capped at max_delay
         delay = policy.get_delay(3)  # Would be 10 * 10^2 = 1000 seconds
         assert delay == timedelta(seconds=30)
@@ -210,33 +212,33 @@ class TestRetryPolicySimple:
 
 class TestTaskPriorityComparison:
     """Test TaskPriority comparison"""
-    
+
     def test_task_priority_comparison(self):
         """Test TaskPriority __lt__ method"""
         assert TaskPriority.CRITICAL < TaskPriority.HIGH
         assert TaskPriority.HIGH < TaskPriority.NORMAL
         assert TaskPriority.NORMAL < TaskPriority.LOW
         assert TaskPriority.LOW < TaskPriority.BACKGROUND
-        
+
         # Should not be less than self
         assert not (TaskPriority.NORMAL < TaskPriority.NORMAL)
 
 
 class TestTaskMetadataEdgeCases:
     """Test TaskMetadata edge cases"""
-    
+
     def test_task_metadata_duration_none_cases(self):
         """Test duration method when timestamps are None"""
         metadata = TaskMetadata()
-        
+
         # No timestamps
         assert metadata.duration() is None
-        
+
         # Only started_at
         metadata.started_at = datetime.now()
         assert metadata.duration() is None
-        
-        # Only completed_at  
+
+        # Only completed_at
         metadata.started_at = None
         metadata.completed_at = datetime.now()
         assert metadata.duration() is None
@@ -244,14 +246,14 @@ class TestTaskMetadataEdgeCases:
     def test_task_metadata_is_ready_with_dependencies(self):
         """Test is_ready with dependencies"""
         metadata = TaskMetadata(status=TaskStatus.PENDING)
-        
+
         # No dependencies - should be ready
         assert metadata.is_ready() is True
-        
+
         # With dependencies - should not be ready
         metadata.depends_on = ["task1", "task2"]
         assert metadata.is_ready() is False
-        
+
         # Different status - should not be ready even without dependencies
         metadata.depends_on = []
         metadata.status = TaskStatus.RUNNING
@@ -260,26 +262,19 @@ class TestTaskMetadataEdgeCases:
 
 class TestTaskResultEdgeCases:
     """Test TaskResult edge cases"""
-    
+
     def test_task_result_is_methods_with_retrying(self):
         """Test is_success and is_failure with RETRYING status"""
-        result = TaskResult(
-            task_id="retry_test",
-            status=TaskStatus.RETRYING
-        )
-        
+        result = TaskResult(task_id="retry_test", status=TaskStatus.RETRYING)
+
         # RETRYING should not be success or failure
         assert result.is_success() is False
         assert result.is_failure() is False
 
     def test_task_result_to_result_with_none_error(self):
         """Test to_result with None error message"""
-        result = TaskResult(
-            task_id="fail_test",
-            status=TaskStatus.FAILED,
-            error=None
-        )
-        
+        result = TaskResult(task_id="fail_test", status=TaskStatus.FAILED, error=None)
+
         converted = result.to_result()
         assert isinstance(converted, Failure)
         assert "Task failed with status: FAILED" in converted.error

@@ -58,9 +58,15 @@ class TestProductionMonitor:
             "network_out_mbps": 8.3,
         }
 
-        monitor.metrics_collector._collect_system_metrics = AsyncMock(return_value=system_metrics)
-        monitor.metrics_collector._collect_application_metrics = AsyncMock(return_value=app_metrics)
-        monitor.metrics_collector._collect_network_metrics = AsyncMock(return_value=network_metrics)
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(
+            return_value=system_metrics
+        )
+        monitor.metrics_collector._collect_application_metrics = AsyncMock(
+            return_value=app_metrics
+        )
+        monitor.metrics_collector._collect_network_metrics = AsyncMock(
+            return_value=network_metrics
+        )
 
         # When: 메트릭 수집 실행
         result = await monitor.collect_metrics()
@@ -102,7 +108,9 @@ class TestProductionMonitor:
             "disk_usage_percent": 50.0,
         }
 
-        monitor.metrics_collector._collect_system_metrics = AsyncMock(return_value=system_metrics)
+        monitor.metrics_collector._collect_system_metrics = AsyncMock(
+            return_value=system_metrics
+        )
         monitor.metrics_collector._collect_application_metrics = AsyncMock()
         monitor.metrics_collector._collect_network_metrics = AsyncMock()
 

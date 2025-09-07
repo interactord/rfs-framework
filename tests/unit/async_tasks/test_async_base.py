@@ -67,7 +67,7 @@ class TestTaskPriority:
             TaskPriority.HIGH,
             TaskPriority.BACKGROUND,
         ]
-        
+
         sorted_priorities = sorted(priorities)
         assert sorted_priorities[0] == TaskPriority.CRITICAL
         assert sorted_priorities[1] == TaskPriority.HIGH
@@ -119,7 +119,7 @@ class TestRetryPolicy:
     def test_should_retry_attempts(self):
         """Test should_retry based on attempts"""
         policy = RetryPolicy(max_attempts=3)
-        
+
         error = ValueError("test error")
         assert policy.should_retry(error, 1) is True
         assert policy.should_retry(error, 2) is True
@@ -128,17 +128,18 @@ class TestRetryPolicy:
 
     def test_should_retry_with_condition(self):
         """Test should_retry with custom condition"""
+
         def retry_on_value_error(exc):
             return isinstance(exc, ValueError)
-        
+
         policy = RetryPolicy(
             max_attempts=5,
             retry_condition=retry_on_value_error,
         )
-        
+
         value_error = ValueError("test")
         runtime_error = RuntimeError("test")
-        
+
         assert policy.should_retry(value_error, 1) is True
         assert policy.should_retry(runtime_error, 1) is False
 
@@ -148,7 +149,7 @@ class TestRetryPolicy:
             delay=timedelta(seconds=2),
             backoff_strategy=BackoffStrategy.FIXED,
         )
-        
+
         assert policy.get_delay(1) == timedelta(seconds=2)
         assert policy.get_delay(2) == timedelta(seconds=2)
         assert policy.get_delay(3) == timedelta(seconds=2)
@@ -159,7 +160,7 @@ class TestRetryPolicy:
             delay=timedelta(seconds=1),
             backoff_strategy=BackoffStrategy.LINEAR,
         )
-        
+
         assert policy.get_delay(1) == timedelta(seconds=1)
         assert policy.get_delay(2) == timedelta(seconds=2)
         assert policy.get_delay(3) == timedelta(seconds=3)
@@ -171,7 +172,7 @@ class TestRetryPolicy:
             backoff_strategy=BackoffStrategy.EXPONENTIAL,
             backoff_multiplier=2.0,
         )
-        
+
         assert policy.get_delay(1) == timedelta(seconds=1)
         assert policy.get_delay(2) == timedelta(seconds=2)
         assert policy.get_delay(3) == timedelta(seconds=4)
@@ -184,7 +185,7 @@ class TestRetryPolicy:
             backoff_multiplier=10,
             max_delay=timedelta(seconds=30),
         )
-        
+
         # This would be 1000 seconds without max_delay
         assert policy.get_delay(3) == timedelta(seconds=30)
 
@@ -195,7 +196,7 @@ class TestRetryPolicy:
             backoff_strategy=BackoffStrategy.JITTER,
             backoff_multiplier=2.0,
         )
-        
+
         # Jitter adds randomness, so we just check it's within range
         delay = policy.get_delay(2)
         assert delay >= timedelta(seconds=2)  # base delay
@@ -217,7 +218,7 @@ class TestTaskMetadata:
             tags=["test", "unit"],
             context={"env": "test", "version": "1.0"},
         )
-        
+
         assert metadata.task_id == "test-123"
         assert metadata.name == "test_task"
         assert metadata.status == TaskStatus.RUNNING
@@ -229,7 +230,7 @@ class TestTaskMetadata:
     def test_task_metadata_defaults(self):
         """Test TaskMetadata with default values"""
         metadata = TaskMetadata()
-        
+
         assert metadata.task_id  # Should have a generated UUID
         assert metadata.name == ""
         assert metadata.status == TaskStatus.PENDING
@@ -239,45 +240,50 @@ class TestTaskMetadata:
         assert metadata.context == {}
         assert metadata.result is None
         assert metadata.error is None
-    
+
     def test_task_metadata_duration(self):
         """Test TaskMetadata duration calculation"""
         started = datetime.now() - timedelta(seconds=10)
         completed = datetime.now()
-        
+
         metadata = TaskMetadata(
             started_at=started,
             completed_at=completed,
         )
-        
+
         duration = metadata.duration()
         assert duration is not None
         assert 9.5 <= duration.total_seconds() <= 10.5
-    
+
     def test_task_metadata_is_terminal(self):
         """Test TaskMetadata is_terminal method"""
         metadata = TaskMetadata()
-        
+
         # Non-terminal states
         for status in [TaskStatus.PENDING, TaskStatus.QUEUED, TaskStatus.RUNNING]:
             metadata.status = status
             assert metadata.is_terminal() is False
-        
+
         # Terminal states
-        for status in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.TIMEOUT]:
+        for status in [
+            TaskStatus.COMPLETED,
+            TaskStatus.FAILED,
+            TaskStatus.CANCELLED,
+            TaskStatus.TIMEOUT,
+        ]:
             metadata.status = status
             assert metadata.is_terminal() is True
-    
+
     def test_task_metadata_is_ready(self):
         """Test TaskMetadata is_ready method"""
         # Ready: pending with no dependencies
         metadata = TaskMetadata(status=TaskStatus.PENDING)
         assert metadata.is_ready() is True
-        
+
         # Not ready: has dependencies
         metadata.depends_on = ["task-1"]
         assert metadata.is_ready() is False
-        
+
         # Not ready: wrong status
         metadata = TaskMetadata(status=TaskStatus.RUNNING)
         assert metadata.is_ready() is False
@@ -294,21 +300,21 @@ class TestTaskResult:
             started_at=datetime.now() - timedelta(seconds=5),
             completed_at=datetime.now(),
         )
-        
+
         result = TaskResult(
             task_id="success-123",
             status=TaskStatus.COMPLETED,
             value={"data": "test_value"},
             metadata=metadata,
         )
-        
+
         assert result.task_id == "success-123"
         assert result.status == TaskStatus.COMPLETED
         assert result.value == {"data": "test_value"}
         assert result.error is None
         assert result.is_success() is True
         assert result.is_failure() is False
-        
+
         # Test to_result conversion
         converted = result.to_result()
         assert isinstance(converted, Success)
@@ -320,21 +326,21 @@ class TestTaskResult:
             task_id="failure-123",
             status=TaskStatus.FAILED,
         )
-        
+
         result = TaskResult(
             task_id="failure-123",
             status=TaskStatus.FAILED,
             error="Task execution failed",
             metadata=metadata,
         )
-        
+
         assert result.task_id == "failure-123"
         assert result.status == TaskStatus.FAILED
         assert result.value is None
         assert result.error == "Task execution failed"
         assert result.is_success() is False
         assert result.is_failure() is True
-        
+
         # Test to_result conversion
         converted = result.to_result()
         assert isinstance(converted, Failure)
@@ -347,12 +353,12 @@ class TestTaskResult:
             status=TaskStatus.TIMEOUT,
             error="Task timed out after 30 seconds",
         )
-        
+
         assert result.task_id == "timeout-123"
         assert result.status == TaskStatus.TIMEOUT
         assert result.is_success() is False
         assert result.is_failure() is True
-        
+
         converted = result.to_result()
         assert isinstance(converted, Failure)
 
@@ -362,12 +368,12 @@ class TestTaskResult:
             task_id="cancelled-123",
             status=TaskStatus.CANCELLED,
         )
-        
+
         assert result.task_id == "cancelled-123"
         assert result.status == TaskStatus.CANCELLED
         assert result.is_success() is False
         assert result.is_failure() is True
-        
+
         converted = result.to_result()
         assert isinstance(converted, Failure)
         assert "CANCELLED" in str(converted.error)
@@ -378,7 +384,7 @@ class TestTaskResult:
             task_id="pending-123",
             status=TaskStatus.PENDING,
         )
-        
+
         assert result.task_id == "pending-123"
         assert result.status == TaskStatus.PENDING
         assert result.value is None

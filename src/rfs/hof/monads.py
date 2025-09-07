@@ -7,7 +7,7 @@ transformations in a functional way.
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, List, Optional, TypeVar, Union, cast
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -84,7 +84,7 @@ class Maybe(Monad[T]):
         if self.is_nothing():
             return Maybe.nothing()
         try:
-            return Maybe.just(func(self._value))
+            return Maybe.just(func(cast(T, self._value)))
         except:
             return Maybe.nothing()
 
@@ -99,25 +99,25 @@ class Maybe(Monad[T]):
         """
         if self.is_nothing():
             return Maybe.nothing()
-        return func(self._value)
+        return func(cast(T, self._value))
 
     def unwrap(self) -> T:
         """Get value or raise exception."""
         if self.is_nothing():
             raise ValueError("Cannot unwrap Nothing")
-        return self._value
+        return cast(T, self._value)
 
     def unwrap_or(self, default: T) -> T:
         """Get value or return default."""
-        return self._value if self.is_just() else default
+        return cast(T, self._value) if self.is_just() else default
 
     def unwrap_or_else(self, func: Callable[[], T]) -> T:
         """Get value or compute default."""
-        return self._value if self.is_just() else func()
+        return cast(T, self._value) if self.is_just() else func()
 
     def filter(self, predicate: Callable[[T], bool]) -> "Maybe[T]":
         """Keep value only if predicate is true."""
-        if self.is_just() and predicate(self._value):
+        if self.is_just() and predicate(cast(T, self._value)):
             return self
         return Maybe.nothing()
 
@@ -175,17 +175,17 @@ class Either(Monad[R], Generic[L, R]):
             Either(left='error')
         """
         if self.is_left():
-            return Either.left(self._left)
+            return Either.left(cast(L, self._left))
         try:
-            return Either.right(func(self._right))
+            return Either.right(func(cast(R, self._right)))
         except Exception as e:
             return Either.left(e)
 
     def map_left(self, func: Callable[[L], U]) -> "Either[U, R]":
         """Apply function to Left value."""
         if self.is_right():
-            return Either.right(self._right)
-        return Either.left(func(self._left))
+            return Either.right(cast(R, self._right))
+        return Either.left(func(cast(L, self._left)))
 
     def bind(self, func: Callable[[R], "Either[L, U]"]) -> "Either[L, U]":
         """
@@ -197,8 +197,8 @@ class Either(Monad[R], Generic[L, R]):
             Either(right=5.0)
         """
         if self.is_left():
-            return Either.left(self._left)
-        return func(self._right)
+            return Either.left(cast(L, self._left))
+        return func(cast(R, self._right))
 
     def unwrap(self) -> R:
         """Get Right value or raise exception."""
@@ -206,21 +206,21 @@ class Either(Monad[R], Generic[L, R]):
             if isinstance(self._left, Exception):
                 raise self._left
             raise ValueError(f"Cannot unwrap Left: {self._left}")
-        return self._right
+        return cast(R, self._right)
 
     def unwrap_left(self) -> L:
         """Get Left value or raise exception."""
         if self.is_right():
             raise ValueError(f"Cannot unwrap Right as Left: {self._right}")
-        return self._left
+        return cast(L, self._left)
 
     def unwrap_or(self, default: R) -> R:
         """Get Right value or return default."""
-        return self._right if self.is_right() else default
+        return cast(R, self._right) if self.is_right() else default
 
     def unwrap_or_else(self, func: Callable[[L], R]) -> R:
         """Get Right value or compute from Left."""
-        return self._right if self.is_right() else func(self._left)
+        return cast(R, self._right) if self.is_right() else func(cast(L, self._left))
 
     def __repr__(self) -> str:
         if self.is_left():
@@ -290,17 +290,17 @@ class Result(Generic[T, E]):
             Result(success=10)
         """
         if self.is_failure():
-            return Result.failure(self._error)
+            return Result.failure(cast(E, self._error))
         try:
-            return Result.success(func(self._value))
+            return Result.success(func(cast(T, self._value)))
         except Exception as e:
             return Result.failure(e)
 
     def map_error(self, func: Callable[[E], U]) -> "Result[T, U]":
         """Apply function to error value."""
         if self.is_success():
-            return Result.success(self._value)
-        return Result.failure(func(self._error))
+            return Result.success(cast(T, self._value))
+        return Result.failure(func(cast(E, self._error)))
 
     def bind(self, func: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
         """
@@ -312,8 +312,8 @@ class Result(Generic[T, E]):
             Result(success=5.0)
         """
         if self.is_failure():
-            return Result.failure(self._error)
-        return func(self._value)
+            return Result.failure(cast(E, self._error))
+        return func(cast(T, self._value))
 
     def unwrap(self) -> T:
         """Get success value or raise exception."""
@@ -321,21 +321,21 @@ class Result(Generic[T, E]):
             if isinstance(self._error, Exception):
                 raise self._error
             raise ValueError(f"Result is failure: {self._error}")
-        return self._value
+        return cast(T, self._value)
 
     def unwrap_error(self) -> E:
         """Get error value or raise exception."""
         if self.is_success():
             raise ValueError(f"Result is success: {self._value}")
-        return self._error
+        return cast(E, self._error)
 
     def unwrap_or(self, default: T) -> T:
         """Get success value or return default."""
-        return self._value if self.is_success() else default
+        return cast(T, self._value) if self.is_success() else default
 
     def unwrap_or_else(self, func: Callable[[E], T]) -> T:
         """Get success value or compute from error."""
-        return self._value if self.is_success() else func(self._error)
+        return cast(T, self._value) if self.is_success() else func(cast(E, self._error))
 
     def __repr__(self) -> str:
         if self.is_success():

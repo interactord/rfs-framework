@@ -386,7 +386,134 @@ class DocumentationGenerator:
     async def _generate_user_guide(self) -> Result[str, str]:
         """사용자 가이드 생성"""
         try:
-            guide_content = f'# {self.config.project_info.get('name', 'Project')} 사용자 가이드\n\n{self.config.project_info.get('description', '')}\n\n## 빠른 시작\n\n### 1. 설치\n\n```bash\npip install {self.config.project_info.get('name', 'project').lower()}\n```\n\n### 2. 기본 사용법\n\n```python\nfrom {self.config.project_info.get('name', 'project').lower()} import RFSConfig\n\n# 기본 설정\nconfig = RFSConfig()\n\n# 애플리케이션 시작\napp = RFSApplication(config)\nawait app.start()\n```\n\n### 3. 설정\n\n환경 변수를 통해 애플리케이션을 설정할 수 있습니다:\n\n```env\nRFS_ENVIRONMENT=production\nRFS_DEBUG=false\nRFS_LOG_LEVEL=INFO\n```\n\n## 주요 기능\n\n### Result Pattern\n\nRFS Framework는 함수형 프로그래밍의 Result 패턴을 사용합니다:\n\n```python\nfrom rfs import Result, Success, Failure\n\ndef divide(a: int, b: int) -> Result[float, str]:\n    if b == 0:\n        return Failure("0으로 나눌 수 없습니다")\n    return Success(a / b)\n\nresult = divide(10, 2)\nif result.is_success():\n    print(f"결과: {{result.unwrap()}}")\nelse:\n    print(f"오류: {{result.unwrap_err()}}")\n```\n\n### Cloud Run 통합\n\nGoogle Cloud Run에 최적화된 기능들:\n\n```python\nfrom rfs.cloud_run import initialize_cloud_run_services\n\n# Cloud Run 서비스 초기화\nawait initialize_cloud_run_services(\n    project_id="your-project",\n    service_name="your-service"\n)\n```\n\n## 고급 사용법\n\n### 서비스 등록\n\n```pytho@stateless\nn\nfrom rfs import stateless\n\n@stateless\nclass UserService:\n    async def get_user(self, user_id: str) -> Result[User, str]:\n        # 사용자 조회 로직\n        pass\n```\n\n### 이벤트 시스템\n\n```python\nfrom rfs import get_event_bus, event_handler\n\n@event_handler("user_created")\nasync def handle_user_created(event):\n    print(f"새 사용자 생성됨: {{event.data}}")\n\n# 이벤트 발생\nawait get_event_bus().publish("user_created", {{"user_id": "123"}})\n```\n\n## 문제 해결\n\n### 일반적인 오류\n\n1. **설정 오류**: `.env` 파일 확인\n2. **의존성 오류**: `pip install -r requirements.txt` 실행\n3. **포트 충돌**: `RFS_PORT` 환경 변수 설정\n\n### 디버깅\n\n```bash\n# 디버그 모드로 실행\nRFS_DEBUG=true python main.py\n\n# 로그 레벨 설정\nRFS_LOG_LEVEL=DEBUG python main.py\n```\n\n## API 참조\n\n자세한 API 문서는 [API 문서](api.md)를 참조하세요.\n\n---\n\n생성일: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n'
+            project_name = self.config.project_info.get("name", "Project")
+            project_description = self.config.project_info.get("description", "")
+            project_package = self.config.project_info.get("name", "project").lower()
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            guide_content = f"""# {project_name} 사용자 가이드
+
+{project_description}
+
+## 빠른 시작
+
+### 1. 설치
+
+```bash
+pip install {project_package}
+```
+
+### 2. 기본 사용법
+
+```python
+from {project_package} import RFSConfig
+
+# 기본 설정
+config = RFSConfig()
+
+# 애플리케이션 시작
+app = RFSApplication(config)
+await app.start()
+```
+
+### 3. 설정
+
+환경 변수를 통해 애플리케이션을 설정할 수 있습니다:
+
+```env
+RFS_ENVIRONMENT=production
+RFS_DEBUG=false
+RFS_LOG_LEVEL=INFO
+```
+
+## 주요 기능
+
+### Result Pattern
+
+RFS Framework는 함수형 프로그래밍의 Result 패턴을 사용합니다:
+
+```python
+from rfs import Result, Success, Failure
+
+def divide(a: int, b: int) -> Result[float, str]:
+    if b == 0:
+        return Failure("0으로 나눌 수 없습니다")
+    return Success(a / b)
+
+result = divide(10, 2)
+if result.is_success():
+    print(f"결과: {{result.unwrap()}}")
+else:
+    print(f"오류: {{result.unwrap_err()}}")
+```
+
+### Cloud Run 통합
+
+Google Cloud Run에 최적화된 기능들:
+
+```python
+from rfs.cloud_run import initialize_cloud_run_services
+
+# Cloud Run 서비스 초기화
+await initialize_cloud_run_services(
+    project_id="your-project",
+    service_name="your-service"
+)
+```
+
+## 고급 사용법
+
+### 서비스 등록
+
+```python
+from rfs import stateless
+
+@stateless
+class UserService:
+    async def get_user(self, user_id: str) -> Result[User, str]:
+        # 사용자 조회 로직
+        pass
+```
+
+### 이벤트 시스템
+
+```python
+from rfs import get_event_bus, event_handler
+
+@event_handler("user_created")
+async def handle_user_created(event):
+    print(f"새 사용자 생성됨: {{event.data}}")
+
+# 이벤트 발생
+await get_event_bus().publish("user_created", {{"user_id": "123"}})
+```
+
+## 문제 해결
+
+### 일반적인 오류
+
+1. **설정 오류**: `.env` 파일 확인
+2. **의존성 오류**: `pip install -r requirements.txt` 실행
+3. **포트 충돌**: `RFS_PORT` 환경 변수 설정
+
+### 디버깅
+
+```bash
+# 디버그 모드로 실행
+RFS_DEBUG=true python main.py
+
+# 로그 레벨 설정
+RFS_LOG_LEVEL=DEBUG python main.py
+```
+
+## API 참조
+
+자세한 API 문서는 [API 문서](api.md)를 참조하세요.
+
+---
+
+생성일: {current_time}
+"""
             guide_file = self.output_path / "user-guide.md"
             guide_file.write_text(guide_content, encoding="utf-8")
             if DocFormat.HTML in self.config.formats:

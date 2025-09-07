@@ -35,16 +35,15 @@ class Guard:
         self.message = message
         self._handled = False
 
-    def __enter__(self):
+    def __enter__(self) -> "GuardStatement":
         if not self.condition:
             return self
         self._handled = True
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if not self._handled and not self.condition:
             raise GuardError(self.message)
-        return False
 
     def else_return(self, value: Any = None) -> NoReturn:
         """Return early with a value if guard fails."""

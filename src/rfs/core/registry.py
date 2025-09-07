@@ -43,7 +43,7 @@ class ServiceRegistry:
     def __init__(self) -> None:
         self._definitions: Dict[str, ServiceDefinition] = {}
         self._instances: Dict[str, Any] = {}
-        self._creating: set = {str: set()}
+        self._creating: set[str] = set()
 
     def register(
         self,
@@ -98,14 +98,14 @@ class ServiceRegistry:
         self._creating.add(name)
         try:
             definition = self._definitions[name]
-            dependencies = []
+            dependencies: list[Any] = []
             for dep_name in definition.dependencies:
                 dep_instance = self.get(dep_name)
                 dependencies = dependencies + [dep_instance]
             instance = definition.service_class(*dependencies)
             return instance
         finally:
-            self._creating = [i for i in self._creating if i != name]
+            self._creating.discard(name)
 
     def list_services(self) -> List[str]:
         """등록된 서비스 목록"""

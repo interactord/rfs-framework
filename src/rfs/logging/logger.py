@@ -15,9 +15,7 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Union
 
 _log_context: ContextVar[Dict[str, Any]] = ContextVar("log_context", default={})
-_trace_context: ContextVar[Optional[Any]] = ContextVar(
-    "_trace_context", default=None
-)
+_trace_context: ContextVar[Optional[Any]] = ContextVar("_trace_context", default=None)
 
 
 class LogLevel(IntEnum):
@@ -118,7 +116,9 @@ class RFSLogger:
             kwargs["stacktrace"] = {"stacktrace": traceback.format_exc()}
         self._log(LogLevel.ERROR, message, **kwargs)
 
-    def critical(self, message: str, error: Optional[Exception] = None, **kwargs) -> None:
+    def critical(
+        self, message: str, error: Optional[Exception] = None, **kwargs
+    ) -> None:
         """CRITICAL 레벨 로그"""
         if error:
             kwargs["error"] = {"error": str(error)}
@@ -208,7 +208,7 @@ class RFSLogger:
         self.log_counts = {level: 0 for level in LogLevel}
 
 
-_logger_cache: Dict[str, Any] = field(default_factory=dict)
+_logger_cache: Dict[str, "RFSLogger"] = {}
 
 
 def get_logger(name: Optional[str] = None) -> RFSLogger:
@@ -222,7 +222,7 @@ def get_logger(name: Optional[str] = None) -> RFSLogger:
         else:
             name = "root"
     if name not in _logger_cache:
-        _logger_cache[name] = {name: RFSLogger(name)}
+        _logger_cache[name] = RFSLogger(name)
     return _logger_cache[name]
 
 

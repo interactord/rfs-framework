@@ -103,7 +103,9 @@ class ReportConfig:
 class Report(ABC):
     """리포트 추상 클래스"""
 
-    def __init__(self, report_id: str, template: ReportTemplate, config: ReportConfig) -> None:
+    def __init__(
+        self, report_id: str, template: ReportTemplate, config: ReportConfig
+    ) -> None:
         self.report_id = report_id
         self.template = template
         self.config = config

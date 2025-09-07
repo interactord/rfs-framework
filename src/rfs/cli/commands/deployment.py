@@ -358,7 +358,7 @@ class LogsCommand(Command):
             "gcloud",
             "logs",
             "read",
-            f'resource.type="cloud_run_revision" resource.labels.service_name="{options['service_name']}"',
+            f'resource.type="cloud_run_revision" resource.labels.service_name="{options["service_name"]}"',
             "--format=value(timestamp,severity,jsonPayload.message,textPayload)",
             f"--limit={options['lines']}",
             f"--freshness={options['since']}",

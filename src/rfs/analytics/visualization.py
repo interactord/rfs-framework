@@ -88,7 +88,7 @@ class Theme(ABC):
 
     def get_colors(self) -> List[str]:
         """색상 팔레트 반환
-        
+
         Returns:
             List[str]: 색상 리스트
         """
@@ -105,7 +105,7 @@ class Theme(ABC):
 
     def get_config_overrides(self) -> Dict[str, Any]:
         """설정 오버라이드 반환
-        
+
         Returns:
             Dict[str, Any]: 설정 오버라이드 딕셔너리
         """
@@ -211,14 +211,17 @@ class VisualizationEngine:
                 case "plotly":
                     import plotly.express as px
                     import plotly.graph_objects as go
+
                     self._backend_module = {"go": go, "px": px}
                 case "matplotlib":
                     import matplotlib.pyplot as plt
                     import seaborn as sns
+
                     self._backend_module = {"plt": plt, "sns": sns}
                 case "bokeh":
                     from bokeh.models import HoverTool
                     from bokeh.plotting import figure, show
+
                     self._backend_module = {
                         "figure": figure,
                         "show": show,
@@ -250,9 +253,12 @@ class VisualizationEngine:
             match self.backend:
                 case "plotly":
                     return await self._generate_plotly_plot(plot_type, data, config)
-                case "matplotlib":                return await self._generate_matplotlib_plot(plot_type, data, config)
-                case "bokeh":                return await self._generate_bokeh_plot(plot_type, data, config)
-                case _:                return Failure(f"Unsupported backend: {self.backend}")
+                case "matplotlib":
+                    return await self._generate_matplotlib_plot(plot_type, data, config)
+                case "bokeh":
+                    return await self._generate_bokeh_plot(plot_type, data, config)
+                case _:
+                    return Failure(f"Unsupported backend: {self.backend}")
         except Exception as e:
             return Failure(f"Plot generation failed: {str(e)}")
 
@@ -310,7 +316,10 @@ class VisualizationEngine:
                 fig = go.Figure()
                 fig.add_trace(
                     go.Histogram(
-                        x=data.x_data, nbinsx=20, name=config.title, marker_color=colors[0]
+                        x=data.x_data,
+                        nbinsx=20,
+                        name=config.title,
+                        marker_color=colors[0],
                     )
                 )
             case PlotType.HEATMAP:
@@ -361,7 +370,9 @@ class VisualizationEngine:
         fig, ax = plt.subplots(figsize=(config.width / 100, config.height / 100))
         match plot_type:
             case PlotType.LINE:
-                ax.plot(data.x_data, data.y_data, color=colors[0], marker="o", linewidth=2)
+                ax.plot(
+                    data.x_data, data.y_data, color=colors[0], marker="o", linewidth=2
+                )
             case PlotType.BAR:
                 ax.bar(data.x_data, data.y_data, color=colors[0])
             case PlotType.SCATTER:
@@ -422,7 +433,9 @@ class VisualizationEngine:
                 p.vbar(x=data.x_data, top=data.y_data, width=0.8, color=colors[0])
             case PlotType.SCATTER:
                 sizes = data.sizes or [10] * len(data.x_data)
-                p.circle(data.x_data, data.y_data, size=sizes, color=colors[0], alpha=0.7)
+                p.circle(
+                    data.x_data, data.y_data, size=sizes, color=colors[0], alpha=0.7
+                )
             case _:
                 return Failure(f"Unsupported plot type for bokeh: {plot_type}")
         p.grid.visible = config.grid

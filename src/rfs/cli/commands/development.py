@@ -24,7 +24,7 @@ try:
         SpinnerColumn,
         TextColumn,
         TimeElapsedColumn,
-    , field)
+    )
     from rich.table import Table
 
     RICH_AVAILABLE = True

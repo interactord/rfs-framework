@@ -7,35 +7,43 @@ Swift-inspired patterns like first, compactMap, and drop operations.
 
 from functools import reduce
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Optional, 
-    Tuple, TypeVar, Union, overload
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
 )
 from itertools import islice, takewhile, dropwhile, groupby
 import itertools
 
 # Type variables
-T = TypeVar('T')
-U = TypeVar('U')
-K = TypeVar('K')
-V = TypeVar('V')
+T = TypeVar("T")
+U = TypeVar("U")
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 # Swift-inspired functions
 def first(
-    iterable: Iterable[T], 
-    predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], predicate: Optional[Callable[[T], bool]] = None
 ) -> Optional[T]:
     """
     Returns the first element matching the predicate, or first element if no predicate.
     Swift-inspired: collection.first(where: { $0 > 5 })
-    
+
     Args:
         iterable: Collection to search
         predicate: Optional condition function
-        
+
     Returns:
         First matching element or None
-        
+
     Example:
         >>> first([1, 2, 3, 4, 5], lambda x: x > 3)
         4
@@ -46,7 +54,7 @@ def first(
     """
     if predicate is None:
         return next(iter(iterable), None)
-    
+
     for item in iterable:
         if predicate(item):
             return item
@@ -54,19 +62,18 @@ def first(
 
 
 def last(
-    iterable: Iterable[T],
-    predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], predicate: Optional[Callable[[T], bool]] = None
 ) -> Optional[T]:
     """
     Returns the last element matching the predicate.
-    
+
     Args:
         iterable: Collection to search
         predicate: Optional condition function
-        
+
     Returns:
         Last matching element or None
-        
+
     Example:
         >>> last([1, 2, 3, 4, 5], lambda x: x < 4)
         3
@@ -84,21 +91,18 @@ def last(
     return result
 
 
-def compact_map(
-    func: Callable[[T], Optional[U]], 
-    iterable: Iterable[T]
-) -> List[U]:
+def compact_map(func: Callable[[T], Optional[U]], iterable: Iterable[T]) -> List[U]:
     """
     Maps and filters None values in one operation.
     Swift-inspired: compactMap { transform($0) }
-    
+
     Args:
         func: Transform function that may return None
         iterable: Collection to transform
-        
+
     Returns:
         List of non-None transformed values
-        
+
     Example:
         >>> compact_map(lambda x: x if x > 2 else None, [1, 2, 3, 4])
         [3, 4]
@@ -108,21 +112,18 @@ def compact_map(
     return [result for item in iterable if (result := func(item)) is not None]
 
 
-def flat_map(
-    func: Callable[[T], Iterable[U]], 
-    iterable: Iterable[T]
-) -> List[U]:
+def flat_map(func: Callable[[T], Iterable[U]], iterable: Iterable[T]) -> List[U]:
     """
     Maps each element to a collection and flattens the result.
     Swift-inspired: flatMap { transform($0) }
-    
+
     Args:
         func: Function returning an iterable
         iterable: Collection to transform
-        
+
     Returns:
         Flattened list of all results
-        
+
     Example:
         >>> flat_map(lambda x: [x, x*2], [1, 2, 3])
         [1, 2, 2, 4, 3, 6]
@@ -133,22 +134,20 @@ def flat_map(
 
 
 def drop_last(
-    iterable: Iterable[T],
-    n: int = 1,
-    predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], n: int = 1, predicate: Optional[Callable[[T], bool]] = None
 ) -> List[T]:
     """
     Drops last n elements or elements matching predicate from the end.
     Swift-inspired: dropLast(while:) and dropLast(n)
-    
+
     Args:
         iterable: Collection to process
         n: Number of elements to drop from end
         predicate: Optional condition for dropping from end
-        
+
     Returns:
         List with elements dropped from end
-        
+
     Example:
         >>> drop_last([1, 2, 3, 4, 5], 2)
         [1, 2, 3]
@@ -156,7 +155,7 @@ def drop_last(
         [1, 2, 3]
     """
     items = list(iterable)
-    
+
     if predicate:
         # Drop from end while predicate is true
         while items and predicate(items[-1]):
@@ -164,25 +163,25 @@ def drop_last(
         return items
     else:
         # Drop last n elements
-        return items[:-n] if n > 0 and n < len(items) else [] if n >= len(items) else items
+        return (
+            items[:-n] if n > 0 and n < len(items) else [] if n >= len(items) else items
+        )
 
 
 def drop_first(
-    iterable: Iterable[T],
-    n: int = 1,
-    predicate: Optional[Callable[[T], bool]] = None
+    iterable: Iterable[T], n: int = 1, predicate: Optional[Callable[[T], bool]] = None
 ) -> List[T]:
     """
     Drops first n elements or elements matching predicate from start.
-    
+
     Args:
         iterable: Collection to process
         n: Number of elements to drop from start
         predicate: Optional condition for dropping from start
-        
+
     Returns:
         List with elements dropped from start
-        
+
     Example:
         >>> drop_first([1, 2, 3, 4, 5], 2)
         [3, 4, 5]
@@ -196,22 +195,20 @@ def drop_first(
 
 
 def merging(
-    dict1: Dict[K, V],
-    dict2: Dict[K, V],
-    unique_keys_with: Callable[[V, V], V]
+    dict1: Dict[K, V], dict2: Dict[K, V], unique_keys_with: Callable[[V, V], V]
 ) -> Dict[K, V]:
     """
     Merges two dictionaries with a custom resolver for conflicts.
     Swift-inspired: merging(_:uniquingKeysWith:)
-    
+
     Args:
         dict1: First dictionary
         dict2: Second dictionary
         unique_keys_with: Function to resolve conflicts (old, new) -> resolved
-        
+
     Returns:
         Merged dictionary
-        
+
     Example:
         >>> d1 = {'a': 1, 'b': 2}
         >>> d2 = {'b': 3, 'c': 4}
@@ -230,20 +227,17 @@ def merging(
 
 
 # Standard functional collection operations
-def map_indexed(
-    func: Callable[[int, T], U], 
-    iterable: Iterable[T]
-) -> List[U]:
+def map_indexed(func: Callable[[int, T], U], iterable: Iterable[T]) -> List[U]:
     """
     Maps with index.
-    
+
     Args:
         func: Function taking (index, item)
         iterable: Collection to map
-        
+
     Returns:
         List of mapped values
-        
+
     Example:
         >>> map_indexed(lambda i, x: f"{i}:{x}", ['a', 'b', 'c'])
         ['0:a', '1:b', '2:c']
@@ -252,19 +246,18 @@ def map_indexed(
 
 
 def filter_indexed(
-    predicate: Callable[[int, T], bool],
-    iterable: Iterable[T]
+    predicate: Callable[[int, T], bool], iterable: Iterable[T]
 ) -> List[T]:
     """
     Filters with index.
-    
+
     Args:
         predicate: Function taking (index, item) returning bool
         iterable: Collection to filter
-        
+
     Returns:
         List of filtered values
-        
+
     Example:
         >>> filter_indexed(lambda i, x: i % 2 == 0, ['a', 'b', 'c', 'd'])
         ['a', 'c']
@@ -273,21 +266,19 @@ def filter_indexed(
 
 
 def reduce_indexed(
-    func: Callable[[int, U, T], U],
-    iterable: Iterable[T],
-    initial: U
+    func: Callable[[int, U, T], U], iterable: Iterable[T], initial: U
 ) -> U:
     """
     Reduces with index.
-    
+
     Args:
         func: Function taking (index, accumulator, item)
         iterable: Collection to reduce
         initial: Initial value
-        
+
     Returns:
         Reduced value
-        
+
     Example:
         >>> reduce_indexed(lambda i, acc, x: acc + i * x, [1, 2, 3], 0)
         8  # 0*1 + 1*2 + 2*3 = 8
@@ -298,22 +289,18 @@ def reduce_indexed(
     return result
 
 
-def fold(
-    func: Callable[[U, T], U],
-    initial: U,
-    iterable: Iterable[T]
-) -> U:
+def fold(func: Callable[[U, T], U], initial: U, iterable: Iterable[T]) -> U:
     """
     Folds (reduces) a collection from left to right.
-    
+
     Args:
         func: Binary function (accumulator, item)
         initial: Initial value
         iterable: Collection to fold
-        
+
     Returns:
         Folded value
-        
+
     Example:
         >>> fold(lambda acc, x: acc + x, 0, [1, 2, 3, 4])
         10
@@ -321,33 +308,25 @@ def fold(
     return reduce(func, iterable, initial)
 
 
-def fold_left(
-    func: Callable[[U, T], U],
-    initial: U,
-    iterable: Iterable[T]
-) -> U:
+def fold_left(func: Callable[[U, T], U], initial: U, iterable: Iterable[T]) -> U:
     """
     Left fold (same as fold).
     """
     return fold(func, initial, iterable)
 
 
-def fold_right(
-    func: Callable[[T, U], U],
-    initial: U,
-    iterable: Iterable[T]
-) -> U:
+def fold_right(func: Callable[[T, U], U], initial: U, iterable: Iterable[T]) -> U:
     """
     Right fold - processes from right to left.
-    
+
     Args:
         func: Binary function (item, accumulator)
         initial: Initial value
         iterable: Collection to fold
-        
+
     Returns:
         Folded value
-        
+
     Example:
         >>> fold_right(lambda x, acc: f"({x}{acc})", "", ['a', 'b', 'c'])
         '(a(b(c)))'
@@ -359,22 +338,18 @@ def fold_right(
     return result
 
 
-def scan(
-    func: Callable[[U, T], U],
-    initial: U,
-    iterable: Iterable[T]
-) -> List[U]:
+def scan(func: Callable[[U, T], U], initial: U, iterable: Iterable[T]) -> List[U]:
     """
     Like fold but returns all intermediate results.
-    
+
     Args:
         func: Binary function
         initial: Initial value
         iterable: Collection to scan
-        
+
     Returns:
         List of all intermediate results
-        
+
     Example:
         >>> scan(lambda acc, x: acc + x, 0, [1, 2, 3, 4])
         [0, 1, 3, 6, 10]
@@ -388,19 +363,18 @@ def scan(
 
 
 def partition(
-    predicate: Callable[[T], bool],
-    iterable: Iterable[T]
+    predicate: Callable[[T], bool], iterable: Iterable[T]
 ) -> Tuple[List[T], List[T]]:
     """
     Splits collection into two based on predicate.
-    
+
     Args:
         predicate: Condition function
         iterable: Collection to partition
-        
+
     Returns:
         Tuple of (matching, non-matching)
-        
+
     Example:
         >>> partition(lambda x: x % 2 == 0, [1, 2, 3, 4, 5])
         ([2, 4], [1, 3, 5])
@@ -415,20 +389,17 @@ def partition(
     return true_items, false_items
 
 
-def group_by(
-    key_func: Callable[[T], K],
-    iterable: Iterable[T]
-) -> Dict[K, List[T]]:
+def group_by(key_func: Callable[[T], K], iterable: Iterable[T]) -> Dict[K, List[T]]:
     """
     Groups elements by key function.
-    
+
     Args:
         key_func: Function to generate keys
         iterable: Collection to group
-        
+
     Returns:
         Dictionary of grouped items
-        
+
     Example:
         >>> group_by(lambda x: x % 3, [1, 2, 3, 4, 5, 6])
         {1: [1, 4], 2: [2, 5], 0: [3, 6]}
@@ -445,14 +416,14 @@ def group_by(
 def chunk(iterable: Iterable[T], size: int) -> List[List[T]]:
     """
     Splits collection into chunks of specified size.
-    
+
     Args:
         iterable: Collection to chunk
         size: Chunk size
-        
+
     Returns:
         List of chunks
-        
+
     Example:
         >>> chunk([1, 2, 3, 4, 5], 2)
         [[1, 2], [3, 4], [5]]
@@ -470,13 +441,13 @@ def chunk(iterable: Iterable[T], size: int) -> List[List[T]]:
 def flatten(iterable: Iterable[Iterable[T]]) -> List[T]:
     """
     Flattens one level of nesting.
-    
+
     Args:
         iterable: Nested collection
-        
+
     Returns:
         Flattened list
-        
+
     Example:
         >>> flatten([[1, 2], [3, 4], [5]])
         [1, 2, 3, 4, 5]
@@ -484,20 +455,17 @@ def flatten(iterable: Iterable[Iterable[T]]) -> List[T]:
     return [item for sublist in iterable for item in sublist]
 
 
-def zip_with(
-    func: Callable[..., U],
-    *iterables: Iterable
-) -> List[U]:
+def zip_with(func: Callable[..., U], *iterables: Iterable) -> List[U]:
     """
     Zips collections and applies function to each tuple.
-    
+
     Args:
         func: Function to apply to zipped elements
         *iterables: Collections to zip
-        
+
     Returns:
         List of results
-        
+
     Example:
         >>> zip_with(lambda x, y: x + y, [1, 2, 3], [10, 20, 30])
         [11, 22, 33]
@@ -508,14 +476,14 @@ def zip_with(
 def take(n: int, iterable: Iterable[T]) -> List[T]:
     """
     Takes first n elements.
-    
+
     Args:
         n: Number of elements
         iterable: Collection
-        
+
     Returns:
         List of first n elements
-        
+
     Example:
         >>> take(3, [1, 2, 3, 4, 5])
         [1, 2, 3]
@@ -526,14 +494,14 @@ def take(n: int, iterable: Iterable[T]) -> List[T]:
 def drop(n: int, iterable: Iterable[T]) -> List[T]:
     """
     Drops first n elements.
-    
+
     Args:
         n: Number of elements to drop
         iterable: Collection
-        
+
     Returns:
         List without first n elements
-        
+
     Example:
         >>> drop(2, [1, 2, 3, 4, 5])
         [3, 4, 5]
@@ -541,20 +509,17 @@ def drop(n: int, iterable: Iterable[T]) -> List[T]:
     return list(islice(iterable, n, None))
 
 
-def take_while(
-    predicate: Callable[[T], bool],
-    iterable: Iterable[T]
-) -> List[T]:
+def take_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> List[T]:
     """
     Takes elements while predicate is true.
-    
+
     Args:
         predicate: Condition function
         iterable: Collection
-        
+
     Returns:
         List of elements
-        
+
     Example:
         >>> take_while(lambda x: x < 4, [1, 2, 3, 4, 5])
         [1, 2, 3]
@@ -562,20 +527,17 @@ def take_while(
     return list(takewhile(predicate, iterable))
 
 
-def drop_while(
-    predicate: Callable[[T], bool],
-    iterable: Iterable[T]
-) -> List[T]:
+def drop_while(predicate: Callable[[T], bool], iterable: Iterable[T]) -> List[T]:
     """
     Drops elements while predicate is true.
-    
+
     Args:
         predicate: Condition function
         iterable: Collection
-        
+
     Returns:
         List of remaining elements
-        
+
     Example:
         >>> drop_while(lambda x: x < 3, [1, 2, 3, 4, 5])
         [3, 4, 5]

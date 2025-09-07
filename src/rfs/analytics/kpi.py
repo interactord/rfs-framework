@@ -131,22 +131,22 @@ class KPI(ABC):
 
     async def _execute_query(self, query: DataQuery) -> Result[Any, str]:
         """데이터 쿼리 실행
-        
+
         Args:
             query: 실행할 쿼리
-            
+
         Returns:
             Result[Any, str]: 쿼리 결과 또는 오류
         """
         if not self.data_source:
             return Failure("Data source not configured")
-            
+
         try:
             from ..analytics.data_source import DataSourceManager
-            
+
             # 데이터 소스 매니저 사용
             manager = DataSourceManager()
-            
+
             # 데이터 소스가 문자열인 경우 ID로 찾기
             if isinstance(self.data_source, str):
                 source_result = manager.get_source(self.data_source)
@@ -155,20 +155,20 @@ class KPI(ABC):
                 data_source = source_result.value
             else:
                 data_source = self.data_source
-                
+
             # 쿼리 실행
             result = await data_source.execute(query)
             return result
         except Exception as e:
             return Failure(f"Query execution failed: {str(e)}")
-    
+
     @abstractmethod
     async def calculate(self, **kwargs) -> Result[float, str]:
         """KPI 값 계산
-        
+
         Args:
             **kwargs: 계산에 필요한 추가 매개변수
-            
+
         Returns:
             Result[float, str]: 계산된 KPI 값 또는 오류
         """
@@ -266,16 +266,16 @@ class CountKPI(KPI):
         """카운트 계산"""
         try:
             from ..analytics.data_source import DataQuery
-            
+
             data_query = DataQuery(query=self.query, parameters=kwargs)
             result = await self._execute_query(data_query)
             if result.is_failure():
                 return Failure(f"Failed to calculate count: {result.error}")
-            
+
             data = result.value
             if not data:
                 return Success(0.0)
-                
+
             # 카운트 계산 로직
             if isinstance(data, list):
                 count = float(len(data))
@@ -294,7 +294,7 @@ class CountKPI(KPI):
                         count = float(data[0])
                 else:
                     count = 0.0
-                    
+
             return Success(count)
         except Exception as e:
             return Failure(f"Failed to calculate count: {str(e)}")
@@ -313,16 +313,16 @@ class AverageKPI(KPI):
         try:
             from ..analytics.data_source import DataQuery
             import statistics
-            
+
             data_query = DataQuery(query=self.query, parameters=kwargs)
             result = await self._execute_query(data_query)
             if result.is_failure():
                 return Failure(f"Failed to calculate average: {result.error}")
-                
+
             data = result.value
             if not data:
                 return Success(0.0)
-                
+
             values = []
             if isinstance(data, list):
                 for row in data:
@@ -343,16 +343,16 @@ class AverageKPI(KPI):
                     values = [float(data[self.column])]
                 except (ValueError, TypeError):
                     pass
-                    
+
             if not values:
                 return Success(0.0)
-                
+
             # None 값 제거
             values = [v for v in values if v is not None]
-            
+
             if not values:
                 return Success(0.0)
-                
+
             average = statistics.mean(values)
             return Success(float(average))
         except Exception as e:

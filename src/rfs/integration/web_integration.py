@@ -692,23 +692,17 @@ class WebIntegrationManager:
             case AuthType.API_KEY:
                 headers = {
                     **headers,
-                    auth_config.get("header_name", "X-API-Key"): auth_config["api_key"]
+                    auth_config.get("header_name", "X-API-Key"): auth_config["api_key"],
                 }
             case AuthType.BEARER_TOKEN:
-                headers = {
-                    **headers,
-                    "Authorization": f"Bearer {auth_config['token']}"
-                }
+                headers = {**headers, "Authorization": f"Bearer {auth_config['token']}"}
             case AuthType.BASIC:
                 import base64
-                
+
                 credentials = base64.b64encode(
                     f"{auth_config.get('username')}:{auth_config.get('password')}".encode()
                 ).decode()
-                headers = {
-                    **headers,
-                    "Authorization": f"Basic {credentials}"
-                }
+                headers = {**headers, "Authorization": f"Basic {credentials}"}
             case AuthType.JWT:
                 token = jwt.encode(
                     auth_config.get("payload", {}),

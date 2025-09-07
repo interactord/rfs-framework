@@ -401,7 +401,7 @@ class AutoScalingOptimizer:
             scale_up_score += 1
         if snapshot.avg_response_time > 1000:
             scale_up_score += 1
-        
+
         scale_down_score = 0
         if snapshot.cpu_utilization < self.config.scale_down_threshold:
             scale_down_score += 1
@@ -411,7 +411,7 @@ class AutoScalingOptimizer:
             scale_down_score += 1
         if snapshot.avg_response_time < 200:
             scale_down_score += 1
-        
+
         if scale_up_score >= 2:
             can_scale, reason = self.config.can_scale_up(current_instances)
             if can_scale:

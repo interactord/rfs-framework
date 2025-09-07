@@ -369,8 +369,10 @@ class HybridExecutor(TaskExecutor):
         match task_type:
             case "cpu":
                 return await self.process_executor.submit(func, *args, **kwargs)
-            case "io":            return await self.thread_executor.submit(func, *args, **kwargs)
-            case _:            return await self.async_executor.submit(func, *args, **kwargs)
+            case "io":
+                return await self.thread_executor.submit(func, *args, **kwargs)
+            case _:
+                return await self.async_executor.submit(func, *args, **kwargs)
 
     def get_stats(self) -> Dict[str, Any]:
         """통계 조회"""

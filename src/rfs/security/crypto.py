@@ -431,8 +431,10 @@ def encrypt(
     match algorithm:
         case EncryptionAlgorithm.AES_256_GCM:
             return _crypto_manager.encrypt_aes_gcm(data, key)
-        case EncryptionAlgorithm.AES_256_CBC:        return _crypto_manager.encrypt_aes_cbc(data, key)
-        case _:        return Failure(f"지원하지 않는 암호화 알고리즘: {algorithm}")
+        case EncryptionAlgorithm.AES_256_CBC:
+            return _crypto_manager.encrypt_aes_cbc(data, key)
+        case _:
+            return Failure(f"지원하지 않는 암호화 알고리즘: {algorithm}")
 
 
 def decrypt(
@@ -444,8 +446,10 @@ def decrypt(
     match algorithm:
         case EncryptionAlgorithm.AES_256_GCM:
             return _crypto_manager.decrypt_aes_gcm(encrypted_result, key)
-        case EncryptionAlgorithm.AES_256_CBC:        return _crypto_manager.decrypt_aes_cbc(encrypted_result, key)
-        case _:        return Failure(f"지원하지 않는 복호화 알고리즘: {algorithm}")
+        case EncryptionAlgorithm.AES_256_CBC:
+            return _crypto_manager.decrypt_aes_cbc(encrypted_result, key)
+        case _:
+            return Failure(f"지원하지 않는 복호화 알고리즘: {algorithm}")
 
 
 def hash_password(password: str, salt: Optional[bytes] = None) -> Result[str, str]:

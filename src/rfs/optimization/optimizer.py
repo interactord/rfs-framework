@@ -202,10 +202,10 @@ class PerformanceOptimizer:
             else:
                 process = None
                 # Provide default values when psutil is not available
-                memory_info = type('MemoryInfo', (), {'rss': 0, 'vms': 0})()
+                memory_info = type("MemoryInfo", (), {"rss": 0, "vms": 0})()
                 cpu_percent = 0
                 num_threads = threading.active_count()
-            
+
             start_time = time.time()
             try:
                 from .. import core
@@ -657,11 +657,11 @@ class PerformanceOptimizer:
                 num_threads = process.num_threads()
             else:
                 process = None
-                memory_info = type('MemoryInfo', (), {'rss': 0})()
+                memory_info = type("MemoryInfo", (), {"rss": 0})()
                 memory_percent = 0
                 cpu_percent = 0
                 num_threads = threading.active_count()
-            
+
             metrics = {
                 "timestamp": datetime.now().isoformat(),
                 "memory": {

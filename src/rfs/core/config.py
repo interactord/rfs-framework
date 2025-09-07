@@ -110,7 +110,6 @@ if PYDANTIC_AVAILABLE:
                         return Environment.PRODUCTION
                     case _:
                         return Environment.DEVELOPMENT
-                        return v if type(v).__name__ == "Environment" else Environment.DEVELOPMENT
 
     @field_validator("cloud_run_cpu_limit")
     @classmethod
@@ -381,7 +380,35 @@ def export_cloud_run_yaml() -> str:
     """Cloud Run service.yaml 생성 (v4 신규)"""
     config = get_config()
     cloud_config = config_manager.export_cloud_run_config()
-    yaml_content = f'\napiVersion: serving.knative.dev/v1\nkind: Service\nmetadata:\n  name: rfs-service\n  annotations:\n    run.googleapis.com/ingress: all\nspec:\n  template:\n    metadata:\n      annotations:\n        autoscaling.knative.dev/maxScale: "{cloud_config.get('scaling')['max_instances']}"\n        run.googleapis.com/cpu-throttling: "false"\n        run.googleapis.com/execution-environment: gen2\n    spec:\n      containerConcurrency: {config.max_concurrency}\n      timeoutSeconds: 300\n      containers:\n      - image: gcr.io/PROJECT_ID/rfs-service:latest\n        resources:\n          limits:\n            cpu: "{cloud_config.get('resource_limits')['cpu']}"\n            memory: "{cloud_config.get('resource_limits')['memory']}"\n        env:\n'
+    max_scale = cloud_config.get("scaling", {}).get("max_instances", "100")
+    cpu_limit = cloud_config.get("resource_limits", {}).get("cpu", "1")
+    memory_limit = cloud_config.get("resource_limits", {}).get("memory", "512Mi")
+
+    yaml_content = f"""
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: rfs-service
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "{max_scale}"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: {config.max_concurrency}
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/PROJECT_ID/rfs-service:latest
+        resources:
+          limits:
+            cpu: "{cpu_limit}"
+            memory: "{memory_limit}"
+        env:
+"""
     for key, value in cloud_config.get("env_vars").items():
         yaml_content = (
             yaml_content + f'        - name: {key}\n          value: "{value}"\n'

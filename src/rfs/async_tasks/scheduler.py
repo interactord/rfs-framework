@@ -86,7 +86,9 @@ class Schedule:
                     if days_until_monday == 0:
                         days_until_monday = 7
                     next_run = now + timedelta(days=days_until_monday)
-                    next_run = next_run.replace(hour=0, minute=0, second=0, microsecond=0)
+                    next_run = next_run.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
                 return next_run
             case ScheduleType.MONTHLY:
                 if self.last_run:
@@ -101,7 +103,9 @@ class Schedule:
                         next_run = now.replace(year=now.year + 1, month=1, day=1)
                     else:
                         next_run = now.replace(month=now.month + 1, day=1)
-                    next_run = next_run.replace(hour=0, minute=0, second=0, microsecond=0)
+                    next_run = next_run.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
                 return next_run
         return None
 
@@ -219,7 +223,7 @@ class TaskScheduler:
             self.scheduled_tasks = {
                 **self.scheduled_tasks,
                 scheduled_task.task_id: scheduled_task,
-                }
+            }
         logger.info(
             f"Task {scheduled_task.name} scheduled with ID {scheduled_task.task_id}"
         )
@@ -273,7 +277,9 @@ class TaskScheduler:
                         if scheduled_task.should_run():
                             tasks_to_run = tasks_to_run + [scheduled_task]
                             scheduled_task.schedule.last_run = now
-                            scheduled_task.schedule.run_count = scheduled_task.schedule.run_count + 1
+                            scheduled_task.schedule.run_count = (
+                                scheduled_task.schedule.run_count + 1
+                            )
                             scheduled_task.schedule.next_run = (
                                 scheduled_task.schedule.calculate_next_run()
                             )

@@ -63,7 +63,7 @@ class DataSource(ABC):
     @abstractmethod
     async def connect(self) -> Result[bool, str]:
         """데이터 소스 연결
-        
+
         Returns:
             Result[bool, str]: 연결 성공 여부 또는 오류
         """
@@ -72,7 +72,7 @@ class DataSource(ABC):
     @abstractmethod
     async def disconnect(self) -> Result[bool, str]:
         """데이터 소스 연결 해제
-        
+
         Returns:
             Result[bool, str]: 연결 해제 성공 여부 또는 오류
         """
@@ -83,10 +83,10 @@ class DataSource(ABC):
         self, query: DataQuery
     ) -> Result[List[Dict[str, Any]], str]:
         """쿼리 실행
-        
+
         Args:
             query: 실행할 쿼리
-            
+
         Returns:
             Result[List[Dict[str, Any]], str]: 쿼리 결과 또는 오류
         """
@@ -95,7 +95,7 @@ class DataSource(ABC):
     @abstractmethod
     async def get_schema(self) -> Result[DataSchema, str]:
         """스키마 조회
-        
+
         Returns:
             Result[DataSchema, str]: 데이터 스키마 또는 오류
         """
@@ -114,7 +114,7 @@ class DataSource(ABC):
 
     def _get_test_query(self) -> str:
         """연결 테스트용 쿼리
-        
+
         Returns:
             str: 테스트 쿼리 문자열
         """
@@ -141,18 +141,21 @@ class DatabaseDataSource(DataSource):
             match self.driver:
                 case "postgresql":
                     import asyncpg
+
                     self._connection = await asyncpg.connect(self.connection_string)
                 case "mysql":
                     import aiomysql
+
                     self._connection = await aiomysql.connect(
-                    host=self.config.get("host"),
-                    port=self.config.get("port", 3306),
-                    user=self.config.get("user"),
-                    password=self.config.get("password"),
-                    db=self.config.get("database"),
-                )
+                        host=self.config.get("host"),
+                        port=self.config.get("port", 3306),
+                        user=self.config.get("user"),
+                        password=self.config.get("password"),
+                        db=self.config.get("database"),
+                    )
                 case "sqlite":
                     import aiosqlite
+
                     self._connection = await aiosqlite.connect(
                         self.config.get("database", ":memory:")
                     )
@@ -248,8 +251,10 @@ class DatabaseDataSource(DataSource):
         match self.driver:
             case "postgresql":
                 return "SELECT 1"
-            case "mysql":            return "SELECT 1"
-            case "sqlite":            return "SELECT 1"
+            case "mysql":
+                return "SELECT 1"
+            case "sqlite":
+                return "SELECT 1"
         return "SELECT 1"
 
 
@@ -271,9 +276,12 @@ class FileDataSource(DataSource):
             match self.file_type:
                 case "csv":
                     await self._load_csv()
-                case "json":                await self._load_json()
-                case "excel":                await self._load_excel()
-                case _:                return Failure(f"Unsupported file type: {self.file_type}")
+                case "json":
+                    await self._load_json()
+                case "excel":
+                    await self._load_excel()
+                case _:
+                    return Failure(f"Unsupported file type: {self.file_type}")
             self._connected = True
             return Success(True)
         except Exception as e:

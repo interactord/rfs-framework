@@ -3,7 +3,7 @@ Reactive Streams module
 
 Spring Reactor inspired reactive programming for Python
 - Flux: 0-N items stream
-- Mono: 0-1 item stream  
+- Mono: 0-1 item stream
 - MonoResult: Mono + Result pattern integration
 - FluxResult: Flux + Result pattern integration
 """

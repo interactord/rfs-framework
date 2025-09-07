@@ -108,7 +108,7 @@ class Widget(ABC):
     @abstractmethod
     async def render(self) -> Result[Dict[str, Any], str]:
         """위젯 렌더링
-        
+
         Returns:
             Result[Dict[str, Any], str]: 렌더링된 위젯 데이터 또는 오류
         """

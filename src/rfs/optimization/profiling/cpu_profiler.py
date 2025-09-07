@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -233,7 +234,7 @@ class CPUProfiler:
                 context_switches=None,
                 interrupts=None,
             )
-        
+
         try:
             overall_cpu = psutil.cpu_percent(interval=0.1)
             loadavg = None

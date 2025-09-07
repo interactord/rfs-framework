@@ -29,10 +29,12 @@ logger = logging.getLogger(__name__)
 # Temporary definitions until properly implemented
 from enum import Enum
 
+
 class TransactionType(Enum):
     DATABASE = "database"
     REDIS = "redis"
     DISTRIBUTED = "distributed"
+
 
 @dataclass
 class TransactionConfig:
@@ -41,11 +43,13 @@ class TransactionConfig:
     retry_count: int = 3
     retry_delay: float = 0.1
 
-@dataclass  
+
+@dataclass
 class RedisTransactionConfig:
     watch_keys: List[str] = field(default_factory=list)
     timeout: int = 30
     retry_count: int = 3
+
 
 @dataclass
 class DistributedTransactionConfig:
@@ -53,8 +57,10 @@ class DistributedTransactionConfig:
     timeout: int = 60
     compensation_enabled: bool = True
 
+
 def get_transaction_registry():
     return None
+
 
 def execute_with_retry(func, config, transaction_type, *args, **kwargs):
     return func(*args, **kwargs)

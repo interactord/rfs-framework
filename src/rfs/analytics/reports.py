@@ -114,7 +114,7 @@ class Report(ABC):
     @abstractmethod
     async def generate(self) -> Result[bytes, str]:
         """리포트 생성
-        
+
         Returns:
             Result[bytes, str]: 생성된 리포트 바이트 또는 오류
         """
@@ -123,7 +123,7 @@ class Report(ABC):
     @abstractmethod
     def get_mime_type(self) -> str:
         """MIME 타입 반환
-        
+
         Returns:
             str: MIME 타입 문자열
         """
@@ -280,8 +280,8 @@ class PDFReport(Report):
                 match section.content_type:
                     case "text":
                         story = story + [
-                        Paragraph(str(section.content), styles.get("Normal"))
-                    ]
+                            Paragraph(str(section.content), styles.get("Normal"))
+                        ]
                     case "table":
                         if (
                             hasattr(section.content, "__class__")
@@ -304,7 +304,12 @@ class PDFReport(Report):
                                 TableStyle(
                                     [
                                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                                        (
+                                            "TEXTCOLOR",
+                                            (0, 0),
+                                            (-1, 0),
+                                            colors.whitesmoke,
+                                        ),
                                         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                                         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                                         ("FONTSIZE", (0, 0), (-1, 0), 14),
@@ -320,7 +325,9 @@ class PDFReport(Report):
                             hasattr(section.content, "__class__")
                             and section.content.__class__.__name__ == "dict"
                         ) and "image_base64" in section.content:
-                            image_data = base64.b64decode(section.content["image_base64"])
+                            image_data = base64.b64decode(
+                                section.content["image_base64"]
+                            )
                             img_buffer = io.BytesIO(image_data)
                             from reportlab.lib.utils import ImageReader
                             from reportlab.platypus import Image
@@ -385,7 +392,7 @@ class HTMLReport(Report):
                 f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
             ]
         if meta_parts:
-            parts = parts + [f'<div class="report-meta">{' | '.join(meta_parts)}</div>']
+            parts = parts + [f'<div class="report-meta">{"| ".join(meta_parts)}</div>']
         return "\n".join(parts)
 
     async def _generate_section_html(self, section: ReportSection) -> str:
@@ -572,9 +579,12 @@ class ReportBuilder:
             match self._format:
                 case ReportFormat.PDF:
                     report = PDFReport(report_id, self._template, self._config)
-                case ReportFormat.HTML:                report = HTMLReport(report_id, self._template, self._config)
-                case ReportFormat.EXCEL:                report = ExcelReport(report_id, self._template, self._config)
-                case _:                return Failure(f"Unsupported format: {self._format}")
+                case ReportFormat.HTML:
+                    report = HTMLReport(report_id, self._template, self._config)
+                case ReportFormat.EXCEL:
+                    report = ExcelReport(report_id, self._template, self._config)
+                case _:
+                    return Failure(f"Unsupported format: {self._format}")
             for template_section in self._template.sections:
                 report.add_section(template_section)
             for key, value in self._template.variables.items():

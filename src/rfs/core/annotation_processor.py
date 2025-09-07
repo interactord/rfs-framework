@@ -235,7 +235,11 @@ class AnnotationProcessor:
             ordered_classes = list(self._discovered_classes.values())
         for cls in ordered_classes:
             component_metadata = get_component_metadata(cls)
-            if component_metadata and component_metadata.profile and (component_metadata.profile != context.profile):
+            if (
+                component_metadata
+                and component_metadata.profile
+                and (component_metadata.profile != context.profile)
+            ):
                 continue
             result = self.registry.register_class(cls)
             results = results + [result]
@@ -255,7 +259,7 @@ class AnnotationProcessor:
             name = component_metadata.component_id
             class_by_name[name] = cls
             # Check if it's a port by looking at metadata
-            if component_metadata.metadata.get('type') == 'port':
+            if component_metadata.metadata.get("type") == "port":
                 in_degree[name] = 0
             else:
                 deps = [dep.name for dep in component_metadata.dependencies]

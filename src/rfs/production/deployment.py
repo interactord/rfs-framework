@@ -185,12 +185,15 @@ class ProductionDeployer:
 
             # Update result with strategy metrics
             deployment_metrics = deployment_result.value
-            result.metrics = {**metrics, **{
-                "success_rate": deployment_metrics.success_rate,
-                "error_rate": deployment_metrics.error_rate,
-                "deployment_duration": str(deployment_metrics.deployment_duration),
-                "rollback_triggered": deployment_metrics.rollback_triggered,
-            }}
+            result.metrics = {
+                **metrics,
+                **{
+                    "success_rate": deployment_metrics.success_rate,
+                    "error_rate": deployment_metrics.error_rate,
+                    "deployment_duration": str(deployment_metrics.deployment_duration),
+                    "rollback_triggered": deployment_metrics.rollback_triggered,
+                },
+            }
 
             if deployment_metrics.rollback_triggered:
                 result.status = DeploymentStatus.ROLLED_BACK
@@ -278,7 +281,9 @@ class ProductionDeployer:
                 "rollback_id": rollback_result.value.rollback_id,
             }
         else:
-            result.errors = result.errors + [f"Rollback failed: {rollback_result.error}"]
+            result.errors = result.errors + [
+                f"Rollback failed: {rollback_result.error}"
+            ]
 
     async def _run_hooks(self, hooks: List[Callable], result: DeploymentResult):
         """훅 실행"""
@@ -380,7 +385,9 @@ async def rollback_deployment(
     return await manager.rollback(deployment_id, strategy)
 
 
-async def rollback_deployment(deployment_id: str, reason: str = "Manual rollback") -> Result[bool, str]:
+async def rollback_deployment(
+    deployment_id: str, reason: str = "Manual rollback"
+) -> Result[bool, str]:
     """
     배포 롤백 실행
 
@@ -394,13 +401,12 @@ async def rollback_deployment(deployment_id: str, reason: str = "Manual rollback
     manager = get_rollback_manager()
     try:
         # Trigger rollback with reason
-        result = await manager.trigger_rollback(
-            RollbackTrigger.MANUAL,
-            reason=reason
-        )
-        
+        result = await manager.trigger_rollback(RollbackTrigger.MANUAL, reason=reason)
+
         if result:
-            logger.info(f"Deployment {deployment_id} rolled back successfully: {reason}")
+            logger.info(
+                f"Deployment {deployment_id} rolled back successfully: {reason}"
+            )
             return Success(True)
         else:
             return Failure(f"Failed to rollback deployment {deployment_id}")

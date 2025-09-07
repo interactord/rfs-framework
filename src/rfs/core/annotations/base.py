@@ -155,7 +155,7 @@ def has_annotation(target: Any) -> bool:
 
 def validate_hexagonal_architecture(classes: List[Type]) -> List[str]:
     """헥사고날 아키텍처 검증
-    
+
     Returns:
         List[str]: 검증 오류 메시지들
     """

@@ -240,8 +240,10 @@ class RateLimiter:
         match rule.strategy:
             case RateLimitStrategy.TOKEN_BUCKET:
                 return self._check_token_bucket(rule, identifier)
-            case RateLimitStrategy.FIXED_WINDOW:            return self._check_fixed_window(rule, identifier)
-            case RateLimitStrategy.SLIDING_WINDOW:            return self._check_sliding_window(rule, identifier)
+            case RateLimitStrategy.FIXED_WINDOW:
+                return self._check_fixed_window(rule, identifier)
+            case RateLimitStrategy.SLIDING_WINDOW:
+                return self._check_sliding_window(rule, identifier)
         return True
 
     def _check_token_bucket(self, rule: RateLimitRule, identifier: str) -> bool:
@@ -304,11 +306,16 @@ class LoadBalancer:
         match self.strategy:
             case LoadBalanceStrategy.ROUND_ROBIN:
                 return self._round_robin(route_id, healthy_backends)
-            case LoadBalanceStrategy.LEAST_CONNECTIONS:            return self._least_connections(healthy_backends)
-            case LoadBalanceStrategy.WEIGHTED_ROUND_ROBIN:            return self._weighted_round_robin(route_id, healthy_backends)
-            case LoadBalanceStrategy.IP_HASH:            return self._ip_hash(healthy_backends, client_ip)
-            case LoadBalanceStrategy.RANDOM:            return self._random(healthy_backends)
-            case LoadBalanceStrategy.LEAST_RESPONSE_TIME:            return self._least_response_time(healthy_backends)
+            case LoadBalanceStrategy.LEAST_CONNECTIONS:
+                return self._least_connections(healthy_backends)
+            case LoadBalanceStrategy.WEIGHTED_ROUND_ROBIN:
+                return self._weighted_round_robin(route_id, healthy_backends)
+            case LoadBalanceStrategy.IP_HASH:
+                return self._ip_hash(healthy_backends, client_ip)
+            case LoadBalanceStrategy.RANDOM:
+                return self._random(healthy_backends)
+            case LoadBalanceStrategy.LEAST_RESPONSE_TIME:
+                return self._least_response_time(healthy_backends)
         return healthy_backends[0]
 
     def _round_robin(self, route_id: str, backends: List[Backend]) -> Backend:
@@ -533,6 +540,7 @@ class APIGatewayEnhancer:
                 if not auth_header.startswith("Basic "):
                     return Failure("Missing or invalid Basic auth")
                 import base64
+
                 try:
                     credentials = base64.b64decode(auth_header[6:]).decode()
                     username, password = credentials.split(":", 1)
@@ -555,9 +563,12 @@ class APIGatewayEnhancer:
         match rule.scope:
             case "global":
                 identifier = "global"
-            case "ip":            identifier = context.client_ip
-            case "user":            identifier = context.user_id or context.client_ip
-            case "api_key":            identifier = context.api_key or context.client_ip
+            case "ip":
+                identifier = context.client_ip
+            case "user":
+                identifier = context.user_id or context.client_ip
+            case "api_key":
+                identifier = context.api_key or context.client_ip
         if not self.rate_limiter.check_rate_limit(rule, identifier):
             return Failure("Rate limit exceeded")
         return Success(True)

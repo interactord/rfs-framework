@@ -78,8 +78,10 @@ class ConsistentHashRing:
         match self.hash_algorithm:
             case "md5":
                 return int(hashlib.md5(data.encode()).hexdigest(), 16)
-            case "sha1":            return int(hashlib.sha1(data.encode()).hexdigest(), 16)
-            case _:            return int(hashlib.sha256(data.encode()).hexdigest(), 16)
+            case "sha1":
+                return int(hashlib.sha1(data.encode()).hexdigest(), 16)
+            case _:
+                return int(hashlib.sha256(data.encode()).hexdigest(), 16)
 
     def add_node(self, node: CacheNode):
         """노드 추가"""
@@ -230,8 +232,8 @@ class DistributedCache(CacheBackend):
             match self.config.read_consistency:
                 case "all":
                     nodes = self.hash_ring.get_nodes(
-                    cache_key, len(self.hash_ring.get_all_nodes())
-                )
+                        cache_key, len(self.hash_ring.get_all_nodes())
+                    )
                 case "quorum":
                     quorum_size = self.config.replication_factor // 2 + 1
                     nodes = self.hash_ring.get_nodes(cache_key, quorum_size)
@@ -273,8 +275,8 @@ class DistributedCache(CacheBackend):
             match self.config.write_consistency:
                 case "all":
                     nodes = self.hash_ring.get_nodes(
-                    cache_key, len(self.hash_ring.get_all_nodes())
-                )
+                        cache_key, len(self.hash_ring.get_all_nodes())
+                    )
                 case "quorum":
                     quorum_size = self.config.replication_factor // 2 + 1
                     nodes = self.hash_ring.get_nodes(cache_key, quorum_size)

@@ -80,7 +80,7 @@ class ServiceRegistry:
                 return self._create_instance(name)
             case ServiceScope.REQUEST:
                 raise NotImplementedError(
-                f"Scope {definition.scope} not implemented yet"
+                    f"Scope {definition.scope} not implemented yet"
                 )
             case _:
                 raise NotImplementedError(f"Unknown scope: {definition.scope}")
@@ -167,10 +167,10 @@ class ServiceRegistry:
             analysis = {
                 **analysis,
                 "dependency_tree": {
-                        **analysis["dependency_tree"],
-                        name: {"dependencies": definition.dependencies, "dependents": []},
-                    },
-                }
+                    **analysis["dependency_tree"],
+                    name: {"dependencies": definition.dependencies, "dependents": []},
+                },
+            }
             for name, definition in self._definitions.items():
                 for dep_name in definition.dependencies:
                     if dep_name in analysis["dependency_tree"]:
@@ -180,9 +180,9 @@ class ServiceRegistry:
             for name, tree_info in analysis["dependency_tree"].items():
                 match (len(tree_info["dependencies"]), len(tree_info["dependents"])):
                     case [0, 0]:
-                        analysis["orphaned_services"] = analysis["orphaned_services"] + [
-                            name
-                        ]
+                        analysis["orphaned_services"] = analysis[
+                            "orphaned_services"
+                        ] + [name]
         return analysis
 
     def get_service_metrics(self) -> Dict[str, Any]:

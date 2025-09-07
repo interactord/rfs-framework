@@ -35,7 +35,9 @@ from .di import (
 
 def is_port(cls):
     """포트 인터페이스 확인"""
-    return getattr(cls, '_is_port', False)
+    return getattr(cls, "_is_port", False)
+
+
 from .processor import (
     AnnotationProcessor,
     process_annotations,

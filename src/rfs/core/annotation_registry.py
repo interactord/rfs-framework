@@ -101,29 +101,32 @@ class AnnotationRegistry(ServiceRegistry):
                 annotation_type=AnnotationType.COMPONENT,
                 errors=[f"Class {cls.__name__} has no component metadata"],
             )
-        
+
         # Extract the annotation type from metadata
         annotation_type = AnnotationType.COMPONENT
-        if component_metadata.metadata.get('type') == 'port':
+        if component_metadata.metadata.get("type") == "port":
             annotation_type = AnnotationType.PORT
-        elif component_metadata.metadata.get('type') == 'adapter':
+        elif component_metadata.metadata.get("type") == "adapter":
             annotation_type = AnnotationType.ADAPTER
-        elif component_metadata.metadata.get('type') == 'use_case':
+        elif component_metadata.metadata.get("type") == "use_case":
             annotation_type = AnnotationType.USE_CASE
-        elif component_metadata.metadata.get('type') == 'controller':
+        elif component_metadata.metadata.get("type") == "controller":
             annotation_type = AnnotationType.CONTROLLER
-        elif component_metadata.metadata.get('type') == 'service':
+        elif component_metadata.metadata.get("type") == "service":
             annotation_type = AnnotationType.SERVICE
-        elif component_metadata.metadata.get('type') == 'repository':
+        elif component_metadata.metadata.get("type") == "repository":
             annotation_type = AnnotationType.REPOSITORY
-        
+
         result = RegistrationResult(
             success=False,
             service_name=component_metadata.component_id,
             annotation_type=annotation_type,
         )
         try:
-            if component_metadata.profile and component_metadata.profile != self.current_profile:
+            if (
+                component_metadata.profile
+                and component_metadata.profile != self.current_profile
+            ):
                 result.warnings = result.warnings + [
                     f"Skipping {component_metadata.component_id} - profile {component_metadata.profile} != {self.current_profile}"
                 ]
@@ -137,8 +140,12 @@ class AnnotationRegistry(ServiceRegistry):
                     self._register_component(cls, component_metadata, result)
             if result.success:
                 # Store component metadata for future reference
-                self._annotation_metadata[component_metadata.component_id] = component_metadata
-                self._registration_order = self._registration_order + [component_metadata.component_id]
+                self._annotation_metadata[component_metadata.component_id] = (
+                    component_metadata
+                )
+                self._registration_order = self._registration_order + [
+                    component_metadata.component_id
+                ]
                 self._update_stats(component_metadata, annotation_type)
                 logger.debug(
                     f"Successfully registered {annotation_type.value}: {component_metadata.component_id}"
@@ -148,9 +155,7 @@ class AnnotationRegistry(ServiceRegistry):
             logger.error(f"Failed to register {cls.__name__}: {e}")
         return result
 
-    def _register_port(
-        self, cls: Type, component_metadata, result: RegistrationResult
-    ):
+    def _register_port(self, cls: Type, component_metadata, result: RegistrationResult):
         """Port 등록"""
         port_name = component_metadata.component_id
         self._ports = {**self._ports, port_name: cls}
@@ -162,7 +167,7 @@ class AnnotationRegistry(ServiceRegistry):
         self, cls: Type, component_metadata, result: RegistrationResult
     ):
         """Adapter 등록 - 함수형 패턴 적용"""
-        port_name = component_metadata.metadata.get('port_name')
+        port_name = component_metadata.metadata.get("port_name")
         if not port_name:
             result.errors = result.errors + ["Adapter must specify a port_name"]
             return
@@ -170,7 +175,7 @@ class AnnotationRegistry(ServiceRegistry):
             result.warnings = result.warnings + [
                 f"Port {port_name} not found - will be validated later"
             ]
-        
+
         dependencies = [dep.name for dep in component_metadata.dependencies]
         super().register(
             name=component_metadata.component_id,

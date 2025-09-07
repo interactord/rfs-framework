@@ -10,52 +10,53 @@ from functools import wraps
 import sys
 import inspect
 
-T = TypeVar('T')
-R = TypeVar('R')
+T = TypeVar("T")
+R = TypeVar("R")
 
 
 class GuardError(Exception):
     """Exception raised when guard condition fails."""
+
     pass
 
 
 class Guard:
     """
     Swift-inspired guard statement for early returns.
-    
+
     Usage:
         with guard(condition) as g:
             g.else_return(value)  # or g.else_raise(exception)
             # code continues only if condition is True
     """
-    
+
     def __init__(self, condition: bool, message: str = "Guard condition failed"):
         self.condition = condition
         self.message = message
         self._handled = False
-    
+
     def __enter__(self):
         if not self.condition:
             return self
         self._handled = True
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self._handled and not self.condition:
             raise GuardError(self.message)
         return False
-    
+
     def else_return(self, value: Any = None) -> NoReturn:
         """Return early with a value if guard fails."""
         if not self.condition:
             # This is a bit hacky but works for early return simulation
             raise _GuardReturn(value)
-    
+
     def else_raise(self, exception: Exception) -> NoReturn:
         """Raise an exception if guard fails."""
         if not self.condition:
             raise exception
-    
+
     def else_call(self, func: Callable[[], Any]) -> NoReturn:
         """Call a function if guard fails."""
         if not self.condition:
@@ -65,29 +66,30 @@ class Guard:
 
 class _GuardReturn(Exception):
     """Internal exception for guard early returns."""
+
     def __init__(self, value):
         self.value = value
         super().__init__()
 
 
 def guard(
-    condition: Union[bool, Callable[[], bool]], 
+    condition: Union[bool, Callable[[], bool]],
     else_return: Any = None,
     else_raise: Optional[Exception] = None,
-    message: str = "Guard condition failed"
+    message: str = "Guard condition failed",
 ) -> Any:
     """
     Functional guard statement for early returns.
-    
+
     Args:
         condition: Boolean or callable returning boolean
         else_return: Value to return if condition fails
         else_raise: Exception to raise if condition fails
         message: Error message if neither return nor raise specified
-        
+
     Returns:
         None if condition passes, otherwise returns/raises as specified
-        
+
     Example:
         >>> def divide(a, b):
         ...     guard(b != 0, else_return=float('inf'))
@@ -100,7 +102,7 @@ def guard(
         condition_result = condition()
     else:
         condition_result = condition
-    
+
     if not condition_result:
         if else_raise is not None:
             raise else_raise
@@ -112,22 +114,20 @@ def guard(
 
 
 def guard_let(
-    value: Optional[T],
-    else_return: Any = None,
-    else_raise: Optional[Exception] = None
+    value: Optional[T], else_return: Any = None, else_raise: Optional[Exception] = None
 ) -> T:
     """
     Guard for optional values - unwraps or returns early.
     Swift-inspired: guard let unwrapped = optional else { return }
-    
+
     Args:
         value: Optional value to unwrap
         else_return: Value to return if None
         else_raise: Exception to raise if None
-        
+
     Returns:
         Unwrapped value if not None
-        
+
     Example:
         >>> def process(data: Optional[str]):
         ...     unwrapped = guard_let(data, else_return="No data")
@@ -151,20 +151,20 @@ def guarded(
     *conditions: Union[bool, Callable[[], bool]],
     else_return: Any = None,
     else_raise: Optional[Exception] = None,
-    message: str = "Guard condition failed"
+    message: str = "Guard condition failed",
 ):
     """
     Decorator for functions with guard conditions.
-    
+
     Args:
         *conditions: Conditions to check before function execution
         else_return: Value to return if conditions fail
         else_raise: Exception to raise if conditions fail
         message: Error message
-        
+
     Returns:
         Decorated function
-        
+
     Example:
         >>> @guarded(lambda: True, else_return="Failed")
         ... def safe_function():
@@ -172,6 +172,7 @@ def guarded(
         >>> safe_function()
         'Success'
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -180,7 +181,7 @@ def guarded(
                     condition_result = condition()
                 else:
                     condition_result = condition
-                    
+
                 if not condition_result:
                     if else_raise is not None:
                         raise else_raise
@@ -188,13 +189,14 @@ def guarded(
                         return else_return
                     else:
                         raise GuardError(message)
-            
+
             try:
                 return func(*args, **kwargs)
             except _GuardReturn as gr:
                 return gr.value
-        
+
         return wrapper
+
     return decorator
 
 
@@ -202,20 +204,20 @@ def guard_type(
     value: Any,
     expected_type: type,
     else_return: Any = None,
-    else_raise: Optional[Exception] = None
+    else_raise: Optional[Exception] = None,
 ) -> Any:
     """
     Guard for type checking with early return.
-    
+
     Args:
         value: Value to check
         expected_type: Expected type
         else_return: Value to return if type doesn't match
         else_raise: Exception to raise if type doesn't match
-        
+
     Returns:
         The value if type matches
-        
+
     Example:
         >>> def process_number(val):
         ...     num = guard_type(val, int, else_return=0)
@@ -242,21 +244,21 @@ def guard_range(
     min_val: Optional[Union[int, float]] = None,
     max_val: Optional[Union[int, float]] = None,
     else_return: Any = None,
-    else_raise: Optional[Exception] = None
+    else_raise: Optional[Exception] = None,
 ) -> Union[int, float]:
     """
     Guard for range checking with early return.
-    
+
     Args:
         value: Value to check
         min_val: Minimum allowed value (inclusive)
         max_val: Maximum allowed value (inclusive)
         else_return: Value to return if out of range
         else_raise: Exception to raise if out of range
-        
+
     Returns:
         The value if in range
-        
+
     Example:
         >>> def process_percentage(val):
         ...     pct = guard_range(val, 0, 100, else_return=50)
@@ -273,7 +275,7 @@ def guard_range(
             raise _GuardReturn(else_return)
         else:
             raise GuardError(f"Value {value} is less than minimum {min_val}")
-    
+
     if max_val is not None and value > max_val:
         if else_raise is not None:
             raise else_raise
@@ -281,26 +283,26 @@ def guard_range(
             raise _GuardReturn(else_return)
         else:
             raise GuardError(f"Value {value} is greater than maximum {max_val}")
-    
+
     return value
 
 
 def guard_not_empty(
     collection: Union[list, dict, set, str, tuple],
     else_return: Any = None,
-    else_raise: Optional[Exception] = None
+    else_raise: Optional[Exception] = None,
 ) -> Union[list, dict, set, str, tuple]:
     """
     Guard for non-empty collections.
-    
+
     Args:
         collection: Collection to check
         else_return: Value to return if empty
         else_raise: Exception to raise if empty
-        
+
     Returns:
         The collection if not empty
-        
+
     Example:
         >>> def process_list(items):
         ...     lst = guard_not_empty(items, else_return=["default"])
@@ -323,7 +325,7 @@ def guard_not_empty(
 class GuardContext:
     """
     Context manager for multiple guard conditions with shared else clause.
-    
+
     Usage:
         with GuardContext() as guard:
             guard.check(condition1, "Condition 1 failed")
@@ -331,46 +333,49 @@ class GuardContext:
             guard.check_not_none(value, "Value is None")
             guard.else_return(default_value)
     """
-    
+
     def __init__(self):
         self.failed = False
         self.failure_message = ""
-        
+
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(exc_val, _GuardReturn):
             # Suppress the GuardReturn exception, it's handled by caller
             return True
         return False
-    
-    def check(self, condition: bool, message: str = "") -> 'GuardContext':
+
+    def check(self, condition: bool, message: str = "") -> "GuardContext":
         """Check a condition."""
         if not condition and not self.failed:
             self.failed = True
             self.failure_message = message
         return self
-    
+
     def check_not_none(self, value: Optional[T], message: str = "") -> Optional[T]:
         """Check that value is not None."""
         if value is None and not self.failed:
             self.failed = True
             self.failure_message = message
         return value
-    
+
     def check_type(self, value: Any, expected_type: type, message: str = "") -> Any:
         """Check that value has expected type."""
         if not isinstance(value, expected_type) and not self.failed:
             self.failed = True
-            self.failure_message = message or f"Expected {expected_type.__name__}, got {type(value).__name__}"
+            self.failure_message = (
+                message
+                or f"Expected {expected_type.__name__}, got {type(value).__name__}"
+            )
         return value
-    
+
     def else_return(self, value: Any = None) -> NoReturn:
         """Return early if any check failed."""
         if self.failed:
             raise _GuardReturn(value)
-    
+
     def else_raise(self, exception: Optional[Exception] = None) -> NoReturn:
         """Raise exception if any check failed."""
         if self.failed:
@@ -383,13 +388,13 @@ class GuardContext:
 def with_guards(func: Callable) -> Callable:
     """
     Decorator to enable guard early returns in a function.
-    
+
     Args:
         func: Function to decorate
-        
+
     Returns:
         Decorated function that handles guard returns
-        
+
     Example:
         >>> @with_guards
         ... def safe_divide(a, b):
@@ -398,11 +403,12 @@ def with_guards(func: Callable) -> Callable:
         >>> safe_divide(10, 0)
         inf
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except _GuardReturn as gr:
             return gr.value
-    
+
     return wrapper

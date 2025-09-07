@@ -157,40 +157,40 @@ class ConfigValidator:
                 self._validate_development_settings(config)
 
     def _validate_production_settings(self, config: RFSConfig) -> None:
-                """운영 환경 설정 검증"""
-                if config.log_level == "DEBUG":
-                    self.results = self.results + [
-                        ValidationResult(
-                            field="log_level",
-                            severity=ValidationSeverity.WARNING,
-                            message="DEBUG 로그는 운영환경에서 성능에 영향을 줄 수 있습니다",
-                            current_value=config.log_level,
-                            suggested_value="INFO",
-                            fix_hint="RFS_LOG_LEVEL=INFO 설정",
-                        )
-                    ]
-                if not config.enable_tracing:
-                    self.results = self.results + [
-                        ValidationResult(
-                            field="enable_tracing",
-                            severity=ValidationSeverity.WARNING,
-                            message="운영환경에서는 분산 추적 활성화를 권장합니다",
-                            current_value=False,
-                            suggested_value=True,
-                            fix_hint="RFS_ENABLE_TRACING=true 설정",
-                        )
-                    ]
-                if not getattr(config, "enable_performance_monitoring", False):
-                    self.results = self.results + [
-                        ValidationResult(
-                            field="enable_performance_monitoring",
-                            severity=ValidationSeverity.WARNING,
-                            message="운영환경에서는 성능 모니터링을 권장합니다",
-                            current_value=False,
-                            suggested_value=True,
-                            fix_hint="RFS_ENABLE_PERFORMANCE_MONITORING=true 설정",
-                        )
-                    ]
+        """운영 환경 설정 검증"""
+        if config.log_level == "DEBUG":
+            self.results = self.results + [
+                ValidationResult(
+                    field="log_level",
+                    severity=ValidationSeverity.WARNING,
+                    message="DEBUG 로그는 운영환경에서 성능에 영향을 줄 수 있습니다",
+                    current_value=config.log_level,
+                    suggested_value="INFO",
+                    fix_hint="RFS_LOG_LEVEL=INFO 설정",
+                )
+            ]
+        if not config.enable_tracing:
+            self.results = self.results + [
+                ValidationResult(
+                    field="enable_tracing",
+                    severity=ValidationSeverity.WARNING,
+                    message="운영환경에서는 분산 추적 활성화를 권장합니다",
+                    current_value=False,
+                    suggested_value=True,
+                    fix_hint="RFS_ENABLE_TRACING=true 설정",
+                )
+            ]
+        if not getattr(config, "enable_performance_monitoring", False):
+            self.results = self.results + [
+                ValidationResult(
+                    field="enable_performance_monitoring",
+                    severity=ValidationSeverity.WARNING,
+                    message="운영환경에서는 성능 모니터링을 권장합니다",
+                    current_value=False,
+                    suggested_value=True,
+                    fix_hint="RFS_ENABLE_PERFORMANCE_MONITORING=true 설정",
+                )
+            ]
 
     def _validate_test_settings(self, config: RFSConfig) -> None:
         """테스트 환경 설정 검증"""
@@ -225,12 +225,12 @@ class ConfigValidator:
                 self.results = self.results + [
                     ValidationResult(
                         field="cloud_run_memory_limit",
-                severity=ValidationSeverity.INFO,
-                message="로컬 개발시에는 작은 메모리 제한을 권장합니다",
-                current_value=config.cloud_run_memory_limit,
-                suggested_value="256Mi",
-                fix_hint="개발용 리소스 절약",
-                )
+                        severity=ValidationSeverity.INFO,
+                        message="로컬 개발시에는 작은 메모리 제한을 권장합니다",
+                        current_value=config.cloud_run_memory_limit,
+                        suggested_value="256Mi",
+                        fix_hint="개발용 리소스 절약",
+                    )
                 ]
 
     def _validate_security(self, config: RFSConfig) -> None:
@@ -271,9 +271,9 @@ class ConfigValidator:
                     message="큰 버퍼 크기는 메모리 사용량을 증가시킬 수 있습니다",
                     current_value=config.default_buffer_size,
                     suggested_value=1000,
-                fix_hint="용도에 맞는 적절한 버퍼 크기 설정",
-                    )
-                ]
+                    fix_hint="용도에 맞는 적절한 버퍼 크기 설정",
+                )
+            ]
         if config.max_concurrency > 100:
             self.results = self.results + [
                 ValidationResult(
@@ -282,20 +282,20 @@ class ConfigValidator:
                     message="높은 동시성 설정은 리소스 부족을 야기할 수 있습니다",
                     current_value=config.max_concurrency,
                     suggested_value=80,
-                fix_hint="Cloud Run 권장값 80 사용",
+                    fix_hint="Cloud Run 권장값 80 사용",
                 )
             ]
         if hasattr(config, "metrics_export_interval"):
             if config.metrics_export_interval < 30:
                 self.results = self.results + [
                     ValidationResult(
-                field="metrics_export_interval",
-                severity=ValidationSeverity.INFO,
-                message="너무 짧은 메트릭 간격은 성능에 영향을 줄 수 있습니다",
-                current_value=config.metrics_export_interval,
-                suggested_value=60,
-                fix_hint="60초 이상 권장",
-                )
+                        field="metrics_export_interval",
+                        severity=ValidationSeverity.INFO,
+                        message="너무 짧은 메트릭 간격은 성능에 영향을 줄 수 있습니다",
+                        current_value=config.metrics_export_interval,
+                        suggested_value=60,
+                        fix_hint="60초 이상 권장",
+                    )
                 ]
 
     def _validate_cloud_run(self, config: RFSConfig) -> None:
@@ -351,22 +351,22 @@ class ConfigValidator:
                 ValidationResult(
                     field="enable_performance_monitoring",
                     severity=ValidationSeverity.INFO,
-                message="Cold start 최적화 활성화시 성능 모니터링도 함께 활성화를 권장합니다",
-                current_value=False,
-                suggested_value=True,
-                fix_hint="성능 최적화 효과 측정을 위한 모니터링 활성화",
+                    message="Cold start 최적화 활성화시 성능 모니터링도 함께 활성화를 권장합니다",
+                    current_value=False,
+                    suggested_value=True,
+                    fix_hint="성능 최적화 효과 측정을 위한 모니터링 활성화",
                 )
-                ]
+            ]
             if config.event_store_enabled and hasattr(config, "redis_url"):
                 if not config.redis_url or config.redis_url == "redis://localhost:6379":
                     if config.environment == Environment.PRODUCTION:
                         self.results = self.results + [
                             ValidationResult(
-                field="redis_url",
-                severity=ValidationSeverity.CRITICAL,
-                message="이벤트 스토어 사용시 운영용 Redis 설정이 필요합니다",
-                current_value=config.redis_url,
-                fix_hint="운영용 Redis 클라우드 서비스 URL 설정",
+                                field="redis_url",
+                                severity=ValidationSeverity.CRITICAL,
+                                message="이벤트 스토어 사용시 운영용 Redis 설정이 필요합니다",
+                                current_value=config.redis_url,
+                                fix_hint="운영용 Redis 클라우드 서비스 URL 설정",
                             )
                         ]
 
@@ -382,7 +382,7 @@ class ConfigValidator:
                 **severity_counts,
                 severity.value: len(
                     [r for r in self.results if r.severity == severity]
-                )
+                ),
             }
         return {
             "total_issues": len(self.results),
@@ -397,7 +397,7 @@ class ConfigValidator:
                 r.to_dict()
                 for r in self.results
                 if r.severity == ValidationSeverity.ERROR
-            ]
+            ],
         }
 
 
@@ -443,10 +443,10 @@ class SecurityValidator:
         """환경 변수 노출 위험 검사"""
         results = []
         sensitive_patterns = [
-                ("password", "PASSWORD found in environment"),
-                ("secret", "SECRET found in environment"),
-                ("private_key", "PRIVATE_KEY found in environment"),
-                ("api_key", "API_KEY found in environment"),
+            ("password", "PASSWORD found in environment"),
+            ("secret", "SECRET found in environment"),
+            ("private_key", "PRIVATE_KEY found in environment"),
+            ("api_key", "API_KEY found in environment"),
         ]
         for key in os.environ:
             key_lower = key.lower()

@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class OptimizationPhase(Enum):
     """최적화 단계"""
-    
+
     IMPORT = "import"
     WARMUP = "warmup"
     MEMORY = "memory"
@@ -43,7 +43,7 @@ class OptimizationPhase(Enum):
 
 class PreloadingStrategy(Enum):
     """모듈 프리로딩 전략"""
-    
+
     LAZY = "lazy"
     EAGER = "eager"
     SELECTIVE = "selective"
@@ -52,7 +52,7 @@ class PreloadingStrategy(Enum):
 
 class CacheWarmupStrategy(Enum):
     """캐시 워밍업 전략"""
-    
+
     NONE = "none"
     BASIC = "basic"
     AGGRESSIVE = "aggressive"
@@ -61,7 +61,7 @@ class CacheWarmupStrategy(Enum):
 
 class MemoryOptimizationStrategy(Enum):
     """메모리 최적화 전략"""
-    
+
     NONE = "none"
     BASIC = "basic"
     AGGRESSIVE = "aggressive"
@@ -673,7 +673,7 @@ if __name__ == "__main__":
 @dataclass
 class ColdStartConfig:
     """Cold Start 최적화 설정"""
-    
+
     preloading_strategy: PreloadingStrategy = PreloadingStrategy.EAGER
     cache_warmup_strategy: CacheWarmupStrategy = CacheWarmupStrategy.BASIC
     memory_strategy: MemoryOptimizationStrategy = MemoryOptimizationStrategy.BASIC
@@ -692,30 +692,33 @@ def get_default_cold_start_optimizer() -> ColdStartOptimizer:
 async def measure_cold_start_time() -> float:
     """Cold Start 시간 측정"""
     import time
+
     start = time.time()
     optimizer = get_default_cold_start_optimizer()
     await optimizer.warm_up()
     return time.time() - start
 
 
-async def optimize_cold_start(config: Optional[ColdStartConfig] = None) -> Dict[str, Any]:
+async def optimize_cold_start(
+    config: Optional[ColdStartConfig] = None,
+) -> Dict[str, Any]:
     """Cold Start 최적화 실행"""
     if config is None:
         config = ColdStartConfig()
-    
+
     optimizer = ColdStartOptimizer()
-    
+
     # 프리로딩 전략 적용
     if config.preloading_strategy == PreloadingStrategy.EAGER:
         common_modules = ["json", "datetime", "uuid", "logging", "os", "sys"]
         optimizer.preload_modules(common_modules)
-    
+
     # 캐시 워밍업
     if config.cache_warmup_strategy != CacheWarmupStrategy.NONE:
         await optimizer.warm_up()
-    
+
     # 메모리 최적화
     if config.memory_strategy != MemoryOptimizationStrategy.NONE:
         optimizer.optimize_memory()
-    
+
     return optimizer.get_metrics()

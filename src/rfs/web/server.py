@@ -112,7 +112,7 @@ class RFSWebServer:
                 if not FLASK_AVAILABLE:
                     raise RuntimeError(
                         "Flask가 설치되지 않았습니다. pip install flask flask-cors 실행"
-                )
+                    )
                 self.framework = WebFramework.FLASK
             case _:
                 if FASTAPI_AVAILABLE:
@@ -120,7 +120,9 @@ class RFSWebServer:
                 elif FLASK_AVAILABLE:
                     self.framework = WebFramework.FLASK
                 else:
-                    raise RuntimeError("FastAPI 또는 Flask 중 하나가 설치되어야 합니다.")
+                    raise RuntimeError(
+                        "FastAPI 또는 Flask 중 하나가 설치되어야 합니다."
+                    )
 
         logger.info(f"웹 프레임워크 선택: {self.framework.value}")
 
@@ -218,11 +220,13 @@ class RFSWebServer:
         @app.route("/health")
         def health():
             import time
+
             return jsonify({"status": "healthy", "timestamp": time.time()})
 
         @app.route("/ready")
         def ready():
             import time
+
             return jsonify({"status": "ready", "timestamp": time.time()})
 
         @app.route("/metrics")
@@ -277,7 +281,7 @@ class RFSWebServer:
                 await self._server_task
 
             else:  # Flask
-            # Flask는 동기 서버이므로 별도 스레드에서 실행
+                # Flask는 동기 서버이므로 별도 스레드에서 실행
                 import threading
 
                 def run_flask():

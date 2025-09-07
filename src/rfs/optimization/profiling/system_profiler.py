@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -310,7 +311,7 @@ class SystemProfiler:
                         memory_trend = "decreasing"
                 summary = {
                     **summary,
-                    "trends": {"cpu": cpu_trend, "memory": memory_trend}
+                    "trends": {"cpu": cpu_trend, "memory": memory_trend},
                 }
             return summary
         except Exception as e:

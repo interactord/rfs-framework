@@ -633,22 +633,22 @@ class ComplianceValidator:
         return ComplianceStatus.PARTIALLY_COMPLIANT
 
     def _generate_summary(self, results: List[ValidationResult]) -> Dict[str, Any]:
-                    """요약 생성"""
-                    return {
-                    "total_controls": len(results),
-                    "compliant": sum(
-                    (1 for r in results if r.status == ComplianceStatus.COMPLIANT)
-                    ),
-                    "non_compliant": sum(
-                    (1 for r in results if r.status == ComplianceStatus.NON_COMPLIANT)
-                    ),
-                    "partially_compliant": sum(
-                    (1 for r in results if r.status == ComplianceStatus.PARTIALLY_COMPLIANT)
-                    ),
-                    "average_score": (
-                    sum((r.score for r in results)) / len(results) if results else 0
-                    ),
-                    }
+        """요약 생성"""
+        return {
+            "total_controls": len(results),
+            "compliant": sum(
+                (1 for r in results if r.status == ComplianceStatus.COMPLIANT)
+            ),
+            "non_compliant": sum(
+                (1 for r in results if r.status == ComplianceStatus.NON_COMPLIANT)
+            ),
+            "partially_compliant": sum(
+                (1 for r in results if r.status == ComplianceStatus.PARTIALLY_COMPLIANT)
+            ),
+            "average_score": (
+                sum((r.score for r in results)) / len(results) if results else 0
+            ),
+        }
 
     def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
         """권장사항 생성"""

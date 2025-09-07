@@ -331,11 +331,11 @@ class CloudMonitoringClient:
                 return Failure(f"등록되지 않은 메트릭: {metric_name}")
                 metric_def = self.registered_metrics[metric_name]
                 metric_data = {
-                "name": metric_name,
-                "value": value,
-                "labels": labels or {},
-                "timestamp": timestamp or datetime.now(),
-                "definition": metric_def,
+                    "name": metric_name,
+                    "value": value,
+                    "labels": labels or {},
+                    "timestamp": timestamp or datetime.now(),
+                    "definition": metric_def,
                 }
             self.metrics_buffer = self.metrics_buffer + [metric_data]
             if len(self.metrics_buffer) >= self.buffer_size:
@@ -367,16 +367,16 @@ class CloudMonitoringClient:
                     }
                 time_series.resource.type = "cloud_run_revision"
                 time_series.resource.labels = {
-                **time_series.resource.labels,
-                "service_name": os.environ.get("K_SERVICE", "rfs-service"),
+                    **time_series.resource.labels,
+                    "service_name": os.environ.get("K_SERVICE", "rfs-service"),
                 }
                 time_series.resource.labels = {
-                **time_series.resource.labels,
-                "revision_name": os.environ.get("K_REVISION", "unknown"),
+                    **time_series.resource.labels,
+                    "revision_name": os.environ.get("K_REVISION", "unknown"),
                 }
                 time_series.resource.labels = {
-                **time_series.resource.labels,
-                "location": os.environ.get("GOOGLE_CLOUD_REGION", "us-central1"),
+                    **time_series.resource.labels,
+                    "location": os.environ.get("GOOGLE_CLOUD_REGION", "us-central1"),
                 }
                 point = Point()
                 point.value.double_value = metric_data["value"]

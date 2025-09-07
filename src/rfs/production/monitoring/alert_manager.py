@@ -205,7 +205,38 @@ class EmailChannel(AlertChannel):
             AlertSeverity.LOW: "#00AA00",
             AlertSeverity.INFO: "#0066FF",
         }.get(alert.severity, "#666666")
-        body = f'\n        <html>\n        <body style="font-family: Arial, sans-serif;">\n            <div style="border-left: 4px solid {severity_color}; padding: 10px; margin: 10px 0;">\n                <h2 style="color: {severity_color}; margin: 0;">{alert.title}</h2>\n                <p><strong>Severity:</strong> {alert.severity.value.upper()}</p>\n                <p><strong>Status:</strong> {alert.status.value.upper()}</p>\n                <p><strong>Created:</strong> {alert.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>\n                <p><strong>Source:</strong> {alert.source}</p>\n            </div>\n            \n            <div style="background-color: #f5f5f5; padding: 15px; margin: 10px 0;">\n                <h3>Message:</h3>\n                <p>{alert.message}</p>\n            </div>\n            \n            {self._format_labels_section(alert)}\n            {self._format_context_section(context)}\n        </body>\n        </html>\n        '
+        # 필요한 변수들 추출
+        alert_title = alert.title
+        alert_severity = alert.severity.value.upper()
+        alert_status = alert.status.value.upper()
+        alert_created = alert.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+        alert_source = alert.source
+        alert_message = alert.message
+        labels_section = self._format_labels_section(alert)
+        context_section = self._format_context_section(context)
+
+        # HTML 템플릿
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <div style="border-left: 4px solid {severity_color}; padding: 10px; margin: 10px 0;">
+                <h2 style="color: {severity_color}; margin: 0;">{alert_title}</h2>
+                <p><strong>Severity:</strong> {alert_severity}</p>
+                <p><strong>Status:</strong> {alert_status}</p>
+                <p><strong>Created:</strong> {alert_created}</p>
+                <p><strong>Source:</strong> {alert_source}</p>
+            </div>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; margin: 10px 0;">
+                <h3>Message:</h3>
+                <p>{alert_message}</p>
+            </div>
+            
+            {labels_section}
+            {context_section}
+        </body>
+        </html>
+        """
         return body
 
     def _format_labels_section(self, alert: Alert) -> str:

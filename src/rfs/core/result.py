@@ -585,10 +585,13 @@ class ResultAsync(Generic[T, E]):
     - 자동 에러 핸들링
     - 체이닝 최적화
     - 편의 클래스 메서드 및 확장 메서드 제공
+    - 결과 캐싱으로 중복 await 방지
     """
 
     def __init__(self, result: Awaitable["Result[T, E]"]):
         self._result = result
+        self._cached_result: Optional["Result[T, E]"] = None
+        self._is_resolved = False
 
     # ==================== 클래스 메서드 (Static Factory) ====================
 
@@ -611,9 +614,10 @@ class ResultAsync(Generic[T, E]):
         """
         async def create_failure() -> "Result[T, E]":
             return Failure(error)
+        # 코루틴 객체를 생성하기 위해 () 추가
         return cls(create_failure())
 
-    @classmethod  
+    @classmethod
     def from_value(cls, value: T) -> "ResultAsync[T, E]":
         """
         값으로부터 ResultAsync 생성
@@ -632,26 +636,34 @@ class ResultAsync(Generic[T, E]):
         """
         async def create_success() -> "Result[T, E]":
             return Success(value)
+        # 코루틴 객체를 생성하기 위해 () 추가
         return cls(create_success())
+
+    async def _get_result(self) -> "Result[T, E]":
+        """내부 헬퍼: 캐싱된 결과 반환 또는 최초 실행"""
+        if not self._is_resolved:
+            self._cached_result = await self._result
+            self._is_resolved = True
+        return self._cached_result
 
     async def is_success(self) -> bool:
         """비동기 성공 여부 확인"""
-        result = await self._result
+        result = await self._get_result()
         return result.is_success()
 
     async def is_failure(self) -> bool:
         """비동기 실패 여부 확인"""
-        result = await self._result
+        result = await self._get_result()
         return result.is_failure()
 
     async def unwrap(self) -> T:
         """비동기 값 추출"""
-        result = await self._result
+        result = await self._get_result()
         return result.unwrap()
 
     async def unwrap_or(self, default: T) -> T:
         """비동기 값 추출 (기본값 포함)"""
-        result = await self._result
+        result = await self._get_result()
         return result.unwrap_or(default)
 
     def map(
@@ -702,7 +714,7 @@ class ResultAsync(Generic[T, E]):
 
     async def to_result(self) -> "Result[T, E]":
         """동기 Result로 변환"""
-        return await self._result
+        return await self._get_result()
 
     # ==================== 확장 메서드 (Enhanced Methods) ====================
 
@@ -727,7 +739,7 @@ class ResultAsync(Generic[T, E]):
             >>> value
             'default'
         """
-        result = await self._result
+        result = await self._get_result()
         if result.is_success():
             return result.unwrap()
         return default
@@ -807,7 +819,7 @@ def async_success(value: T) -> "ResultAsync[T, Any]":
     """비동기 Success 생성"""
 
     async def create() -> "Result[T, Any]":
-        return Success(s.value)
+        return Success(value)  # s.value가 아닌 value 사용
 
     return ResultAsync(create())
 
@@ -816,7 +828,7 @@ def async_failure(error: E) -> "ResultAsync[Any, E]":
     """비동기 Failure 생성"""
 
     async def create() -> "Result[Any, E]":
-        return Failure(f.error)
+        return Failure(error)  # f.error가 아닌 error 사용
 
     return ResultAsync(create())
 

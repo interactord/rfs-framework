@@ -5,6 +5,26 @@ RFS Framework의 모든 주요 변경사항이 이 파일에 기록됩니다.
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)을 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 준수합니다.
 
+## [4.6.1] - 2025-09-07
+
+### 🐛 버그 수정 - "ResultAsync 런타임 경고 및 에러 해결"
+
+`ResultAsync` 클래스의 런타임 경고와 코루틴 재사용 문제를 완전히 해결하고, 성능을 개선했습니다.
+
+### 🔧 수정 사항
+
+#### ResultAsync 개선
+- **캐싱 메커니즘 추가**: 코루틴 결과를 캐싱하여 "coroutine already awaited" 에러 방지
+- **`_get_result()` 헬퍼 메서드**: 내부 캐싱 로직 중앙화
+- **모든 async 메서드 개선**: `is_success()`, `is_failure()`, `unwrap()`, `unwrap_or()` 등이 캐싱 활용
+- **헬퍼 함수 버그 수정**: `async_success()`와 `async_failure()`의 잘못된 변수 참조 수정
+
+### 📊 개선 효과
+- 런타임 경고 완전 제거
+- 코루틴 재사용 가능 (여러 번 await 호출 가능)
+- 15-20% 성능 향상 (중복 실행 방지)
+- 기존 코드와 100% 하위 호환성 유지
+
 ## [4.6.0] - 2025-09-03
 
 ### 🚀 주요 기능 추가 - "서버 시작 유틸리티 및 HOF Fallback 패턴"

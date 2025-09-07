@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Pattern, Union
 
-from .base import FluentBase, ChainableResult, success, failure
+from .base import ChainableResult, FluentBase, failure, success
 from .types import Validator
 
 

@@ -19,20 +19,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from ..core.result import Failure, Result, Success
 from ..core.enhanced_logging import get_logger
-from ..hof.core import pipe
-from ..hof.combinators import with_fallback
+from ..core.result import Failure, Result, Success
 from ..hof.async_hof import async_with_fallback
+from ..hof.combinators import with_fallback
+from ..hof.core import pipe
 from ..web.startup_utils import (
-    validate_imports,
-    safe_import,
-    check_missing_types,
-    resolve_import_path,
-    check_dependencies,
-    validate_server_startup,
     auto_fix_missing_imports,
+    check_dependencies,
+    check_missing_types,
     create_startup_report,
+    resolve_import_path,
+    safe_import,
+    validate_imports,
+    validate_server_startup,
 )
 
 logger = get_logger(__name__)

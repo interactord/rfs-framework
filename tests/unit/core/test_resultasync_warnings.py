@@ -5,13 +5,14 @@ ResultAsync 런타임 경고 방지 테스트
 """
 
 import asyncio
-import pytest
-import warnings
-from typing import Any
+import os
 
 # 직접 core.result 모듈만 import (전체 초기화 회피)
 import sys
-import os
+import warnings
+from typing import Any
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../src"))
 
@@ -25,7 +26,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_no_runtime_warnings_from_value(self):
         """from_value 사용 시 런타임 경고가 발생하지 않는지 확인"""
-        from rfs.core.result import ResultAsync, Success, Failure
+        from rfs.core.result import Failure, ResultAsync, Success
 
         # 경고 캡처
         with warnings.catch_warnings(record=True) as w:
@@ -52,7 +53,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_no_runtime_warnings_from_error(self):
         """from_error 사용 시 런타임 경고가 발생하지 않는지 확인"""
-        from rfs.core.result import ResultAsync, Success, Failure
+        from rfs.core.result import Failure, ResultAsync, Success
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -78,7 +79,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_bind_async_no_warnings(self):
         """bind_async 사용 시 런타임 경고가 발생하지 않는지 확인"""
-        from rfs.core.result import ResultAsync, Result, Success, Failure
+        from rfs.core.result import Failure, Result, ResultAsync, Success
 
         async def process_data(value: str) -> Result[str, str]:
             """비동기 처리 함수"""
@@ -107,7 +108,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_map_async_no_warnings(self):
         """map_async 사용 시 런타임 경고가 발생하지 않는지 확인"""
-        from rfs.core.result import ResultAsync, Success, Failure
+        from rfs.core.result import Failure, ResultAsync, Success
 
         async def transform_data(value: str) -> str:
             """비동기 변환 함수"""
@@ -136,7 +137,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_chaining_no_warnings(self):
         """체이닝 연산 시 런타임 경고가 발생하지 않는지 확인"""
-        from rfs.core.result import ResultAsync, Result, Success, Failure
+        from rfs.core.result import Failure, Result, ResultAsync, Success
 
         async def step1(value: int) -> Result[int, str]:
             return Success(value * 2)
@@ -165,7 +166,7 @@ class TestResultAsyncWarnings:
     @pytest.mark.asyncio
     async def test_helper_functions_no_warnings(self):
         """async_success, async_failure 헬퍼 함수 테스트"""
-        from rfs.core.result import async_success, async_failure
+        from rfs.core.result import async_failure, async_success
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

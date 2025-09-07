@@ -2,21 +2,22 @@
 Simplified unit tests for database migration module
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-import tempfile
 import os
+import tempfile
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.migration import (
-    MigrationStatus,
-    MigrationInfo,
     Migration,
-    SQLMigration,
-    PythonMigration,
+    MigrationInfo,
     MigrationManager,
+    MigrationStatus,
+    PythonMigration,
+    SQLMigration,
 )
-from rfs.core.result import Success, Failure
 
 
 class TestMigrationStatus:

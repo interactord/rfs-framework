@@ -2,28 +2,29 @@
 Unit tests for database migration module
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock, call
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
-import tempfile
-import os
+from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.migration import (
+    AlembicMigrationManager,
     Migration,
     MigrationInfo,
-    MigrationStatus,
-    SQLMigration,
-    PythonMigration,
     MigrationManager,
-    AlembicMigrationManager,
+    MigrationStatus,
+    PythonMigration,
+    SQLMigration,
     create_migration,
-    run_migrations,
-    rollback_migration,
     get_migration_manager,
+    rollback_migration,
+    run_migrations,
     set_migration_manager,
 )
-from rfs.core.result import Success, Failure
 
 
 class TestMigrationStatus:

@@ -5,7 +5,9 @@ Provides higher-order functions for working with collections including
 Swift-inspired patterns like first, compactMap, and drop operations.
 """
 
+import itertools
 from functools import reduce
+from itertools import dropwhile, groupby, islice, takewhile
 from typing import (
     Any,
     Callable,
@@ -19,8 +21,6 @@ from typing import (
     Union,
     overload,
 )
-from itertools import islice, takewhile, dropwhile, groupby
-import itertools
 
 # Type variables
 T = TypeVar("T")

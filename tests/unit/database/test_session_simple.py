@@ -2,10 +2,12 @@
 Simplified unit tests for database session module
 """
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
-from rfs.database.session import SessionConfig, DatabaseSession
-from rfs.core.result import Success, Failure
+
+from rfs.core.result import Failure, Success
+from rfs.database.session import DatabaseSession, SessionConfig
 
 
 class TestSessionConfig:

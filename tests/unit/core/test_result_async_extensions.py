@@ -7,8 +7,9 @@ PR에서 요구된 ResultAsync 확장 메서드들의 테스트
 """
 
 import asyncio
-import pytest
 from typing import Any
+
+import pytest
 
 from rfs.core.result import Failure, Result, ResultAsync, Success
 

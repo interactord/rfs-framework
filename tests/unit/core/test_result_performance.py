@@ -6,7 +6,7 @@ Result 패턴 성능 테스트
 
 import pytest
 
-from rfs.core.result import Success, Failure, sequence
+from rfs.core.result import Failure, Success, sequence
 
 
 class TestResultPerformance:

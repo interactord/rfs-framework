@@ -3,8 +3,9 @@ Unit tests for Flux reactive streams (RFS Framework)
 """
 
 import asyncio
-import pytest
 from typing import List
+
+import pytest
 
 from rfs.reactive.flux import Flux
 

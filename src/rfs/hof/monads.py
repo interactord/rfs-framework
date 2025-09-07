@@ -6,8 +6,8 @@ transformations in a functional way.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
 from functools import wraps
+from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
 
 T = TypeVar("T")
 U = TypeVar("U")

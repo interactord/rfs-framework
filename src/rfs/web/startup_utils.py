@@ -16,13 +16,13 @@ import importlib
 import inspect
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 from types import ModuleType
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from ..core.result import Failure, Result, Success
 from ..core.enhanced_logging import get_logger
-from ..hof.combinators import with_fallback, safe_call
+from ..core.result import Failure, Result, Success
 from ..hof.async_hof import async_with_fallback
+from ..hof.combinators import safe_call, with_fallback
 
 logger = get_logger(__name__)
 

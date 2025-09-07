@@ -10,17 +10,15 @@ import inspect
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Type
 from functools import reduce
+from typing import Any, Callable, Dict, List, Optional, Set, Type
 
-from .annotations.base import (
-    AnnotationType,
-    ServiceScope,
-)
 from .annotations import (
     AnnotationMetadata,
 )
 from .annotations.base import (
+    AnnotationType,
+    ServiceScope,
     get_component_metadata,
     has_annotation,
 )

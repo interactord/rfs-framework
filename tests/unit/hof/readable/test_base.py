@@ -5,14 +5,14 @@ RFS Readable HOF Base Classes Tests
 """
 
 import pytest
-from rfs.core.result import Success, Failure
 
+from rfs.core.result import Failure, Success
 from rfs.hof.readable.base import (
-    FluentBase,
     ChainableResult,
-    success,
+    FluentBase,
     failure,
     from_result,
+    success,
 )
 from rfs.hof.readable.types import ErrorInfo
 

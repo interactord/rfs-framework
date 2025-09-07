@@ -4,8 +4,9 @@ RFS Framework Cache 설정 단위 테스트
 CacheConfig와 MemoryCacheConfig 클래스의 설정 및 검증을 테스트합니다.
 """
 
-import pytest
 from dataclasses import asdict
+
+import pytest
 
 from rfs.cache.base import CacheConfig, CacheType, SerializationType
 from rfs.cache.memory_cache import MemoryCacheConfig

@@ -7,9 +7,10 @@ RFS Readable HOF Base Classes
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generic, Optional, TypeVar, Union
-from rfs.core.result import Result, Success, Failure
 
-from .types import T, U, ErrorInfo
+from rfs.core.result import Failure, Result, Success
+
+from .types import ErrorInfo, T, U
 
 
 class FluentBase(Generic[T], ABC):

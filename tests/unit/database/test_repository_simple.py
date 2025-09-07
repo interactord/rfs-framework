@@ -2,13 +2,14 @@
 Simplified unit tests for database repository module
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, Mock
 
-from rfs.database.repository import Repository, RepositoryConfig
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.models import BaseModel
-from rfs.core.result import Success, Failure
+from rfs.database.repository import Repository, RepositoryConfig
 
 
 class TestModelSimple(BaseModel):
@@ -41,7 +42,7 @@ class TestModelSimple(BaseModel):
 
     @classmethod
     def create_table(cls):
-        from rfs.database.models import Table, Field
+        from rfs.database.models import Field, Table
 
         return Table("test_table", [])
 

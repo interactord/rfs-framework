@@ -5,9 +5,10 @@ Essential functional programming utilities for function composition,
 partial application, and basic combinators.
 """
 
-from functools import reduce, wraps, partial as functools_partial
-from typing import Any, Callable, TypeVar, Union, Tuple, overload
 import inspect
+from functools import partial as functools_partial
+from functools import reduce, wraps
+from typing import Any, Callable, Tuple, TypeVar, Union, overload
 
 # Type variables for generic type hints
 A = TypeVar("A")

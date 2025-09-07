@@ -12,13 +12,13 @@ import uuid
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
-from enum import Enum
 
-from rfs.core.result import Result, Success, Failure
-from rfs.reactive.mono_result import MonoResult
+from rfs.core.result import Failure, Result, Success
 from rfs.reactive.flux_result import FluxResult
+from rfs.reactive.mono_result import MonoResult
 
 T = TypeVar("T")
 E = TypeVar("E")

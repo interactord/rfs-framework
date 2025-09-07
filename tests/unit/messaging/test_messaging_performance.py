@@ -5,6 +5,7 @@ RFS Messaging Performance Tests (RFS v4.3)
 """
 
 import asyncio
+
 import pytest
 
 from rfs.messaging.base import Message

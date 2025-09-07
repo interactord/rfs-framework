@@ -485,9 +485,9 @@ async def async_memoize(
         ...     await asyncio.sleep(1)
         ...     return x ** 2
     """
-    from collections import OrderedDict
     import hashlib
     import pickle
+    from collections import OrderedDict
 
     cache: OrderedDict = OrderedDict()
     lock = asyncio.Lock()

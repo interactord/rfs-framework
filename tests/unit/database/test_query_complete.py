@@ -2,39 +2,41 @@
 Complete test coverage for query.py to achieve 100%
 """
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+
+from rfs.core.result import Failure, Success
+from rfs.database.models import BaseModel
 from rfs.database.query import (
-    Operator,
-    SortOrder,
+    AdvancedQueryBuilder,
     Filter,
-    Sort,
+    Operator,
     Pagination,
+    Q,
     Query,
     QueryBuilder,
-    AdvancedQueryBuilder,
+    Sort,
+    SortOrder,
     TransactionalQueryBuilder,
-    Q,
-    eq,
-    ne,
-    lt,
-    le,
-    gt,
-    ge,
-    in_,
-    nin,
-    like,
-    ilike,
-    regex,
-    is_null,
-    is_not_null,
     between,
-    contains,
     build_query,
+    contains,
+    eq,
     execute_query,
+    ge,
+    gt,
+    ilike,
+    in_,
+    is_not_null,
+    is_null,
+    le,
+    like,
+    lt,
+    ne,
+    nin,
+    regex,
 )
-from rfs.database.models import BaseModel
-from rfs.core.result import Success, Failure
 
 
 class TestModel(BaseModel):
@@ -67,7 +69,7 @@ class TestModel(BaseModel):
 
     @classmethod
     def create_table(cls):
-        from rfs.database.models import Table, Field
+        from rfs.database.models import Field, Table
 
         return Table("test_table", [])
 

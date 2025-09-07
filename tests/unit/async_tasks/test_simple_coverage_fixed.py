@@ -11,18 +11,18 @@ import pytest
 
 from rfs.async_tasks.base import (
     BackoffStrategy,
+    CallableTask,
     RetryPolicy,
+    Task,
+    TaskCallback,
+    TaskCancelled,
+    TaskDependencyError,
+    TaskError,
     TaskMetadata,
     TaskPriority,
     TaskResult,
     TaskStatus,
-    Task,
-    CallableTask,
-    TaskCallback,
-    TaskError,
     TaskTimeout,
-    TaskCancelled,
-    TaskDependencyError,
 )
 from rfs.core.result import Failure, Success
 

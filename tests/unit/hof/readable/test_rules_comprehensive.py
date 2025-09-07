@@ -5,11 +5,13 @@ RFS Readable HOF Rules Module - Comprehensive Tests
 apply_rules_to 패턴과 관련된 모든 기능을 검증합니다.
 """
 
-import pytest
 import re
 from dataclasses import dataclass
-from typing import Any, Optional, List
+from typing import Any, List, Optional
 
+import pytest
+
+from rfs.hof.readable.base import ChainableResult
 from rfs.hof.readable.rules import (
     RuleApplication,
     RuleProcessor,
@@ -19,7 +21,6 @@ from rfs.hof.readable.rules import (
     count_violations,
 )
 from rfs.hof.readable.types import ViolationInfo
-from rfs.hof.readable.base import ChainableResult
 
 
 class TestRuleApplication:

@@ -5,8 +5,10 @@
 """
 
 import asyncio
+
 import pytest
-from rfs.async_tasks.base import TaskGroup, CallableTask
+
+from rfs.async_tasks.base import CallableTask, TaskGroup
 
 
 class TestTaskGroupFailFast:

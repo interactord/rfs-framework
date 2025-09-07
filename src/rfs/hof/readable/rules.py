@@ -8,11 +8,11 @@ RFS Readable HOF Rules System
     violations = apply_rules_to(text).using(security_rules).collect_violations()
 """
 
-from typing import Any, Callable, List, Optional
 from dataclasses import dataclass
+from typing import Any, Callable, List, Optional
 
-from .base import FluentBase, ChainableResult, success, failure
-from .types import Rule, ViolationInfo, ErrorInfo, T, R
+from .base import ChainableResult, FluentBase, failure, success
+from .types import ErrorInfo, R, Rule, T, ViolationInfo
 
 
 class RuleApplication(FluentBase[T]):

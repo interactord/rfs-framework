@@ -14,20 +14,74 @@ Modules:
     - readable: 자연어에 가까운 선언적 HOF 패턴 (apply_rules_to, validate_config, scan_for)
 """
 
-from .core import (
-    compose,
-    pipe,
-    curry,
-    partial,
-    identity,
-    constant,
-    flip,
-    apply,
+from .async_hof import (
+    async_compose,
+    async_filter,
+    async_map,
+    async_parallel,
+    async_pipe,
+    async_reduce,
+    async_retry,
+    async_retry_with_fallback,
+    async_safe_call,
+    async_sequential,
+    async_timeout,
+    async_timeout_with_fallback,
+    async_with_fallback,
 )
-
+from .collections import (
+    chunk,
+    drop,
+    drop_while,
+    filter_indexed,
+    flat_map,
+    flatten,
+    fold,
+    fold_left,
+    fold_right,
+    group_by,
+    map_indexed,
+    partition,
+    reduce_indexed,
+    scan,
+    take,
+    take_while,
+    zip_with,
+)
+from .combinators import (
+    always,
+    complement,
+    cond,
+    if_else,
+    retry_with_fallback,
+    safe_call,
+    tap,
+    unless,
+    when,
+    with_fallback,
+)
+from .core import (
+    apply,
+    compose,
+    constant,
+    curry,
+    flip,
+    identity,
+    partial,
+    pipe,
+)
+from .decorators import (
+    circuit_breaker,
+    debounce,
+    memoize,
+    rate_limit,
+    retry,
+    throttle,
+    timeout,
+)
 from .monads import (
-    Maybe,
     Either,
+    Maybe,
     Result,
     bind,
     lift,
@@ -35,87 +89,24 @@ from .monads import (
     traverse,
 )
 
-from .combinators import (
-    tap,
-    when,
-    unless,
-    if_else,
-    cond,
-    always,
-    complement,
-    with_fallback,
-    safe_call,
-    retry_with_fallback,
-)
-
-from .decorators import (
-    memoize,
-    throttle,
-    debounce,
-    retry,
-    timeout,
-    rate_limit,
-    circuit_breaker,
-)
-
-from .collections import (
-    map_indexed,
-    filter_indexed,
-    reduce_indexed,
-    fold,
-    fold_left,
-    fold_right,
-    scan,
-    partition,
-    group_by,
-    chunk,
-    flatten,
-    flat_map,
-    zip_with,
-    take,
-    drop,
-    take_while,
-    drop_while,
-)
-
-from .async_hof import (
-    async_compose,
-    async_pipe,
-    async_map,
-    async_filter,
-    async_reduce,
-    async_retry,
-    async_timeout,
-    async_parallel,
-    async_sequential,
-    async_with_fallback,
-    async_safe_call,
-    async_retry_with_fallback,
-    async_timeout_with_fallback,
-)
-
 # Readable HOF - 자연어에 가까운 선언적 패턴들 (선택적 import)
 try:
-    from .readable import (
-        # 핵심 함수들
-        apply_rules_to,
-        validate_config,
-        scan_for,
-        extract_from,
-        # 유틸리티 함수들
-        quick_validate,
-        quick_scan,
-        quick_process,
-        # 규칙 생성 함수들
-        required,
-        range_check,
-        format_check,
-        email_check,
-        url_check,
-        # 기본 클래스들
+    from .readable import (  # 핵심 함수들; 유틸리티 함수들; 규칙 생성 함수들; 기본 클래스들
         ChainableResult,
-        success,
+        apply_rules_to,
+        email_check,
+        extract_from,
         failure,
+        format_check,
+        quick_process,
+        quick_scan,
+        quick_validate,
+        range_check,
+        required,
+        scan_for,
+        success,
+        url_check,
+        validate_config,
     )
 
     _READABLE_AVAILABLE = True

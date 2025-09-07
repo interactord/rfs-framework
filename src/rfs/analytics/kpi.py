@@ -311,8 +311,9 @@ class AverageKPI(KPI):
     async def calculate(self, **kwargs) -> Result[float, str]:
         """평균 계산"""
         try:
-            from ..analytics.data_source import DataQuery
             import statistics
+
+            from ..analytics.data_source import DataQuery
 
             data_query = DataQuery(query=self.query, parameters=kwargs)
             result = await self._execute_query(data_query)

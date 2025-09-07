@@ -5,18 +5,19 @@ Tests Swift-inspired guard statement for early returns.
 """
 
 import pytest
+
 from rfs.hof.guard import (
     Guard,
+    GuardContext,
     GuardError,
+    _GuardReturn,
     guard,
     guard_let,
-    guarded,
-    guard_type,
-    guard_range,
     guard_not_empty,
-    GuardContext,
+    guard_range,
+    guard_type,
+    guarded,
     with_guards,
-    _GuardReturn,
 )
 
 

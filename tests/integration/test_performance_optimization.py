@@ -3,18 +3,19 @@ Performance Optimization Integration Tests
 """
 
 import asyncio
-import pytest
 import time
 from typing import Any, Dict
 
-from rfs.optimization.profiling import get_system_profiler, SystemProfiler
+import pytest
+
+from rfs.core import Failure, Success
 from rfs.optimization import (
-    get_cloud_run_optimizer,
-    get_memory_optimizer,
-    get_cpu_optimizer,
     OptimizationStrategy,
+    get_cloud_run_optimizer,
+    get_cpu_optimizer,
+    get_memory_optimizer,
 )
-from rfs.core import Success, Failure
+from rfs.optimization.profiling import SystemProfiler, get_system_profiler
 
 
 @pytest.mark.asyncio

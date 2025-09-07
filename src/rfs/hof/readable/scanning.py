@@ -13,19 +13,19 @@ RFS Readable HOF Scanning System
                .to_result())
 """
 
+import os
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Pattern, Union
-from collections import defaultdict
-import os
 
-from .base import FluentBase, ChainableResult, success, failure
+from .base import ChainableResult, FluentBase, failure, success
 from .types import (
+    RISK_LEVEL_ORDER,
     Extractor,
     RiskLevel,
-    ViolationInfo,
     ScanResult,
-    RISK_LEVEL_ORDER,
+    ViolationInfo,
     is_risk_above_threshold,
 )
 

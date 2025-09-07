@@ -6,18 +6,18 @@ base.py의 남은 missing coverage를 위한 테스트
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
 from rfs.async_tasks.base import (
-    TaskHook,
     LoggingHook,
     MetricsHook,
+    TaskHook,
     TaskMetadata,
+    TaskPriority,
     TaskResult,
     TaskStatus,
-    TaskPriority,
 )
 
 
@@ -267,7 +267,7 @@ class TestTaskMetadataComplexScenarios:
     def test_task_metadata_retry_scenario(self):
         """Test TaskMetadata in retry scenario"""
 
-        from rfs.async_tasks.base import RetryPolicy, BackoffStrategy
+        from rfs.async_tasks.base import BackoffStrategy, RetryPolicy
 
         retry_policy = RetryPolicy(
             max_attempts=3,
@@ -295,7 +295,7 @@ class TestCompleteTaskResult:
     def test_task_result_all_status_conversions(self):
         """Test TaskResult to_result() for all statuses"""
 
-        from rfs.core.result import Success, Failure
+        from rfs.core.result import Failure, Success
 
         # Success case
         success_result = TaskResult(

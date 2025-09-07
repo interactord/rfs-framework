@@ -2,23 +2,24 @@
 Complete test coverage for migration.py to achieve 100%
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, mock_open
-import tempfile
-import os
-from datetime import datetime
 import hashlib
 import json
+import os
+import tempfile
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.migration import (
-    MigrationStatus,
-    MigrationInfo,
     Migration,
-    SQLMigration,
-    PythonMigration,
+    MigrationInfo,
     MigrationManager,
+    MigrationStatus,
+    PythonMigration,
+    SQLMigration,
 )
-from rfs.core.result import Success, Failure
 
 
 class TestMigrationInfo:

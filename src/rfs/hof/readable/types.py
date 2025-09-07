@@ -5,9 +5,9 @@ RFS Readable HOF Types and Protocols
 플루언트 인터페이스, 규칙 시스템, 검증 시스템에서 공통으로 사용되는 타입들을 정의합니다.
 """
 
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional, Pattern, Protocol, TypeVar, Union
-import re
 
 # 기본 타입 변수들
 T = TypeVar("T")  # 일반적인 타입

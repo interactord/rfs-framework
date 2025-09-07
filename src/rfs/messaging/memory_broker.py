@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 
 from ..core.enhanced_logging import get_logger
 from ..core.result import Failure, Result, Success
-from .base import Message, MessageBroker, MessageConfig, MessagePriority, BrokerType
+from .base import BrokerType, Message, MessageBroker, MessageConfig, MessagePriority
 
 logger = get_logger(__name__)
 

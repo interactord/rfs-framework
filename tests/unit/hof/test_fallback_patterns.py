@@ -8,17 +8,18 @@ PR에서 요구된 fallback 패턴들의 테스트:
 """
 
 import asyncio
-import pytest
 import time
 from typing import Any
 
-from rfs.hof.combinators import with_fallback, safe_call, retry_with_fallback
+import pytest
+
 from rfs.hof.async_hof import (
-    async_with_fallback,
-    async_safe_call,
     async_retry_with_fallback,
+    async_safe_call,
     async_timeout_with_fallback,
+    async_with_fallback,
 )
+from rfs.hof.combinators import retry_with_fallback, safe_call, with_fallback
 
 
 class TestSyncFallbackPatterns:

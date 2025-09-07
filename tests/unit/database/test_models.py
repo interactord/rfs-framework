@@ -2,23 +2,24 @@
 Unit tests for database models module
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.models import (
     BaseModel,
     Field,
     ModelRegistry,
     SQLAlchemyModel,
-    TortoiseModel,
     Table,
+    TortoiseModel,
     create_model,
     get_model_registry,
     register_model,
 )
-from rfs.core.result import Success, Failure
 
 
 # Test base model implementation
@@ -412,9 +413,9 @@ class TestSQLAlchemyModel:
     )
     def test_sqlalchemy_model_relationships(self):
         """Test SQLAlchemy model relationships"""
-        from sqlalchemy import Column, Integer, String, ForeignKey
-        from sqlalchemy.orm import relationship
+        from sqlalchemy import Column, ForeignKey, Integer, String
         from sqlalchemy.ext.declarative import declarative_base
+        from sqlalchemy.orm import relationship
 
         Base = declarative_base()
 
@@ -438,8 +439,8 @@ class TestTortoiseModel:
     )
     def test_tortoise_model_creation(self):
         """Test creating Tortoise model"""
-        from tortoise.models import Model as TortoiseBaseModel
         from tortoise import fields
+        from tortoise.models import Model as TortoiseBaseModel
 
         class User(TortoiseBaseModel, TortoiseModel):
             id = fields.IntField(pk=True)

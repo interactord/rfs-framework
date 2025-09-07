@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock
 import pytest
 
 from rfs.async_tasks.base import (
+    CallableTask,
     TaskChain,
     TaskGroup,
-    CallableTask,
     TaskMetadata,
 )
 

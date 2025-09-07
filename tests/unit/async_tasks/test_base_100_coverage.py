@@ -6,32 +6,32 @@ base.py 100% 커버리지 달성을 위한 테스트
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch, AsyncMock
 from io import StringIO
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
 from rfs.async_tasks.base import (
     BackoffStrategy,
+    CallableTask,
+    LoggingHook,
+    MetricsHook,
     RetryPolicy,
+    Task,
+    TaskCallback,
+    TaskCancelled,
+    TaskChain,
+    TaskDependencyError,
+    TaskError,
+    TaskGroup,
+    TaskHook,
     TaskMetadata,
     TaskPriority,
     TaskResult,
     TaskStatus,
-    Task,
-    CallableTask,
-    TaskCallback,
-    TaskError,
     TaskTimeout,
-    TaskCancelled,
-    TaskDependencyError,
-    TaskChain,
-    TaskGroup,
-    TaskHook,
-    LoggingHook,
-    MetricsHook,
 )
-from rfs.core.result import Success, Failure
+from rfs.core.result import Failure, Success
 
 
 class TestRetryPolicyBuggyLogic:

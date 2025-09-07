@@ -6,24 +6,25 @@ RFS Readable HOF Proposal Validation Tests
 """
 
 import re
-import pytest
-from typing import List, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List
 
+import pytest
+
+from rfs.core.result import Failure, Result, Success
 from rfs.hof.readable import (
+    ChainableResult,
+    ViolationInfo,
     apply_rules_to,
-    validate_config,
-    scan_for,
-    required,
-    range_check,
+    failure,
     format_check,
     length_check,
-    ViolationInfo,
-    ChainableResult,
+    range_check,
+    required,
+    scan_for,
     success,
-    failure,
+    validate_config,
 )
-from rfs.core.result import Result, Success, Failure
 
 
 class TestProposalExamples:

@@ -2,27 +2,28 @@
 Unit tests for Result pattern (RFS Framework)
 """
 
-import pytest
 from typing import Any
 
+import pytest
+
 from rfs.core.result import (
-    Success,
+    Either,
     Failure,
+    Maybe,
     Result,
-    sequence,
+    Success,
     combine,
+    either_to_result,
     first_success,
+    none,
     partition,
+    result_to_either,
+    result_to_maybe,
+    sequence,
+    some,
     traverse,
     traverse_either,
     traverse_maybe,
-    result_to_either,
-    result_to_maybe,
-    either_to_result,
-    Either,
-    Maybe,
-    some,
-    none,
 )
 
 

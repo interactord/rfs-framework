@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 
-from ..result import Failure, Result, Success
 from ...events import Event, EventBus, get_event_bus
+from ..result import Failure, Result, Success
 from .base import (
     TransactionError,
     TransactionMetadata,

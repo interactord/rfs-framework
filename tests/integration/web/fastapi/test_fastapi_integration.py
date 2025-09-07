@@ -5,36 +5,36 @@ Phase 2에서 구현한 모든 FastAPI 통합 기능들을
 종합적으로 테스트합니다.
 """
 
-import pytest
 import asyncio
 from typing import List
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
 
-from fastapi import FastAPI, Depends, HTTPException
+import pytest
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 # Phase 1 구현체들
-from rfs.core.result import Result, Success, Failure
-from rfs.reactive.mono_result import MonoResult
+from rfs.core.result import Failure, Result, Success
 from rfs.reactive.flux_result import FluxResult
+from rfs.reactive.mono_result import MonoResult
+from rfs.web.fastapi.dependencies import (
+    ResultDependency,
+    inject_result_service,
+    register_service,
+    result_dependency,
+)
 
 # Phase 2 구현체들
 from rfs.web.fastapi.errors import APIError, ErrorCode
-from rfs.web.fastapi.types import FastAPIResult, FastAPIMonoResult, FastAPIFluxResult
-from rfs.web.fastapi.response_helpers import handle_result, handle_flux_result
-from rfs.web.fastapi.dependencies import (
-    ResultDependency,
-    result_dependency,
-    register_service,
-    inject_result_service,
-)
 from rfs.web.fastapi.middleware import (
-    ResultLoggingMiddleware,
     ExceptionToResultMiddleware,
     PerformanceMetricsMiddleware,
+    ResultLoggingMiddleware,
     setup_result_middleware,
 )
+from rfs.web.fastapi.response_helpers import handle_flux_result, handle_result
+from rfs.web.fastapi.types import FastAPIFluxResult, FastAPIMonoResult, FastAPIResult
 
 
 # 테스트용 모델들

@@ -10,51 +10,50 @@ RFS Framework Core Result 패턴 포괄적 단위 테스트
 """
 
 import asyncio
-import pytest
-from typing import List, Optional, Any
-from unittest.mock import Mock, AsyncMock
+import os
 
 # 직접 import하여 순환 참조 방지
 import sys
-import os
+from typing import Any, List, Optional
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../src"))
 
 from rfs.core.result import (
-    Result,
-    Success,
-    Failure,
-    ResultAsync,
     Either,
-    Maybe,
-    Success,
     Failure,
-    async_success,
+    Maybe,
+    Result,
+    ResultAsync,
+    Success,
     async_failure,
-    try_except,
+    async_result_decorator,
+    async_success,
     async_try_except,
-    pipe_results,
-    sequence,
-    traverse,
+    check_is_exception,
     combine,
+    either_to_result,
     first_success,
-    partition,
+    from_optional,
+    get_error,
+    get_value,
+    left,
     lift,
     lift2,
-    from_optional,
-    result_decorator,
-    async_result_decorator,
-    get_value,
-    get_error,
-    check_is_exception,
-    result_to_either,
-    either_to_result,
-    maybe_to_result,
-    some,
-    none,
     maybe_of,
-    left,
+    maybe_to_result,
+    none,
+    partition,
+    pipe_results,
+    result_decorator,
+    result_to_either,
     right,
+    sequence,
+    some,
+    traverse,
+    try_except,
 )
 
 

@@ -3,30 +3,31 @@ Dependency Injection Annotations Tests
 의존성 주입 어노테이션 테스트
 """
 
-import pytest
 from typing import Any, Optional
 
-from rfs.core.annotations.di import (
-    Component,
-    Port,
-    Adapter,
-    UseCase,
-    Controller,
-    Service,
-    Repository,
-    Injectable,
-    Autowired,
-    Qualifier,
-    Scope,
-    Primary,
-    Lazy,
-    Value,
-    ConfigProperty,
-)
+import pytest
+
 from rfs.core.annotations.base import (
-    get_annotation_metadata,
     AnnotationType,
     ServiceScope,
+    get_annotation_metadata,
+)
+from rfs.core.annotations.di import (
+    Adapter,
+    Autowired,
+    Component,
+    ConfigProperty,
+    Controller,
+    Injectable,
+    Lazy,
+    Port,
+    Primary,
+    Qualifier,
+    Repository,
+    Scope,
+    Service,
+    UseCase,
+    Value,
 )
 
 

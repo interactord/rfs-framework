@@ -6,6 +6,7 @@ Message 클래스의 생성, 속성, 직렬화 등을 테스트합니다.
 
 import uuid
 from datetime import datetime, timedelta
+
 import pytest
 
 from rfs.messaging.base import Message, MessagePriority

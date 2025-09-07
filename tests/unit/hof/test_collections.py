@@ -5,30 +5,31 @@ Tests Swift-inspired collection operations and functional utilities.
 """
 
 import pytest
+
 from rfs.hof.collections import (
-    first,
-    last,
+    chunk,
     compact_map,
-    flat_map,
-    drop_last,
+    drop,
     drop_first,
-    merging,
-    map_indexed,
+    drop_last,
+    drop_while,
     filter_indexed,
-    reduce_indexed,
+    first,
+    flat_map,
+    flatten,
     fold,
     fold_left,
     fold_right,
-    scan,
-    partition,
     group_by,
-    chunk,
-    flatten,
-    zip_with,
+    last,
+    map_indexed,
+    merging,
+    partition,
+    reduce_indexed,
+    scan,
     take,
-    drop,
     take_while,
-    drop_while,
+    zip_with,
 )
 
 

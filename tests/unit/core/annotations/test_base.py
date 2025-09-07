@@ -3,10 +3,11 @@ Annotation Base Module Tests
 어노테이션 베이스 모듈 테스트
 """
 
-import pytest
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
+import pytest
 
 from rfs.core.annotations.base import (
     AnnotationMetadata,
@@ -14,9 +15,8 @@ from rfs.core.annotations.base import (
     ComponentMetadata,
     ServiceScope,
     get_annotation_metadata,
-    set_annotation_metadata,
-    ServiceScope,
     has_annotation,
+    set_annotation_metadata,
     validate_hexagonal_architecture,
 )
 

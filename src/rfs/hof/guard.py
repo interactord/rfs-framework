@@ -5,10 +5,10 @@ Provides a Pythonic implementation of Swift's guard statement for
 cleaner early returns and improved code readability.
 """
 
-from typing import Any, Callable, Optional, TypeVar, Union, NoReturn
-from functools import wraps
-import sys
 import inspect
+import sys
+from functools import wraps
+from typing import Any, Callable, NoReturn, Optional, TypeVar, Union
 
 T = TypeVar("T")
 R = TypeVar("R")

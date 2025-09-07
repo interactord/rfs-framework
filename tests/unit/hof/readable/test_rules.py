@@ -4,13 +4,14 @@ RFS Readable HOF Rules System Tests
 규칙 적용 시스템의 단위 테스트입니다.
 """
 
-import pytest
 from dataclasses import dataclass
 
+import pytest
+
 from rfs.hof.readable.rules import (
-    apply_rules_to,
     RuleApplication,
     RuleProcessor,
+    apply_rules_to,
     apply_single_rule,
     check_violations,
     count_violations,

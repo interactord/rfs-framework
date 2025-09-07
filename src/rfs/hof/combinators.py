@@ -5,8 +5,8 @@ Provides combinators for conditional execution, function modification,
 and control flow in a functional style.
 """
 
-from typing import Any, Callable, List, Optional, TypeVar, Union, Tuple
 from functools import wraps
+from typing import Any, Callable, List, Optional, Tuple, TypeVar, Union
 
 T = TypeVar("T")
 U = TypeVar("U")

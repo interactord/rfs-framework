@@ -5,27 +5,29 @@ Result 패턴과 FastAPI의 의존성 주입을 완벽하게 통합하여
 타입 안전한 서비스 의존성 관리를 제공합니다.
 """
 
-from typing import (
-    Callable,
-    Any,
-    Optional,
-    Union,
-    Type,
-    TypeVar,
-    Generic,
-    get_type_hints,
-)
-from functools import wraps
 import inspect
 import logging
 from contextlib import asynccontextmanager
+from functools import wraps
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 from fastapi import Depends, HTTPException
-from rfs.core.result import Result, Success, Failure
-from rfs.reactive.mono_result import MonoResult
+
+from rfs.core.result import Failure, Result, Success
 from rfs.reactive.flux_result import FluxResult
+from rfs.reactive.mono_result import MonoResult
+
 from .errors import APIError
-from .types import FastAPIResult, FastAPIMonoResult, FastAPIFluxResult
+from .types import FastAPIFluxResult, FastAPIMonoResult, FastAPIResult
 
 T = TypeVar("T")
 E = TypeVar("E")

@@ -5,25 +5,26 @@ RFS Readable HOF Scanning Module - Comprehensive Tests
 제안서의 모든 예제와 실제 사용 시나리오들을 검증합니다.
 """
 
-import re
-import pytest
-import tempfile
 import os
-from typing import List, Dict, Any
+import re
+import tempfile
 from dataclasses import dataclass
+from typing import Any, Dict, List
+
+import pytest
 
 from rfs.hof.readable.scanning import (
-    Scanner,
-    TextScanner,
+    ExtractionResult,
     FileScanner,
     MultiFileScanner,
-    ExtractionResult,
-    scan_for,
-    create_security_violation,
+    Scanner,
+    TextScanner,
     create_log_entry,
+    create_security_violation,
+    scan_for,
     simple_extract,
 )
-from rfs.hof.readable.types import ViolationInfo, ScanResult, is_risk_above_threshold
+from rfs.hof.readable.types import ScanResult, ViolationInfo, is_risk_above_threshold
 
 
 class TestScanner:

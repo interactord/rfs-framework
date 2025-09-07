@@ -5,6 +5,8 @@ Result 패턴 통합 메트릭 시스템
 임계값 기반 자동 알림과 상세한 성능 분석을 지원합니다.
 """
 
+import json
+import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -12,8 +14,6 @@ from datetime import datetime, timedelta
 from enum import Enum
 from threading import Lock
 from typing import Any, Callable, Dict, List, Optional, Union
-import json
-import logging
 
 from rfs.core.result import Result
 

@@ -2,8 +2,10 @@
 Reactive Streams Tests
 """
 
-import pytest
 import asyncio
+
+import pytest
+
 from rfs.reactive import Flux, Mono
 
 

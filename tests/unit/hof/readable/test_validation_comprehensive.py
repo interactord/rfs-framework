@@ -6,23 +6,24 @@ RFS Readable HOF Validation Module - Comprehensive Tests
 """
 
 import re
-import pytest
 from dataclasses import dataclass
 from typing import Optional
 
+import pytest
+
+from rfs.hof.readable.base import failure, success
 from rfs.hof.readable.validation import (
-    ValidationRule,
     ConfigValidator,
-    validate_config,
-    required,
-    range_check,
+    ValidationRule,
+    custom_check,
+    email_check,
     format_check,
     length_check,
-    email_check,
+    range_check,
+    required,
     url_check,
-    custom_check,
+    validate_config,
 )
-from rfs.hof.readable.base import success, failure
 
 
 class TestValidationRule:

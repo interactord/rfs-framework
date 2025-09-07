@@ -2,26 +2,27 @@
 Complete test coverage for base.py to achieve 100%
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, Any, Optional
 import asyncio
+from typing import Any, Dict, Optional
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+import pytest
+
+from rfs.core.result import Failure, Success
 from rfs.database.base import (
-    DatabaseType,
-    ORMType,
-    DatabaseConfig,
-    ConnectionPool,
-    Database,
-    SQLAlchemyDatabase,
-    TortoiseDatabase,
-    DatabaseManager,
-    get_database_manager,
-    get_database,
     SQLALCHEMY_AVAILABLE,
     TORTOISE_AVAILABLE,
+    ConnectionPool,
+    Database,
+    DatabaseConfig,
+    DatabaseManager,
+    DatabaseType,
+    ORMType,
+    SQLAlchemyDatabase,
+    TortoiseDatabase,
+    get_database,
+    get_database_manager,
 )
-from rfs.core.result import Success, Failure
 
 
 class TestDatabaseType:

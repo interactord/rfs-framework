@@ -11,9 +11,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from rfs.async_tasks.task_definition import (
-    TaskType,
     TaskContext,
     TaskDefinition,
+    TaskType,
 )
 
 

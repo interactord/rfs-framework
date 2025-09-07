@@ -3,18 +3,18 @@ Simplified unit tests for database query module
 """
 
 import pytest
-import pytest
+
+from rfs.core.result import Failure, Success
+from rfs.database.models import BaseModel
 from rfs.database.query import (
-    Operator,
-    SortOrder,
     Filter,
-    Sort,
+    Operator,
     Pagination,
     Query,
     QueryBuilder,
+    Sort,
+    SortOrder,
 )
-from rfs.database.models import BaseModel
-from rfs.core.result import Success, Failure
 
 
 class TestModelForQuery(BaseModel):
@@ -55,7 +55,7 @@ class TestModelForQuery(BaseModel):
 
     @classmethod
     def create_table(cls):
-        from rfs.database.models import Table, Field
+        from rfs.database.models import Field, Table
 
         return Table("test_table", [])
 
@@ -645,8 +645,9 @@ class TestQueryHelperFunctions:
     @pytest.mark.asyncio
     async def test_execute_query_function(self):
         """Test execute_query helper function"""
-        from rfs.database.query import execute_query
         from unittest.mock import AsyncMock
+
+        from rfs.database.query import execute_query
 
         # Create mock query with async execute method
         mock_query = AsyncMock()
@@ -803,8 +804,9 @@ class TestTransactionalQueryBuilder:
     @pytest.fixture
     def transaction_query(self):
         """Create transactional query builder instance"""
-        from rfs.database.query import TransactionalQueryBuilder
         from unittest.mock import Mock
+
+        from rfs.database.query import TransactionalQueryBuilder
 
         mock_tx_manager = Mock()
         return TransactionalQueryBuilder(TestModelForQuery, mock_tx_manager)
@@ -864,8 +866,9 @@ class TestTransactionalQueryBuilder:
     @pytest.mark.asyncio
     async def test_execute_without_transaction_manager(self):
         """Test execute without transaction manager"""
-        from rfs.database.query import TransactionalQueryBuilder
         from unittest.mock import AsyncMock
+
+        from rfs.database.query import TransactionalQueryBuilder
 
         query = TransactionalQueryBuilder(TestModelForQuery, None)
 
@@ -885,6 +888,7 @@ class TestTransactionalQueryBuilder:
     async def test_execute_batch_with_transaction_manager(self, transaction_query):
         """Test execute_batch with transaction manager"""
         from unittest.mock import AsyncMock, Mock
+
         from rfs.core.result import Success
 
         # Create mock queries
@@ -914,9 +918,10 @@ class TestTransactionalQueryBuilder:
     @pytest.mark.asyncio
     async def test_execute_batch_without_transaction_manager(self):
         """Test execute_batch without transaction manager"""
-        from rfs.database.query import TransactionalQueryBuilder
         from unittest.mock import AsyncMock, Mock
+
         from rfs.core.result import Success
+        from rfs.database.query import TransactionalQueryBuilder
 
         query = TransactionalQueryBuilder(TestModelForQuery, None)
 
@@ -938,7 +943,8 @@ class TestTransactionalQueryBuilder:
     async def test_execute_batch_with_failure(self, transaction_query):
         """Test execute_batch with query failure"""
         from unittest.mock import AsyncMock, Mock
-        from rfs.core.result import Success, Failure
+
+        from rfs.core.result import Failure, Success
 
         # Create mock queries - second one fails
         mock_query1 = Mock()

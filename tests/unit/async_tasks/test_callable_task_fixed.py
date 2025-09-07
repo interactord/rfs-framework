@@ -210,10 +210,10 @@ class TestTaskErrorExceptions:
     def test_task_error_inheritance(self):
         """Test TaskError exception inheritance"""
         from rfs.async_tasks.base import (
-            TaskError,
-            TaskTimeout,
             TaskCancelled,
             TaskDependencyError,
+            TaskError,
+            TaskTimeout,
         )
 
         # Test that all task errors inherit from TaskError

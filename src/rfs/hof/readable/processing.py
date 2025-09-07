@@ -15,12 +15,12 @@ RFS Readable HOF Processing System
                .collect())
 """
 
-from typing import Any, Awaitable, Callable, Iterable, List, Optional, TypeVar, Union
 from dataclasses import dataclass
 from functools import reduce
+from typing import Any, Awaitable, Callable, Iterable, List, Optional, TypeVar, Union
 
-from .base import FluentBase, ChainableResult, success, failure
-from .types import ProcessorFunction, PredicateFunction, TransformFunction, T, U
+from .base import ChainableResult, FluentBase, failure, success
+from .types import PredicateFunction, ProcessorFunction, T, TransformFunction, U
 
 
 class DataExtractor(FluentBase[Any]):
@@ -565,7 +565,7 @@ def filter_and_transform(
 # 병렬 처리 기능 추가
 import asyncio
 import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 
 

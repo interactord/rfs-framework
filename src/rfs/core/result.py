@@ -4,22 +4,22 @@ Railway Oriented Programming을 위한 Result 타입
 Success/Failure를 명시적으로 처리하는 함수형 에러 처리 패턴
 """
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from functools import singledispatch
 from typing import (
     Any,
+    Awaitable,
     Callable,
+    Coroutine,
     Generic,
     Iterator,
+    List,
     Optional,
     TypeVar,
-    List,
-    Awaitable,
-    Coroutine,
 )
-from collections.abc import Sequence
-import asyncio
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")

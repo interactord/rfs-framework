@@ -5,15 +5,15 @@ Provides decorators for caching, rate limiting, and other cross-cutting concerns
 """
 
 import asyncio
+import hashlib
+import logging
+import pickle
 import time
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from threading import Lock, Timer
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
-import hashlib
-import pickle
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -296,8 +296,8 @@ def timeout(seconds: float, error_message: str = "Function call timed out") -> C
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            import threading
             import queue
+            import threading
 
             result_queue = queue.Queue()
             exception_queue = queue.Queue()

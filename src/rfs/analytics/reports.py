@@ -103,7 +103,7 @@ class ReportConfig:
 class Report(ABC):
     """리포트 추상 클래스"""
 
-    def __init__(self, report_id: str, template: ReportTemplate, config: ReportConfig):
+    def __init__(self, report_id: str, template: ReportTemplate, config: ReportConfig) -> None:
         self.report_id = report_id
         self.template = template
         self.config = config
@@ -542,7 +542,7 @@ class ExcelReport(Report):
 class ReportBuilder:
     """리포트 빌더"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._template: Optional[ReportTemplate] = None
         self._config: Optional[ReportConfig] = None
         self._format: ReportFormat = ReportFormat.HTML

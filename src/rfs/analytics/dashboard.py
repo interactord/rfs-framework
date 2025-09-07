@@ -467,7 +467,7 @@ class Dashboard:
 class DashboardBuilder:
     """대시보드 빌더"""
 
-    def __init__(self, dashboard_id: str, title: str):
+    def __init__(self, dashboard_id: str, title: str) -> None:
         self.dashboard = Dashboard(dashboard_id, title)
 
     def description(self, description: str) -> "DashboardBuilder":
@@ -594,7 +594,7 @@ class DashboardBuilder:
 class DashboardManager:
     """대시보드 관리자"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dashboards: Dict[str, Dashboard] = {}
 
     def create_dashboard(

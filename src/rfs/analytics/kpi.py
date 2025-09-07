@@ -474,7 +474,7 @@ class TrendKPI(KPI):
 class KPICalculator:
     """KPI 계산기"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._kpis: Dict[str, KPI] = {}
         self._calculation_cache: Dict[str, KPIValue] = {}
         self._cache_ttl: int = 300
@@ -581,7 +581,7 @@ class KPICalculator:
 class KPIDashboard:
     """KPI 대시보드"""
 
-    def __init__(self, dashboard_id: str, name: str, calculator: KPICalculator):
+    def __init__(self, dashboard_id: str, name: str, calculator: KPICalculator) -> None:
         self.dashboard_id = dashboard_id
         self.name = name
         self.calculator = calculator

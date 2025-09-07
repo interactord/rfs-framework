@@ -35,7 +35,7 @@ class Guard:
         self.message = message
         self._handled = False
 
-    def __enter__(self) -> "GuardStatement":
+    def __enter__(self) -> "Guard":
         if not self.condition:
             return self
         self._handled = True

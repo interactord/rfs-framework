@@ -404,7 +404,7 @@ def group_by(key_func: Callable[[T], K], iterable: Iterable[T]) -> Dict[K, List[
         >>> group_by(lambda x: x % 3, [1, 2, 3, 4, 5, 6])
         {1: [1, 4], 2: [2, 5], 0: [3, 6]}
     """
-    result = {}
+    result: Dict[Any, List[Any]] = {}
     for item in iterable:
         key = key_func(item)
         if key not in result:

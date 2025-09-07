@@ -7,7 +7,17 @@ RFS Readable HOF Types and Protocols
 
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional, Pattern, Protocol, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    List,
+    Literal,
+    Optional,
+    Pattern,
+    Protocol,
+    TypeVar,
+    Union,
+)
 
 # 기본 타입 변수들
 T = TypeVar("T")  # 일반적인 타입
@@ -48,7 +58,7 @@ class Extractor(Protocol):
 
 
 # 위험 수준 타입
-RiskLevel = Union["low", "medium", "high", "critical"]
+RiskLevel = Literal["low", "medium", "high", "critical"]
 
 # 컬렉션 타입들
 ProcessorFunction = Callable[[Any], Any]

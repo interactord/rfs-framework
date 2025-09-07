@@ -70,7 +70,7 @@ def pipe(*functions: Callable) -> Callable:
     return reduce(lambda f, g: lambda *args, **kwargs: g(f(*args, **kwargs)), functions)
 
 
-def curry(func: Callable, arity: int = None) -> Callable:
+def curry(func: Callable, arity: Optional[int] = None) -> Callable:
     """
     Curry a function to enable partial application.
 

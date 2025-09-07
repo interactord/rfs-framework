@@ -66,7 +66,7 @@ class Guard:
 class _GuardReturn(Exception):
     """Internal exception for guard early returns."""
 
-    def __init__(self, value):
+    def __init__(self, value: Any) -> None:
         self.value = value
         super().__init__()
 
@@ -333,14 +333,14 @@ class GuardContext:
             guard.else_return(default_value)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.failed = False
         self.failure_message = ""
 
-    def __enter__(self):
+    def __enter__(self) -> "GuardContext":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         if isinstance(exc_val, _GuardReturn):
             # Suppress the GuardReturn exception, it's handled by caller
             return True

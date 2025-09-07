@@ -43,7 +43,7 @@ class Maybe(Monad[T]):
     Represents a value that might be present (Just) or absent (Nothing).
     """
 
-    def __init__(self, value: Optional[T] = None):
+    def __init__(self, value: Optional[T] = None) -> None:
         self._value = value
 
     @staticmethod
@@ -140,7 +140,7 @@ class Either(Monad[R], Generic[L, R]):
     Represents a value that is either Left (typically error) or Right (success).
     """
 
-    def __init__(self, left: Optional[L] = None, right: Optional[R] = None):
+    def __init__(self, left: Optional[L] = None, right: Optional[R] = None) -> None:
         if (left is None) == (right is None):
             raise ValueError("Either must have exactly one value (left or right)")
         self._left = left
@@ -241,7 +241,7 @@ class Result(Generic[T, E]):
     A specialized Either where Right is Success and Left is Failure.
     """
 
-    def __init__(self, value: Optional[T] = None, error: Optional[E] = None):
+    def __init__(self, value: Optional[T] = None, error: Optional[E] = None) -> None:
         if (value is None) == (error is None):
             raise ValueError("Result must have exactly one value (success or error)")
         self._value = value

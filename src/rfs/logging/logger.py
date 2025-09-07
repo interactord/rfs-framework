@@ -15,7 +15,7 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Union
 
 _log_context: ContextVar[Dict[str, Any]] = ContextVar("log_context", default={})
-_trace_context: ContextVar[Optional["TraceContext"]] = ContextVar(
+_trace_context: ContextVar[Optional[Any]] = ContextVar(
     "_trace_context", default=None
 )
 
@@ -55,9 +55,9 @@ class LogContext:
         """필드 추가"""
         self.fields = {**self.fields, key: value}
 
-    def remove_field(self, key: str):
+    def remove_field(self, key: str) -> None:
         """필드 제거"""
-        fields = {k: v for k, v in fields.items() if k != "key, None"}
+        self.fields = {k: v for k, v in self.fields.items() if k != key}
 
     def get_fields(self) -> Dict[str, Any]:
         """필드 조회"""
@@ -94,23 +94,23 @@ class RFSLogger:
             self.logger.addHandler(handler)
         self.log_counts = {level: 0 for level in LogLevel}
 
-    def trace(self, message: str, **kwargs):
+    def trace(self, message: str, **kwargs) -> None:
         """TRACE 레벨 로그"""
         self._log(LogLevel.TRACE, message, **kwargs)
 
-    def debug(self, message: str, **kwargs):
+    def debug(self, message: str, **kwargs) -> None:
         """DEBUG 레벨 로그"""
         self._log(LogLevel.DEBUG, message, **kwargs)
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, **kwargs) -> None:
         """INFO 레벨 로그"""
         self._log(LogLevel.INFO, message, **kwargs)
 
-    def warning(self, message: str, **kwargs):
+    def warning(self, message: str, **kwargs) -> None:
         """WARNING 레벨 로그"""
         self._log(LogLevel.WARNING, message, **kwargs)
 
-    def error(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def error(self, message: str, error: Optional[Exception] = None, **kwargs) -> None:
         """ERROR 레벨 로그"""
         if error:
             kwargs["error"] = {"error": str(error)}
@@ -118,7 +118,7 @@ class RFSLogger:
             kwargs["stacktrace"] = {"stacktrace": traceback.format_exc()}
         self._log(LogLevel.ERROR, message, **kwargs)
 
-    def critical(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def critical(self, message: str, error: Optional[Exception] = None, **kwargs) -> None:
         """CRITICAL 레벨 로그"""
         if error:
             kwargs["error"] = {"error": str(error)}
@@ -126,7 +126,7 @@ class RFSLogger:
             kwargs["stacktrace"] = {"stacktrace": traceback.format_exc()}
         self._log(LogLevel.CRITICAL, message, **kwargs)
 
-    def fatal(self, message: str, error: Optional[Exception] = None, **kwargs):
+    def fatal(self, message: str, error: Optional[Exception] = None, **kwargs) -> None:
         """FATAL 레벨 로그 (CRITICAL의 별칭)"""
         self.critical(message, error, **kwargs)
 

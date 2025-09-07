@@ -8,7 +8,7 @@ partial application, and basic combinators.
 import inspect
 from functools import partial as functools_partial
 from functools import reduce, wraps
-from typing import Any, Callable, Tuple, TypeVar, Union, overload
+from typing import Any, Callable, Optional, Tuple, TypeVar, Union, overload
 
 # Type variables for generic type hints
 A = TypeVar("A")

@@ -47,7 +47,7 @@ class APIError:
     details: Optional[Dict[str, Any]] = field(default_factory=dict)
     status_code: int = 500
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """상태 코드 자동 매핑"""
         if self.status_code == 500:  # 기본값인 경우에만 자동 매핑
             self.status_code = self._get_default_status_code()

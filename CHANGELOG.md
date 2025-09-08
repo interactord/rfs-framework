@@ -5,6 +5,46 @@ RFS Framework의 모든 주요 변경사항이 이 파일에 기록됩니다.
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)을 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 준수합니다.
 
+## [4.6.4] - 2025-09-08
+
+### 🐛 중요 버그 수정 - "ResultAsync 체이닝 __await__ 지원"
+
+**심각도**: 🔴 Critical
+**영향 범위**: ResultAsync를 사용하는 모든 비동기 체이닝 코드
+
+ResultAsync 클래스가 Python의 awaitable 프로토콜을 제대로 구현하지 않아 체이닝된 메서드들을 await할 수 없던 심각한 버그를 해결했습니다.
+
+### 🔧 핵심 수정 사항
+
+#### ResultAsync awaitable 지원
+- **`__await__` 메서드 추가**: Python의 awaitable 프로토콜 완벽 구현
+- **체이닝 지원**: 다음과 같은 패턴이 이제 정상 작동:
+  ```python
+  result = await (
+      ResultAsync.from_value(10)
+      .bind_async(lambda x: ResultAsync.from_value(x * 2))
+      .map_async(lambda x: x + 5)
+  )
+  ```
+- **직접 await 지원**: `result = await result_async` 패턴 지원
+- **RuntimeWarning 제거**: "coroutine was never awaited" 경고 완전 해결
+
+#### 개선된 메서드들
+- **`bind_async()` 향상**: `await self` 사용으로 더 깔끔한 구현
+- **`map_async()` 향상**: 일관된 awaitable 패턴 적용
+- **캐싱 메커니즘 유지**: 기존의 성능 최적화 보존
+
+### 📊 개선 효과
+- **체이닝 가능**: 모든 비동기 Result 체이닝이 정상 작동
+- **TypeError 해결**: "object ResultAsync can't be used in 'await' expression" 에러 제거
+- **성능 유지**: 기존 캐싱 메커니즘과 성능 최적화 보존
+- **100% 하위 호환**: 기존 코드 변경 없이 작동
+
+### 🧪 테스트 추가
+- **체이닝 테스트**: 복잡한 비동기 체이닝 패턴 검증
+- **RuntimeWarning 테스트**: 경고 발생 여부 체크
+- **호환성 테스트**: 기존 코드와의 호환성 확인
+
 ## [4.6.1] - 2025-09-07
 
 ### 🐛 버그 수정 - "ResultAsync 런타임 경고 및 에러 해결"

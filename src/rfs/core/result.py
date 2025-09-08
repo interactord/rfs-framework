@@ -593,6 +593,32 @@ class ResultAsync(Generic[T, E]):
         self._cached_result: Optional["Result[T, E]"] = None
         self._is_resolved = False
 
+    def __await__(self):
+        """
+        ResultAsync를 awaitable하게 만드는 핵심 메서드
+        
+        이 메서드를 통해 다음과 같은 체이닝이 가능해집니다:
+        ```python
+        result = await (
+            ResultAsync.from_value(10)
+            .bind_async(lambda x: ResultAsync.from_value(x * 2))
+            .map_async(lambda x: x + 5)
+        )
+        ```
+        
+        Returns:
+            await 가능한 이터레이터
+        """
+        # 내부 async 함수를 정의하고 그것의 __await__를 반환
+        async def resolve():
+            if not self._is_resolved:
+                self._cached_result = await self._result
+                self._is_resolved = True
+            return self._cached_result
+        
+        # async 함수의 __await__ 메서드를 호출하여 이터레이터 반환
+        return resolve().__await__()
+
     # ==================== 클래스 메서드 (Static Factory) ====================
 
     @classmethod
@@ -774,7 +800,8 @@ class ResultAsync(Generic[T, E]):
         """
 
         async def bound() -> "Result[U, E]":
-            result = await self._result
+            # self를 직접 await할 수 있게 됨 (__await__ 덕분에)
+            result = await self
             match result:
                 case Success() as s:
                     try:
@@ -809,7 +836,8 @@ class ResultAsync(Generic[T, E]):
         """
 
         async def mapped() -> "Result[U, E]":
-            result = await self._result
+            # self를 직접 await할 수 있게 됨 (__await__ 덕분에)
+            result = await self
             match result:
                 case Success() as s:
                     try:

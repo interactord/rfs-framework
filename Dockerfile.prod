@@ -1,0 +1,84 @@
+# RFS Framework Production Dockerfile
+# Version: 4.6.3
+# Optimized for Google Cloud Run deployment
+
+# Build stage - Python 3.11 slim for smaller image
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /build
+
+# Copy dependency files first (for better caching)
+COPY pyproject.toml setup.py README.md ./
+COPY src/ ./src/
+
+# Install dependencies and build wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip wheel --no-cache-dir --wheel-dir /wheels .
+
+# Runtime stage - Minimal image for production
+FROM python:3.11-slim
+
+# Security: Run as non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy wheels from builder
+COPY --from=builder /wheels /wheels
+
+# Install RFS Framework and dependencies
+RUN pip install --no-cache-dir --no-index --find-links /wheels rfs-framework && \
+    rm -rf /wheels
+
+# Copy application code (if any)
+# COPY app/ ./app/
+
+# RFS Framework 환경변수 기본값 설정 (Cloud Run 지원)
+ENV RFS_ENVIRONMENT=production \
+    RFS_LOG_LEVEL=INFO \
+    RFS_LOG_FORMAT=json \
+    RFS_ENABLE_COLD_START_OPTIMIZATION=true \
+    RFS_ENABLE_TRACING=true \
+    RFS_ENABLE_PERFORMANCE_MONITORING=true \
+    RFS_METRICS_EXPORT_INTERVAL=60
+
+# 애플리케이션 환경변수 기본값
+ENV ENVIRONMENT=production \
+    LOG_LEVEL=INFO \
+    PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Change ownership to non-root user
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Cloud Run은 PORT 환경변수를 제공
+EXPOSE 8080
+
+# 기본 실행 명령 (FastAPI 앱 예시)
+# 실제 애플리케이션에 맞게 수정하세요
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+# 또는 RFS CLI 사용 (RFS Framework 애플리케이션인 경우)
+# CMD ["rfs-cli", "serve", "--host", "0.0.0.0", "--port", "8080"]

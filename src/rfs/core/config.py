@@ -111,69 +111,69 @@ if PYDANTIC_AVAILABLE:
                     case _:
                         return Environment.DEVELOPMENT
 
-    @field_validator("cloud_run_cpu_limit")
-    @classmethod
-    def validate_cpu_limit(cls, v: str) -> str:
-        """Cloud Run CPU 제한 검증"""
-        if not (v.endswith("m") or v.endswith("Mi")):
-            raise ValueError("CPU limit must end with 'm' or 'Mi'")
-        return v
+        @field_validator("cloud_run_cpu_limit")
+        @classmethod
+        def validate_cpu_limit(cls, v: str) -> str:
+            """Cloud Run CPU 제한 검증"""
+            if not (v.endswith("m") or v.endswith("Mi")):
+                raise ValueError("CPU limit must end with 'm' or 'Mi'")
+            return v
 
-    @field_validator("cloud_run_memory_limit")
-    @classmethod
-    def validate_memory_limit(cls, v: str) -> str:
-        """Cloud Run 메모리 제한 검증"""
-        if not (v.endswith("Mi") or v.endswith("Gi")):
-            raise ValueError("Memory limit must end with 'Mi' or 'Gi'")
-        return v
+        @field_validator("cloud_run_memory_limit")
+        @classmethod
+        def validate_memory_limit(cls, v: str) -> str:
+            """Cloud Run 메모리 제한 검증"""
+            if not (v.endswith("Mi") or v.endswith("Gi")):
+                raise ValueError("Memory limit must end with 'Mi' or 'Gi'")
+            return v
 
-    @model_validator(mode="after")
-    def validate_config_consistency(self) -> "RFSConfig":
-        """설정 일관성 검증"""
-        if self.environment == Environment.PRODUCTION:
-            if not self.enable_tracing:
-                print("Warning: 운영 환경에서는 추적을 활성화하는 것을 권장합니다.")
-            if (
-                self.enable_performance_monitoring
-                and self.metrics_export_interval > 300
-            ):
-                print(
-                    "Warning: 성능 모니터링 활성화 시 메트릭 간격을 300초 이하로 설정하는 것을 권장합니다."
-                )
-        return self
+        @model_validator(mode="after")
+        def validate_config_consistency(self) -> "RFSConfig":
+            """설정 일관성 검증"""
+            if self.environment == Environment.PRODUCTION:
+                if not self.enable_tracing:
+                    print("Warning: 운영 환경에서는 추적을 활성화하는 것을 권장합니다.")
+                if (
+                    self.enable_performance_monitoring
+                    and self.metrics_export_interval > 300
+                ):
+                    print(
+                        "Warning: 성능 모니터링 활성화 시 메트릭 간격을 300초 이하로 설정하는 것을 권장합니다."
+                    )
+            return self
 
-    def is_development(self) -> bool:
-        """개발 환경 여부"""
-        return self.environment == Environment.DEVELOPMENT
+        def is_development(self) -> bool:
+            """개발 환경 여부"""
+            return self.environment == Environment.DEVELOPMENT
 
-    def is_production(self) -> bool:
-        """운영 환경 여부"""
-        return self.environment == Environment.PRODUCTION
+        def is_production(self) -> bool:
+            """운영 환경 여부"""
+            return self.environment == Environment.PRODUCTION
 
-    def is_test(self) -> bool:
-        """테스트 환경 여부"""
-        return self.environment == Environment.TEST
+        def is_test(self) -> bool:
+            """테스트 환경 여부"""
+            return self.environment == Environment.TEST
 
-    def export_cloud_run_config(self) -> Dict[str, Any]:
-        """Cloud Run 배포용 설정 내보내기 (v4 신규)"""
-        return {
-            "env_vars": {
-                "RFS_ENVIRONMENT": self.environment.value,
-                "RFS_DEFAULT_BUFFER_SIZE": str(self.default_buffer_size),
-                "RFS_MAX_CONCURRENCY": str(self.max_concurrency),
-                "RFS_ENABLE_COLD_START_OPTIMIZATION": str(
-                    self.enable_cold_start_optimization
-                ).lower(),
-                "RFS_REDIS_URL": self.redis_url,
-                "RFS_LOG_LEVEL": self.log_level,
-                "RFS_ENABLE_TRACING": str(self.enable_tracing).lower(),
-            },
-            "resource_limits": {
-                "cpu": self.cloud_run_cpu_limit,
-                "memory": self.cloud_run_memory_limit,
-            },
-            "scaling": {"max_instances": self.cloud_run_max_instances},
-        }
+        def export_cloud_run_config(self) -> Dict[str, Any]:
+            """Cloud Run 배포용 설정 내보내기 (v4 신규)"""
+            return {
+                "env_vars": {
+                    "RFS_ENVIRONMENT": self.environment.value,
+                    "RFS_DEFAULT_BUFFER_SIZE": str(self.default_buffer_size),
+                    "RFS_MAX_CONCURRENCY": str(self.max_concurrency),
+                    "RFS_ENABLE_COLD_START_OPTIMIZATION": str(
+                        self.enable_cold_start_optimization
+                    ).lower(),
+                    "RFS_REDIS_URL": self.redis_url,
+                    "RFS_LOG_LEVEL": self.log_level,
+                    "RFS_ENABLE_TRACING": str(self.enable_tracing).lower(),
+                },
+                "resource_limits": {
+                    "cpu": self.cloud_run_cpu_limit,
+                    "memory": self.cloud_run_memory_limit,
+                },
+                "scaling": {"max_instances": self.cloud_run_max_instances},
+            }
 
 else:
     from dataclasses import dataclass, field
@@ -219,6 +219,10 @@ class ConfigManager:
         """설정 로드 (Pydantic 자동 처리 활용)"""
         if self._config is not None and (not force_reload):
             return self._config
+        
+        # 환경변수 브리지 적용 (Cloud Run 등 지원)
+        self._apply_environment_bridge()
+        
         if PYDANTIC_AVAILABLE:
             match (self.config_path, self.env_file):
                 case [str() as config_path, str() as env_file] if Path(
@@ -238,6 +242,34 @@ class ConfigManager:
             config_dict = {**config_dict, **env_config}
             self._config = self._create_config(config_dict)
         return self._config
+    
+    def _apply_environment_bridge(self) -> None:
+        """환경변수 브리지 적용 (Cloud Run 등 배포 환경 지원)"""
+        # RFS_ENVIRONMENT가 없으면 ENVIRONMENT에서 가져오기
+        if not os.getenv("RFS_ENVIRONMENT"):
+            app_env = os.getenv("ENVIRONMENT", "development").lower()
+            # 환경 매핑
+            if app_env in ("production", "prod"):
+                os.environ["RFS_ENVIRONMENT"] = "production"
+            elif app_env in ("staging", "stage", "test", "testing"):
+                os.environ["RFS_ENVIRONMENT"] = "test"
+            else:  # development, dev, develop 또는 기타
+                os.environ["RFS_ENVIRONMENT"] = "development"
+        
+        # RFS_LOG_LEVEL이 없으면 LOG_LEVEL에서 가져오기
+        if not os.getenv("RFS_LOG_LEVEL") and os.getenv("LOG_LEVEL"):
+            os.environ["RFS_LOG_LEVEL"] = os.getenv("LOG_LEVEL", "INFO")
+        
+        # Cloud Run 환경 감지 및 설정
+        if os.getenv("K_SERVICE"):  # Cloud Run indicator
+            # PORT 환경변수 브리지
+            if port := os.getenv("PORT"):
+                os.environ.setdefault("RFS_PORT", port)
+            # Cloud Run 최적화 설정
+            os.environ.setdefault("RFS_ENABLE_COLD_START_OPTIMIZATION", "true")
+            # 프로덕션 환경 기본값
+            if not os.getenv("RFS_ENVIRONMENT"):
+                os.environ["RFS_ENVIRONMENT"] = "production"
 
     def _load_from_file(self, file_path: str) -> Dict[str, Any]:
         """파일에서 설정 로드 (JSON만 지원)"""

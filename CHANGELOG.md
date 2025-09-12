@@ -5,7 +5,45 @@ RFS Framework의 모든 주요 변경사항이 이 파일에 기록됩니다.
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)을 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 준수합니다.
 
-## [4.6.4] - 2025-09-08
+## [4.6.5] - 2024-09-12
+
+### 🚀 Cloud Run 배포 지원 강화
+
+**심각도**: 🟡 Important  
+**영향 범위**: Cloud Run 및 컨테이너 기반 배포 환경
+
+Google Cloud Run, AWS ECS, Azure Container Instances 등 컨테이너 기반 서버리스 환경에서 RFS Framework가 원활하게 작동하도록 환경변수 브리지 기능을 추가했습니다.
+
+### 🔧 핵심 추가 사항
+
+#### 환경변수 자동 브리지 (config_bridge.py)
+- **자동 매핑**: `ENVIRONMENT` → `RFS_ENVIRONMENT` 자동 변환
+- **Cloud Run 감지**: `K_SERVICE` 환경변수로 Cloud Run 환경 자동 감지
+- **다중 환경 지원**: production, staging, development 환경 자동 구분
+- **멱등성 보장**: 여러 번 호출해도 안전한 초기화
+
+#### ConfigManager 개선
+- **Fallback 로직 추가**: RFS_ENVIRONMENT가 없을 때 ENVIRONMENT 변수 사용
+- **자동 초기화**: Framework import 시 자동으로 환경 설정
+- **Cloud Run 최적화**: Cloud Run 특화 설정 자동 적용
+
+### 📦 배포 도구 추가
+- **Dockerfile.prod**: 프로덕션용 멀티스테이지 Docker 이미지
+- **deploy-cloud-run.sh**: Cloud Run 자동 배포 스크립트
+- **docker-compose.yml**: 로컬 테스트용 컴포즈 파일
+
+### 📊 개선 효과
+- **Zero-config 배포**: Cloud Run에 별도 설정 없이 바로 배포 가능
+- **환경 호환성**: 다양한 클라우드 환경과 호환
+- **자동 감지**: 배포 환경을 자동으로 감지하고 최적화
+- **100% 하위 호환**: 기존 설정 방식도 계속 작동
+
+### 🧪 테스트 추가
+- **환경변수 브리지 테스트**: 다양한 환경 시나리오 검증
+- **Cloud Run 감지 테스트**: K_SERVICE 환경변수 처리 확인
+- **멱등성 테스트**: 중복 초기화 안전성 검증
+
+## [4.6.4] - 2024-09-08
 
 ### 🐛 중요 버그 수정 - "ResultAsync 체이닝 __await__ 지원"
 

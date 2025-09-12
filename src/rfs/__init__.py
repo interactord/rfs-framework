@@ -13,9 +13,23 @@ RFS Framework - Enterprise-Grade Reactive Functional Serverless
 Version: 4.6.3 (Production Ready)
 """
 
-__version__ = "4.6.3"
+__version__ = "4.6.5"
 __author__ = "RFS Framework Team"
 __phase__ = "Production Ready"
+
+# 환경변수 브리지 초기화 (Cloud Run 등 배포 환경 지원)
+# 모든 import 전에 실행되어 설정 문제 방지
+try:
+    from .core.config_bridge import ensure_rfs_configured
+    ensure_rfs_configured()
+except ImportError:
+    # config_bridge가 없어도 기본 동작은 계속
+    pass
+except Exception as e:
+    # 개발 환경에서는 경고만 출력
+    import os
+    if os.getenv("ENVIRONMENT", "development") not in ("production", "prod"):
+        print(f"Warning: RFS configuration bridge failed: {e}")
 
 # Task Management System (새로 구현됨)
 from .async_tasks import (

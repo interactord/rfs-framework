@@ -264,3 +264,15 @@ scripts/quality/unified/
 
 # Development reports and cleanup files
 CLEANUP_REPORT.md
+
+# Test files in root directory (should be in tests/)
+test_*.py
+
+# Lock files
+uv.lock
+poetry.lock
+Pipfile.lock
+
+# PR and issue tracking files
+pr/
+issues/

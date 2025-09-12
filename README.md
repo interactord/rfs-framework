@@ -3,7 +3,7 @@
 > **Enterprise-Grade Reactive Functional Serverless Framework for Python**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/Version-4.3.0-green.svg)](https://pypi.org/project/rfs-framework/)
+[![Version](https://img.shields.io/badge/Version-4.6.5-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Cloud Run Ready](https://img.shields.io/badge/Cloud%20Run-Ready-green.svg)](https://cloud.google.com/run)
 
@@ -21,7 +21,7 @@
 ### Installation
 
 ```bash
-# PyPI에서 설치 (v4.0.0 - 안정 버전)
+# PyPI에서 설치 (v4.6.5 - 최신 안정 버전)
 pip install rfs-framework
 
 # 선택적 모듈 설치

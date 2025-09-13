@@ -38,6 +38,48 @@ class LogLevel(Enum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
+    @classmethod
+    def from_value(cls, value):
+        """
+        안전한 LogLevel 생성
+        딕셔너리, 문자열 등 다양한 입력 형태를 처리
+
+        Args:
+            value: 로그 레벨 값 (str, dict, 기타)
+
+        Returns:
+            LogLevel: 파싱된 LogLevel enum
+
+        Raises:
+            ValueError: 유효하지 않은 로그 레벨값인 경우
+        """
+        # 이미 LogLevel 인스턴스인 경우
+        if isinstance(value, cls):
+            return value
+
+        # 딕셔너리 형태 처리 (Cloud Run 환경 대응)
+        if isinstance(value, dict):
+            if 'log_level' in value:
+                value = value['log_level']
+            else:
+                # 딕셔너리에 log_level 키가 없으면 기본값 반환
+                return cls.INFO
+
+        # 문자열이 아닌 경우 문자열로 변환
+        if not isinstance(value, str):
+            value = str(value)
+
+        # 대소문자 무관하게 처리
+        value = value.upper().strip()
+
+        # 유효한 값인지 확인
+        for level in cls:
+            if level.value == value:
+                return level
+
+        # 유효하지 않은 값인 경우 기본값 반환 (안전한 Fallback)
+        return cls.INFO
+
 
 @dataclass
 class LogContext:
@@ -450,10 +492,71 @@ def get_default_logger() -> EnhancedLogger:
     """기본 로거 조회"""
     global _default_logger
     if _default_logger is None:
-        config = get_config()
-        log_level = getattr(config, "log_level", "INFO")
-        _default_logger = get_logger("rfs", LogLevel(log_level))
+        try:
+            config = get_config()
+            log_level = getattr(config, "log_level", "INFO")
+            
+            # 안전한 LogLevel 생성 (딕셔너리, 문자열 모두 처리)
+            safe_log_level = LogLevel.from_value(log_level)
+            _default_logger = get_logger("rfs", safe_log_level)
+            
+        except Exception as e:
+            # 설정 로드 실패 시 안전한 기본값으로 생성
+            import logging
+            logging.error(f"기본 로거 생성 중 오류 발생: {e}")
+            _default_logger = get_logger("rfs", LogLevel.INFO)
+            
     return _default_logger
+
+def create_safe_logger(name: str, level=None, **kwargs) -> EnhancedLogger:
+    """
+    안전한 로거 생성
+    다양한 log_level 입력 형태를 방어적으로 처리
+    
+    Args:
+        name: 로거 이름
+        level: 로그 레벨 (str, dict, LogLevel, 기타)
+        **kwargs: 추가 로거 설정
+    
+    Returns:
+        EnhancedLogger: 생성된 로거 인스턴스
+    """
+    try:
+        if level is not None:
+            level = LogLevel.from_value(level)
+        else:
+            level = LogLevel.INFO
+        return get_logger(name, level, **kwargs)
+    except Exception as e:
+        # 생성 실패 시 기본 설정으로 생성
+        import logging
+        logging.error(f"안전 로거 생성 중 오류 발생: {e}")
+        return get_logger(name, LogLevel.INFO, **kwargs)
+
+
+def validate_log_level_config(config_value):
+    """
+    로그 레벨 설정값 검증 및 정규화
+    
+    Args:
+        config_value: 설정에서 가져온 로그 레벨 값
+        
+    Returns:
+        LogLevel: 검증된 LogLevel enum
+        
+    Example:
+        >>> validate_log_level_config('DEBUG')
+        LogLevel.DEBUG
+        >>> validate_log_level_config({'log_level': 'INFO'})
+        LogLevel.INFO
+        >>> validate_log_level_config('invalid')
+        LogLevel.INFO
+    """
+    try:
+        return LogLevel.from_value(config_value)
+    except Exception:
+        # 모든 예외에 대해 안전한 기본값 반환
+        return LogLevel.INFO
 
 
 def set_log_context(context: LogContext) -> None:

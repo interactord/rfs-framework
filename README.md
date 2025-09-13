@@ -3,7 +3,7 @@
 > **Enterprise-Grade Reactive Functional Serverless Framework for Python**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/Version-4.6.5-green.svg)](https://pypi.org/project/rfs-framework/)
+[![Version](https://img.shields.io/badge/Version-4.6.6-green.svg)](https://pypi.org/project/rfs-framework/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Cloud Run Ready](https://img.shields.io/badge/Cloud%20Run-Ready-green.svg)](https://cloud.google.com/run)
 
@@ -21,7 +21,7 @@
 ### Installation
 
 ```bash
-# PyPI에서 설치 (v4.6.5 - 최신 안정 버전)
+# PyPI에서 설치 (v4.6.6 - 최신 안정 버전)
 pip install rfs-framework
 
 # 선택적 모듈 설치
@@ -172,6 +172,7 @@ rfs-framework/
 - Blue-Green/Canary 배포
 - Circuit Breaker 패턴
 - 성능 모니터링
+- **강화된 LogLevel 검증**: Cloud Run 환경 호환성 개선 (v4.6.6)
 - [상세 문서 →](./docs/05-deployment.md)
 
 ## 📊 Performance
@@ -185,8 +186,9 @@ rfs-framework/
 
 ## 🚧 Status
 
-- **완성도**: 93% (v4.3.0)
+- **완성도**: 93% (v4.6.6)
 - **프로덕션 준비**: ✅ Ready
+- **최신 개선**: LogLevel 검증 시스템 강화 - Cloud Run 환경 호환성 완벽 지원
 - **미완성 항목**: [TODO.md](./TODO.md) 참조
 
 ## 🤝 Contributing

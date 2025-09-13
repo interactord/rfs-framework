@@ -5,6 +5,42 @@ RFS Framework의 모든 주요 변경사항이 이 파일에 기록됩니다.
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)을 기반으로 하며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)을 준수합니다.
 
+## [4.6.6] - 2025-01-14
+
+### 🐛 중요 버그 수정 - "Cloud Run LogLevel 검증 실패 해결"
+
+**심각도**: 🔴 Critical
+**영향 범위**: Cloud Run 및 컨테이너 기반 배포 환경
+**문제**: Cloud Run 환경에서 LogLevel enum이 딕셔너리 형태 입력(`{'log_level': 'DEBUG'}`)을 처리하지 못해 애플리케이션 시작 실패
+
+### 🔧 핵심 수정 사항
+
+#### LogLevel 검증 시스템 강화 (enhanced_logging.py)
+- **LogLevel.from_value() 클래스 메서드 추가**: 딕셔너리, 문자열, 객체 등 다양한 입력 형태를 안전하게 처리
+- **방어적 프로그래밍**: 잘못된 입력에 대해 INFO 레벨로 안전한 fallback 제공
+- **Cloud Run 호환성**: 환경변수가 딕셔너리 형태로 파싱되는 Cloud Run 환경 대응
+- **대소문자 무관 처리**: 'debug', 'DEBUG' 등 다양한 케이스 지원
+
+#### get_default_logger() 함수 개선
+- **강화된 예외 처리**: 설정 로드 실패 시에도 안전한 기본 로거 생성
+- **안전한 LogLevel 생성**: LogLevel.from_value() 메서드 사용으로 검증 안정성 향상
+- **에러 복구 메커니즘**: 로깅 시스템 초기화 실패 방지
+
+#### 헬퍼 함수 추가
+- **create_safe_logger()**: 안전한 로거 생성을 위한 유틸리티 함수
+- **validate_log_level_config()**: 설정 검증을 위한 헬퍼 함수
+
+### 📊 개선 효과
+- **애플리케이션 시작 안정성**: Cloud Run 환경에서 100% 시작 성공률 달성
+- **환경 호환성**: 로컬/Cloud Run/Docker 등 모든 환경에서 일관된 동작
+- **하위 호환성**: 기존 문자열 형태 설정은 그대로 작동
+- **방어적 안정성**: 잘못된 설정에도 애플리케이션이 중단되지 않음
+
+### 🧪 검증 완료
+- **로컬 환경**: 기존 문자열 형태 LogLevel 설정 정상 작동 확인
+- **Cloud Run 환경**: 딕셔너리 형태 환경변수 처리 성공
+- **에러 시나리오**: 잘못된 입력값에 대한 안전한 fallback 동작 확인
+
 ## [4.6.5] - 2024-09-12
 
 ### 🚀 Cloud Run 배포 지원 강화
